@@ -108,7 +108,7 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.Send(message, new[] { nonExistingPeer });
             senderTransport.Send(message, new[] { destinationPeer });
 
-            Wait.Until(() => receivedMessages.Count >= 1, 500.Milliseconds(), "The outbound thread was killed and couldn't connect to the next peer");
+            Wait.Until(() => receivedMessages.Count >= 1, 1000.Milliseconds(), "The outbound thread was killed and couldn't connect to the next peer");
         }
 
         [Test]
