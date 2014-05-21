@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<project name="Abc.Zebus" default="build-local">
+	
+	<property name="project.platform" value="AnyCPU" />
+	<property name="project.config" value="release" />
+	
+	<property name="unittest.LocalOnlyCategory" value="LocalOnly" />
+	<property name="under.teamcity" value="${property::exists('teamcity.version')}" />
+	<property name="base.dir" value="${directory::get-current-directory()}" />
+	<property name="base.dir" value="${directory::get-current-directory()}\output" unless="${under.teamcity}" />
+	<property name="solution.dir" value="${base.dir}"/>
+	<property name="build.dir" value="${base.dir}\build-result" overwrite="false" />
+	<property name="build.dir.tests" value="${base.dir}\build-result-tests" />
+	<property name="artefacts.dir" value="${base.dir}\artefacts" />
+	<property name="dcvs.dir" value="${base.dir}\dcvsexport" />
+	<property name="src.dir" value="${dcvs.dir}\src" />
+	<property name="nunit.result.dir" value="${artefacts.dir}\nunit" />
+	<property name="msbuild.exe" value="C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"/>
+	<property name="nunit.dir" value='tools\nunit' />
+	<property name="nunit.exe" value='${nunit.dir}\nunit-console.exe' />
+	
+	
+	<target name="build-tc" depends="init init-project compile-tests compile"/>
+	<target name="build-local" depends="init init-local init-project compile compile-tests test localonly-test"/>
+
+	
+	<target name="clean" description="Remove all build products">
+		<delete dir="${build.dir}"  if="${directory::exists(build.dir)}" />
+		<delete dir="${build.dir.tests}"  if="${directory::exists(build.dir.tests)}" />
+		<delete dir="${artefacts.dir}"  if="${directory::exists(artefacts.dir)}" />
+
+		<attrib normal="true">
+			<fileset basedir="${dcvs.dir}">
+				<include name="**/**" />
+			</fileset>
+		</attrib>
+
+		<delete dir="${dcvs.dir}" if="${directory::exists(dcvs.dir)}" />
+	</target>
+	
+	<target name="init" depends="clean">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${artefacts.dir}" />
+		<mkdir dir="${nunit.result.dir}" />
+	</target>
+	
+	<target name="init-local">
+		<!-- switch back the src dir to the dir where this file is -->
+		<property name="src.dir" value="../src" />
+	</target>
+	
+	<target name="init-project">
+		<fileset id="projectsToBuild" basedir="${src.dir}">
+			<include name="Abc.Zebus\Abc.Zebus.csproj" />
+		</fileset>
+	</target>
+	
+	<target name="init-tests">
+		<fileset id="testsToBuild" basedir="${src.dir}">
+			<include name="Abc.Zebus.Tests\Abc.Zebus.Tests.csproj" />
+		</fileset>
+	</target>
+	
+	<target name="compile-tests" depends="init-tests">
+		<echo message="Build Directory is ${build.dir.tests}" />
+		<mkdir dir="${build.dir.tests}" />
+	
+		<foreach item="File" property="vsnet.project">
+			<in>
+				<items refid="testsToBuild" />
+			</in>
+			<do>
+				<echo message="Compiling ${vsnet.project}" />
+				<exec program="${msbuild.exe}"
+				  verbose="true"
+				  commandline='"${vsnet.project}" /t:Build /p:Configuration=debug;Platform="${project.platform}";OutputPath="${build.dir.tests}";SolutionDir="${solution.dir}" /v:q'/>
+			</do>
+		</foreach>
+	</target>
+		
+	<target name="compile" depends="init-project">
+		<echo message="Build Directory is ${build.dir}" />
+
+		<foreach item="File" property="vsnet.project">
+			<in>
+				<items refid="projectsToBuild" />
+			</in>
+			<do>
+				<echo message="Compiling ${vsnet.project}" />
+				<exec program="${msbuild.exe}"
+					  verbose="true"
+					  commandline='"${vsnet.project}" /t:Build /p:Configuration=${project.config};Platform="${project.platform}";OutputPath="${build.dir}";SolutionDir="${solution.dir}" /v:q' />
+			</do>
+		</foreach>
+	</target>
+		
+	<target name="test">
+		<echo message="Tests - Category to exclude : ${unittest.LocalOnlyCategory}" />
+		<property name="nunit.arguments" value="/exclude=${unittest.LocalOnlyCategory}" />
+		<call target="internal-test" />
+	</target>	
+	
+	<target name="localonly-test">
+		<echo message="Integration Tests - Category to include : ${unittest.LocalOnlyCategory}" />
+		<property name="nunit.arguments" value="/include=${unittest.LocalOnlyCategory}" />
+		<call target="internal-test" />
+	</target>
+		
+	<target name="internal-test">
+		<echo message="Executing tests in ${build.dir.tests}" />
+		<foreach item="File" property="filePath">
+			<in>
+				<items basedir="${build.dir.tests}">
+					<include name="*Tests.dll" />
+				</items>
+			</in>
+			<do>
+				<property name="filename" value="${path::get-file-name(filePath)}" />
+				<echo message="'${filename}'" />
+				<exec program="${nunit.exe}" workingdir="${build.dir.tests}" failonerror="true">
+					<arg value="${filename}" />
+					<arg value="/xml:${filename}-testresults.xml" />
+					<arg value="/noshadow" />
+					<arg value="/nothread" />
+					<arg value="/domain=Multiple" />
+					<arg value="/process=Single" />
+					<arg value="/framework=4.0.30319" />
+					<arg value="${nunit.arguments}" />
+				</exec>
+			</do>
+		</foreach>
+	</target>
+</project>
