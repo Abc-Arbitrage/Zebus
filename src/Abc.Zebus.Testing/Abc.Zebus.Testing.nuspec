@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
+    <projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+    <iconUrl>http://www.designdownloader.com/item/pngl/Zebu_t005/Zebu_t005-20120728103350-00005.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes></releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags></tags>
+  </metadata>
+</package>
