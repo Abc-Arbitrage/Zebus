@@ -73,7 +73,7 @@
 				<echo message="Compiling ${vsnet.project}" />
 				<exec program="${msbuild.exe}"
 				  verbose="true"
-				  commandline='"${vsnet.project}" /t:Build /p:Configuration=debug;Platform="${project.platform}";OutputPath="${build.dir.tests}";SolutionDir="${solution.dir}" /v:q'/>
+				  commandline='"${vsnet.project}" /t:rebuild /p:Configuration=debug;Platform="${project.platform}";OutputPath="${build.dir.tests}";SolutionDir="${solution.dir}" /v:q'/>
 			</do>
 		</foreach>
 	</target>
@@ -89,7 +89,7 @@
 				<echo message="Compiling ${vsnet.project}" />
 				<exec program="${msbuild.exe}"
 					  verbose="true"
-					  commandline='"${vsnet.project}" /t:Build /p:Configuration=${project.config};Platform="${project.platform}";OutputPath="${build.dir}";SolutionDir="${solution.dir}" /v:q' />
+					  commandline='"${vsnet.project}" /t:rebuild /p:Configuration=${project.config};Platform="${project.platform}";OutputPath="${build.dir}";SolutionDir="${solution.dir}" /v:q' />
 			</do>
 		</foreach>
 	</target>
