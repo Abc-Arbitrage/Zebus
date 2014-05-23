@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SharedVersionInfo.cs = SharedVersionInfo.cs
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Directory", "Abc.Zebus.Directory\Abc.Zebus.Directory.csproj", "{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +68,18 @@ Global
 		{4CE123DF-8021-411C-929B-53E5C5FC1E04}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{4CE123DF-8021-411C-929B-53E5C5FC1E04}.Release|x64.ActiveCfg = Release|Any CPU
 		{4CE123DF-8021-411C-929B-53E5C5FC1E04}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Release|x64.ActiveCfg = Release|Any CPU
+		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
