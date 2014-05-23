@@ -6,14 +6,11 @@
 	
 	<property name="unittest.LocalOnlyCategory" value="LocalOnly" />
 	<property name="under.teamcity" value="${property::exists('teamcity.version')}" />
-	<property name="base.dir" value="${directory::get-current-directory()}" />
-	<property name="base.dir" value="${directory::get-current-directory()}\output" unless="${under.teamcity}" />
-	<property name="solution.dir" value="${base.dir}"/>
-	<property name="build.dir" value="${base.dir}\build-result" overwrite="false" />
-	<property name="build.dir.tests" value="${base.dir}\build-result-tests" />
-	<property name="artefacts.dir" value="${base.dir}\artefacts" />
-	<property name="dcvs.dir" value="${base.dir}\dcvsexport" />
-	<property name="src.dir" value="${dcvs.dir}\src" />
+	<property name="output.dir" value="${directory::get-current-directory()}\output" />
+	<property name="build.dir" value="${output.dir}\build-result" overwrite="false" />
+	<property name="build.dir.tests" value="${output.dir}\build-result-tests" />
+	<property name="artefacts.dir" value="${output.dir}\artefacts" />
+	<property name="src.dir" value="${directory::get-current-directory()}\src" />
 	<property name="nunit.result.dir" value="${artefacts.dir}\nunit" />
 	<property name="msbuild.exe" value="C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"/>
 	<property name="nunit.dir" value='tools\nunit' />
@@ -21,21 +18,13 @@
 	
 	
 	<target name="build-tc" depends="init init-project compile-tests compile"/>
-	<target name="build-local" depends="init init-local init-project compile compile-tests test localonly-test"/>
+	<target name="build-local" depends="init init-project compile compile-tests test localonly-test"/>
 
 	
 	<target name="clean" description="Remove all build products">
 		<delete dir="${build.dir}"  if="${directory::exists(build.dir)}" />
 		<delete dir="${build.dir.tests}"  if="${directory::exists(build.dir.tests)}" />
 		<delete dir="${artefacts.dir}"  if="${directory::exists(artefacts.dir)}" />
-
-		<attrib normal="true">
-			<fileset basedir="${dcvs.dir}">
-				<include name="**/**" />
-			</fileset>
-		</attrib>
-
-		<delete dir="${dcvs.dir}" if="${directory::exists(dcvs.dir)}" />
 	</target>
 	
 	<target name="init" depends="clean">
@@ -43,12 +32,7 @@
 		<mkdir dir="${artefacts.dir}" />
 		<mkdir dir="${nunit.result.dir}" />
 	</target>
-	
-	<target name="init-local">
-		<!-- switch back the src dir to the dir where this file is -->
-		<property name="src.dir" value="../src" />
-	</target>
-	
+
 	<target name="init-project">
 		<fileset id="projectsToBuild" basedir="${src.dir}">
 			<include name="Abc.Zebus\Abc.Zebus.csproj" />
@@ -73,7 +57,7 @@
 				<echo message="Compiling ${vsnet.project}" />
 				<exec program="${msbuild.exe}"
 				  verbose="true"
-				  commandline='"${vsnet.project}" /t:rebuild /p:Configuration=debug;Platform="${project.platform}";OutputPath="${build.dir.tests}";SolutionDir="${solution.dir}" /v:q'/>
+				  commandline='"${vsnet.project}" /t:rebuild /p:Configuration=debug;Platform="${project.platform}";OutputPath="${build.dir.tests}";SolutionDir="${output.dir}" /v:q'/>
 			</do>
 		</foreach>
 	</target>
@@ -89,7 +73,7 @@
 				<echo message="Compiling ${vsnet.project}" />
 				<exec program="${msbuild.exe}"
 					  verbose="true"
-					  commandline='"${vsnet.project}" /t:rebuild /p:Configuration=${project.config};Platform="${project.platform}";OutputPath="${build.dir}";SolutionDir="${solution.dir}" /v:q' />
+					  commandline='"${vsnet.project}" /t:rebuild /p:Configuration=${project.config};Platform="${project.platform}";OutputPath="${build.dir}";SolutionDir="${output.dir}" /v:q' />
 			</do>
 		</foreach>
 	</target>
