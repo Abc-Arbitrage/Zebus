@@ -1,33 +1,33 @@
 <?xml version="1.0"?>
 <package >
-  <metadata>
-    <id>$id$</id>
-    <version>$version$</version>
-    <title>$title$</title>
-    <authors>$author$</authors>
-    <owners>$author$</owners>
-    <licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</licenseUrl>
-    <projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
-    <releaseNotes></releaseNotes>
-    <copyright>$copyright$</copyright>
-    <tags></tags>
-  <references>
-	<reference file="Abc.Zebus.dll" />
-  </references>
-  </metadata>
-  <files>
-	  <file src="bin\$configuration$\$id$.pdb" target="lib\net45\" />
-	  <file src="C:\Dev\dotnet\lib\ZeroMq\clrzmq.dll" target="lib\net45\" />
-	  <file src="C:\Dev\dotnet\lib\log4net.dll" target="lib\net45\" />
-	  <file src="C:\Dev\dotnet\lib\Json.Net\Newtonsoft.Json.dll" target="lib\net45\" />
-	  <file src="C:\Dev\dotnet\lib\protobuf-net\protobuf-net.dll" target="lib\net45\" />
-	  <file src="C:\Dev\dotnet\lib\StructureMap\StructureMap.dll" target="lib\net45\" />
-	  
-	  <file src="C:\Dev\dotnet\lib\ZeroMq\libzmq-x64-0.0.0.0.dll" target="tools\" />
-	  <file src="C:\Dev\dotnet\lib\ZeroMq\libzmq-x86-0.0.0.0.dll" target="tools\" />
-	  <file src="..\Nuget\Tools\Zebus\Install.ps1" target="tools\" />
-	  <file src="..\Nuget\Tools\Zebus\Uninstall.ps1" target="tools\" />
+	<metadata>
+		<id>$id$</id>
+		<version>$version$</version>
+		<title>$title$</title>
+		<authors>$author$</authors>
+		<owners>$author$</owners>
+		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</licenseUrl>
+		<projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>$description$</description>
+		<releaseNotes></releaseNotes>
+		<copyright>$copyright$</copyright>
+		<tags></tags>
+		<references>
+			<reference file="Abc.Zebus.dll" />
+		</references>
+	</metadata>
+	<files>
+		<file src="bin\$configuration$\$id$.pdb" target="lib\net45\" />
+		<file src="..\..\lib\zmq\clrzmq.dll" target="lib\net45\" />
+		<file src="..\..\lib\log4net\log4net.dll" target="lib\net45\" />
+		<file src="..\..\lib\json.net\Newtonsoft.Json.dll" target="lib\net45\" />
+		<file src="..\..\lib\protobuf\protobuf-net.dll" target="lib\net45\" />
+		<file src="..\..\lib\structuremap\StructureMap.dll" target="lib\net45\" />
+
+		<file src="..\..\lib\zmq\libzmq-x64-0.0.0.0.dll" target="tools\" />
+		<file src="..\..\lib\zmq\libzmq-x86-0.0.0.0.dll" target="tools\" />
+		<file src="..\..\build\nuget\nuget-scripts\Zebus\Install.ps1" target="tools\" />
+		<file src="..\..\build\nuget\nuget-scripts\Zebus\Uninstall.ps1" target="tools\" />
 	</files>
 </package>

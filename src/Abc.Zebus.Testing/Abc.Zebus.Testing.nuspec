@@ -1,18 +1,27 @@
 <?xml version="1.0"?>
 <package >
-  <metadata>
-    <id>$id$</id>
-    <version>$version$</version>
-    <title>$title$</title>
-    <authors>$author$</authors>
-    <owners>$author$</owners>
-    <licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
-    <projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
-    <iconUrl>http://www.designdownloader.com/item/pngl/Zebu_t005/Zebu_t005-20120728103350-00005.png</iconUrl>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
-    <releaseNotes></releaseNotes>
-    <copyright>$copyright$</copyright>
-    <tags></tags>
-  </metadata>
+	<metadata>
+		<id>$id$</id>
+		<version>$version$</version>
+		<title>$title$</title>
+		<authors>$author$</authors>
+		<owners>$author$</owners>
+		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
+		<projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>$description$</description>
+		<releaseNotes></releaseNotes>
+		<copyright>$copyright$</copyright>
+		<tags></tags>
+		<dependencies>
+		  <dependency id="NUnit" version="2.6.3" />
+		</dependencies>
+	</metadata>
+	<files>
+		<file src="..\..\lib\json.net\Newtonsoft.Json.dll" target="lib\net45\" />
+		<file src="..\..\lib\structuremap\StructureMap.dll" target="lib\net45\" />
+		<file src="..\..\lib\compare.net\KellermanSoftware.Compare-NET-Objects.dll" target="lib\net45\" />
+		<file src="..\..\lib\moq\Moq.dll" target="lib\net45\" />
+		<file src="..\..\lib\autofixture\Ploeh.AutoFixture.dll" target="lib\net45\" />
+	</files>
 </package>
