@@ -244,6 +244,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>xcopy "$(ProjectDir)..\..\lib\zmq\libzmq-x64-0.0.0.0.dll" "$(TargetDir)" /Y
+
 xcopy "$(ProjectDir)..\..\lib\zmq\libzmq-x86-0.0.0.0.dll" "$(TargetDir)" /Y</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
