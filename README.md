@@ -72,6 +72,9 @@ public class MyClient
 ```
 And you are set ! This is all the code you need to send an event from one machine to the other. If you want to read more about how the magic happens, have a look at the [wiki](https://github.com/Abc-Arbitrage/Zebus/wiki).
 
+# Release notes
+We try to stick to the [semantic versioning](http://semver.org/) principles and keep the [release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES.md) up to date.
+
 # Copyright
 
 Copyright © 2014 Abc Arbitrage Asset Management
@@ -79,5 +82,3 @@ Copyright © 2014 Abc Arbitrage Asset Management
 # License
 
 Zebus is licensed under MIT, refer to [LICENSE.md](https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md) for more information.
-
-
