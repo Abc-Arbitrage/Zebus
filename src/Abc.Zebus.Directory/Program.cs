@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Configuration;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory.Configuration;
+using Abc.Zebus.Directory.DeadPeerDetection;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Util;
@@ -27,13 +27,14 @@ namespace Abc.Zebus.Directory
             };
 
             XmlConfigurator.ConfigureAndWatch(new FileInfo(PathUtil.InBaseDirectory("log4net.config")));
-            _log.InfoFormat("Starting in memory directory (version: {0})", Assembly.GetExecutingAssembly().GetName().Version.ToString(4));
+            _log.Info("Starting in memory directory");
 
             var busFactory = new BusFactory();
             busFactory.ConfigureContainer(c =>
             {
                 c.For<IDirectoryConfiguration>().Use(AppSettingsDirectoryConfiguration.Current);
 
+                c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
                 c.ForSingletonOf<IPeerRepository>().Use<MemoryPeerRepository>();
                 c.ForSingletonOf<IPeerDirectory>().Use<PeerDirectoryServer>();
 

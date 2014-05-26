@@ -57,6 +57,7 @@
     <Compile Include="DeadPeerDetection\DeadPeerDetector.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerDetectorEntry.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerStatus.cs" />
+    <Compile Include="DeadPeerDetection\IDeadPeerDetector.cs" />
     <Compile Include="Handlers\DirectoryCommandsHandler.cs" />
     <Compile Include="Configuration\IDirectoryConfiguration.cs" />
     <Compile Include="PeerDirectoryServer.cs" />

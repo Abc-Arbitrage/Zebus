@@ -11,7 +11,7 @@ using log4net;
 
 namespace Abc.Zebus.Directory.DeadPeerDetection
 {
-    public class DeadPeerDetector
+    public class DeadPeerDetector : IDeadPeerDetector
     {
         private readonly ConcurrentDictionary<PeerId, DeadPeerDetectorEntry> _peers = new ConcurrentDictionary<PeerId, DeadPeerDetectorEntry>();
         private readonly IBus _bus;
@@ -169,7 +169,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 _logger.Error(ex);
                 ++_exceptionCount;
 
-                PublishError(ex);
+                ExceptionHandler(ex);
             }
             if (_exceptionCount >= _exceptionCountMax)
             {
@@ -182,6 +182,6 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
         }
 
-        public Action<Exception> PublishError { get; set; }
+        public Action<Exception> ExceptionHandler { get; set; }
     }
 }
