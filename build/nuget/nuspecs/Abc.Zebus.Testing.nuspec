@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package >
 	<metadata>
-		<id>Abc.Zebus.Testing</id>
+		<id>Zebus.Testing</id>
 		<version>$version$</version>
-		<title>$title$</title>
+		<title>Zebus.Testing</title>
 		<authors>$author$</authors>
 		<owners>$author$</owners>
 		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
@@ -14,7 +14,7 @@
 		<copyright>$copyright$</copyright>
 		<tags></tags>
 		<dependencies>
-		  <dependency id="Abc.Zebus" version="$version$" />
+		  <dependency id="Zebus" version="$version$" />
 		  <dependency id="NUnit" version="2.6.3" />
 		</dependencies>
 	</metadata>

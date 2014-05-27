@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package >
 	<metadata>
-		<id>Abc.Zebus.Directory</id>
+		<id>Zebus.Directory</id>
 		<version>$version$</version>
-		<title>$title$</title>
+		<title>Zebus.Directory</title>
 		<authors>$author$</authors>
 		<owners>$author$</owners>
 		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
