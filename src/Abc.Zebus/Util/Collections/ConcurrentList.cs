@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Abc.Zebus.Util.Collections
 {
@@ -18,23 +17,6 @@ namespace Abc.Zebus.Util.Collections
         {
             _innerList = _tempList1 = new List<T>();
             _tempList2 = new List<T>();
-        }
-
-        public ConcurrentList(int capacity)
-        {
-            _innerList = _tempList1 = new List<T>(capacity);
-            _tempList2 = new List<T>(capacity);
-        }
-
-        public ConcurrentList(IEnumerable<T> collection)
-        {
-            _innerList = _tempList1 = new List<T>(collection);
-            _tempList2 = new List<T>(_innerList.Capacity);
-        }
-
-        public List<T> ToList()
-        {
-            return _innerList.ToList();
         }
 
         public IEnumerator<T> GetEnumerator()
