@@ -67,6 +67,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
             SendPingCommand(timestampUtc);
         }
+
         public void Timeout()
         {
             DateTime timeoutTimestampUtc;

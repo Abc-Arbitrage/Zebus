@@ -4,6 +4,7 @@ using System.Linq;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
+using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Directory.Handlers
 {
@@ -21,7 +22,7 @@ namespace Abc.Zebus.Directory.Handlers
         {
             _bus = bus;
             _peerRepository = peerRepository;
-            _blacklistedMachines = new HashSet<string>(configuration.BlacklistedMachines, StringComparer.OrdinalIgnoreCase);
+            _blacklistedMachines = configuration.BlacklistedMachines.ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
         public MessageContext Context { get; set; }

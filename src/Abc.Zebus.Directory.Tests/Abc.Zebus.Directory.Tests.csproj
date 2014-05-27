@@ -57,9 +57,9 @@
     <Compile Include="..\SharedVersionInfo.cs">
       <Link>Properties\SharedVersionInfo.cs</Link>
     </Compile>
-    <Compile Include="DeadPeerDetectorEntryTests.cs" />
-    <Compile Include="DeadPeerDetectorTests.cs" />
-    <Compile Include="Directory\PeerDirectoryServerTests.cs" />
+    <Compile Include="DeadPeerDetection\DeadPeerDetectorEntryTests.cs" />
+    <Compile Include="DeadPeerDetection\DeadPeerDetectorTests.cs" />
+    <Compile Include="PeerDirectoryServerTests.cs" />
     <Compile Include="FakeCommand.cs" />
     <Compile Include="FakeRoutableCommand.cs" />
     <Compile Include="Handlers\DirectoryCommandsHandlerTests.cs" />

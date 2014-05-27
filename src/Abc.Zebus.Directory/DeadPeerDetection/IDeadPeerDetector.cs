@@ -2,7 +2,7 @@
 
 namespace Abc.Zebus.Directory.DeadPeerDetection
 {
-    public interface IDeadPeerDetector
+    public interface IDeadPeerDetector : IDisposable
     {
         event Action PersistenceDownDetected;
         event Action<PeerId, DateTime> PeerDownDetected;
@@ -10,8 +10,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         
         Action<Exception> ExceptionHandler { get; set; }
         
-        void AfterStart();
-        void DoPeriodicAction();
-        void BeforeStop();
+        void Start();
+        void Stop();
     }
 }

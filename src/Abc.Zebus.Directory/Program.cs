@@ -13,17 +13,17 @@ using log4net.Config;
 
 namespace Abc.Zebus.Directory
 {
-    class Program
+    internal class Program
     {
-        private static readonly ManualResetEvent _event = new ManualResetEvent(false);
+        private static readonly ManualResetEvent _cancelKeySignal = new ManualResetEvent(false);
         private static readonly ILog _log = LogManager.GetLogger(typeof(Program));
 
-        static void Main(string[] args)
+        public static void Main()
         {
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 eventArgs.Cancel = true;
-                _event.Set();
+                _cancelKeySignal.Set();
             };
 
             XmlConfigurator.ConfigureAndWatch(new FileInfo(PathUtil.InBaseDirectory("log4net.config")));
@@ -32,11 +32,12 @@ namespace Abc.Zebus.Directory
             var busFactory = new BusFactory();
             busFactory.ConfigureContainer(c =>
             {
-                c.For<IDirectoryConfiguration>().Use(AppSettingsDirectoryConfiguration.Current);
+                c.ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
 
                 c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
                 c.ForSingletonOf<IPeerRepository>().Use<MemoryPeerRepository>();
-                c.ForSingletonOf<IPeerDirectory>().Use<PeerDirectoryServer>();
+                c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
+                c.Forward<PeerDirectoryServer, IPeerDirectory>();
 
                 c.ForSingletonOf<IMessageDispatcher>().Use(ctx =>
                 {
@@ -48,16 +49,16 @@ namespace Abc.Zebus.Directory
             });
 
             busFactory
-                .WithConfiguration(AppSettingsBusConfiguration.Current, ConfigurationManager.AppSettings["Environment"])
+                .WithConfiguration(new AppSettingsBusConfiguration(), ConfigurationManager.AppSettings["Environment"])
                 .WithScan()
                 .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"])
                 .WithPeerId(ConfigurationManager.AppSettings["PeerId"]);
 
-            using (var bus = busFactory.CreateAndStartBus())
+            using (busFactory.CreateAndStartBus())
             {
                 _log.Info("In memory directory started");
 
-                _event.WaitOne();
+                _cancelKeySignal.WaitOne();
             }
         }
     }

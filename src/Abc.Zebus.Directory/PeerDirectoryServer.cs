@@ -8,13 +8,13 @@ using Abc.Zebus.Util;
 namespace Abc.Zebus.Directory
 {
     public class PeerDirectoryServer : IPeerDirectory,
-        IMessageHandler<PeerStarted>,
-        IMessageHandler<PeerStopped>,
-        IMessageHandler<PeerDecommissioned>,
-        IMessageHandler<PingPeerCommand>,
-        IMessageHandler<PeerSubscriptionsUpdated>,
-        IMessageHandler<PeerNotResponding>,
-        IMessageHandler<PeerResponding>
+                                       IMessageHandler<PeerStarted>,
+                                       IMessageHandler<PeerStopped>,
+                                       IMessageHandler<PeerDecommissioned>,
+                                       IMessageHandler<PingPeerCommand>,
+                                       IMessageHandler<PeerSubscriptionsUpdated>,
+                                       IMessageHandler<PeerNotResponding>,
+                                       IMessageHandler<PeerResponding>
     {
         private readonly IPeerRepository _peerRepository;
         private Peer _self;
@@ -23,6 +23,9 @@ namespace Abc.Zebus.Directory
         {
             _peerRepository = peerRepository;
         }
+
+        public event Action Registered = delegate { };
+        public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
 
         public IList<Peer> GetPeersHandlingMessage(IMessage message)
         {
@@ -46,9 +49,6 @@ namespace Abc.Zebus.Directory
         {
             return _peerRepository.GetPeers();
         }
-
-        public event Action Registered = delegate { };
-        public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
 
         public void Register(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
         {
