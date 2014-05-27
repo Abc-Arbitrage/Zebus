@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Abc.Zebus.Util
 {
@@ -14,12 +15,6 @@ namespace Abc.Zebus.Util
         private bool _isOpen;
         private int _length;
         private int _position;
-
-
-        public int Origin
-        {
-            get { return _origin; }
-        }
 
         public virtual int Capacity
         {
@@ -124,46 +119,6 @@ namespace Abc.Zebus.Util
             _expandable = true;
             _origin = 0;
             _isOpen = true;
-        }
-
-        public MutableMemoryStream(byte[] buffer)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            _buffer = buffer;
-            _length = _capacity = buffer.Length;
-            _origin = 0;
-            _isOpen = true;
-        }
-
-        public MutableMemoryStream(byte[] buffer, int index, int count)
-        {
-            SetBuffer(buffer, index, count);
-        }
-
-        public virtual byte[] GetBuffer()
-        {
-            return _buffer;
-        }
-
-        public virtual byte[] ToArray()
-        {
-            var copy = new byte[_length - _origin];
-            System.Buffer.BlockCopy(_buffer, _origin, copy, 0, _length - _origin);
-
-            return copy;
-        }
-
-        public virtual void WriteTo(Stream stream)
-        {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
-
-            if (!_isOpen)
-                throw new InvalidOperationException();
-
-            stream.Write(_buffer, _origin, _length - _origin);
         }
 
         public override void Flush()
@@ -393,19 +348,6 @@ namespace Abc.Zebus.Util
             }
         }
 
-        internal int InternalEmulateRead(int count)
-        {
-            if (!_isOpen)
-                throw new InvalidOperationException();
-
-            var n = _length - _position;
-            if (n > count) n = count;
-            if (n < 0) n = 0;
-
-            _position += n;
-            return n;
-        }
-
         private bool EnsureCapacity(int value)
         {
             if (value < 0)
@@ -422,11 +364,6 @@ namespace Abc.Zebus.Util
                 return true;
             }
             return false;
-        }
-
-        public void SetBuffer(Buffer buffer)
-        {
-            SetBuffer(buffer.Data, 0, buffer.Length);
         }
     }
 }
