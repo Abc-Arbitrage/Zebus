@@ -19,5 +19,7 @@
 		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.exe.config" target="tools" />
 		<file src="src\Abc.Zebus.Directory\bin\$configuration$\*.dll" target="tools" />
 		<file src="src\Abc.Zebus.Directory\bin\$configuration$\log4net.config" target="tools" />
+    
+		<file src="build\nuget\tools\Zebus.Directory\readme.txt" target="" />
 	</files>
 </package>
