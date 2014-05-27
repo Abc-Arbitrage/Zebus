@@ -22,14 +22,14 @@ $properties = "`"version="+$version.Value+";title="+$title.Value+";author="+$com
 
 # Build nuget for Zebus
 Write-Host "############# Building Zebus package #############" -ForegroundColor Green
-& 'C:\Program Files (x86)\NuGet\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
 
 # Build nuget for Zebus.Testing
 Write-Host
 Write-Host "############# Building Zebus.Testing package #############" -ForegroundColor Green
-& 'C:\Program Files (x86)\NuGet\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
 
 # Build nuget for Zebus.Directory
 Write-Host
 Write-Host "############# Building Zebus.Directory package #############" -ForegroundColor Green
-& 'C:\Program Files (x86)\NuGet\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -NoPackageAnalysis;
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -NoPackageAnalysis;
