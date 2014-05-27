@@ -15,9 +15,9 @@
 		<tags></tags>
 	</metadata>
 	<files>
-		<file src="src\Abc.Zebus.Directory\bin\Debug\Abc.Zebus.Directory.exe" target="tools" />
-		<file src="src\Abc.Zebus.Directory\bin\Debug\Abc.Zebus.Directory.exe.config" target="tools" />
-		<file src="src\Abc.Zebus.Directory\bin\Debug\*.dll" target="tools" />
-		<file src="src\Abc.Zebus.Directory\bin\Debug\log4net.config" target="tools" />
+		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.exe" target="tools" />
+		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.exe.config" target="tools" />
+		<file src="src\Abc.Zebus.Directory\bin\$configuration$\*.dll" target="tools" />
+		<file src="src\Abc.Zebus.Directory\bin\$configuration$\log4net.config" target="tools" />
 	</files>
 </package>

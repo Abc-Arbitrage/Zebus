@@ -7,7 +7,7 @@ if( (Test-Path $outputLocation) -eq $false)
 }
 
 # Get metadata
-$file = Get-Item ([System.IO.Path]::Combine($zebusLocation,"bin\Debug\Abc.Zebus.dll"));
+$file = Get-Item ([System.IO.Path]::Combine($zebusLocation,"bin\Release\Abc.Zebus.dll"));
 $assembly = [System.Reflection.Assembly]::LoadFile($file.FullName);
 $attributes = $assembly.GetCustomAttributesData();
 
@@ -18,7 +18,7 @@ $copyright = ($attributes | ? { $_.AttributeType.Name -eq  "AssemblyCopyrightAtt
 $configuration = ($attributes | ? { $_.AttributeType.Name -eq  "AssemblyConfigurationAttribute" })[0].ConstructorArguments;
 $version = ($attributes | ? { $_.AttributeType.Name -eq  "AssemblyInformationalVersionAttribute" })[0].ConstructorArguments;
 
-$properties = "`"version="+$version.Value+";title="+$title.Value+";author="+$company.Value+";description="+$description.Value+";copyright="+$copyright.Value+"`"";
+$properties = "`"version="+$version.Value+";title="+$title.Value+";author="+$company.Value+";description="+$description.Value+";copyright="+$copyright.Value+";configuration="+$configuration.Value+"`"";
 
 # Build nuget for Zebus
 Write-Host "############# Building Zebus package #############" -ForegroundColor Green

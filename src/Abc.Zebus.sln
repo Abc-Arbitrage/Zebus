@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus", "Abc.Zebus\Abc.Zebus.csproj", "{1F4C6307-6113-40D5-BF42-4B6BF5DF13B2}"
 EndProject
@@ -21,6 +21,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Directory", "Directory", "{934FC246-87D6-48C6-AB0C-6B0638E326EC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Directory.Tests", "Abc.Zebus.Directory.Tests\Abc.Zebus.Directory.Tests.csproj", "{7C004E59-3B24-4359-8E45-1CD93F03FD80}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuspecs", "nuspecs", "{287DED32-2E05-4DBD-B4D1-5C2AC2EBD4D0}"
+	ProjectSection(SolutionItems) = preProject
+		..\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec
+		..\build\nuget\nuspecs\Abc.Zebus.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.nuspec
+		..\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,5 +111,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3} = {934FC246-87D6-48C6-AB0C-6B0638E326EC}
 		{7C004E59-3B24-4359-8E45-1CD93F03FD80} = {934FC246-87D6-48C6-AB0C-6B0638E326EC}
+		{287DED32-2E05-4DBD-B4D1-5C2AC2EBD4D0} = {A85342C3-7BA4-4A6B-B690-B1D0ACE14C76}
 	EndGlobalSection
 EndGlobal
