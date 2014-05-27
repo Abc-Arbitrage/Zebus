@@ -13,20 +13,8 @@ namespace Abc.Zebus.Util.Collections
             _items = new ConcurrentDictionary<T, object>();
         }
 
-        public ConcurrentSet(IEqualityComparer<T> comparer)
-        {
-            _items = new ConcurrentDictionary<T, object>(comparer);
-        }
-
         public ConcurrentSet(IEnumerable<T> items)
             : this()
-        {
-            foreach (var item in items)
-                Add(item);
-        }
-
-        public ConcurrentSet(IEnumerable<T> items, IEqualityComparer<T> comparer)
-            : this(comparer)
         {
             foreach (var item in items)
                 Add(item);
