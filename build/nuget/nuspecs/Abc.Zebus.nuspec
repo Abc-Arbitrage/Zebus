@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package >
+	<metadata>
+		<id>Abc.Zebus</id>
+		<version>$version$</version>
+		<title>$title$</title>
+		<authors>$author$</authors>
+		<owners>$author$</owners>
+		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</licenseUrl>
+		<projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>$description$</description>
+		<releaseNotes></releaseNotes>
+		<copyright>$copyright$</copyright>
+		<tags></tags>
+		<references>
+			<reference file="Abc.Zebus.dll" />
+		</references>
+	</metadata>
+	<files>
+		<file src="src\Abc.Zebus\bin\Debug\Abc.Zebus.pdb" target="lib\net45\" />
+		<file src="src\Abc.Zebus\bin\Debug\Abc.Zebus.dll" target="lib\net45\" />
+		
+		<file src="lib\zmq\clrzmq.dll" target="lib\net45\" />
+		<file src="lib\log4net\log4net.dll" target="lib\net45\" />
+		<file src="lib\json.net\Newtonsoft.Json.dll" target="lib\net45\" />
+		<file src="lib\protobuf\protobuf-net.dll" target="lib\net45\" />
+		<file src="lib\structuremap\StructureMap.dll" target="lib\net45\" />
+
+		<file src="lib\zmq\libzmq-x64-0.0.0.0.dll" target="tools\" />
+		<file src="lib\zmq\libzmq-x86-0.0.0.0.dll" target="tools\" />
+		<file src="build\nuget\tools\Zebus\Install.ps1" target="tools\" />
+		<file src="build\nuget\tools\Zebus\Uninstall.ps1" target="tools\" />
+	</files>
+</package>
