@@ -103,7 +103,6 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             var peerRespondingCount = 0;
             _entry.PeerRespondingDetected += (e, o) => peerRespondingCount++;
 
-            //_entry.CommandTimeout = 5.Milliseconds();
             _entry.Process(pingTimestampUtc, true);
             _entry.Process(pingTimestampUtc, true);
             

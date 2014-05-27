@@ -235,7 +235,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
 
-                _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());//, new CreateLogMessageCommand("/Infrastructure/Alerts/Persistence", "Persistence was detected as being down", string.Empty, "DirectoryService", false));
+                _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 persistenceDownDetectedCount.ShouldEqual(1);
             }
         }

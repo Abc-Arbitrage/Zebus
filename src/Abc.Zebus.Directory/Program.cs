@@ -30,23 +30,7 @@ namespace Abc.Zebus.Directory
             _log.Info("Starting in memory directory");
 
             var busFactory = new BusFactory();
-            busFactory.ConfigureContainer(c =>
-            {
-                c.ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
-
-                c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
-                c.ForSingletonOf<IPeerRepository>().Use<MemoryPeerRepository>();
-                c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
-                c.Forward<PeerDirectoryServer, IPeerDirectory>();
-
-                c.ForSingletonOf<IMessageDispatcher>().Use(ctx =>
-                {
-                    var dispatcher = ctx.GetInstance<MessageDispatcher>();
-                    dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
-
-                    return dispatcher;
-                });
-            });
+            InjectDirectoryServiceSpecificConfiguration(busFactory);
 
             busFactory
                 .WithConfiguration(new AppSettingsBusConfiguration(), ConfigurationManager.AppSettings["Environment"])
@@ -67,6 +51,27 @@ namespace Abc.Zebus.Directory
                 _log.Info("Stopping dead peer detector");
                 deadPeerDetector.Stop();
             }
+        }
+
+        private static void InjectDirectoryServiceSpecificConfiguration(BusFactory busFactory)
+        {
+            busFactory.ConfigureContainer(c =>
+            {
+                c.ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
+
+                c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
+                c.ForSingletonOf<IPeerRepository>().Use<MemoryPeerRepository>();
+                c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
+                c.Forward<PeerDirectoryServer, IPeerDirectory>();
+
+                c.ForSingletonOf<IMessageDispatcher>().Use(ctx =>
+                {
+                    var dispatcher = ctx.GetInstance<MessageDispatcher>();
+                    dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
+
+                    return dispatcher;
+                });
+            });
         }
     }
 }
