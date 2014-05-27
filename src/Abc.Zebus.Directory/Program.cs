@@ -58,7 +58,14 @@ namespace Abc.Zebus.Directory
             {
                 _log.Info("In memory directory started");
 
+                _log.Info("Starting dead peer detector");
+                var deadPeerDetector = busFactory.Container.GetInstance<IDeadPeerDetector>();
+                deadPeerDetector.Start();
+
                 _cancelKeySignal.WaitOne();
+
+                _log.Info("Stopping dead peer detector");
+                deadPeerDetector.Stop();
             }
         }
     }

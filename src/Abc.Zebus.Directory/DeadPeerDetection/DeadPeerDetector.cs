@@ -18,21 +18,16 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
         private readonly IDirectoryConfiguration _configuration;
-        private readonly TimeSpan _detectionPeriod;
+        private readonly TimeSpan _detectionPeriod = 5.Seconds();
         private Thread _detectionThread;
         private DateTime? _lastPingTimeUtc;
         private bool _isRunning;
 
-        public DeadPeerDetector(IBus bus, IPeerRepository peerRepository, IDirectoryConfiguration configuration) : this(bus, peerRepository, configuration, 5.Seconds())
-        {
-        }
-
-        public DeadPeerDetector(IBus bus, IPeerRepository peerRepository, IDirectoryConfiguration configuration, TimeSpan detectionPeriod)
+        public DeadPeerDetector(IBus bus, IPeerRepository peerRepository, IDirectoryConfiguration configuration)
         {
             _bus = bus;
             _peerRepository = peerRepository;
             _configuration = configuration;
-            _detectionPeriod = detectionPeriod;
 
             TaskScheduler = TaskScheduler.Current;
             ExceptionHandler = ex => _logger.ErrorFormat("MainLoop error: {0}", ex);
