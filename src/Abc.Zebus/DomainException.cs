@@ -13,11 +13,6 @@ namespace Abc.Zebus
         public DomainException(int errorCode, string message, params object[] values)
             : base(string.Format(message, values))
         {
-            // TODO : handle infrastructure MaxReservedErrorCode
-            //if (errorCode <= InfrastructureErrorCodes.MaxReservedErrorCode)
-            //    throw new ArgumentOutOfRangeException(string.Format("Error codes below {0} are reserved for the infrastructure",
-            //                                                        InfrastructureErrorCodes.MaxReservedErrorCode));
-
             ErrorCode = errorCode;
         }
 
