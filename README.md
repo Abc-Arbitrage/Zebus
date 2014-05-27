@@ -4,7 +4,7 @@ Zebus is a lightweight peer to peer service bus, built with [CQRS](http://martin
 
 # Introduction
 
-Zebus is **peer to peer**, so it does not depend on a broker to dispatch messages between the peers. This allows it to reach a throughput of 80k mgs/s and a roundtrip latency under 500µs.
+Zebus is **peer to peer**, so it does not depend on a broker to dispatch messages between the peers. This allows it to reach a throughput of 80k mgs/s and a roundtrip latency under 500ï¿½s.
 
 It is **resilient** thanks to the absence of a broker and an optional persistence feature that ensures that messages are not lost if a peer is down or disconnected.
 
@@ -49,34 +49,19 @@ public class MyHandler : IMessageHandler<MyEvent>
 
 ### Sender
 ```csharp
-public class MyClient
+public void MethodThatSends(IBus bus)
 {
-    private IBus _bus;
-    
-    public MyClient (IBus bus)
-    {
-        _bus = bus;
-    }
-    
-    public void MethodThatSends()
-    {
-        _bus.Publish(new MyEvent { Value = 42 });
-    }
+    bus.Publish(new MyEvent { Value = 42 });
 }
 ```
 ### Event description
 ```csharp
-    [ProtoContract]
-    public class MyEvent : IEvent
-    {
-        [ProtoMember(1, IsRequired = true)]
-        public int Value { get;set; }
-        
-        public MyEvent (int value)
-        {
-            Value = value;
-        }
-    }
+[ProtoContract]
+public class MyEvent : IEvent
+{
+    [ProtoMember(1)]
+    public int Value { get; set; }
+}
 ```
 And you are set ! This is all the code you need to send an event from one machine to the other. If you want to read more about how the magic happens, have a look at the [wiki](https://github.com/Abc-Arbitrage/Zebus/wiki).
 
@@ -85,7 +70,7 @@ We try to stick to the [semantic versioning](http://semver.org/) principles and 
 
 # Copyright
 
-Copyright © 2014 Abc Arbitrage Asset Management
+Copyright ï¿½ 2014 Abc Arbitrage Asset Management
 
 # License
 
