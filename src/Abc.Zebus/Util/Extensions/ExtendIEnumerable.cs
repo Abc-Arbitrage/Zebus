@@ -14,6 +14,12 @@ namespace Abc.Zebus.Util.Extensions
         }
 
         [Pure]
+        public static HashSet<T> ToHashSet<T>([InstantHandle] this IEnumerable<T> collection, IEqualityComparer<T> comparer)
+        {
+            return new HashSet<T>(collection, comparer);
+        }
+
+        [Pure]
         public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)
         {
             var random = new Random();

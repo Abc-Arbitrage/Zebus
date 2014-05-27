@@ -39,7 +39,7 @@ namespace Abc.Zebus.Tests.Util.Collections
             }
         }
 
-        [Test, Repeat(5)]
+        [Test]
         public void should_flush_collection()
         {
             var collection = new FlushableBlockingCollection<int>();

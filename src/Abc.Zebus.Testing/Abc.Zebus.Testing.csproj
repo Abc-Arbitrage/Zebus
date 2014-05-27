@@ -69,6 +69,7 @@
     </Compile>
     <Compile Include="Comparison\ComparisonExtensions.cs" />
     <Compile Include="Comparison\MessageComparer.cs" />
+    <Compile Include="CurrentThreadTaskScheduler.cs" />
     <Compile Include="Directory\TestPeerDirectory.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvocation.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker.cs" />

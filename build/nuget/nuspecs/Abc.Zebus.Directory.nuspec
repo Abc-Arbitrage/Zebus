@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
 	<metadata>
-		<id>$id$</id>
+		<id>Abc.Zebus.Directory</id>
 		<version>$version$</version>
 		<title>$title$</title>
 		<authors>$author$</authors>
@@ -13,15 +13,11 @@
 		<releaseNotes></releaseNotes>
 		<copyright>$copyright$</copyright>
 		<tags></tags>
-		<dependencies>
-		  <dependency id="NUnit" version="2.6.3" />
-		</dependencies>
 	</metadata>
 	<files>
-		<file src="..\..\lib\json.net\Newtonsoft.Json.dll" target="lib\net45\" />
-		<file src="..\..\lib\structuremap\StructureMap.dll" target="lib\net45\" />
-		<file src="..\..\lib\compare.net\KellermanSoftware.Compare-NET-Objects.dll" target="lib\net45\" />
-		<file src="..\..\lib\moq\Moq.dll" target="lib\net45\" />
-		<file src="..\..\lib\autofixture\Ploeh.AutoFixture.dll" target="lib\net45\" />
+		<file src="src\Abc.Zebus.Directory\bin\Debug\Abc.Zebus.Directory.exe" target="tools" />
+		<file src="src\Abc.Zebus.Directory\bin\Debug\Abc.Zebus.Directory.exe.config" target="tools" />
+		<file src="src\Abc.Zebus.Directory\bin\Debug\*.dll" target="tools" />
+		<file src="src\Abc.Zebus.Directory\bin\Debug\log4net.config" target="tools" />
 	</files>
 </package>

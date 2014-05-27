@@ -7,6 +7,8 @@ using System.Runtime.InteropServices;
 [assembly: Guid("a287fe42-8da0-46cd-9562-9b35274da061")]
 
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Testing")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Integration")]
