@@ -1,14 +1,21 @@
 ﻿$location = Get-Location;
 $zebusLocation = [System.IO.Path]::Combine($location, ".\src\Abc.Zebus");
 $outputLocation = [System.IO.Path]::Combine($location, "output\nuget");
+$msbuild = 'C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe';
 if( (Test-Path $outputLocation) -eq $false)
 {
     $dir = New-Item -ItemType directory $outputLocation;
 }
 
-# Get metadata
-$file = Get-Item ([System.IO.Path]::Combine($zebusLocation,"bin\Release\Abc.Zebus.dll"));
-$assembly = [System.Reflection.Assembly]::LoadFile($file.FullName);
+# Compile solution in release
+& $msbuild .\src\Abc.Zebus.sln /t:rebuild /p:Configuration=Release
+
+# Get metadata (without locking file)
+$fileStream = ([System.IO.FileInfo] (Get-Item ([System.IO.Path]::Combine($zebusLocation,"bin\Release\Abc.Zebus.dll")))).OpenRead();
+$assemblyBytes = new-object byte[] $fileStream.Length
+$fileStream.Read($assemblyBytes, 0, $fileStream.Length);
+$fileStream.Close();
+$assembly = [System.Reflection.Assembly]::Load($assemblyBytes);
 $attributes = $assembly.GetCustomAttributesData();
 
 $description = ($attributes | ? { $_.AttributeType.Name -eq  "AssemblyDescriptionAttribute" })[0].ConstructorArguments;
@@ -29,7 +36,12 @@ Write-Host
 Write-Host "############# Building Zebus.Testing package #############" -ForegroundColor Green
 & '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
 
-# Build nuget for Zebus.Directory
+# Build nuget for Zebus.Directory.Standalone
 Write-Host
-Write-Host "############# Building Zebus.Directory package #############" -ForegroundColor Green
-& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -NoPackageAnalysis;
+Write-Host "############# Building Zebus.Directory.Standalone package #############" -ForegroundColor Green
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.Standalone.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -NoPackageAnalysis;
+
+# Build nuget for Zebus.Directory
+# Compile Zebus.Directory in release and as a class library
+& $msbuild .\src\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj /p:Configuration=Release`;OverrideOutputType=Library
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;

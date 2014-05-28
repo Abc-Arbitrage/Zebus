@@ -2,10 +2,11 @@
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
+    <OverrideOutputType>Exe</OverrideOutputType>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{EE6730D9-6A21-46A5-AE3F-AF78060B6EA3}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>$(OverrideOutputType)</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Abc.Zebus.Directory</RootNamespace>
     <AssemblyName>Abc.Zebus.Directory</AssemblyName>
@@ -83,7 +84,6 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>xcopy "$(ProjectDir)..\..\lib\zmq\libzmq-x64-0.0.0.0.dll" "$(TargetDir)" /Y
-
 xcopy "$(ProjectDir)..\..\lib\zmq\libzmq-x86-0.0.0.0.dll" "$(TargetDir)" /Y</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

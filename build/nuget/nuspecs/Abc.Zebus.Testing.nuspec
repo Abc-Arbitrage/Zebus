@@ -15,7 +15,6 @@
 		<tags></tags>
 		<dependencies>
 		  <dependency id="Zebus" version="$version$" />
-		  <dependency id="NUnit" version="2.6.3" />
 		</dependencies>
 	</metadata>
 	<files>
@@ -27,5 +26,6 @@
 		<file src="lib\compare.net\KellermanSoftware.Compare-NET-Objects.dll" target="lib\net45\" />
 		<file src="lib\moq\Moq.dll" target="lib\net45\" />
 		<file src="lib\autofixture\Ploeh.AutoFixture.dll" target="lib\net45\" />
+		<file src="lib\nunit\nunit.framework.dll" target="lib\net45\" />
 	</files>
 </package>
