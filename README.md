@@ -63,7 +63,7 @@ public class MyEvent : IEvent
     public int Value { get; set; }
 }
 ```
-And you are set ! This is all the code you need to send an event from one machine to the other. If you want to read more about how the magic happens, have a look at the [wiki](https://github.com/Abc-Arbitrage/Zebus/wiki).
+And you're set ! This is all the code you need to send an event from one machine to the other. If you want to read more about how the magic happens, have a look at the [wiki](https://github.com/Abc-Arbitrage/Zebus/wiki). Or if you want a more detailed walkthrough (what to reference, how to start the Bus...) visit the [Quick start](https://github.com/Abc-Arbitrage/Zebus/wiki/Quick-start) page.
 
 # Release notes
 We try to stick to the [semantic versioning](http://semver.org/) principles and keep the [release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES.md) up to date.
