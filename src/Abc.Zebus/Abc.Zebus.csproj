@@ -241,6 +241,10 @@
       <LastGenOutput>Events.cs</LastGenOutput>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Transport\LibZmq\libzmq-x64-0.0.0.0.dll" />
+    <EmbeddedResource Include="Transport\LibZmq\libzmq-x86-0.0.0.0.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>xcopy "$(ProjectDir)..\..\lib\zmq\libzmq-x64-0.0.0.0.dll" "$(TargetDir)" /Y

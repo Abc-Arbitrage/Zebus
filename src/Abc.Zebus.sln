@@ -45,6 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Zebus", "Zebus", "{825A27C6
 	ProjectSection(SolutionItems) = preProject
 		..\build\nuget\tools\Zebus\Install.ps1 = ..\build\nuget\tools\Zebus\Install.ps1
 		..\build\nuget\tools\Zebus\Uninstall.ps1 = ..\build\nuget\tools\Zebus\Uninstall.ps1
+		..\build\nuget\tools\Zebus\Zebus.targets = ..\build\nuget\tools\Zebus\Zebus.targets
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Zebus.Directory", "Zebus.Directory", "{0232BC2F-5907-4957-8B7D-0DD1CCC6428F}"

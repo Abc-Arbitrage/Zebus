@@ -26,10 +26,5 @@
 		<file src="lib\json.net\Newtonsoft.Json.dll" target="lib\net45\" />
 		<file src="lib\protobuf\protobuf-net.dll" target="lib\net45\" />
 		<file src="lib\structuremap\StructureMap.dll" target="lib\net45\" />
-
-		<file src="lib\zmq\libzmq-x64-0.0.0.0.dll" target="tools\" />
-		<file src="lib\zmq\libzmq-x86-0.0.0.0.dll" target="tools\" />
-		<file src="build\nuget\tools\Zebus\Install.ps1" target="tools\" />
-		<file src="build\nuget\tools\Zebus\Uninstall.ps1" target="tools\" />
 	</files>
 </package>
