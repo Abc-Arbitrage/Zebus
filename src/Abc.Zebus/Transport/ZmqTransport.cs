@@ -41,16 +41,20 @@ namespace Abc.Zebus.Transport
 
         static void ExtractLibZmq(Assembly assembly, string platform)
         {
-            if (File.Exists(string.Format(@".\libzmq-{0}-0.0.0.0.dll", platform)))
+            var libraryPath = string.Format(@".\libzmq-{0}-0.0.0.0.dll", platform);
+            if (File.Exists(libraryPath))
                 return;
 
-            using (var s = assembly.GetManifestResourceStream(string.Format("Abc.Zebus.Transport.LibZmq.libzmq-{0}-0.0.0.0.dll", platform)))
+            var resourceName = string.Format("Abc.Zebus.Transport.LibZmq.libzmq-{0}-0.0.0.0.dll", platform);
+            using (var resourceStream = assembly.GetManifestResourceStream(resourceName))
             {
-                if(s == null)
+                if (resourceStream == null)
                     throw new Exception("Unable to find libzmq in the embedded resources.");
 
-                using (var f = new FileStream(string.Format(@".\libzmq-{0}-0.0.0.0.dll", platform), FileMode.OpenOrCreate, FileAccess.Write))
-                    s.CopyTo(f);
+                using (var libraryFileStream = new FileStream(libraryPath, FileMode.OpenOrCreate, FileAccess.Write))
+                {
+                    resourceStream.CopyTo(libraryFileStream);
+                }
             }
         }
         
