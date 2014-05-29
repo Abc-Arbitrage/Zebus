@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Util;
@@ -30,6 +31,33 @@ namespace Abc.Zebus.Transport
         private ZmqEndPoint _realInboundEndPoint;
         private string _environment;
         private CountdownEvent _outboundSocketsToStop;
+
+        static ZmqTransport()
+        {
+            ExtractLibZmq("x64");
+            ExtractLibZmq("x86");
+        }
+
+        static void ExtractLibZmq(string platform)
+        {
+            var resourceName = string.Format("libzmq-{0}-0.0.0.0.dll", platform);
+
+            var libraryPath = PathUtil.InBaseDirectory(resourceName);
+            if (File.Exists(libraryPath))
+                return;
+
+            var transportType = typeof(ZmqTransport);
+            using (var resourceStream = transportType.Assembly.GetManifestResourceStream(transportType, resourceName))
+            {
+                if (resourceStream == null)
+                    throw new Exception("Unable to find libzmq in the embedded resources.");
+
+                using (var libraryFileStream = new FileStream(libraryPath, FileMode.OpenOrCreate, FileAccess.Write))
+                {
+                    resourceStream.CopyTo(libraryFileStream);
+                }
+            }
+        }
         
         public ZmqTransport(IZmqTransportConfiguration configuration, IZmqSocketOptions socketOptions)
         {

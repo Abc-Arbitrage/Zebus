@@ -34,8 +34,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="clrzmq, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="clrzmq">
       <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
@@ -241,11 +240,14 @@
       <LastGenOutput>Events.cs</LastGenOutput>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.dll" />
+    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>xcopy "$(ProjectDir)..\..\lib\zmq\libzmq-x64-0.0.0.0.dll" "$(TargetDir)" /Y
-
-xcopy "$(ProjectDir)..\..\lib\zmq\libzmq-x86-0.0.0.0.dll" "$(TargetDir)" /Y</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
