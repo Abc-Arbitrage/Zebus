@@ -10,6 +10,7 @@ using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Util.Extensions;
 using KellermanSoftware.CompareNetObjects;
 using NUnit.Framework;
+using NUnit.Framework.Constraints;
 
 namespace Abc.Zebus.Testing.Extensions
 {
@@ -145,7 +146,8 @@ namespace Abc.Zebus.Testing.Extensions
         {
             foreach (var obj in actual)
             {
-                if (obj.Equals(expected))
+                var empty = Tolerance.Empty;
+                if (NUnitEqualityComparer.Default.AreEqual(obj, expected, ref empty))
                     return;
             }
 
@@ -168,19 +170,10 @@ namespace Abc.Zebus.Testing.Extensions
         {
             foreach (var obj in actual)
             {
-                if (obj.Equals(expected))
+                var empty = Tolerance.Empty;
+                if (NUnitEqualityComparer.Default.AreEqual(obj, expected, ref empty))
                     Assert.Fail("'{0}' is present in the enumerable", expected);
             }
-        }
-
-        public static void ShouldContain(this IList actual, object expected)
-        {
-            Assert.Contains(expected, actual);
-        }
-
-        public static void ShouldNotContain(this IList collection, object expected)
-        {
-            CollectionAssert.DoesNotContain(collection, expected);
         }
 
         public static void ShouldBeEquivalentTo(this IEnumerable collection, IEnumerable expected, bool compareDeeply = false)
