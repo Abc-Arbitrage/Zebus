@@ -97,12 +97,9 @@
     <Compile Include="Lotus\CustomDelegatedProcessingFailed.cs" />
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
-    <Compile Include="Monitoring\Events.cs">
-      <DependentUpon>Events.msg</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Monitoring\IProvideQueueLength.cs" />
+    <Compile Include="Monitoring\SocketConnected.cs" />
+    <Compile Include="Monitoring\SocketDisconnected.cs" />
     <Compile Include="Serialization\PeerIdConverter.cs" />
     <Compile Include="Persistence\PersistentTransport.cs" />
     <Compile Include="Scan\Pipes\AfterInvokeArgs.cs" />
@@ -233,12 +230,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Persistence\PersistentTransport.Phases.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Monitoring\Events.msg">
-      <Generator>ServiceBusVsGenerator</Generator>
-      <LastGenOutput>Events.cs</LastGenOutput>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.dll" />
