@@ -4,7 +4,7 @@ Zebus is a lightweight peer to peer service bus, built with [CQRS](http://martin
 
 # Introduction
 
-Zebus is **peer to peer**, so it does not depend on a broker to dispatch messages between the peers. This allows it to reach a throughput of 80k mgs/s and a roundtrip latency under 500µs.
+Zebus is **peer to peer**, so it does not depend on a broker to dispatch messages between the peers. This allows it to reach a throughput of 80k msg/s and a roundtrip latency under 500µs.
 
 It is **resilient** thanks to the absence of a broker and an optional persistence feature that ensures that messages are not lost if a peer is down or disconnected.
 
