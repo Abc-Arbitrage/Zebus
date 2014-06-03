@@ -73,9 +73,9 @@ namespace Abc.Zebus.Core
             return _bus.Subscribe(handler);
         }
 
-        public IDisposable Subscribe(Type messageType, IMultiEventHandler multiEventHandler)
+        public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
         {
-            return _bus.Subscribe(messageType, multiEventHandler);
+            return _bus.Subscribe(subscriptions, handler);
         }
 
         public void Reply(int errorCode)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
@@ -55,7 +56,6 @@ namespace Abc.Zebus.Tests.Dispatch
             {
                 new SyncMessageHandlerInvokerLoader(_containerMock.Object),
                 new AsyncMessageHandlerInvokerLoader(_containerMock.Object),
-                new MultiEventHandlerInvokerLoader(_containerMock.Object),
             }, taskSchedulerFactory);
 
             messageDispatcher.ConfigureAssemblyFilter(x => x == GetType().Assembly);
@@ -258,19 +258,15 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
-        public void should_dispatch_to_MultiEventHandler()
+        public void should_dispatch_to_event_handler()
         {
-            var handler = new FakeMultiEventHandler();
-            _containerMock.Setup(x => x.GetInstance(typeof(FakeMultiEventHandler))).Returns(handler);
-
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            IMessage receivedMessage = null;
+            _messageDispatcher.AddInvoker(new EventHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent)));
 
             var evt = new FakeEvent(123);
-            var dispatchResult = Dispatch(evt);
+            Dispatch(evt);
 
-            handler.ReceivedEvents[0].ShouldEqual(evt);
-            handler.Context.ShouldNotBeNull();
-            dispatchResult.WasHandled.ShouldBeTrue();
+            receivedMessage.ShouldEqual(evt);
         }
 
         [Test]
@@ -338,24 +334,5 @@ namespace Abc.Zebus.Tests.Dispatch
 
             return _dispatchResult;
         }
-
-        public class FakeMultiEventHandler : IMultiEventHandler, IMessageContextAware
-        {
-            public List<IEvent> ReceivedEvents = new List<IEvent>();
-
-            public void Handle(IEvent e)
-            {
-                lock (ReceivedEvents)
-                    ReceivedEvents.Add(e);
-            }
-
-            public IEnumerable<Type> GetHandledEventTypes()
-            {
-                yield return typeof(FakeEvent);
-            }
-
-            public MessageContext Context { get; set; }
-        }
-
     }
 }

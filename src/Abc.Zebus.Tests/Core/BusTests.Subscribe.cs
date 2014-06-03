@@ -88,8 +88,6 @@ namespace Abc.Zebus.Tests.Core
             _directoryMock.Verify(x => x.Update(_bus, It.Is<IEnumerable<Subscription>>(c => !c.Any())));
         }
 
-
-
         [Test]
         public void should_unsubscribe_to_message()
         {
@@ -159,17 +157,17 @@ namespace Abc.Zebus.Tests.Core
             invokers[0].ShouldCreateStartedTasks.ShouldBeFalse();
         }
 
-
         [Test]
         public void should_subscribe_with_untype_handler()
         {
             _bus.Start();
 
             var invokers = new List<IMessageHandlerInvoker>();
-            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<MultiEventHandlerInvoker>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
+            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<EventHandlerInvoker>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
 
-            var handlerMock = new Mock<IMultiEventHandler>();
-            _bus.Subscribe(typeof(FakeEvent), handlerMock.Object);
+            var handlerMock = new Mock<IMessageHandler<IMessage>>();
+            var subscriptions = new[] { Subscription.Any<FakeEvent>() };
+            _bus.Subscribe(subscriptions, handlerMock.Object.Handle);
 
             invokers.Count.ShouldEqual(1);
             invokers[0].CanInvokeSynchronously.ShouldBeTrue();

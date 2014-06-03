@@ -59,5 +59,13 @@ namespace Abc.Zebus.Util.Extensions
         {
             return ((ICollection<KeyValuePair<TKey, TValue>>)dictionary).Remove(new KeyValuePair<TKey, TValue>(key, comparisonValue));
         }
+
+        public static void RemoveRange<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IEnumerable<TKey> keys)
+        {
+            foreach (var key in keys)
+            {
+                dictionary.Remove(key);
+            }
+        }
     }
 }

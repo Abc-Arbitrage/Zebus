@@ -70,6 +70,7 @@
     <Compile Include="Core\BusFactory.cs" />
     <Compile Include="Core\DefaultStoppingStrategy.cs" />
     <Compile Include="Core\EventHandlerInvoker.cs" />
+    <Compile Include="Core\EventHandlerInvoker`1.cs" />
     <Compile Include="Core\IStoppingStrategy.cs" />
     <Compile Include="Core\RoundRobinPeerSelector.cs" />
     <Compile Include="Directory\DecommissionPeerCommand.cs" />
@@ -94,6 +95,7 @@
     <Compile Include="Dispatch\IMessageHandlerInvocation.cs" />
     <Compile Include="BusExtensions.cs" />
     <Compile Include="HostInitializer.cs" />
+    <Compile Include="IMultiEventHandler.cs" />
     <Compile Include="Lotus\CustomDelegatedProcessingFailed.cs" />
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
@@ -111,7 +113,6 @@
     <Compile Include="Core\MessageContextAwareBus.cs" />
     <Compile Include="Dispatch\MessageDispatch.cs" />
     <Compile Include="Dispatch\MessageHandlerInvoker.cs" />
-    <Compile Include="Dispatch\MultiEventHandlerInvoker.cs" />
     <Compile Include="IBusConfiguration.cs" />
     <Compile Include="Directory\PeerDescriptor.cs" />
     <Compile Include="Directory\PeerDirectoryClient.cs" />
@@ -154,7 +155,6 @@
     <Compile Include="Persistence\MessageReplayed.cs" />
     <Compile Include="Persistence\PersistMessageCommand.cs" />
     <Compile Include="Scan\IMessageHandlerInvokerLoader.cs" />
-    <Compile Include="Scan\MultiEventHandlerInvokerLoader.cs" />
     <Compile Include="Scan\AsyncMessageHandlerInvokerLoader.cs" />
     <Compile Include="Scan\SyncMessageHandlerInvokerLoader.cs" />
     <Compile Include="Scan\MessageHandlerInvokerLoader.cs" />
@@ -171,7 +171,6 @@
     <Compile Include="EventSourcing\IExtraTypesProvider.cs" />
     <Compile Include="IMessage.cs" />
     <Compile Include="IMessageHandler.cs" />
-    <Compile Include="IMultiEventHandler.cs" />
     <Compile Include="InfrastructureAttribute.cs" />
     <Compile Include="MessageTypeIdAttribute.cs" />
     <Compile Include="NoScanAttribute.cs" />

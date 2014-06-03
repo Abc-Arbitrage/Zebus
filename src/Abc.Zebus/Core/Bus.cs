@@ -20,7 +20,7 @@ namespace Abc.Zebus.Core
     {
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
-        private readonly HashSet<Subscription> _subscriptions = new HashSet<Subscription>();
+        private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
         private readonly BusMessageLogger _messageLogger = new BusMessageLogger();
         private readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
         private readonly ITransport _transport;
@@ -115,7 +115,8 @@ namespace Abc.Zebus.Core
             var autoSubscribeInvokers = _messageDispatcher.GetMessageHanlerInvokers().Where(x => x.ShouldBeSubscribedOnStartup);
             foreach (var invoker in autoSubscribeInvokers)
             {
-                _subscriptions.Add(new Subscription(invoker.MessageTypeId));
+                var subscription = new Subscription(invoker.MessageTypeId);
+                _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
             }
         }
 
@@ -123,7 +124,7 @@ namespace Abc.Zebus.Core
         {
             lock (_subscriptions)
             {
-                return _subscriptions.ToList();
+                return _subscriptions.Keys.ToList();
             }
         }
 
@@ -143,6 +144,7 @@ namespace Abc.Zebus.Core
             _subscriptions.Clear();
             _messageIdToTaskCompletionSources.Clear();
             _completionResultTaskScheduler.Dispose();
+
             Stopped();
         }
 
@@ -211,14 +213,9 @@ namespace Abc.Zebus.Core
                 }
             }
 
-            lock (_subscriptions)
-            {
-                _subscriptions.AddRange(subscriptions);
-            }
+            AddSubscriptions(subscriptions);
 
-            OnSubscriptionsUpdated();
-
-            return new DisposableAction(() => Unsubscribe(subscriptions));
+            return new DisposableAction(() => RemoveSubscriptions(subscriptions));
         }
 
         public IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default)
@@ -227,16 +224,9 @@ namespace Abc.Zebus.Core
             if (shouldHaveHanlderInvoker && _messageDispatcher.GetMessageHanlerInvokers().All(x => x.MessageTypeId != subscription.MessageTypeId))
                 throw new ArgumentException(string.Format("No handler available for message type Id: {0}", subscription.MessageTypeId));
 
-            bool updated;
-            lock (_subscriptions)
-            {
-                updated = _subscriptions.Add(subscription);
-            }
+            AddSubscriptions(new[] { subscription });
 
-            if (updated)
-                OnSubscriptionsUpdated();
-
-            return new DisposableAction(() => Unsubscribe(subscription));
+            return new DisposableAction(() => RemoveSubscriptions(new[] { subscription }));
         }
 
         public IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage
@@ -244,56 +234,63 @@ namespace Abc.Zebus.Core
             var eventHandlerInvoker = new EventHandlerInvoker<T>(handler);
             var subscription = new Subscription(eventHandlerInvoker.MessageTypeId);
 
-            return AddSubscriptionWithInvoker(eventHandlerInvoker, subscription);
-        }
+            _messageDispatcher.AddInvoker(eventHandlerInvoker);
 
-        private IDisposable AddSubscriptionWithInvoker(IMessageHandlerInvoker invoker, Subscription subscription)
-        {
-            _messageDispatcher.AddInvoker(invoker);
-
-            lock (_subscriptions)
-            {
-                _subscriptions.Add(subscription);
-            }
-            OnSubscriptionsUpdated();
+            AddSubscriptions(new[] { subscription });
 
             return new DisposableAction(() =>
             {
-                Unsubscribe(subscription);
-                _messageDispatcher.RemoveInvoker(invoker);
+                RemoveSubscriptions(new[] { subscription });
+                _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
             });
         }
 
-
-        public IDisposable Subscribe(Type messageType, IMultiEventHandler multiEventHandler) 
+        public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
         {
-            var eventHandlerInvoker = new MultiEventHandlerInvoker(messageType, multiEventHandler);
-            var subscription = new Subscription(eventHandlerInvoker.MessageTypeId);
+            var eventHandlerInvokers = subscriptions.Select(x => new EventHandlerInvoker(handler, x.MessageTypeId.GetMessageType())).ToList();
 
-            return AddSubscriptionWithInvoker(eventHandlerInvoker, subscription);
-
-        }
-
-        private void Unsubscribe(Subscription subscription)
-        {
-            bool updated;
-
-            lock (_subscriptions)
+            foreach (var eventHandlerInvoker in eventHandlerInvokers)
             {
-                updated = _subscriptions.Remove(subscription);
+                _messageDispatcher.AddInvoker(eventHandlerInvoker);
             }
 
-            if (updated)
-                OnSubscriptionsUpdated();
+            AddSubscriptions(subscriptions);
+
+            return new DisposableAction(() =>
+            {
+                RemoveSubscriptions(subscriptions);
+                foreach (var eventHandlerInvoker in eventHandlerInvokers)
+                {
+                    _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
+                }
+            });
         }
 
-        private void Unsubscribe(IEnumerable<Subscription> subscriptions)
+        private void AddSubscriptions(IEnumerable<Subscription> subscriptions)
         {
             lock (_subscriptions)
             {
-                _subscriptions.RemoveRange(subscriptions);
+                foreach (var subscription in subscriptions)
+                {
+                    _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                }
             }
+            OnSubscriptionsUpdated();
+        }
 
+        private void RemoveSubscriptions(IEnumerable<Subscription> subscriptions)
+        {
+            lock (_subscriptions)
+            {
+                foreach (var subscription in subscriptions)
+                {
+                    var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
+                    if (subscriptionCount <= 1)
+                        _subscriptions.Remove(subscription);
+                    else
+                        _subscriptions[subscription] = subscriptionCount - 1;
+                }
+            }
             OnSubscriptionsUpdated();
         }
 

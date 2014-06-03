@@ -145,17 +145,19 @@ namespace Abc.Zebus.Testing
             return new DisposableAction(() => _handlers.Remove(handlerKey));
         }
 
-        public IDisposable Subscribe(Type messageType, IMultiEventHandler multiEventHandler)
+        public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
         {
-            var handlerKey = new HandlerKey(messageType, default(PeerId));
-
-            _handlers[handlerKey] = x =>
+            var handlerKeys = subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default(PeerId))).ToList();
+            foreach (var handlerKey in handlerKeys)
             {
-                multiEventHandler.Handle((IEvent)x);
-                return null;
-            };
+                _handlers[handlerKey] = x =>
+                {
+                    handler(x);
+                    return null;
+                };
+            }
 
-            return new DisposableAction(() => _handlers.Remove(handlerKey));
+            return new DisposableAction(() => _handlers.RemoveRange(handlerKeys));
         }
 
         public void Reply(int errorCode)
