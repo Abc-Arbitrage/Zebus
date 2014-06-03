@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
 using NUnit.Framework;
@@ -83,7 +84,7 @@ namespace Abc.Zebus.Tests.Dispatch
             StartTask(() => Thread.Sleep(1000));
             StartTask(() => Thread.Sleep(1000));
 
-            _taskScheduler.TaskCount.ShouldEqual(2);
+            Wait.Until(() => _taskScheduler.TaskCount == 1, 1.Second());
 
             _taskScheduler.PurgeTasks();
 

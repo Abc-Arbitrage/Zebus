@@ -240,7 +240,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new AsyncFailingCommand(new InvalidOperationException(":'("));
             Dispatch(command);
 
-            Wait.Until(() => _dispatchResult.WasHandled, 200.Milliseconds());
+            Wait.Until(() => _dispatchResult.WasHandled, 500.Milliseconds());
 
             _dispatchResult.Errors.First().ShouldEqual(command.Exception);
         }
