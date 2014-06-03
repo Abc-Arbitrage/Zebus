@@ -19,7 +19,6 @@
 	
 	<target name="build-tc" depends="init init-project compile-tests compile"/>
 	<target name="build-local" depends="init init-project compile compile-tests test localonly-test"/>
-	<target name="build-only" depends="init init-project compile compile-tests"/>
 
 	
 	<target name="clean" description="Remove all build products">
