@@ -31,7 +31,6 @@ namespace Abc.Zebus.Routing
 
         private BindingKey(string[] parts, bool isJoined)
         {
-
             if (parts == null || parts.Length == 0)
                 _parts = null;
             else
@@ -76,6 +75,19 @@ namespace Abc.Zebus.Routing
             }
 
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            if (_parts == null || _parts.Length == 0)
+                return 0;
+
+            var hashCode = _parts[0].GetHashCode();
+            for (var partIndex = 1; partIndex < _parts.Length; ++partIndex)
+            {
+                hashCode = (hashCode * 397) ^ _parts[partIndex].GetHashCode();
+            }
+            return hashCode;
         }
 
         public override string ToString()

@@ -205,13 +205,7 @@ namespace Abc.Zebus.Core
         {
             var shouldHaveHanlderInvoker = (options & SubscriptionOptions.ThereIsNoHandlerButIKnowWhatIAmDoing) == 0;
             if (shouldHaveHanlderInvoker)
-            {
-                foreach (var subscription in subscriptions)
-                {
-                    if (_messageDispatcher.GetMessageHanlerInvokers().All(x => x.MessageTypeId != subscription.MessageTypeId))            
-                        throw new ArgumentException(string.Format("No handler available for message type Id: {0}", subscription.MessageTypeId));
-                }
-            }
+                EnsureMessageHandlerInvokerExists(subscriptions);
 
             AddSubscriptions(subscriptions);
 
@@ -220,13 +214,15 @@ namespace Abc.Zebus.Core
 
         public IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default)
         {
+            var subscriptions = new[] { subscription };
+
             var shouldHaveHanlderInvoker = (options & SubscriptionOptions.ThereIsNoHandlerButIKnowWhatIAmDoing) == 0;
-            if (shouldHaveHanlderInvoker && _messageDispatcher.GetMessageHanlerInvokers().All(x => x.MessageTypeId != subscription.MessageTypeId))
-                throw new ArgumentException(string.Format("No handler available for message type Id: {0}", subscription.MessageTypeId));
+            if (shouldHaveHanlderInvoker)
+                EnsureMessageHandlerInvokerExists(subscriptions);
+            
+            AddSubscriptions(subscriptions);
 
-            AddSubscriptions(new[] { subscription });
-
-            return new DisposableAction(() => RemoveSubscriptions(new[] { subscription }));
+            return new DisposableAction(() => RemoveSubscriptions(subscriptions));
         }
 
         public IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage
@@ -264,6 +260,15 @@ namespace Abc.Zebus.Core
                     _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
                 }
             });
+        }
+
+        private void EnsureMessageHandlerInvokerExists(Subscription[] subscriptions)
+        {
+            foreach (var subscription in subscriptions)
+            {
+                if (!_messageDispatcher.GetMessageHanlerInvokers().Any(x => x.MessageTypeId == subscription.MessageTypeId))
+                    throw new ArgumentException(string.Format("No handler available for message type Id: {0}", subscription.MessageTypeId));
+            }
         }
 
         private void AddSubscriptions(IEnumerable<Subscription> subscriptions)
