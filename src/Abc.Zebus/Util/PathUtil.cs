@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Abc.Zebus.Util
 {
-    public static class PathUtil
+    internal static class PathUtil
     {
         public static string InBaseDirectory(string path)
         {

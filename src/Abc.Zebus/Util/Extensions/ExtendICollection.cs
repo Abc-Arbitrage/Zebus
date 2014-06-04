@@ -15,7 +15,7 @@ namespace Abc.Zebus.Util.Extensions
     /// Simple helper extensions for <see cref="ICollection{T}"/>
     /// </summary>
     internal static class ExtendICollection
-{
+    {
         /// <summary>
         /// Adds all items to the target collection
         /// </summary>
