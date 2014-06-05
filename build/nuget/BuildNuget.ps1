@@ -29,7 +29,7 @@ $properties = "`"version="+$version.Value+";author="+$company.Value+";descriptio
 
 # Build nuget for Zebus
 Write-Host "############# Building Zebus package #############" -ForegroundColor Green
-& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
+& '.\tools\nuget\NuGet.exe' pack -sym .\build\nuget\nuspecs\Abc.Zebus.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
 
 # Build nuget for Zebus.Testing
 Write-Host
