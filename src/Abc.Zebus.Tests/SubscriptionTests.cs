@@ -80,33 +80,6 @@ namespace Abc.Zebus.Tests
             subscription.Matches(BindingKey.Split(routingKey)).ShouldBeFalse();
         }
 
-        [Ignore]
-        [TestCase("a.b", "a.b.c.d")]
-        [TestCase("d.*", "a.b.c.d")]
-        [TestCase("d.#", "a.b.c.d")]
-        public void Performance_test(string routingKey, string bindingKey)
-        {
-            var subscription = CreateSubscription(bindingKey);
-            var key = BindingKey.Split(routingKey);
-
-            Measure.Execution(x =>
-            {
-                x.Iteration = 1000000;
-                x.WarmUpIteration = 1000;
-                x.Action = _ => subscription.Matches(key);
-            });
-        }
-
-        private Subscription CreateSubscription(string bindingKey)
-        {
-            return new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Split(bindingKey));
-        }
-
-        private int GetFieldValue()
-        {
-            return _field;
-        }
-
         [Test]
         public void exact_same_routing_key_should_match_binding_key()
         {
@@ -171,6 +144,46 @@ namespace Abc.Zebus.Tests
             var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.Id == GetFieldValue());
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
             subscription.BindingKey.ShouldEqual(new BindingKey(GetFieldValue().ToString(), "*", "*"));
+        }
+
+        [Test]
+        public void should_be_equatable()
+        {
+            var otherId = Guid.NewGuid();
+
+            var subscription1 = Subscription.Matching<FakeRoutableCommand>(x => x.Id == 12 && x.OtherId == otherId);
+            var subscription2 = Subscription.Matching<FakeRoutableCommand>(x => x.Id == 12 && x.OtherId == otherId);
+
+            subscription1.GetHashCode().ShouldEqual(subscription2.GetHashCode());
+            subscription1.Equals(subscription2).ShouldBeTrue();
+            subscription1.Equals((object)subscription2).ShouldBeTrue();
+        }
+
+        [Ignore("Manual test")]
+        [TestCase("a.b", "a.b.c.d")]
+        [TestCase("d.*", "a.b.c.d")]
+        [TestCase("d.#", "a.b.c.d")]
+        public void MeasurePerformance(string routingKey, string bindingKey)
+        {
+            var subscription = CreateSubscription(bindingKey);
+            var key = BindingKey.Split(routingKey);
+
+            Measure.Execution(x =>
+            {
+                x.Iteration = 1000000;
+                x.WarmUpIteration = 1000;
+                x.Action = _ => subscription.Matches(key);
+            });
+        }
+
+        private Subscription CreateSubscription(string bindingKey)
+        {
+            return new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Split(bindingKey));
+        }
+
+        private int GetFieldValue()
+        {
+            return _field;
         }
     }
 }
