@@ -13,7 +13,7 @@ using Ploeh.AutoFixture.Kernel;
 
 namespace Abc.Zebus.Testing
 {
-    internal static class SimpleSerializationTestHelper
+    public static class MessageSerializationTester
     {
         private static readonly MethodInfo _createAnonymousMethod = typeof(SpecimenFactory).GetMethod("CreateAnonymous", new[] { typeof(ISpecimenBuilderComposer) });
         private static readonly MethodInfo _injectMethod = typeof(FixtureRegistrar).GetMethod("Inject");

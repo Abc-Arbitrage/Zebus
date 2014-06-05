@@ -93,7 +93,8 @@ namespace Abc.Zebus.Tests
             {
                 x.Iteration = 1000000;
                 x.WarmUpIteration = 1000;
-            }, x => subscription.Matches(key));
+                x.Action = _ => subscription.Matches(key);
+            });
         }
 
         private Subscription CreateSubscription(string bindingKey)

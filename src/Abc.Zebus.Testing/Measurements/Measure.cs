@@ -14,18 +14,25 @@ namespace Abc.Zebus.Testing.Measurements
 
         public static void Execution(long iterations, Action action)
         {
-            Execution(conf => conf.Iteration = (int)iterations, i => action());
+            Execution(conf =>
+            {
+                conf.Action = i => action();
+                conf.Iteration = (int)iterations;
+
+            });
         }
 
-        public static void Execution(Action<MeasureConfiguration> configurationAction, Action<long> action)
+        public static void Execution(Action<MeasureConfiguration> configurationAction)
         {
             var configuration = new MeasureConfiguration();
             configurationAction(configuration);
 
-            Bench(action, configuration.WarmUpIteration);
+            if (configuration.Action == null)
+                throw new ArgumentException("Action should be specified");
 
-            var results = Bench(action, configuration.Iteration);
+            Bench(configuration.Action, configuration.WarmUpIteration);
 
+            var results = Bench(configuration.Action, configuration.Iteration);
 
             PrintResults(configuration, results);
         }
@@ -58,6 +65,7 @@ namespace Abc.Zebus.Testing.Measurements
             g0Count = GC.CollectionCount(0) - g0Count;
             g1Count = GC.CollectionCount(1) - g1Count;
             g2Count = GC.CollectionCount(2) - g2Count;
+
             return new BenchResults
                        {
                            Elapsed = stopwatch.Elapsed,
@@ -140,18 +148,5 @@ namespace Abc.Zebus.Testing.Measurements
                 Console.WriteLine("G2 : {0,6:0}", g2Count);
             });
         }
-    }
-
-    public class MeasureConfiguration
-    {
-        public int Iteration { get; set; }
-        public string Name { get; set; }
-
-        public int TotalIteration
-        {
-            get { return Iteration + WarmUpIteration; }
-        }
-
-        public int WarmUpIteration { get; set; }
     }
 }

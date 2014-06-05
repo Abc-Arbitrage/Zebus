@@ -82,12 +82,13 @@ namespace Abc.Zebus.Tests
             {
                 x.Iteration = 200000;
                 x.WarmUpIteration = 10;
-            }, x =>
-            {
-                for (var i = 0; i < 10; ++i)
+                x.Action = _ =>
                 {
-                    MessageId.NextId();
-                }
+                    for (var i = 0; i < 10; ++i)
+                    {
+                        MessageId.NextId();
+                    }
+                };
             });
         }
     }

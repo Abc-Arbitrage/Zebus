@@ -20,13 +20,13 @@ namespace Abc.Zebus.Tests
                 new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3}, new PeerId("peer"), "endpoint", MessageId.NextId()), 
             };
 
-            SimpleSerializationTestHelper.CheckSerializationForTypesInSameAssemblyAs<IBus>(prebuildObjectTypes);
+            MessageSerializationTester.CheckSerializationForTypesInSameAssemblyAs<IBus>(prebuildObjectTypes);
         }
 
         [Test]
         public void should_detect_duplicate_serialization_ids()
         {
-            SimpleSerializationTestHelper.DetectDuplicatedSerializationIds(typeof(IBus).Assembly);
+            MessageSerializationTester.DetectDuplicatedSerializationIds(typeof(IBus).Assembly);
         }
 
         [Test]

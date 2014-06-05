@@ -59,7 +59,8 @@ namespace Abc.Zebus.Tests
             {
                 x.Iteration = iterationCount;
                 x.WarmUpIteration = warmUpIterationCount;
-            }, _ => subscriptionList.GetPeers(bindingKey));
+                x.Action = _ => subscriptionList.GetPeers(bindingKey);
+            });
             Console.WriteLine();
 
             Console.WriteLine("{0} test -------------", subscriptionTree.GetType().Name);
@@ -68,7 +69,8 @@ namespace Abc.Zebus.Tests
             {
                 x.Iteration = iterationCount;
                 x.WarmUpIteration = warmUpIterationCount;
-            }, _ => subscriptionTree.GetPeers(bindingKey));
+                x.Action = _ => subscriptionTree.GetPeers(bindingKey);
+            });
         }
 
         private Subscription CreateSubscription(string bindingKey)
