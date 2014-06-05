@@ -2,10 +2,9 @@
 $zebusLocation = [System.IO.Path]::Combine($location, ".\src\Abc.Zebus");
 $outputLocation = [System.IO.Path]::Combine($location, "output\nuget");
 $msbuild = 'C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe';
-if( (Test-Path $outputLocation) -eq $false)
-{
-    $dir = New-Item -ItemType directory $outputLocation;
-}
+# clean output
+Remove-Item -Recurse -Force $outputLocation;
+$dir = New-Item -ItemType directory $outputLocation;
 
 # Compile solution in release
 & $msbuild .\src\Abc.Zebus.sln /t:rebuild /p:Configuration=Release
