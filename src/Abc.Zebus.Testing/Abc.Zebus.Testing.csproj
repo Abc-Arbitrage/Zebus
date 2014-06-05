@@ -78,6 +78,7 @@
     <Compile Include="Integration\IntegrationTestFixture.cs" />
     <Compile Include="Integration\TestService.cs" />
     <Compile Include="Measurements\Measure.cs" />
+    <Compile Include="Measurements\MeasureConfiguration.cs" />
     <Compile Include="MessageSerializationTester.cs" />
     <Compile Include="Pipes\TestPipeInvocation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
