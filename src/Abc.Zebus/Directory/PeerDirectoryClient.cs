@@ -18,7 +18,7 @@ namespace Abc.Zebus.Directory
         IMessageHandler<PeerNotResponding>,
         IMessageHandler<PeerResponding>
     {
-        private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionList> _subscriptionsByMessageType = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionList>();
+        private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerDescriptor> _peers = new ConcurrentDictionary<PeerId, PeerDescriptor>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly IBusConfiguration _configuration;
@@ -242,7 +242,7 @@ namespace Abc.Zebus.Directory
             var toAdd = newSub.Except(oldSub);
             foreach (var subscription in toAdd)
             {
-                var list = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionList());
+                var list = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
                 list.Add(peer, subscription);
             }
         }

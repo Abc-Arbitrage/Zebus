@@ -88,6 +88,8 @@
     <Compile Include="Core\BusTests.Subscribe.cs" />
     <Compile Include="Core\MessageContextAwareBusTests.cs" />
     <Compile Include="Core\RoundRobinPeerSelectorTests.cs" />
+    <Compile Include="Directory\PeerDirectoryClientTests.Performance.cs" />
+    <Compile Include="Directory\PeerSubscriptionTreeTests.Performance.cs" />
     <Compile Include="Dispatch\AsyncMessageHandlerInvokerTests.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommand.cs" />
@@ -149,7 +151,7 @@
     <Compile Include="Dispatch\DispatchMessages\ScanCommandHandler1.cs" />
     <Compile Include="Dispatch\DispatchMessages\ScanCommandHandler2.cs" />
     <Compile Include="SerializationTests.cs" />
-    <Compile Include="PeerSubscriptionTreeTests.cs" />
+    <Compile Include="Directory\PeerSubscriptionTreeTests.cs" />
     <Compile Include="SubscriptionTests.cs" />
     <Compile Include="SubscriptionTests.Legacy.cs" />
     <Compile Include="TestDataBuilder.cs" />

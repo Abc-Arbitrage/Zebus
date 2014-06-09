@@ -7,58 +7,91 @@ namespace Abc.Zebus.Directory
     public class PeerSubscriptionTree
     {
         private readonly SubscriptionNode _rootNode = new SubscriptionNode(0);
+        private List<Peer> _peersMatchingAllMessages = new List<Peer>();
 
         public bool IsEmpty
         {
-            get { return _rootNode.IsEmpty; }
+            get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0; }
         }
 
         public void Add(Peer peer, Subscription subscription)
         {
-            _rootNode.Update(peer, subscription, true);
+            if (subscription.IsMatchingAllMessages)
+                UpdatePeersMatchingAllMessages(peer, true);
+            else
+                _rootNode.Update(peer, subscription, true);
         }
 
-        public IList<Peer> GetPeers(BindingKey bindingKey)
+        public IList<Peer> GetPeers(BindingKey routingKey)
         {
-            var peerCollector = new PeerCollector();
+            var peerCollector = new PeerCollector(_peersMatchingAllMessages);
 
-            _rootNode.Accept(peerCollector, bindingKey);
+            _rootNode.Accept(peerCollector, routingKey);
 
-            return (List<Peer>)peerCollector;
+            return peerCollector.GetPeers();
         }
 
         public void Remove(Peer peer, Subscription subscription)
         {
-            _rootNode.Update(peer, subscription, false);
+            if (subscription.IsMatchingAllMessages)
+                UpdatePeersMatchingAllMessages(peer, false);
+            else
+                _rootNode.Update(peer, subscription, false);
+        }
+
+        private void UpdatePeersMatchingAllMessages(Peer peer, bool isAddOrUpdate)
+        {
+            var newPeers = _peersMatchingAllMessages.Where(i => i.Id != peer.Id).ToList();
+
+            if (isAddOrUpdate)
+                newPeers.Add(peer);
+
+            _peersMatchingAllMessages = newPeers;
         }
 
         private class PeerCollector
         {
-            private readonly HashSet<PeerId> _peerIds = new HashSet<PeerId>();
-            private readonly List<Peer> _peers = new List<Peer>();
+            private readonly Dictionary<PeerId, Peer> _collectedPeers = new Dictionary<PeerId, Peer>();
+            private readonly List<Peer> _initialPeers;
 
-            public void Offer(IEnumerable<Peer> peers)
+            public PeerCollector(List<Peer> peers)
             {
-                foreach (var peer in peers.Where(x => _peerIds.Add(x.Id)))
+                _initialPeers = peers;
+            }
+
+            public void Offer(List<Peer> peers)
+            {
+                foreach (var peer in peers)
                 {
-                    _peers.Add(peer);
+                    _collectedPeers[peer.Id] = peer;
                 }
             }
 
-            public static implicit operator List<Peer>(PeerCollector collector)
+            public List<Peer> GetPeers()
             {
-                return collector._peers.ToList();
+                if (_collectedPeers.Count == 0)
+                    return _initialPeers;
+
+                Offer(_initialPeers);
+
+                return _collectedPeers.Values.ToList();
             }
         }
 
         private class SubscriptionNode
         {
+            private readonly int _nextPartIndex;
             private readonly bool _matchesAll;
-            private readonly int _partIndex;
             private Dictionary<string, SubscriptionNode> _childrenNodes = new Dictionary<string, SubscriptionNode>();
             private List<Peer> _peers = new List<Peer>();
             private SubscriptionNode _sharpNode;
             private SubscriptionNode _starNode;
+
+            public SubscriptionNode(int nextPartIndex, bool matchesAll = false)
+            {
+                _nextPartIndex = nextPartIndex;
+                _matchesAll = matchesAll;
+            }
 
             public bool IsEmpty
             {
@@ -71,76 +104,70 @@ namespace Abc.Zebus.Directory
                 }
             }
 
-            public SubscriptionNode(int partIndex, bool matchesAll = false)
+            public void Accept(PeerCollector peerCollector, BindingKey routingKey)
             {
-                _partIndex = partIndex;
-                _matchesAll = matchesAll;
-            }
-
-            public void Accept(PeerCollector peerCollector, BindingKey bindingKey)
-            {
-                if (_partIndex == bindingKey.PartCount || _matchesAll)
+                if (IsLeaf(routingKey) || _matchesAll)
                 {
                     peerCollector.Offer(_peers);
                     return;
                 }
 
                 if (_sharpNode != null)
-                    _sharpNode.Accept(peerCollector, bindingKey);
+                    _sharpNode.Accept(peerCollector, routingKey);
 
                 if (_starNode != null)
-                    _starNode.Accept(peerCollector, bindingKey);
+                    _starNode.Accept(peerCollector, routingKey);
 
-                var part = bindingKey.GetPart(_partIndex);
-                if (part == null)
+                var nextPart = routingKey.GetPart(_nextPartIndex);
+                if (nextPart == null)
                     return;
 
                 SubscriptionNode childNode;
-                if (_childrenNodes.TryGetValue(part, out childNode))
-                    childNode.Accept(peerCollector, bindingKey);
+                if (_childrenNodes.TryGetValue(nextPart, out childNode))
+                    childNode.Accept(peerCollector, routingKey);
             }
-
 
             public void Update(Peer peer, Subscription subscription, bool isAddOrUpdate)
             {
-                if (IsLeaf(subscription) || IsMatchingAll(subscription))
+                if (IsLeaf(subscription.BindingKey))
                 {
                     UpdateList(peer, isAddOrUpdate);
                     return;
                 }
 
-                var part = subscription.BindingKey.GetPart(_partIndex);
+                var nextPart = subscription.BindingKey.GetPart(_nextPartIndex);
 
-                if (part == "#" || part == null)
+                if (nextPart == "#" || nextPart == null)
                 {
                     var sharpNode = GetOrCreateSharpNode();
                     sharpNode.Update(peer, subscription, isAddOrUpdate);
                 }
-                else if (part == "*")
+                else if (nextPart == "*")
                 {
                     var starNode = GetOrCreateStarNode();
                     starNode.Update(peer, subscription, isAddOrUpdate);
                 }
                 else
                 {
-                    var child = GetOrAddChildNode(part);
+                    var child = GetOrAddChildNode(nextPart);
                     child.Update(peer, subscription, isAddOrUpdate);
                 }
             }
 
-            private bool IsMatchingAll(Subscription subscription)
+            private bool IsLeaf(BindingKey bindingKey)
             {
-                return (_partIndex != 0 && subscription.IsMatchingAllMessages);
-            }
+                if (_nextPartIndex == 0)
+                    return false;
 
-            private bool IsLeaf(Subscription subscription)
-            {
-                return (_partIndex == subscription.BindingKey.PartCount && _partIndex != 0);
+                if (bindingKey.IsEmpty)
+                    return _nextPartIndex == 1;
+
+                return _nextPartIndex == bindingKey.PartCount;
             }
 
             private SubscriptionNode CreateChildNode(bool matchesAll = false)
             {
-                return new SubscriptionNode(_partIndex + 1, matchesAll);
+                return new SubscriptionNode(_nextPartIndex + 1, matchesAll);
             }
 
             private SubscriptionNode GetOrAddChildNode(string part)
@@ -168,9 +195,7 @@ namespace Abc.Zebus.Directory
 
             private void UpdateList(Peer peer, bool isAddOrUpdate)
             {
-                var newPeers = _peers
-                    .Where(i => i.Id != peer.Id)
-                    .ToList();
+                var newPeers = _peers.Where(i => i.Id != peer.Id).ToList();
 
                 if (isAddOrUpdate)
                     newPeers.Add(peer);

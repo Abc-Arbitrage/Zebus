@@ -46,7 +46,7 @@ namespace Abc.Zebus.Routing
 
         public bool IsEmpty
         {
-            get { return _parts == null; }
+            get { return _parts == null || _parts.Length == 1 && _parts[0] == "#"; }
         }
 
         internal bool IsJoined

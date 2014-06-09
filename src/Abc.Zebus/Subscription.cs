@@ -41,7 +41,7 @@ namespace Abc.Zebus
 
         public bool IsMatchingAllMessages
         {
-            get { return BindingKey.IsEmpty || BindingKey.PartCount == 1 && BindingKey.GetPart(0) == "#"; }
+            get { return BindingKey.IsEmpty; }
         }
 
         public bool Matches(MessageBinding messageBinding)

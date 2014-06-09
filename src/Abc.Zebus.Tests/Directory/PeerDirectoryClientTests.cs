@@ -19,7 +19,7 @@ namespace Abc.Zebus.Tests.Directory
     //       you might end up with a test passing by coincidence
 
     [TestFixture]
-    public class PeerDirectoryClientTests
+    public partial class PeerDirectoryClientTests
     {
         private PeerDirectoryClient _directory;
         private Mock<IBusConfiguration> _configurationMock;
