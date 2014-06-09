@@ -89,6 +89,7 @@
     <Compile Include="Core\MessageContextAwareBusTests.cs" />
     <Compile Include="Core\RoundRobinPeerSelectorTests.cs" />
     <Compile Include="Directory\PeerDirectoryClientTests.Performance.cs" />
+    <Compile Include="Directory\PeerSubscriptionList.cs" />
     <Compile Include="Directory\PeerSubscriptionTreeTests.Performance.cs" />
     <Compile Include="Dispatch\AsyncMessageHandlerInvokerTests.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncCommand.cs" />

@@ -80,7 +80,6 @@
     <Compile Include="Directory\PeerDecommissioned.cs" />
     <Compile Include="Directory\PeerNotResponding.cs" />
     <Compile Include="Directory\PeerResponding.cs" />
-    <Compile Include="Directory\PeerSubscriptionList.cs" />
     <Compile Include="Directory\PeerSubscriptionsUpdated.cs" />
     <Compile Include="Directory\PeerSubscriptionTree.cs" />
     <Compile Include="Directory\PingPeerCommand.cs" />

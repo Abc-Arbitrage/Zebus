@@ -1,11 +1,15 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Util.Extensions;
 
-namespace Abc.Zebus.Directory
+namespace Abc.Zebus.Tests.Directory
 {
+    /// <summary>
+    /// Old container for peer subscriptions, now replaced by PeerSubscriptionTree.
+    /// It is kept for performance comparison purposes.
+    /// </summary>
     internal class PeerSubscriptionList
     {
         private List<PeerSubscription> _dynamicPeerSubscriptions = new List<PeerSubscription>();
