@@ -13,13 +13,13 @@ namespace Abc.Zebus.Directory
         public readonly Subscription[] Subscriptions;
 
         [ProtoMember(3, IsRequired = false)]
-        public readonly DateTime? TimestampUtc;
+        public readonly DateTime TimestampUtc;
 
-        public AddPeerSubscriptionsCommand(PeerId peerId, Subscription[] subscriptions, DateTime logicalClock)
+        public AddPeerSubscriptionsCommand(PeerId peerId, Subscription[] subscriptions, DateTime timestampUtc)
         {
             PeerId = peerId;
             Subscriptions = subscriptions;
-            TimestampUtc = logicalClock;
+            TimestampUtc = timestampUtc;
         }
 
         public override string ToString()

@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Routing;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Directory
 {
@@ -14,12 +16,17 @@ namespace Abc.Zebus.Directory
             get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0; }
         }
 
-        public void Add(Peer peer, Subscription subscription)
+        public bool Add(Peer peer, Subscription subscription)
+        {
+            return Add(peer, subscription, SystemDateTime.UtcNow);
+        }
+
+        public bool Add(Peer peer, Subscription subscription, DateTime timestampUtc)
         {
             if (subscription.IsMatchingAllMessages)
-                UpdatePeersMatchingAllMessages(peer, true);
-            else
-                _rootNode.Update(peer, subscription, true);
+                return UpdatePeersMatchingAllMessages(peer, true);
+
+            return _rootNode.Update(peer, subscription, true);
         }
 
         public IList<Peer> GetPeers(BindingKey routingKey)
@@ -31,15 +38,20 @@ namespace Abc.Zebus.Directory
             return peerCollector.GetPeers();
         }
 
-        public void Remove(Peer peer, Subscription subscription)
+        public bool Remove(Peer peer, Subscription subscription)
         {
-            if (subscription.IsMatchingAllMessages)
-                UpdatePeersMatchingAllMessages(peer, false);
-            else
-                _rootNode.Update(peer, subscription, false);
+            return Remove(peer, subscription, SystemDateTime.UtcNow);
         }
 
-        private void UpdatePeersMatchingAllMessages(Peer peer, bool isAddOrUpdate)
+        public bool Remove(Peer peer, Subscription subscription, DateTime timestampUtc)
+        {
+            if (subscription.IsMatchingAllMessages)
+                return UpdatePeersMatchingAllMessages(peer, false);
+            
+            return _rootNode.Update(peer, subscription, false);
+        }
+
+        private bool UpdatePeersMatchingAllMessages(Peer peer, bool isAddOrUpdate)
         {
             var newPeers = _peersMatchingAllMessages.Where(i => i.Id != peer.Id).ToList();
 
@@ -47,6 +59,9 @@ namespace Abc.Zebus.Directory
                 newPeers.Add(peer);
 
             _peersMatchingAllMessages = newPeers;
+
+            // TMP ocoanet
+            return true;
         }
 
         private class PeerCollector
@@ -127,12 +142,14 @@ namespace Abc.Zebus.Directory
                     childNode.Accept(peerCollector, routingKey);
             }
 
-            public void Update(Peer peer, Subscription subscription, bool isAddOrUpdate)
+            public bool Update(Peer peer, Subscription subscription, bool isAddOrUpdate)
             {
                 if (IsLeaf(subscription.BindingKey))
                 {
                     UpdateList(peer, isAddOrUpdate);
-                    return;
+
+                    // TMP ocoanet
+                    return true;
                 }
 
                 var nextPart = subscription.BindingKey.GetPart(_nextPartIndex);
@@ -152,6 +169,9 @@ namespace Abc.Zebus.Directory
                     var child = GetOrAddChildNode(nextPart);
                     child.Update(peer, subscription, isAddOrUpdate);
                 }
+
+                // TMP ocoanet
+                return true;
             }
 
             private bool IsLeaf(BindingKey bindingKey)
@@ -203,5 +223,12 @@ namespace Abc.Zebus.Directory
                 _peers = newPeers;
             }
         }
+
+//        private class SubscriptionEntry
+//        {
+//            public readonly Peer Peer;
+//            public readonly DateTime? TimestampUtc;
+//            public readonly bool Enabled;
+//        }
     }
 }

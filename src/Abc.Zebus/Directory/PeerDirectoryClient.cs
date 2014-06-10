@@ -14,6 +14,8 @@ namespace Abc.Zebus.Directory
         IMessageHandler<PeerStopped>,
         IMessageHandler<PeerDecommissioned>,
         IMessageHandler<PingPeerCommand>,
+        IMessageHandler<PeerSubscriptionsAdded>,
+        IMessageHandler<PeerSubscriptionsRemoved>,
         IMessageHandler<PeerSubscriptionsUpdated>,
         IMessageHandler<PeerNotResponding>,
         IMessageHandler<PeerResponding>
@@ -66,6 +68,40 @@ namespace Abc.Zebus.Directory
             UpdatePeerSubscriptions(removedPeer.Peer, removedPeer.Subscriptions, null);
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Decommissioned);
+        }
+
+        public void Handle(PeerSubscriptionsAdded message)
+        {
+            var peer = _peers.GetValueOrDefault(message.PeerId);
+            if (peer == null || message.Subscriptions == null)
+                return;
+
+            peer.Subscriptions = peer.Subscriptions.Concat(message.Subscriptions).ToArray();
+
+            foreach (var subscription in message.Subscriptions)
+            {
+                var messageSubscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
+                messageSubscriptions.Add(peer.Peer, subscription, message.TimestampUtc);
+            }
+
+            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
+        }
+
+        public void Handle(PeerSubscriptionsRemoved message)
+        {
+            var peer = _peers.GetValueOrDefault(message.PeerId);
+            if (peer == null || message.Subscriptions == null)
+                return;
+
+            peer.Subscriptions = peer.Subscriptions.Except(message.Subscriptions).ToArray();
+
+            foreach (var subscription in message.Subscriptions)
+            {
+                var messageSubscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
+                messageSubscriptions.Remove(peer.Peer, subscription, message.TimestampUtc);
+            }
+
+            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
         }
 
         public void Handle(PeerSubscriptionsUpdated message)
@@ -187,6 +223,7 @@ namespace Abc.Zebus.Directory
         }
 
         // Only internal for testing purposes
+
         internal IEnumerable<Peer> GetDirectoryPeers()
         {
             _directoryPeers = _configuration.DirectoryServiceEndPoints.Select(CreateDirectoryPeer);
@@ -229,21 +266,21 @@ namespace Abc.Zebus.Directory
             var toRemove = oldSub.Except(newSub);
             foreach (var subscription in toRemove)
             {
-                var list = _subscriptionsByMessageType.GetValueOrDefault(subscription.MessageTypeId);
-                if (list == null)
+                var subscriptions = _subscriptionsByMessageType.GetValueOrDefault(subscription.MessageTypeId);
+                if (subscriptions == null)
                     continue;
 
-                list.Remove(peer, subscription);
+                subscriptions.Remove(peer, subscription);
 
-                if (list.IsEmpty)
-                    _subscriptionsByMessageType.TryRemove(subscription.MessageTypeId, list);
+                if (subscriptions.IsEmpty)
+                    _subscriptionsByMessageType.TryRemove(subscription.MessageTypeId, subscriptions);
             }
 
             var toAdd = newSub.Except(oldSub);
             foreach (var subscription in toAdd)
             {
-                var list = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
-                list.Add(peer, subscription);
+                var subscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
+                subscriptions.Add(peer, subscription);
             }
         }
 
@@ -262,6 +299,4 @@ namespace Abc.Zebus.Directory
             return peer;
         }
     }
-
-    
 }

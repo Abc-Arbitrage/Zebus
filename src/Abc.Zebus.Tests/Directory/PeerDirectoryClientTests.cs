@@ -521,6 +521,39 @@ namespace Abc.Zebus.Tests.Directory
             peer1.EndPoint.ShouldEqual(peer3.EndPoint);
         }
 
+        [Test]
+        public void should_handle_added_subscriptions()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddTicks(1)));
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
+
+            _directory.GetPeersHandlingMessage(new FakeEvent(0)).ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent1()).ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
+        }
+
+        [Test]
+        public void should_handle_removed_subscriptions()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent), typeof(OtherFakeEvent1))));
+            _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddTicks(1)));
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent1()).ShouldBeEmpty();
+        }
+
+        //[Test]
+        //public void should_ignore_outdated_removed_subscriptions()
+        //{
+        //    _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));;
+        //    _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddMinutes(2)));
+        //    _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddTicks(1)));
+
+        //    _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
+        //    _directory.GetPeersHandlingMessage(new OtherFakeEvent1()).ShouldNotBeEmpty();
+        //}
+
         private class OtherFakeEvent1 : IEvent
         {
         }
