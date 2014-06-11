@@ -9,11 +9,11 @@ namespace Abc.Zebus.Directory
     public class PeerSubscriptionTree
     {
         private readonly SubscriptionNode _rootNode = new SubscriptionNode(0);
-        private List<Peer> _peersMatchingAllMessages = new List<Peer>();
+        private List<Entry> _peersMatchingAllMessages = new List<Entry>();
 
         public bool IsEmpty
         {
-            get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0; }
+            get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count(x => x.Enabled) == 0; }
         }
 
         public bool Add(Peer peer, Subscription subscription)
@@ -24,9 +24,9 @@ namespace Abc.Zebus.Directory
         public bool Add(Peer peer, Subscription subscription, DateTime timestampUtc)
         {
             if (subscription.IsMatchingAllMessages)
-                return UpdatePeersMatchingAllMessages(peer, true);
+                return UpdatePeersMatchingAllMessages(peer, true, timestampUtc);
 
-            return _rootNode.Update(peer, subscription, true);
+            return _rootNode.Update(peer, subscription, true, timestampUtc);
         }
 
         public IList<Peer> GetPeers(BindingKey routingKey)
@@ -46,37 +46,53 @@ namespace Abc.Zebus.Directory
         public bool Remove(Peer peer, Subscription subscription, DateTime timestampUtc)
         {
             if (subscription.IsMatchingAllMessages)
-                return UpdatePeersMatchingAllMessages(peer, false);
+                return UpdatePeersMatchingAllMessages(peer, false, timestampUtc);
             
-            return _rootNode.Update(peer, subscription, false);
+            return _rootNode.Update(peer, subscription, false, timestampUtc);
         }
 
-        private bool UpdatePeersMatchingAllMessages(Peer peer, bool isAddOrUpdate)
+        private bool UpdatePeersMatchingAllMessages(Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
         {
-            var newPeers = _peersMatchingAllMessages.Where(i => i.Id != peer.Id).ToList();
+            return UpdateList(ref _peersMatchingAllMessages, peer, isAddOrUpdate, timestampUtc);
+        }
 
-            if (isAddOrUpdate)
-                newPeers.Add(peer);
+        private static bool UpdateList(ref List<Entry> peerEntries, Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
+        {
+            var newPeerEntries = new List<Entry>(peerEntries.Capacity);
 
-            _peersMatchingAllMessages = newPeers;
+            foreach (var entry in peerEntries)
+            {
+                if (entry.Value.Id == peer.Id)
+                {
+                    if (entry.TimestampUtc > timestampUtc)
+                        return false;
+                }
+                else
+                {
+                    newPeerEntries.Add(entry);
+                }
+            }
 
-            // TMP ocoanet
+            newPeerEntries.Add(new Entry(peer, timestampUtc, isAddOrUpdate));
+
+            peerEntries = newPeerEntries;
+
             return true;
         }
 
         private class PeerCollector
         {
             private readonly Dictionary<PeerId, Peer> _collectedPeers = new Dictionary<PeerId, Peer>();
-            private readonly List<Peer> _initialPeers;
+            private readonly List<Entry> _initialPeers;
 
-            public PeerCollector(List<Peer> peers)
+            public PeerCollector(List<Entry> peers)
             {
                 _initialPeers = peers;
             }
 
-            public void Offer(List<Peer> peers)
+            public void Offer(IEnumerable<Entry> peerEntries)
             {
-                foreach (var peer in peers)
+                foreach (var peer in peerEntries.Where(x => x.Enabled).Select(x => x.Value))
                 {
                     _collectedPeers[peer.Id] = peer;
                 }
@@ -85,7 +101,7 @@ namespace Abc.Zebus.Directory
             public List<Peer> GetPeers()
             {
                 if (_collectedPeers.Count == 0)
-                    return _initialPeers;
+                    return _initialPeers.Where(x => x.Enabled).Select(x => x.Value).ToList();
 
                 Offer(_initialPeers);
 
@@ -98,7 +114,7 @@ namespace Abc.Zebus.Directory
             private readonly int _nextPartIndex;
             private readonly bool _matchesAll;
             private Dictionary<string, SubscriptionNode> _childrenNodes = new Dictionary<string, SubscriptionNode>();
-            private List<Peer> _peers = new List<Peer>();
+            private List<Entry> _peerEntries = new List<Entry>();
             private SubscriptionNode _sharpNode;
             private SubscriptionNode _starNode;
 
@@ -112,7 +128,7 @@ namespace Abc.Zebus.Directory
             {
                 get
                 {
-                    return _peers.Count == 0 &&
+                    return _peerEntries.Count(x => x.Enabled) == 0 &&
                            (_sharpNode == null || _sharpNode.IsEmpty) &&
                            (_starNode == null || _starNode.IsEmpty) &&
                            _childrenNodes.All(x => x.Value.IsEmpty);
@@ -123,7 +139,7 @@ namespace Abc.Zebus.Directory
             {
                 if (IsLeaf(routingKey) || _matchesAll)
                 {
-                    peerCollector.Offer(_peers);
+                    peerCollector.Offer(_peerEntries);
                     return;
                 }
 
@@ -142,36 +158,27 @@ namespace Abc.Zebus.Directory
                     childNode.Accept(peerCollector, routingKey);
             }
 
-            public bool Update(Peer peer, Subscription subscription, bool isAddOrUpdate)
+            public bool Update(Peer peer, Subscription subscription, bool isAddOrUpdate, DateTime timestampUtc)
             {
                 if (IsLeaf(subscription.BindingKey))
-                {
-                    UpdateList(peer, isAddOrUpdate);
-
-                    // TMP ocoanet
-                    return true;
-                }
+                    return UpdateList(peer, isAddOrUpdate, timestampUtc);
 
                 var nextPart = subscription.BindingKey.GetPart(_nextPartIndex);
 
                 if (nextPart == "#" || nextPart == null)
                 {
                     var sharpNode = GetOrCreateSharpNode();
-                    sharpNode.Update(peer, subscription, isAddOrUpdate);
-                }
-                else if (nextPart == "*")
-                {
-                    var starNode = GetOrCreateStarNode();
-                    starNode.Update(peer, subscription, isAddOrUpdate);
-                }
-                else
-                {
-                    var child = GetOrAddChildNode(nextPart);
-                    child.Update(peer, subscription, isAddOrUpdate);
+                    return sharpNode.Update(peer, subscription, isAddOrUpdate, timestampUtc);
                 }
 
-                // TMP ocoanet
-                return true;
+                if (nextPart == "*")
+                {
+                    var starNode = GetOrCreateStarNode();
+                    return starNode.Update(peer, subscription, isAddOrUpdate, timestampUtc);
+                }
+
+                var childNode = GetOrAddChildNode(nextPart);
+                return childNode.Update(peer, subscription, isAddOrUpdate, timestampUtc);
             }
 
             private bool IsLeaf(BindingKey bindingKey)
@@ -213,22 +220,24 @@ namespace Abc.Zebus.Directory
                 return _starNode ?? (_starNode = CreateChildNode());
             }
 
-            private void UpdateList(Peer peer, bool isAddOrUpdate)
+            private bool UpdateList(Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
             {
-                var newPeers = _peers.Where(i => i.Id != peer.Id).ToList();
-
-                if (isAddOrUpdate)
-                    newPeers.Add(peer);
-
-                _peers = newPeers;
+                return PeerSubscriptionTree.UpdateList(ref _peerEntries, peer, isAddOrUpdate, timestampUtc);
             }
         }
 
-//        private class SubscriptionEntry
-//        {
-//            public readonly Peer Peer;
-//            public readonly DateTime? TimestampUtc;
-//            public readonly bool Enabled;
-//        }
+        private class Entry
+        {
+            public readonly Peer Value;
+            public DateTime? TimestampUtc;
+            public bool Enabled;
+
+            public Entry(Peer value, DateTime? timestampUtc, bool enabled)
+            {
+                Enabled = enabled;
+                Value = value;
+                TimestampUtc = timestampUtc;
+            }
+        }
     }
 }

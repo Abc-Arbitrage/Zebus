@@ -543,16 +543,49 @@ namespace Abc.Zebus.Tests.Directory
             _directory.GetPeersHandlingMessage(new OtherFakeEvent1()).ShouldBeEmpty();
         }
 
-        //[Test]
-        //public void should_ignore_outdated_removed_subscriptions()
-        //{
-        //    _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));;
-        //    _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddMinutes(2)));
-        //    _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddTicks(1)));
+        [Test]
+        public void should_ignore_outdated_removed_subscriptions()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));;
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddMinutes(1)));
+            _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddTicks(1)));
 
-        //    _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
-        //    _directory.GetPeersHandlingMessage(new OtherFakeEvent1()).ShouldNotBeEmpty();
-        //}
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent1()).ShouldNotBeEmpty();
+        }
+
+        [Test]
+        public void should_ignore_outdated_added_subscriptions()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent), typeof(OtherFakeEvent1)))); ;
+            _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddMinutes(1)));
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Any<OtherFakeEvent1>() }, DateTime.UtcNow.AddTicks(1)));
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent1()).ShouldBeEmpty();
+        }
+
+        [Test]
+        public void should_ignore_outdated_removed_subscriptions_with_binding_key()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, new [] { Subscription.Any<FakeEvent>() }))); ;
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddMinutes(1)));
+            _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent3(42)).ShouldNotBeEmpty();
+        }
+
+        [Test]
+        public void should_ignore_outdated_added_subscriptions_with_binding_key()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, new[] { Subscription.Any<FakeEvent>(), Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) })));
+            _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddMinutes(1)));
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent3(42)).ShouldBeEmpty();
+        }
 
         private class OtherFakeEvent1 : IEvent
         {
@@ -560,6 +593,18 @@ namespace Abc.Zebus.Tests.Directory
 
         private class OtherFakeEvent2 : IEvent
         {
+        }
+
+        [Routable]
+        private class OtherFakeEvent3 : IEvent
+        {
+            [RoutingPosition(1)]
+            public readonly int Id;
+
+            public OtherFakeEvent3(int id)
+            {
+                Id = id;
+            }
         }
     }
 }
