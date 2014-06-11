@@ -28,3 +28,4 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 output/**
 
+src/packages/**

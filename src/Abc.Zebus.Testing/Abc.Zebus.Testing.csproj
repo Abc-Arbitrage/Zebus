@@ -74,6 +74,7 @@
     <Compile Include="Dispatch\TestMessageHandlerInvocation.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker`1.cs" />
+    <Compile Include="Extensions\ExtendSystemDateTime.cs" />
     <Compile Include="Extensions\NUnitExtensions.cs" />
     <Compile Include="Integration\IntegrationTestFixture.cs" />
     <Compile Include="Integration\TestService.cs" />

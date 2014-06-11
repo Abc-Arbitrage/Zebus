@@ -60,6 +60,12 @@ namespace Abc.Zebus.Routing
             return index < PartCount ? _parts[index] : null;
         }
 
+        [Pure]
+        public IEnumerable<string> GetParts()
+        {
+            return _parts != null ? _parts.ToList() : Enumerable.Empty<string>();
+        }
+
         public bool Equals(BindingKey other)
         {
             if (Equals(_parts, other._parts))

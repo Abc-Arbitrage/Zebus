@@ -7,6 +7,7 @@ using Abc.Zebus.Persistence;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Directory;
 using Abc.Zebus.Testing.Dispatch;
+using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
@@ -38,7 +39,7 @@ namespace Abc.Zebus.Testing
 
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, IEnumerable<Subscription> subscriptions)
         {
-            return new PeerDescriptor(peer.Id, peer.EndPoint, isPersistent, peer.IsUp, peer.IsResponding, SystemDateTime.UtcNow, subscriptions.ToArray());
+            return new PeerDescriptor(peer.Id, peer.EndPoint, isPersistent, peer.IsUp, peer.IsResponding, SystemDateTime.UtcNow.RoundToMillisecond(), subscriptions.ToArray());
         }
         
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, params MessageTypeId[] messageTypeIds)
