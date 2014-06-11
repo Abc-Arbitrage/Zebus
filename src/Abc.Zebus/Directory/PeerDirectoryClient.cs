@@ -65,7 +65,7 @@ namespace Abc.Zebus.Directory
                 return;
 
             // TODO CAO
-            UpdatePeerSubscriptions(removedPeer.Peer, removedPeer.Subscriptions, null, DateTime.UtcNow);
+            UpdatePeerSubscriptions(removedPeer.Peer, removedPeer.Subscriptions, new Subscription[0], DateTime.UtcNow);
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Decommissioned);
         }
@@ -76,7 +76,7 @@ namespace Abc.Zebus.Directory
             if (peer == null || message.Subscriptions == null)
                 return;
 
-            var peerSubscriptions = peer.Subscriptions.ToHashSet();
+            var peerSubscriptions = peer.Subscriptions.ToList();
 
             foreach (var subscription in message.Subscriptions)
             {
@@ -96,7 +96,7 @@ namespace Abc.Zebus.Directory
             if (peer == null || message.Subscriptions == null)
                 return;
 
-            var peerSubscriptions = peer.Subscriptions.ToHashSet();
+            var peerSubscriptions = peer.Subscriptions.ToList();
 
             foreach (var subscription in message.Subscriptions)
             {
@@ -244,7 +244,7 @@ namespace Abc.Zebus.Directory
 
         private void LoadPeerDescriptor(PeerDescriptor peerDescriptor)
         {
-            IEnumerable<Subscription> previousSubscriptions = null;
+            var previousSubscriptions = ArrayUtil.Empty<Subscription>();
 
             var uniquePeerDescriptorInstance = _peers.AddOrUpdate(peerDescriptor.PeerId, peerDescriptor, (key, currentPeer) =>
             {
@@ -264,14 +264,16 @@ namespace Abc.Zebus.Directory
             UpdatePeerSubscriptions(uniquePeerDescriptorInstance.Peer, previousSubscriptions, peerDescriptor.Subscriptions, uniquePeerDescriptorInstance.TimestampUtc ?? DateTime.UtcNow);
         }
 
-        private void UpdatePeerSubscriptions(Peer peer, IEnumerable<Subscription> oldSubscriptions, IEnumerable<Subscription> newSubscriptions, DateTime timestampUtc)
+        private void UpdatePeerSubscriptions(Peer peer, Subscription[] oldSubscriptions, Subscription[] newSubscriptions, DateTime timestampUtc)
         {
-            var oldSub = (oldSubscriptions ?? Enumerable.Empty<Subscription>()).ToList();
-            var newSub = (newSubscriptions ?? Enumerable.Empty<Subscription>()).ToList();
+            var oldSet = oldSubscriptions.ToHashSet();
+            var newSet = newSubscriptions.ToHashSet();
 
-            var toRemove = oldSub.Except(newSub);
-            foreach (var subscription in toRemove)
+            foreach (var subscription in oldSet)
             {
+                if (newSet.Contains(subscription))
+                    continue;
+
                 var subscriptions = _subscriptionsByMessageType.GetValueOrDefault(subscription.MessageTypeId);
                 if (subscriptions == null)
                     continue;
@@ -282,9 +284,11 @@ namespace Abc.Zebus.Directory
                     _subscriptionsByMessageType.TryRemove(subscription.MessageTypeId, subscriptions);
             }
 
-            var toAdd = newSub.Except(oldSub);
-            foreach (var subscription in toAdd)
+            foreach (var subscription in newSet)
             {
+                if (oldSet.Contains(subscription))
+                    continue;
+
                 var subscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
                 subscriptions.Add(peer, subscription, timestampUtc);
             }

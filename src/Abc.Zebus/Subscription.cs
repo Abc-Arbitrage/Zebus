@@ -16,6 +16,7 @@ namespace Abc.Zebus
     public class Subscription : IEquatable<Subscription>
     {
         private static readonly MethodInfo _wildCardTokenMethod = typeof(Builder).GetMethod("Any");
+        private int _computedHashCode;
 
         [ProtoMember(1, IsRequired = true)]
         public readonly MessageTypeId MessageTypeId;
@@ -101,7 +102,10 @@ namespace Abc.Zebus
         {
             unchecked
             {
-                return ((MessageTypeId != null ? MessageTypeId.GetHashCode() : 0) * 397) ^ BindingKey.GetHashCode();
+                if (_computedHashCode == 0)
+                    _computedHashCode = ((MessageTypeId != null ? MessageTypeId.GetHashCode() : 0) * 397) ^ BindingKey.GetHashCode();
+
+                return _computedHashCode;
             }
         }
 
