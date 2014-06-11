@@ -9,11 +9,12 @@ namespace Abc.Zebus.Directory
     public class PeerSubscriptionTree
     {
         private readonly SubscriptionNode _rootNode = new SubscriptionNode(0);
-        private List<Entry> _peersMatchingAllMessages = new List<Entry>();
+        private List<Peer> _enabledPeersMatchingAllMessages = new List<Peer>();
+        private List<Entry> _entriesMatchingAllMessages = new List<Entry>();
 
         public bool IsEmpty
         {
-            get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count(x => x.Enabled) == 0; }
+            get { return _rootNode.IsEmpty && _enabledPeersMatchingAllMessages.Count == 0; }
         }
 
         public bool Add(Peer peer, Subscription subscription)
@@ -31,7 +32,7 @@ namespace Abc.Zebus.Directory
 
         public IList<Peer> GetPeers(BindingKey routingKey)
         {
-            var peerCollector = new PeerCollector(_peersMatchingAllMessages);
+            var peerCollector = new PeerCollector(_enabledPeersMatchingAllMessages);
 
             _rootNode.Accept(peerCollector, routingKey);
 
@@ -53,7 +54,11 @@ namespace Abc.Zebus.Directory
 
         private bool UpdatePeersMatchingAllMessages(Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
         {
-            return UpdateList(ref _peersMatchingAllMessages, peer, isAddOrUpdate, timestampUtc);
+            var updated = UpdateList(ref _entriesMatchingAllMessages, peer, isAddOrUpdate, timestampUtc);
+            if (updated)
+                _enabledPeersMatchingAllMessages = _entriesMatchingAllMessages.Where(x => x.Enabled).Select(x => x.Value).ToList();
+
+            return updated;
         }
 
         private static bool UpdateList(ref List<Entry> peerEntries, Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
@@ -83,16 +88,21 @@ namespace Abc.Zebus.Directory
         private class PeerCollector
         {
             private readonly Dictionary<PeerId, Peer> _collectedPeers = new Dictionary<PeerId, Peer>();
-            private readonly List<Entry> _initialPeers;
+            private readonly List<Peer> _initialPeers;
 
-            public PeerCollector(List<Entry> peers)
+            public PeerCollector(List<Peer> initialPeers)
             {
-                _initialPeers = peers;
+                _initialPeers = initialPeers;
             }
 
             public void Offer(IEnumerable<Entry> peerEntries)
             {
-                foreach (var peer in peerEntries.Where(x => x.Enabled).Select(x => x.Value))
+                Offer(peerEntries.Where(x => x.Enabled).Select(x => x.Value));
+            }
+
+            private void Offer(IEnumerable<Peer> peers)
+            {
+                foreach (var peer in peers)
                 {
                     _collectedPeers[peer.Id] = peer;
                 }
@@ -101,7 +111,7 @@ namespace Abc.Zebus.Directory
             public List<Peer> GetPeers()
             {
                 if (_collectedPeers.Count == 0)
-                    return _initialPeers.Where(x => x.Enabled).Select(x => x.Value).ToList();
+                    return _initialPeers;
 
                 Offer(_initialPeers);
 
