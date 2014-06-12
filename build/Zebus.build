@@ -15,10 +15,11 @@
 	<property name="msbuild.exe" value="C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"/>
 	<property name="nunit.dir" value='tools\nunit' />
 	<property name="nunit.exe" value='${nunit.dir}\nunit-console.exe' />
+	<property name="nuget.exe" value='tools\nuget\NuGet.exe' /> 
 	
 	
-	<target name="build-tc" depends="init init-project compile-tests compile"/>
-	<target name="build-local" depends="init init-project compile compile-tests test localonly-test"/>
+	<target name="build-tc" depends="init init-project nuget-restore compile-tests compile"/>
+	<target name="build-local" depends="init init-project nuget-restore compile compile-tests test localonly-test"/>
 
 	
 	<target name="clean" description="Remove all build products">
@@ -37,6 +38,23 @@
 		<fileset id="projectsToBuild" basedir="${src.dir}">
 			<include name="Abc.Zebus\Abc.Zebus.csproj" />
 		</fileset>
+	</target>
+	
+	<target name="nuget-restore">	
+		<foreach item="File" property="sln.file">
+		  <in>
+			<items basedir="${src.dir}">
+			  <include name="*.sln" />
+			</items>
+		  </in>
+		  <do>
+			<exec program="${nuget.exe}">
+			  <arg value="restore" />
+			  <arg path="${sln.file}" />
+			  <arg value="-NonInteractive" />
+			</exec>
+		  </do>
+		</foreach>
 	</target>
 	
 	<target name="init-tests">
