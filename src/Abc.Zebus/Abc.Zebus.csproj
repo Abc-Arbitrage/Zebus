@@ -41,6 +41,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\log4net\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\json.net\Newtonsoft.Json.dll</HintPath>
@@ -79,6 +80,7 @@
     <Compile Include="Directory\IPeerDirectory.cs" />
     <Compile Include="Directory\MessageBinding.cs" />
     <Compile Include="Directory\PeerDecommissioned.cs" />
+    <Compile Include="Directory\PeerDirectoryClient.PeerEntry.cs" />
     <Compile Include="Directory\PeerNotResponding.cs" />
     <Compile Include="Directory\PeerResponding.cs" />
     <Compile Include="Directory\PeerSubscriptionsAdded.cs" />

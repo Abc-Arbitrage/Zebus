@@ -599,6 +599,7 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent3(42)).ShouldNotBeEmpty();
         }
 
         [Test]
@@ -613,6 +614,23 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+            _directory.GetPeersHandlingMessage(new OtherFakeEvent3(42)).ShouldNotBeEmpty();
+        }
+
+        [Test]
+        public void should_not_ignore_subscriptions_received_while_registering()
+        {
+            _bus.AddHandler<RegisterPeerCommand>(x =>
+            {
+                var peerDescriptor = _otherPeer.ToPeerDescriptor(true);
+                _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Any<FakeEvent>() }, DateTime.UtcNow.AddTicks(1)));
+                return new RegisterPeerResponse(new[] { peerDescriptor });
+            });
+
+            _directory.Register(_bus, _self, Enumerable.Empty<Subscription>());
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+            _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
         }
 
         private class OtherFakeEvent1 : IEvent
