@@ -35,7 +35,7 @@ namespace Abc.Zebus.Directory
             TimestampUtc = timestampUtc;
         }
 
-        public PeerDescriptor(PeerDescriptor other)
+        internal PeerDescriptor(PeerDescriptor other)
         {
             Peer = new Peer(other.Peer.Id, other.Peer.EndPoint, other.Peer.IsUp)
             {

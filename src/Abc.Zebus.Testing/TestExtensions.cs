@@ -39,7 +39,7 @@ namespace Abc.Zebus.Testing
 
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, IEnumerable<Subscription> subscriptions)
         {
-            return new PeerDescriptor(peer.Id, peer.EndPoint, isPersistent, peer.IsUp, peer.IsResponding, SystemDateTime.UtcNow.RoundToMillisecond(), subscriptions.ToArray());
+            return new PeerDescriptor(peer.Id, peer.EndPoint, isPersistent, peer.IsUp, peer.IsResponding, SystemDateTime.UtcNow, subscriptions.ToArray());
         }
         
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, params MessageTypeId[] messageTypeIds)
@@ -50,6 +50,13 @@ namespace Abc.Zebus.Testing
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, params Type[] messageTypes)
         {
             return peer.ToPeerDescriptor(isPersistent, messageTypes.Select(x => new Subscription(MessageUtil.GetTypeId(x))));
+        }
+
+        public static PeerDescriptor ToPeerDescriptorWithRoundedTime(this Peer peer, bool isPersistent, params Type[] messageTypes)
+        {
+            var descriptor = peer.ToPeerDescriptor(isPersistent, messageTypes.Select(x => new Subscription(MessageUtil.GetTypeId(x))));
+            descriptor.TimestampUtc = SystemDateTime.UtcNow.RoundToMillisecond();
+            return descriptor;
         }
 
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, params string[] messageTypes)

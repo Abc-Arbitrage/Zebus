@@ -120,7 +120,7 @@ namespace Abc.Zebus.Directory.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
             
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptions(peerDescriptor, new[] { CreateSubscriptionFor<int>() });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[]
@@ -137,7 +137,7 @@ namespace Abc.Zebus.Directory.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptions(peerDescriptor, new[] { CreateSubscriptionFor<int>() });
 
             var fetched = _repository.GetPeers().ExpectedSingle();
             fetched.Subscriptions.ShouldEqual(new[]
@@ -146,7 +146,6 @@ namespace Abc.Zebus.Directory.Tests.Storage
                 CreateSubscriptionFor<int>()
             });
         }
-
 
         private Subscription CreateSubscriptionFor<TMessage>(params string[] bindingKeyParts)
         {
@@ -158,9 +157,9 @@ namespace Abc.Zebus.Directory.Tests.Storage
         {
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptions(peerDescriptor, new[] { CreateSubscriptionFor<int>() });
 
-            _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+            _repository.RemoveDynamicSubscriptions(peerDescriptor, new[] { CreateSubscriptionFor<int>() });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.ShouldHaveSamePropertiesAs(peerDescriptor);
@@ -172,7 +171,7 @@ namespace Abc.Zebus.Directory.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<FakeCommand>() });
+            _repository.RemoveDynamicSubscriptions(peerDescriptor, new[] { CreateSubscriptionFor<FakeCommand>() });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.ShouldHaveSamePropertiesAs(peerDescriptor);
@@ -184,7 +183,7 @@ namespace Abc.Zebus.Directory.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<FakeCommand>(), CreateSubscriptionFor<FakeCommand>() });
+            _repository.AddDynamicSubscriptions(peerDescriptor, new[] { CreateSubscriptionFor<FakeCommand>(), CreateSubscriptionFor<FakeCommand>() });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[] { CreateSubscriptionFor<FakeCommand>() });
@@ -196,7 +195,7 @@ namespace Abc.Zebus.Directory.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<FakeCommand>("bli"), CreateSubscriptionFor<FakeCommand>("bla") });
+            _repository.AddDynamicSubscriptions(peerDescriptor, new[] { CreateSubscriptionFor<FakeCommand>("bli"), CreateSubscriptionFor<FakeCommand>("bla") });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[]
@@ -204,6 +203,42 @@ namespace Abc.Zebus.Directory.Tests.Storage
                 CreateSubscriptionFor<FakeCommand>(),
                 CreateSubscriptionFor<FakeCommand>("bli"),
                 CreateSubscriptionFor<FakeCommand>("bla")
+            });
+        }
+
+        [Test]
+        public void should_not_add_dynamic_subscriptions_using_outdated_add_command()
+        {
+            var pastPeerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            pastPeerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddMinutes(-1).RoundToMillisecond();
+            var presentPeerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(presentPeerDescriptor);
+
+            _repository.RemoveDynamicSubscriptions(presentPeerDescriptor, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptions(pastPeerDescriptor, new[] { CreateSubscriptionFor<int>() });
+
+            var fetched = _repository.Get(presentPeerDescriptor.Peer.Id);
+            fetched.Subscriptions.ShouldEqual(new[] { CreateSubscriptionFor<FakeCommand>() });
+        }
+
+        [Test]
+        public void should_not_remove_dynamic_subscriptions_using_outdated_delete_command()
+        {
+            var pastPeerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            pastPeerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddMinutes(-1).RoundToMillisecond();
+            var presentPeerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(presentPeerDescriptor);
+            _repository.AddDynamicSubscriptions(presentPeerDescriptor, new[] { CreateSubscriptionFor<int>() });
+
+            _repository.AddDynamicSubscriptions(presentPeerDescriptor, new[] { CreateSubscriptionFor<int>() });
+            _repository.RemoveDynamicSubscriptions(pastPeerDescriptor, new[] { CreateSubscriptionFor<int>() });
+
+
+            var fetched = _repository.Get(presentPeerDescriptor.Peer.Id);
+            fetched.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<int>()
             });
         }
     }

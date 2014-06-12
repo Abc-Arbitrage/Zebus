@@ -14,7 +14,7 @@ create table IF NOT EXISTS "Peers" (
 create table IF NOT EXISTS "DynamicSubscriptions" (
 	"PeerId" text,
 	"SubscriptionIdentifier" uuid,
-	"MessageTypeFullName" text,
+	"MessageTypeId" text,
 	"BindingKeyParts" map<int, text>,
 	PRIMARY KEY("PeerId", "SubscriptionIdentifier")
 );

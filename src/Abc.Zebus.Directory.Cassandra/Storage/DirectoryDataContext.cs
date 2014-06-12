@@ -9,8 +9,13 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             : base(sessionManager, cassandraConfiguration)
         {
             StoragePeers = AddTable<StoragePeer>();
+            DynamicSubscriptions = AddTable<StorageSubscription>();
         }
 
+        public ContextTable<StorageSubscription> DynamicSubscriptions { get; set; }
+
         public ContextTable<StoragePeer> StoragePeers { get; set; }
+        
+        
     }
 }

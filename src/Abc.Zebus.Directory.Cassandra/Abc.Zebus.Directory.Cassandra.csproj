@@ -79,7 +79,7 @@
     <Compile Include="Storage\DirectoryDataContext.cs" />
     <Compile Include="Storage\StorageConvertionExtensions.cs" />
     <Compile Include="Storage\StoragePeer.cs" />
-    <Compile Include="Storage\DynamicSubscription.cs" />
+    <Compile Include="Storage\StorageSubscription.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj">

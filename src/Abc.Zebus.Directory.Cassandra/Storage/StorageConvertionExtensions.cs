@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Abc.Zebus.Routing;
@@ -30,31 +31,33 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             return stream.ToArray();
         }
 
-        public static DynamicSubscription ToStorageSubscription(this Subscription subscription, PeerId peerId)
+        public static StorageSubscription ToStorageSubscription(this Subscription subscription, PeerId peerId)
         {
-            return new DynamicSubscription
+            return new StorageSubscription
             {
                 PeerId = peerId.ToString(),
                 BindingKeyParts = subscription.BindingKey.GetParts().Select((part, i) => new { Index = i, Part = part }).ToDictionary(x => x.Index, x => x.Part),
-                MessageTypeFullName = subscription.MessageTypeId.FullName
+                MessageTypeId = subscription.MessageTypeId.FullName
             };
         }
 
-        public static Subscription ToSubscription(this DynamicSubscription dynamicSubscription)
+        public static Subscription ToSubscription(this StorageSubscription storageSubscription)
         {
             var bindingKeyParts = new string[0];
-            if (dynamicSubscription.BindingKeyParts != null)
-                bindingKeyParts = dynamicSubscription.BindingKeyParts.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToArray();
+            if (storageSubscription.BindingKeyParts != null)
+                bindingKeyParts = storageSubscription.BindingKeyParts.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToArray();
             
-            return new Subscription(new MessageTypeId(dynamicSubscription.MessageTypeFullName), new BindingKey(bindingKeyParts));
+            return new Subscription(new MessageTypeId(storageSubscription.MessageTypeId), new BindingKey(bindingKeyParts));
         }
 
-        public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer)
+        public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
         {
             if (storagePeer == null)
                 return null;
+            var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
+            var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
             return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
-                                      storagePeer.IsResponding, storagePeer.TimestampUtc, DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes)) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+                                      storagePeer.IsResponding, storagePeer.TimestampUtc, allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
         private static Subscription[] DeserializeSubscriptions(byte[] staticSubscriptionsBytes)

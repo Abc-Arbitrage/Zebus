@@ -13,7 +13,7 @@ using System.Threading;
 namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 {
     [TestFixture]
-    public class CqlPeerRepositoryTests : CqlTestFixture<DirectoryDataContext, ICassandraConfiguration>
+    public partial class CqlPeerRepositoryTests : CqlTestFixture<DirectoryDataContext, ICassandraConfiguration>
     {
         private CqlPeerRepository _repository;
         private Peer _peer1;
@@ -34,9 +34,9 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void should_insert_and_get_peer()
         {
-            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             peerDescriptor.HasDebuggerAttached = true;
-            var otherDescriptor = _peer2.ToPeerDescriptor(false, typeof(FakeCommand), typeof(FakeRoutableCommand));
+            var otherDescriptor = _peer2.ToPeerDescriptorWithRoundedTime(false, typeof(FakeCommand), typeof(FakeRoutableCommand));
 
             _repository.AddOrUpdatePeer(peerDescriptor);
             _repository.AddOrUpdatePeer(otherDescriptor);
@@ -58,11 +58,11 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void should_get_all_peers()
         {
-            var peerDescriptor1 = _peer1.ToPeerDescriptor(true, typeof(string));
+            var peerDescriptor1 = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(string));
             peerDescriptor1.HasDebuggerAttached = true;
             _repository.AddOrUpdatePeer(peerDescriptor1);
 
-            var peerDescriptor2 = _peer2.ToPeerDescriptor(true, typeof(int));
+            var peerDescriptor2 = _peer2.ToPeerDescriptorWithRoundedTime(true, typeof(int));
             _repository.AddOrUpdatePeer(peerDescriptor2);
 
             var fetchedPeers = _repository.GetPeers().ToList();
@@ -76,10 +76,10 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void should_update_peer()
         {
-            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(string));
+            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(string));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            var updatedPeer = _peer1.ToPeerDescriptor(false, typeof(int));
+            var updatedPeer = _peer1.ToPeerDescriptorWithRoundedTime(false, typeof(int));
             _repository.AddOrUpdatePeer(updatedPeer);
 
             var fetchedPeers = _repository.GetPeers();
@@ -90,11 +90,11 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void should_not_override_peer_with_old_version()
         {
-            var descriptor1 = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            var descriptor1 = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             descriptor1.TimestampUtc = SystemDateTime.UtcNow.AddMinutes(1).RoundToMillisecond();
             _repository.AddOrUpdatePeer(descriptor1);
 
-            var descriptor2 = _peer1.ToPeerDescriptor(true);
+            var descriptor2 = _peer1.ToPeerDescriptorWithRoundedTime(true);
             _repository.AddOrUpdatePeer(descriptor2);
 
             var fetched = _repository.Get(_peer1.Id);
@@ -105,7 +105,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void should_remove_peer()
         {
-            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(string));
+            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(string));
 
             _repository.AddOrUpdatePeer(peerDescriptor);
             _repository.RemovePeer(peerDescriptor.Peer.Id);
@@ -115,77 +115,16 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
-        public void should_add_dynamic_subscriptions()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void should_remove_dynamic_subscriptions()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test, Ignore("Will be implemented for incremental subscriptions")]
-        public void should_remove_the_dynamic_subscriptions_of_a_peer_when_removing_it()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test, Ignore("Will be implemented for incremental subscriptions")]
-        public void should_not_override_subscriptions_with_old_version()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test, Ignore("Will be implemented for incremental subscriptions")]
-        public void should_get_a_peer_with_no_subscriptions_using_getAll()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test, Ignore("Will be implemented for incremental subscriptions")]
-        public void parts_should_stay_in_order()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void removing_a_dynamic_subscription_doesnt_remove_static_subscription()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void should_deduplicate_dynamic_subscriptions()
-        {
-            throw new NotImplementedException();
-        }
-        
-        [Test]
-        public void should_not_mixup_subscriptions_to_same_type_with_different_tokens()
-        {
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void should_not_erase_subscriptions_of_a_peer_on_register()
-        {
-            // Allow reregister
-            throw new NotImplementedException();
-        }
-
-        [Test]
         public void should_insert_a_peer_with_no_timestamp_that_was_previously_deleted()
         {
-            var descriptor = _peer1.ToPeerDescriptor(true);
+            var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
             descriptor.TimestampUtc = DateTime.UtcNow;
             _repository.AddOrUpdatePeer(descriptor);
             _repository.RemovePeer(descriptor.PeerId);
 
             Thread.Sleep(1);
 
-            descriptor = _peer1.ToPeerDescriptor(true);
+            descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
             descriptor.TimestampUtc = null;
 
             _repository.AddOrUpdatePeer(descriptor);
@@ -197,7 +136,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void should_mark_peer_as_responding()
         {
-            var descriptor = _peer1.ToPeerDescriptor(true);
+            var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
             descriptor.TimestampUtc = DateTime.UtcNow;
             _repository.AddOrUpdatePeer(descriptor);
 

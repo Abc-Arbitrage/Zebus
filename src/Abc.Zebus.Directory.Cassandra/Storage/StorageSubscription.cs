@@ -8,7 +8,7 @@ using Cassandra.Data.Linq;
 namespace Abc.Zebus.Directory.Cassandra.Storage
 {
     [Table("DynamicSubscriptions")]
-    public class DynamicSubscription
+    public class StorageSubscription
     {
         [PartitionKey]
         public string PeerId { get; set; }
@@ -17,12 +17,12 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         [Column("SubscriptionIdentifier")]
         public Guid SubscriptionIdentifier
         {
-            get { return HashToGuid((BindingKeyParts ?? new Dictionary<int, string>()).OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).Concat(new[] { MessageTypeFullName })); }
+            get { return HashToGuid((BindingKeyParts ?? new Dictionary<int, string>()).OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).Concat(new[] { MessageTypeId })); }
             set { }
         }
 
-        [Column("MessageTypeFullName")]
-        public string MessageTypeFullName { get; set; }
+        [Column("MessageTypeId")]
+        public string MessageTypeId { get; set; }
 
         // Favoring a map<int, text> over list<text> allows use to limit tombstone generation if a peer always recreates massively the same subscriptions
         [Column("BindingKeyParts")]
