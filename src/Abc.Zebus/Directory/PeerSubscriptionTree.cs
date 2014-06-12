@@ -9,80 +9,54 @@ namespace Abc.Zebus.Directory
     public class PeerSubscriptionTree
     {
         private readonly SubscriptionNode _rootNode = new SubscriptionNode(0);
-        private List<Peer> _enabledPeersMatchingAllMessages = new List<Peer>();
-        private List<Entry> _entriesMatchingAllMessages = new List<Entry>();
+        private List<Peer> _peersMatchingAllMessages = new List<Peer>();
 
         public bool IsEmpty
         {
-            get { return _rootNode.IsEmpty && _enabledPeersMatchingAllMessages.Count == 0; }
+            get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0; }
         }
 
-        public bool Add(Peer peer, Subscription subscription)
+        public void Add(Peer peer, Subscription subscription)
         {
-            return Add(peer, subscription, SystemDateTime.UtcNow);
+            UpdatePeerSubscription(peer, subscription, UpdateAction.Add);
         }
 
-        public bool Add(Peer peer, Subscription subscription, DateTime timestampUtc)
+        public void Remove(Peer peer, Subscription subscription)
         {
-            if (subscription.IsMatchingAllMessages)
-                return UpdatePeersMatchingAllMessages(peer, true, timestampUtc);
-
-            return _rootNode.Update(peer, subscription, true, timestampUtc);
+            UpdatePeerSubscription(peer, subscription, UpdateAction.Remove);
         }
 
         public IList<Peer> GetPeers(BindingKey routingKey)
         {
-            var peerCollector = new PeerCollector(_enabledPeersMatchingAllMessages);
+            var peerCollector = new PeerCollector(_peersMatchingAllMessages);
 
             _rootNode.Accept(peerCollector, routingKey);
 
             return peerCollector.GetPeers();
         }
 
-        public bool Remove(Peer peer, Subscription subscription)
-        {
-            return Remove(peer, subscription, SystemDateTime.UtcNow);
-        }
-
-        public bool Remove(Peer peer, Subscription subscription, DateTime timestampUtc)
+        private void UpdatePeerSubscription(Peer peer, Subscription subscription, UpdateAction action)
         {
             if (subscription.IsMatchingAllMessages)
-                return UpdatePeersMatchingAllMessages(peer, false, timestampUtc);
-            
-            return _rootNode.Update(peer, subscription, false, timestampUtc);
+                UpdatePeersMatchingAllMessages(peer, action);
+            else
+                _rootNode.Update(peer, subscription, action);
         }
 
-        private bool UpdatePeersMatchingAllMessages(Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
+        private void UpdatePeersMatchingAllMessages(Peer peer, UpdateAction action)
         {
-            var updated = UpdateList(ref _entriesMatchingAllMessages, peer, isAddOrUpdate, timestampUtc);
-            if (updated)
-                _enabledPeersMatchingAllMessages = _entriesMatchingAllMessages.Where(x => x.Enabled).Select(x => x.Value).ToList();
-
-            return updated;
+            UpdateList(ref _peersMatchingAllMessages, peer, action);
         }
 
-        private static bool UpdateList(ref List<Entry> peerEntries, Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
+        private static void UpdateList(ref List<Peer> peers, Peer peer, UpdateAction action)
         {
-            var newPeerEntries = new List<Entry>(peerEntries.Capacity);
+            var newPeers = new List<Peer>(peers.Capacity);
+            newPeers.AddRange(peers.Where(x => x.Id != peer.Id));
 
-            foreach (var entry in peerEntries)
-            {
-                if (entry.Value.Id == peer.Id)
-                {
-                    if (entry.TimestampUtc > timestampUtc)
-                        return false;
-                }
-                else
-                {
-                    newPeerEntries.Add(entry);
-                }
-            }
+            if (action == UpdateAction.Add)
+                newPeers.Add(peer);
 
-            newPeerEntries.Add(new Entry(peer, timestampUtc, isAddOrUpdate));
-
-            peerEntries = newPeerEntries;
-
-            return true;
+            peers = newPeers;
         }
 
         private class PeerCollector
@@ -95,12 +69,7 @@ namespace Abc.Zebus.Directory
                 _initialPeers = initialPeers;
             }
 
-            public void Offer(IEnumerable<Entry> peerEntries)
-            {
-                Offer(peerEntries.Where(x => x.Enabled).Select(x => x.Value));
-            }
-
-            private void Offer(IEnumerable<Peer> peers)
+            public void Offer(IEnumerable<Peer> peers)
             {
                 foreach (var peer in peers)
                 {
@@ -124,7 +93,7 @@ namespace Abc.Zebus.Directory
             private readonly int _nextPartIndex;
             private readonly bool _matchesAll;
             private Dictionary<string, SubscriptionNode> _childrenNodes = new Dictionary<string, SubscriptionNode>();
-            private List<Entry> _peerEntries = new List<Entry>();
+            private List<Peer> _peers = new List<Peer>();
             private SubscriptionNode _sharpNode;
             private SubscriptionNode _starNode;
 
@@ -136,20 +105,14 @@ namespace Abc.Zebus.Directory
 
             public bool IsEmpty
             {
-                get
-                {
-                    return _peerEntries.Count(x => x.Enabled) == 0 &&
-                           (_sharpNode == null || _sharpNode.IsEmpty) &&
-                           (_starNode == null || _starNode.IsEmpty) &&
-                           _childrenNodes.All(x => x.Value.IsEmpty);
-                }
+                get { return _peers.Count == 0 && (_sharpNode == null || _sharpNode.IsEmpty) && (_starNode == null || _starNode.IsEmpty) && _childrenNodes.All(x => x.Value.IsEmpty); }
             }
 
             public void Accept(PeerCollector peerCollector, BindingKey routingKey)
             {
                 if (IsLeaf(routingKey) || _matchesAll)
                 {
-                    peerCollector.Offer(_peerEntries);
+                    peerCollector.Offer(_peers);
                     return;
                 }
 
@@ -168,27 +131,32 @@ namespace Abc.Zebus.Directory
                     childNode.Accept(peerCollector, routingKey);
             }
 
-            public bool Update(Peer peer, Subscription subscription, bool isAddOrUpdate, DateTime timestampUtc)
+            public void Update(Peer peer, Subscription subscription, UpdateAction action)
             {
                 if (IsLeaf(subscription.BindingKey))
-                    return UpdateList(peer, isAddOrUpdate, timestampUtc);
+                {
+                    UpdateList(peer, action);
+                    return;
+                }
 
                 var nextPart = subscription.BindingKey.GetPart(_nextPartIndex);
 
                 if (nextPart == "#" || nextPart == null)
                 {
                     var sharpNode = GetOrCreateSharpNode();
-                    return sharpNode.Update(peer, subscription, isAddOrUpdate, timestampUtc);
+                    sharpNode.Update(peer, subscription, action);
+                    return;
                 }
 
                 if (nextPart == "*")
                 {
                     var starNode = GetOrCreateStarNode();
-                    return starNode.Update(peer, subscription, isAddOrUpdate, timestampUtc);
+                    starNode.Update(peer, subscription, action);
+                    return;
                 }
 
                 var childNode = GetOrAddChildNode(nextPart);
-                return childNode.Update(peer, subscription, isAddOrUpdate, timestampUtc);
+                childNode.Update(peer, subscription, action);
             }
 
             private bool IsLeaf(BindingKey bindingKey)
@@ -230,24 +198,16 @@ namespace Abc.Zebus.Directory
                 return _starNode ?? (_starNode = CreateChildNode());
             }
 
-            private bool UpdateList(Peer peer, bool isAddOrUpdate, DateTime timestampUtc)
+            private void UpdateList(Peer peer, UpdateAction action)
             {
-                return PeerSubscriptionTree.UpdateList(ref _peerEntries, peer, isAddOrUpdate, timestampUtc);
+                PeerSubscriptionTree.UpdateList(ref _peers, peer, action);
             }
         }
 
-        private class Entry
+        private enum UpdateAction
         {
-            public readonly Peer Value;
-            public DateTime? TimestampUtc;
-            public bool Enabled;
-
-            public Entry(Peer value, DateTime? timestampUtc, bool enabled)
-            {
-                Enabled = enabled;
-                Value = value;
-                TimestampUtc = timestampUtc;
-            }
+            Add,
+            Remove,
         }
     }
 }

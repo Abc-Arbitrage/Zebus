@@ -21,7 +21,7 @@ namespace Abc.Zebus.Directory
         IMessageHandler<PeerResponding>
     {
         private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
-        private readonly ConcurrentDictionary<PeerId, PeerDescriptor> _peers = new ConcurrentDictionary<PeerId, PeerDescriptor>();
+        private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider();
         private readonly IBusConfiguration _configuration;
@@ -37,7 +37,7 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerStarted message)
         {
-            LoadPeerDescriptor(message.PeerDescriptor);
+            AddOrUpdatePeerEntry(message.PeerDescriptor);
             PeerUpdated(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
         }
 
@@ -51,21 +51,30 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.Peer.IsUp = false;
-            peer.Peer.IsResponding = false;
-            peer.TimestampUtc = message.TimestampUtc;
+            peer.Descriptor.Peer.IsUp = false;
+            peer.Descriptor.Peer.IsResponding = false;
+            peer.Descriptor.TimestampUtc = message.TimestampUtc;
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Stopped);
         }
 
         public void Handle(PeerDecommissioned message)
         {
-            PeerDescriptor removedPeer;
+            PeerEntry removedPeer;
             if (!_peers.TryRemove(message.PeerId, out removedPeer))
                 return;
 
-            // TODO CAO
-            UpdatePeerSubscriptions(removedPeer.Peer, removedPeer.Subscriptions, new Subscription[0], DateTime.UtcNow);
+            foreach (var subscription in removedPeer.SubscriptionStatuses.Where(x => x.Value.Enabled).Select(x => x.Key))
+            {
+                var messageSubscriptions = _subscriptionsByMessageType.GetValueOrDefault(subscription.MessageTypeId);
+                if (messageSubscriptions == null)
+                    continue;
+
+                messageSubscriptions.Remove(removedPeer.Descriptor.Peer, subscription);
+
+                if (messageSubscriptions.IsEmpty)
+                    _subscriptionsByMessageType.Remove(subscription.MessageTypeId);
+            }
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Decommissioned);
         }
@@ -76,16 +85,20 @@ namespace Abc.Zebus.Directory
             if (peer == null || message.Subscriptions == null)
                 return;
 
-            var peerSubscriptions = peer.Subscriptions.ToList();
+            var peerSubscriptions = peer.Descriptor.Subscriptions.ToList();
 
             foreach (var subscription in message.Subscriptions)
             {
+                if (!peer.EnableSubscription(subscription, true, message.TimestampUtc))
+                    continue;
+
+                peerSubscriptions.Add(subscription);
+
                 var messageSubscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
-                if (messageSubscriptions.Add(peer.Peer, subscription, message.TimestampUtc))
-                    peerSubscriptions.Add(subscription);
+                messageSubscriptions.Add(peer.Descriptor.Peer, subscription);
             }
 
-            peer.Subscriptions = peerSubscriptions.ToArray();
+            peer.Descriptor.Subscriptions = peerSubscriptions.ToArray();
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
         }
@@ -96,16 +109,25 @@ namespace Abc.Zebus.Directory
             if (peer == null || message.Subscriptions == null)
                 return;
 
-            var peerSubscriptions = peer.Subscriptions.ToList();
+            var peerSubscriptions = peer.Descriptor.Subscriptions.ToList();
 
             foreach (var subscription in message.Subscriptions)
             {
-                var messageSubscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
-                if (messageSubscriptions.Remove(peer.Peer, subscription, message.TimestampUtc))
-                    peerSubscriptions.Remove(subscription);
+                if (!peer.EnableSubscription(subscription, false, message.TimestampUtc))
+                    continue;
+
+                peerSubscriptions.Remove(subscription);
+
+                var messageSubscriptions = _subscriptionsByMessageType.GetValueOrDefault(subscription.MessageTypeId);
+                if (messageSubscriptions == null)
+                    continue;
+
+                messageSubscriptions.Remove(peer.Descriptor.Peer, subscription);
+                if (messageSubscriptions.IsEmpty)
+                    _subscriptionsByMessageType.Remove(subscription.MessageTypeId);
             }
 
-            peer.Subscriptions = peerSubscriptions.ToArray();
+            peer.Descriptor.Subscriptions = peerSubscriptions.ToArray();
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
         }
@@ -116,12 +138,10 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            var oldSubscriptions = peer.Subscriptions;
+            peer.Descriptor.Subscriptions = message.PeerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
+            peer.Descriptor.TimestampUtc = message.PeerDescriptor.TimestampUtc;
 
-            peer.Subscriptions = message.PeerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
-            peer.TimestampUtc = message.PeerDescriptor.TimestampUtc;
-
-            UpdatePeerSubscriptions(peer.Peer, oldSubscriptions, peer.Subscriptions, peer.TimestampUtc ?? DateTime.UtcNow);
+            ReplaceSubscriptions(peer, peer.Descriptor.Subscriptions);
 
             PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
         }
@@ -142,7 +162,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.Peer.IsResponding = isResponding;
+            peer.Descriptor.Peer.IsResponding = isResponding;
 
             PeerUpdated(peerId, PeerUpdateAction.Updated);
         }
@@ -159,7 +179,7 @@ namespace Abc.Zebus.Directory
                 HasDebuggerAttached = Debugger.IsAttached
             };
 
-            LoadPeerDescriptor(selfDescriptor);
+            AddOrUpdatePeerEntry(selfDescriptor);
 
             var directoryPeers = GetDirectoryPeers().ToList();
             if (!directoryPeers.Any(peer => TryRegister(bus, selfDescriptor, peer)))
@@ -183,7 +203,7 @@ namespace Abc.Zebus.Directory
             }
 
             if (response.PeerDescriptors != null)
-                response.PeerDescriptors.ForEach(LoadPeerDescriptor);
+                response.PeerDescriptors.ForEach(AddOrUpdatePeerEntry);
 
             return true;
         }
@@ -220,12 +240,13 @@ namespace Abc.Zebus.Directory
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
         {
-            return _peers.GetValueOrDefault(peerId);
+            var entry = _peers.GetValueOrDefault(peerId);
+            return entry != null ? entry.Descriptor : null;
         }
 
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()
         {
-            return _peers.Values;
+            return _peers.Values.Select(x => x.Descriptor).ToList();
         }
 
         // Only internal for testing purposes
@@ -242,71 +263,121 @@ namespace Abc.Zebus.Directory
             return new Peer(peerId, endPoint);
         }
 
-        private void LoadPeerDescriptor(PeerDescriptor peerDescriptor)
+        private void AddOrUpdatePeerEntry(PeerDescriptor peerDescriptor)
         {
-            var previousSubscriptions = ArrayUtil.Empty<Subscription>();
+            var subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
 
-            var uniquePeerDescriptorInstance = _peers.AddOrUpdate(peerDescriptor.PeerId, peerDescriptor, (key, currentPeer) =>
+            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, (key) => new PeerEntry(peerDescriptor), (key, entry) =>
             {
-                previousSubscriptions = currentPeer.Subscriptions;
+                entry.Descriptor.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
+                entry.Descriptor.Peer.IsUp = peerDescriptor.Peer.IsUp;
+                entry.Descriptor.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
+                entry.Descriptor.IsPersistent = peerDescriptor.IsPersistent;
+                entry.Descriptor.Subscriptions = subscriptions;
+                entry.Descriptor.TimestampUtc = peerDescriptor.TimestampUtc;
+                entry.Descriptor.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
 
-                currentPeer.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
-                currentPeer.Peer.IsUp = peerDescriptor.Peer.IsUp;
-                currentPeer.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
-                currentPeer.IsPersistent = peerDescriptor.IsPersistent;
-                currentPeer.Subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
-                currentPeer.TimestampUtc = peerDescriptor.TimestampUtc;
-                currentPeer.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
-
-                return currentPeer;
+                return entry;
             });
 
-            UpdatePeerSubscriptions(uniquePeerDescriptorInstance.Peer, previousSubscriptions, peerDescriptor.Subscriptions, uniquePeerDescriptorInstance.TimestampUtc ?? DateTime.UtcNow);
+            ReplaceSubscriptions(peerEntry, subscriptions);
         }
 
-        private void UpdatePeerSubscriptions(Peer peer, Subscription[] oldSubscriptions, Subscription[] newSubscriptions, DateTime timestampUtc)
+        private void ReplaceSubscriptions(PeerEntry peerEntry,  Subscription[] newSubscriptions)
         {
-            var oldSet = oldSubscriptions.ToHashSet();
-            var newSet = newSubscriptions.ToHashSet();
+            peerEntry.ClearDisabledSubscriptions();
 
-            foreach (var subscription in oldSet)
+            var previousSubscriptions = peerEntry.SubscriptionStatuses.Keys.ToList();
+            var newSubscriptionSet = newSubscriptions.ToHashSet();
+
+            foreach (var previousSubscription in previousSubscriptions)
             {
-                if (newSet.Contains(subscription))
+                if (newSubscriptionSet.Contains(previousSubscription))
+                {
+                    newSubscriptionSet.Remove(previousSubscription);
                     continue;
+                }
 
-                var subscriptions = _subscriptionsByMessageType.GetValueOrDefault(subscription.MessageTypeId);
-                if (subscriptions == null)
-                    continue;
+                peerEntry.SubscriptionStatuses.Remove(previousSubscription);
 
-                subscriptions.Remove(peer, subscription, timestampUtc);
+                var messageSubscriptions = _subscriptionsByMessageType.GetValueOrDefault(previousSubscription.MessageTypeId, _ => new PeerSubscriptionTree());
+                messageSubscriptions.Remove(peerEntry.Descriptor.Peer, previousSubscription);
 
-                if (subscriptions.IsEmpty)
-                    _subscriptionsByMessageType.TryRemove(subscription.MessageTypeId, subscriptions);
+                if (messageSubscriptions.IsEmpty)
+                    _subscriptionsByMessageType.Remove(previousSubscription.MessageTypeId);
             }
 
-            foreach (var subscription in newSet)
+            var timestampUtc = peerEntry.Descriptor.TimestampUtc ?? SystemDateTime.UtcNow;
+            foreach (var newSubscription in newSubscriptionSet)
             {
-                if (oldSet.Contains(subscription))
-                    continue;
+                peerEntry.SubscriptionStatuses.Add(newSubscription, new SubscriptionStatus(true, timestampUtc));
 
-                var subscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
-                subscriptions.Add(peer, subscription, timestampUtc);
+                var messageSubscriptions = _subscriptionsByMessageType.GetOrAdd(newSubscription.MessageTypeId, _ => new PeerSubscriptionTree());
+                messageSubscriptions.Add(peerEntry.Descriptor.Peer, newSubscription);
             }
         }
 
-        private PeerDescriptor GetPeerCheckTimestamp(PeerId peerId, DateTime? timestampUtc)
+        private PeerEntry GetPeerCheckTimestamp(PeerId peerId, DateTime? timestampUtc)
         {
             var peer = _peers.GetValueOrDefault(peerId);
             if (peer == null)
                 return null;
 
-            if (peer.TimestampUtc > timestampUtc)
+            if (peer.Descriptor.TimestampUtc > timestampUtc)
             {
                 _logger.InfoFormat("Outdated message ignored");
                 return null;
             }
 
             return peer;
+        }
+
+        private class PeerEntry
+        {
+            public readonly Dictionary<Subscription, SubscriptionStatus> SubscriptionStatuses = new Dictionary<Subscription, SubscriptionStatus>();
+            public readonly PeerDescriptor Descriptor;
+
+            public PeerEntry(PeerDescriptor descriptor)
+            {
+                Descriptor = descriptor;
+            }
+
+            public bool EnableSubscription(Subscription subscription, bool enabled, DateTime timestampUtc)
+            {
+                SubscriptionStatus status;
+                if (SubscriptionStatuses.TryGetValue(subscription, out status))
+                {
+                    if (status.TimestampUtc > timestampUtc || status.Enabled == enabled)
+                        return false;
+
+                    status.Enabled = enabled;
+                    status.TimestampUtc = timestampUtc;
+
+                    return true;
+                }
+                
+                SubscriptionStatuses.Add(subscription, new SubscriptionStatus(enabled, timestampUtc));
+
+                return true;
+            }
+
+            public void ClearDisabledSubscriptions()
+            {
+                var disabledSubscriptions = SubscriptionStatuses.Where(x => !x.Value.Enabled).Select(x => x.Key).ToList();
+                SubscriptionStatuses.RemoveRange(disabledSubscriptions);
+            }
+        }
+
+        private class SubscriptionStatus
+        {
+            public bool Enabled;
+            public DateTime TimestampUtc;
+
+            public SubscriptionStatus(bool enabled, DateTime timestampUtc)
+            {
+                Enabled = enabled;
+                TimestampUtc = timestampUtc;
+            }
         }
     }
 }

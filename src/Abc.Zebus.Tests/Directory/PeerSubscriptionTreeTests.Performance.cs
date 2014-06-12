@@ -72,8 +72,8 @@ namespace Abc.Zebus.Tests.Directory
             Console.WriteLine();
             Measure.Execution(x =>
             {
-                x.Iteration = 10000;
-                x.WarmUpIteration = 100;
+                x.Iteration = 100000;
+                x.WarmUpIteration = 1000;
                 x.Action = _ => subscriptionList.GetPeers(BindingKey.Empty);
             });
             Console.WriteLine();
@@ -82,8 +82,8 @@ namespace Abc.Zebus.Tests.Directory
             Console.WriteLine();
             Measure.Execution(x =>
             {
-                x.Iteration = 10000;
-                x.WarmUpIteration = 100;
+                x.Iteration = 100000;
+                x.WarmUpIteration = 1000;
                 x.Action = _ => subscriptionTree.GetPeers(BindingKey.Empty);
             });
         }

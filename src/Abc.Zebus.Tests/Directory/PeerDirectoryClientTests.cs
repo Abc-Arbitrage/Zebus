@@ -587,6 +587,34 @@ namespace Abc.Zebus.Tests.Directory
             _directory.GetPeersHandlingMessage(new OtherFakeEvent3(42)).ShouldBeEmpty();
         }
 
+        [Test]
+        public void should_forget_removed_subscriptions_for_restarting_peer()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
+            _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddMinutes(1)));
+            _directory.Handle(new PeerStopped(_otherPeer.Id, _otherPeer.EndPoint));
+
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+        }
+
+        [Test]
+        public void should_forget_removed_subscriptions_for_decommissioned_peer()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
+            _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddMinutes(1)));
+            _directory.Handle(new PeerDecommissioned(_otherPeer.Id));
+
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
+            _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { Subscription.Matching<OtherFakeEvent3>(x => x.Id == 42) }, DateTime.UtcNow.AddTicks(1)));
+
+            _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
+        }
+
         private class OtherFakeEvent1 : IEvent
         {
         }
