@@ -114,6 +114,29 @@ namespace Abc.Zebus.Tests.Directory
             command.Subscriptions.ShouldBeEquivalentTo(subscriptions);
         }
 
+
+        [Test]
+        public void should_timestamp_updatesubscriptions_with_a_minimum_ten_ticks_granularity()
+        {
+            _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
+            _directory.Register(_bus, _self, new Subscription[0]);
+
+            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
+            for (var i = 0; i < 100; ++i)
+                _directory.Update(_bus, subscriptions);
+
+
+            var commands = _bus.Commands.OfType<UpdatePeerSubscriptionsCommand>();
+            var lastTimestamp = DateTime.MinValue;
+            foreach (var updatePeerSubscriptionsCommand in commands)
+            {
+                var timeSinceLastCommand = (updatePeerSubscriptionsCommand.TimestampUtc - lastTimestamp).Value;
+                timeSinceLastCommand.ShouldBeGreaterOrEqualThan(10.Ticks());
+                lastTimestamp = updatePeerSubscriptionsCommand.TimestampUtc.Value;
+            }
+        }
+
+
         [Test]
         public void should_have_unique_timestamp_in_UpdatePeerSubscriptionsCommand()
         {

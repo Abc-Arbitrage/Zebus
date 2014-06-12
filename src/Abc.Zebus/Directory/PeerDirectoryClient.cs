@@ -23,7 +23,7 @@ namespace Abc.Zebus.Directory
         private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
-        private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider();
+        private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly List<IEvent> _eventsReceivedWhileRegistering = new List<IEvent>();
         private readonly IBusConfiguration _configuration;
         private volatile bool _isRegistering;
