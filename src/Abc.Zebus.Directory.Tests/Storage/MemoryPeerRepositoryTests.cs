@@ -130,6 +130,24 @@ namespace Abc.Zebus.Directory.Tests.Storage
             });
         }
 
+
+        [Test]
+        public void should_get_dynamic_subscriptions_in_GetPeers()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+
+            var fetched = _repository.GetPeers().ExpectedSingle();
+            fetched.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<int>()
+            });
+        }
+
+
         private Subscription CreateSubscriptionFor<TMessage>(params string[] bindingKeyParts)
         {
             return new Subscription(MessageUtil.GetTypeId(typeof(TMessage)), new BindingKey(bindingKeyParts));
