@@ -114,6 +114,18 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             fetched.ShouldBeNull();
         }
 
+        [Test]
+        public void should_add_dynamic_subscriptions()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void should_remove_dynamic_subscriptions()
+        {
+            throw new NotImplementedException();
+        }
+
         [Test, Ignore("Will be implemented for incremental subscriptions")]
         public void should_remove_the_dynamic_subscriptions_of_a_peer_when_removing_it()
         {
@@ -135,6 +147,31 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test, Ignore("Will be implemented for incremental subscriptions")]
         public void parts_should_stay_in_order()
         {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void removing_a_dynamic_subscription_doesnt_remove_static_subscription()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void should_deduplicate_dynamic_subscriptions()
+        {
+            throw new NotImplementedException();
+        }
+        
+        [Test]
+        public void should_not_mixup_subscriptions_to_same_type_with_different_tokens()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void should_not_erase_subscriptions_of_a_peer_on_register()
+        {
+            // Allow reregister
             throw new NotImplementedException();
         }
 

@@ -35,14 +35,14 @@ namespace Abc.Zebus.Directory
             TimestampUtc = timestampUtc;
         }
 
-        internal PeerDescriptor(PeerDescriptor other)
+        public PeerDescriptor(PeerDescriptor other)
         {
             Peer = new Peer(other.Peer.Id, other.Peer.EndPoint, other.Peer.IsUp)
             {
                 IsResponding = other.Peer.IsResponding
             };
 
-            Subscriptions = other.Subscriptions ?? ArrayUtil.Empty<Subscription>();
+            Subscriptions = other.Subscriptions != null ? (Subscription[])other.Subscriptions.Clone() : ArrayUtil.Empty<Subscription>();
             IsPersistent = other.IsPersistent;
             TimestampUtc = other.TimestampUtc;
             HasDebuggerAttached = other.HasDebuggerAttached;

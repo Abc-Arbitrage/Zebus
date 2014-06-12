@@ -1,5 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Abc.Zebus.Directory.Storage;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
@@ -110,6 +112,81 @@ namespace Abc.Zebus.Directory.Tests.Storage
 
             var fetched = _repository.Get(_peer1.Id);
             fetched.ShouldNotBeNull();
+        }
+
+        [Test]
+        public void should_add_dynamic_subscriptions()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+            
+            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<int>()
+            });
+        }
+
+        private Subscription CreateSubscriptionFor<TMessage>(params string[] bindingKeyParts)
+        {
+            return new Subscription(MessageUtil.GetTypeId(typeof(TMessage)), new BindingKey(bindingKeyParts));
+        }
+
+        [Test]
+        public void should_remove_dynamic_subscriptions()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+
+            _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<int>() });
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.ShouldHaveSamePropertiesAs(peerDescriptor);
+        }
+
+        [Test]
+        public void removing_a_dynamic_subscription_doesnt_remove_static_subscription()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<FakeCommand>() });
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.ShouldHaveSamePropertiesAs(peerDescriptor);
+        }
+
+        [Test]
+        public void should_deduplicate_dynamic_subscriptions_and_static_subscriptions()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<FakeCommand>(), CreateSubscriptionFor<FakeCommand>() });
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.Subscriptions.ShouldEqual(new[] { CreateSubscriptionFor<FakeCommand>() });
+        }
+
+        [Test]
+        public void should_not_mixup_subscriptions_to_same_type_with_different_tokens()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, new[] { CreateSubscriptionFor<FakeCommand>("bli"), CreateSubscriptionFor<FakeCommand>("bla") });
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<FakeCommand>("bli"),
+                CreateSubscriptionFor<FakeCommand>("bla")
+            });
         }
     }
 }

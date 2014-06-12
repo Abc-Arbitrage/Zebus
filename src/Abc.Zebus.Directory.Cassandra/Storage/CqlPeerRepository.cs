@@ -67,5 +67,15 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                         .Execute();
 
         }
+
+        public void AddDynamicSubscriptions(PeerId peerId, Subscription[] subscriptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveDynamicSubscriptions(PeerId peerId, Subscription[] subscriptions)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
