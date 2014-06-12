@@ -19,7 +19,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         private Peer _peer1;
         private Peer _peer2;
 
-        protected override string Hosts { get { return "test_cassandra"; } }
+        protected override string Hosts { get { return "cassandra-test-host"; } }
 
         protected override string LocalDataCenter { get { return "Paris-CEN"; } }
         
