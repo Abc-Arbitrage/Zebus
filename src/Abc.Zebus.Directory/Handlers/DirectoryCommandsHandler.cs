@@ -12,6 +12,8 @@ namespace Abc.Zebus.Directory.Handlers
                                             IMessageHandler<UpdatePeerSubscriptionsCommand>,
                                             IMessageHandler<UnregisterPeerCommand>,
                                             IMessageHandler<DecommissionPeerCommand>,
+                                            IMessageHandler<AddPeerSubscriptionsCommand>,
+                                            IMessageHandler<RemovePeerSubscriptionsCommand>,
                                             IMessageContextAware
     {
         private readonly HashSet<string> _blacklistedMachines;
@@ -93,6 +95,18 @@ namespace Abc.Zebus.Directory.Handlers
 
             if (_peerRepository.SetPeerDown(peerId, timestampUtc))
                 _bus.Publish(new PeerStopped(peerId, endPoint, timestampUtc));
+        }
+
+        public void Handle(AddPeerSubscriptionsCommand message)
+        {
+            _peerRepository.AddDynamicSubscriptions(message.PeerId, message.TimestampUtc, message.Subscriptions);
+            _bus.Publish(new PeerSubscriptionsAdded(message.PeerId, message.Subscriptions, message.TimestampUtc));
+        }
+
+        public void Handle(RemovePeerSubscriptionsCommand message)
+        {
+            _peerRepository.RemoveDynamicSubscriptions(message.PeerId, message.TimestampUtc, message.Subscriptions);
+            _bus.Publish(new PeerSubscriptionsRemoved(message.PeerId, message.Subscriptions, message.TimestampUtc));
         }
     }
 }
