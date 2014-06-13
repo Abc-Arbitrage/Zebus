@@ -87,7 +87,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         }
 
-        public void AddDynamicSubscriptions(PeerDescriptor peerDescriptor, Subscription[] subscriptions)
+        public void AddDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
         {
             var batch = _dataContext.Session.CreateBatch();
             batch.SetConsistencyLevel(ConsistencyLevel.LocalQuorum);
@@ -95,24 +95,24 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             foreach (var subscription in subscriptions)
             {
                 batch.Append(_dataContext.DynamicSubscriptions
-                                         .CreateInsert(subscription.ToStorageSubscription(peerDescriptor.PeerId))
-                                         .SetTimestamp(peerDescriptor.TimestampUtc ?? DateTime.UtcNow));
+                                         .CreateInsert(subscription.ToStorageSubscription(peerId))
+                                         .SetTimestamp(timestampUtc));
             }
 
             batch.Execute();
         }
 
-        public void RemoveDynamicSubscriptions(PeerDescriptor peerDescriptor, Subscription[] subscriptions)
+        public void RemoveDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
         {
             var batch = _dataContext.Session.CreateBatch();
             batch.SetConsistencyLevel(ConsistencyLevel.LocalQuorum);
 
-            foreach (var subscriptionToRemove in subscriptions.Select(sub => sub.ToStorageSubscription(peerDescriptor.PeerId)))
+            foreach (var subscriptionToRemove in subscriptions.Select(sub => sub.ToStorageSubscription(peerId)))
             {
                 var deleteQuery = _dataContext.DynamicSubscriptions
                                               .Where(sub => sub.PeerId == subscriptionToRemove.PeerId && sub.SubscriptionIdentifier == subscriptionToRemove.SubscriptionIdentifier)
                                               .Delete()
-                                              .SetTimestamp(peerDescriptor.TimestampUtc ?? DateTime.UtcNow);
+                                              .SetTimestamp(timestampUtc);
                 batch.Append(deleteQuery);
             }
             

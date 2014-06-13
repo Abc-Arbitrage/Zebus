@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -64,21 +65,21 @@ namespace Abc.Zebus.Directory.Storage
             return _peers.TryGetValue(peerId, out peerEntry) ? peerEntry : null;
         }
 
-        public void AddDynamicSubscriptions(PeerDescriptor peerDescriptor, Subscription[] subscriptions)
+        public void AddDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
         {
-            var peerEntry = GetEntry(peerDescriptor.PeerId);
+            var peerEntry = GetEntry(peerId);
             if (peerEntry == null)
                 return;
-            if (peerDescriptor.TimestampUtc >= peerEntry.PeerDescriptor.TimestampUtc)
+            if (timestampUtc >= peerEntry.PeerDescriptor.TimestampUtc)
                 peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Concat(subscriptions).ToList();
         }
 
-        public void RemoveDynamicSubscriptions(PeerDescriptor peerDescriptor, Subscription[] subscriptions)
+        public void RemoveDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
         {
-            var peerEntry = GetEntry(peerDescriptor.PeerId);
+            var peerEntry = GetEntry(peerId);
             if (peerEntry == null)
                 return;
-            if (peerDescriptor.TimestampUtc >= peerEntry.PeerDescriptor.TimestampUtc)
+            if (timestampUtc >= peerEntry.PeerDescriptor.TimestampUtc)
                 peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Except(subscriptions).ToList();
         }
     }
