@@ -1,7 +1,7 @@
 ﻿using Abc.Zebus.Directory.Cassandra.Cql;
 using Abc.Zebus.Util;
 using Cassandra;
-using Cassandra.Data.EntityContext;
+using Cassandra.Data.Linq;
 using Moq;
 using NUnit.Framework;
 using System;
@@ -24,7 +24,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
 
         public TDataContext DataContext { get; private set; }
 
-        protected ISession Session { get; private set; }
+        protected Session Session { get; private set; }
 
         public Mock<TConfig> ConfigurationMock { get; private set; }
 

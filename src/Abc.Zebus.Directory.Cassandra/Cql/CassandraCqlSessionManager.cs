@@ -11,11 +11,11 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
     {
         private readonly ConcurrentDictionary<string, Cluster> _clusters = new ConcurrentDictionary<string, Cluster>();
 
-        private readonly ConcurrentDictionary<Cluster, ISession> _sessions = new ConcurrentDictionary<Cluster, ISession>();
+        private readonly ConcurrentDictionary<Cluster, Session> _sessions = new ConcurrentDictionary<Cluster, Session>();
 
-        private ISession GetOrCreateSession(Cluster cluster, string keySpace)
+        private Session GetOrCreateSession(Cluster cluster, string keySpace)
         {
-            ISession session;
+            Session session;
             if (!_sessions.TryGetValue(cluster, out session))
             {
                 session = cluster.Connect(keySpace);
@@ -53,7 +53,7 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
                 cluster.Dispose();
         }
 
-        public ISession GetSession(ICassandraConfiguration configuration)
+        public Session GetSession(ICassandraConfiguration configuration)
         {
             var cluster = GetOrCreateCluster(configuration.Hosts, configuration.KeySpace, configuration.QueryTimeout, configuration.LocalDataCenter);
 

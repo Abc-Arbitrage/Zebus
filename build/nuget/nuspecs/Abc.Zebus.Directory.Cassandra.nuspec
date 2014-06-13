@@ -20,5 +20,9 @@
 	<files>
 		<file src="src\Abc.Zebus.Directory.Cassandra\bin\$configuration$\Abc.Zebus.Directory.Cassandra.dll" target="lib\net45\" />
 		<file src="src\Abc.Zebus.Directory.Cassandra\bin\$configuration$\Abc.Zebus.Directory.Cassandra.pdb" target="lib\net45\" />
+		
+		<file src="lib\cassandra-csharp-driver\Cassandra.Data.dll" target="lib\net45\" />
+		<file src="lib\cassandra-csharp-driver\Cassandra.Data.Linq.dll" target="lib\net45\" />
+		<file src="lib\cassandra-csharp-driver\Cassandra.dll" target="lib\net45\" />
 	</files>
 </package>

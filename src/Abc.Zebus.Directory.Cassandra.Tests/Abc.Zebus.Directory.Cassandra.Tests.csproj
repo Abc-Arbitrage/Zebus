@@ -30,22 +30,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cassandra, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.0.2\lib\net40\Cassandra.dll</HintPath>
+    <Reference Include="Cassandra">
+      <HintPath>..\..\lib\cassandra-csharp-driver\Cassandra.dll</HintPath>
     </Reference>
     <Reference Include="Cassandra.Data">
-      <HintPath>..\packages\CassandraCSharpDriver.2.0.2\lib\net40\Cassandra.Data.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Cassandra.Data.EntityContext">
-      <HintPath>..\packages\CassandraEntityContext.2.0.2\lib\net40\Cassandra.Data.EntityContext.dll</HintPath>
+      <HintPath>..\..\lib\cassandra-csharp-driver\Cassandra.Data.dll</HintPath>
     </Reference>
     <Reference Include="Cassandra.Data.Linq">
-      <HintPath>..\packages\CassandraCSharpDriver.2.0.2\lib\net40\Cassandra.Data.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="LZ4">
-      <HintPath>..\packages\lz4net.1.0.3.93\lib\net40-client\LZ4.dll</HintPath>
+      <HintPath>..\..\lib\cassandra-csharp-driver\Cassandra.Data.Linq.dll</HintPath>
     </Reference>
     <Reference Include="Moq, Version=4.0.10827.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -96,7 +88,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <Compile Include="Storage\CqlPeerRepositoryTests.DynamicSubscriptions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
