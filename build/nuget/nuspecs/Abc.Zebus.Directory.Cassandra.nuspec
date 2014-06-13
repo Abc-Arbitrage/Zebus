@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package >
+	<metadata>
+		<id>Zebus.Directory.Cassandra</id>
+		<version>$version$</version>
+		<title>Zebus.Directory.Cassandra</title>
+		<authors>$author$</authors>
+		<owners>$author$</owners>
+		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
+		<projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>An implementation of the Directory backed out by Cassandra</description>
+		<releaseNotes></releaseNotes>
+		<copyright>$copyright$</copyright>
+		<tags></tags>
+    <dependencies>
+      <dependency id="Zebus" version="$version$" />
+    </dependencies>
+	</metadata>
+	<files>
+		<file src="src\Abc.Zebus.Directory.Cassandra\bin\$configuration$\Abc.Zebus.Directory.Cassandra.dll" target="lib\net45\" />
+		<file src="src\Abc.Zebus.Directory.Cassandra\bin\$configuration$\Abc.Zebus.Directory.Cassandra.pdb" target="lib\net45\" />
+	</files>
+</package>

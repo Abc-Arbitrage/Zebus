@@ -3,7 +3,10 @@ $zebusLocation = [System.IO.Path]::Combine($location, ".\src\Abc.Zebus");
 $outputLocation = [System.IO.Path]::Combine($location, "output\nuget");
 $msbuild = 'C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe';
 # clean output
-Remove-Item -Recurse -Force $outputLocation;
+if((Test-Path $outputLocation) -eq $true)
+{
+   Remove-Item -Recurse -Force $outputLocation;
+}
 $dir = New-Item -ItemType directory $outputLocation;
 
 # Compile solution in release
@@ -44,3 +47,8 @@ Write-Host "############# Building Zebus.Directory.Standalone package ##########
 # Compile Zebus.Directory in release and as a class library
 & $msbuild .\src\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj /p:Configuration=Release`;OverrideOutputType=Library
 & '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
+
+# Build nuget for Zebus.Directory.Cassandra
+Write-Host
+Write-Host "############# Building Zebus.Directory.Cassandra package #############" -ForegroundColor Green
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.Cassandra.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -NoPackageAnalysis;

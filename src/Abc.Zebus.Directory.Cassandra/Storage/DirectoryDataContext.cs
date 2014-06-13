@@ -15,7 +15,5 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         public ContextTable<StorageSubscription> DynamicSubscriptions { get; set; }
 
         public ContextTable<StoragePeer> StoragePeers { get; set; }
-        
-        
     }
 }
