@@ -229,6 +229,13 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         }
 
         [Test]
+        public void should_throw_an_explicit_exception_when_updating_the_subscriptions_of_a_decommissioned_peer()
+        {
+            Assert.That(() => _handler.Handle(new UpdatePeerSubscriptionsCommand(new PeerId("Abc.NonExistingPeer.0"), new Subscription[0], DateTime.UtcNow)),
+                        Throws.InstanceOf<InvalidOperationException>().With.Property("Message").EqualTo("The specified Peer (Abc.NonExistingPeer.0) does not exist."));
+        }
+
+        [Test]
         public void should_ignore_old_peer_updates()
         {
             var originalPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));

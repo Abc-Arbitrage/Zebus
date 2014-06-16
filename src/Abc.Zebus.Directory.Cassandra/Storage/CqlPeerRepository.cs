@@ -89,6 +89,8 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         public void AddDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
         {
+            if (subscriptions == null)
+                return;
             var batch = _dataContext.Session.CreateBatch();
             batch.SetConsistencyLevel(ConsistencyLevel.LocalQuorum);
 
@@ -104,6 +106,8 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         public void RemoveDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
         {
+            if (subscriptions == null)
+                return;
             var batch = _dataContext.Session.CreateBatch();
             batch.SetConsistencyLevel(ConsistencyLevel.LocalQuorum);
 

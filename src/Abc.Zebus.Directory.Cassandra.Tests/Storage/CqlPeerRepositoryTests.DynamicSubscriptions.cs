@@ -28,10 +28,26 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
                 CreateSubscriptionFor<int>()
             });
         }
-
+        
         private Subscription CreateSubscriptionFor<TMessage>(params string[] bindingKeyParts)
         {
             return new Subscription(MessageUtil.GetTypeId(typeof(TMessage)), new BindingKey(bindingKeyParts));
+        }
+
+        [Test]
+        public void should_not_crash_when_passing_null_subscriptions_array_to_AddDynamicSubscriptions()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
+
+            Assert.DoesNotThrow(() => _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
+        }
+
+        [Test]
+        public void should_not_crash_when_passing_null_subscriptions_array_to_RemoveDynamicSubscriptions()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
+
+            Assert.DoesNotThrow(() => _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
         }
 
         [Test]
