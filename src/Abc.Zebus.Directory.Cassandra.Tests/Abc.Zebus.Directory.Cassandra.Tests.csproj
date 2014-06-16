@@ -68,6 +68,7 @@
     <Compile Include="FakeRoutableCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Storage\CqlPeerRepositoryTests.cs" />
+    <Compile Include="Storage\StorageConvertionExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Directory.Cassandra\Abc.Zebus.Directory.Cassandra.csproj">

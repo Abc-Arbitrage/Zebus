@@ -115,6 +115,26 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
+        public void should_readd_peer_after_removing_it()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(string));
+            peerDescriptor.TimestampUtc = GetUnspecifiedKindUtcNow();
+
+            _repository.AddOrUpdatePeer(peerDescriptor);
+            _repository.RemovePeer(peerDescriptor.Peer.Id);
+            peerDescriptor.TimestampUtc = peerDescriptor.TimestampUtc.Value.Add(1.Second());
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.ShouldNotBeNull();
+        }
+
+        private static DateTime GetUnspecifiedKindUtcNow()
+        {
+            return new DateTime(SystemDateTime.UtcNow.RoundToMillisecond().Ticks, DateTimeKind.Unspecified);
+        }
+
+        [Test]
         public void should_insert_a_peer_with_no_timestamp_that_was_previously_deleted()
         {
             var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);

@@ -11,6 +11,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
     {
         public static StoragePeer ToStoragePeer(this PeerDescriptor peerDescriptor)
         {
+            var timestamp = peerDescriptor.TimestampUtc.HasValue ? new DateTime(peerDescriptor.TimestampUtc.Value.Ticks, DateTimeKind.Utc) : DateTime.UtcNow;
             return new StoragePeer
             {
                 PeerId = peerDescriptor.PeerId.ToString(),
@@ -19,7 +20,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                 IsPersistent = peerDescriptor.IsPersistent,
                 IsUp = peerDescriptor.Peer.IsUp,
                 IsResponding = peerDescriptor.Peer.IsResponding,
-                TimestampUtc = peerDescriptor.TimestampUtc ?? DateTime.UtcNow,
+                TimestampUtc = timestamp,
                 StaticSubscriptionsBytes = SerializeSubscriptions(peerDescriptor.Subscriptions)
             };
         }
@@ -57,7 +58,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
             var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
             return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
-                                      storagePeer.IsResponding, storagePeer.TimestampUtc, allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+                                      storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
         private static Subscription[] DeserializeSubscriptions(byte[] staticSubscriptionsBytes)
