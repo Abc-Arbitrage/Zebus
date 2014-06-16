@@ -24,7 +24,7 @@ namespace Abc.Zebus.Directory
 
         public override string ToString()
         {
-            return string.Format("PeerId: {0}, Subscriptions: {1}", PeerId.ToString(), Subscriptions != null ? Subscriptions.Length : 0);
+            return string.Format("PeerId: {0}, Subscriptions: {1}, TimestampUtc: {2:yyyy-MM-dd HH:mm:ss.fff}", PeerId, Subscriptions != null ? Subscriptions.Length : 0, TimestampUtc);
         }
     }
 }

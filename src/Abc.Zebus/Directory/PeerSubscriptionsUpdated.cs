@@ -15,7 +15,7 @@ namespace Abc.Zebus.Directory
 
         public override string ToString()
         {
-            return PeerDescriptor.Peer.Id.ToString();
+            return string.Format("PeerId: {0}, TimestampUtc: {1:yyyy-MM-dd HH:mm:ss.fff}", PeerDescriptor.PeerId, PeerDescriptor.TimestampUtc);
         }
     }
 }
