@@ -33,6 +33,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{041FD6B0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuspecs", "nuspecs", "{CF60551C-BB7F-4053-93BE-3E2B53222DF7}"
 	ProjectSection(SolutionItems) = preProject
+		..\build\nuget\nuspecs\Abc.Zebus.Directory.Cassandra.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Directory.Cassandra.nuspec
 		..\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec
 		..\build\nuget\nuspecs\Abc.Zebus.Directory.Standalone.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Directory.Standalone.nuspec
 		..\build\nuget\nuspecs\Abc.Zebus.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.nuspec

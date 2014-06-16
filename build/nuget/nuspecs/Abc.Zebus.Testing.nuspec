@@ -27,5 +27,7 @@
 		<file src="lib\moq\Moq.dll" target="lib\net45\" />
 		<file src="lib\autofixture\Ploeh.AutoFixture.dll" target="lib\net45\" />
 		<file src="lib\nunit\nunit.framework.dll" target="lib\net45\" />
+    
+    <file src="src\Abc.Zebus.Testing\**\*.cs" target="src" />
 	</files>
 </package>

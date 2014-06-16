@@ -20,5 +20,7 @@
 	<files>
 		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.dll" target="lib\net45\" />
 		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.pdb" target="lib\net45\" />
+    
+    <file src="src\Abc.Zebus.Directory\**\*.cs" target="src" />
 	</files>
 </package>

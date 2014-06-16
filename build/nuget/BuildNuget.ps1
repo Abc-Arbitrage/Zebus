@@ -31,12 +31,12 @@ $properties = "`"version="+$version.Value+";author="+$company.Value+";descriptio
 
 # Build nuget for Zebus
 Write-Host "############# Building Zebus package #############" -ForegroundColor Green
-& '.\tools\nuget\NuGet.exe' pack -sym .\build\nuget\nuspecs\Abc.Zebus.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -sym;
 
 # Build nuget for Zebus.Testing
 Write-Host
 Write-Host "############# Building Zebus.Testing package #############" -ForegroundColor Green
-& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -sym;
 
 # Build nuget for Zebus.Directory.Standalone
 Write-Host
@@ -46,9 +46,9 @@ Write-Host "############# Building Zebus.Directory.Standalone package ##########
 # Build nuget for Zebus.Directory
 # Compile Zebus.Directory in release and as a class library
 & $msbuild .\src\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj /p:Configuration=Release`;OverrideOutputType=Library
-& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties;
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -sym;
 
 # Build nuget for Zebus.Directory.Cassandra
 Write-Host
 Write-Host "############# Building Zebus.Directory.Cassandra package #############" -ForegroundColor Green
-& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.Cassandra.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -NoPackageAnalysis;
+& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Directory.Cassandra.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -NoPackageAnalysis -sym;

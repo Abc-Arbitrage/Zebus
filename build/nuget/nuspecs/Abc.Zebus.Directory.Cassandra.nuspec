@@ -24,5 +24,7 @@
 		<file src="lib\cassandra-csharp-driver\Cassandra.Data.dll" target="lib\net45\" />
 		<file src="lib\cassandra-csharp-driver\Cassandra.Data.Linq.dll" target="lib\net45\" />
 		<file src="lib\cassandra-csharp-driver\Cassandra.dll" target="lib\net45\" />
+    
+    <file src="src\Abc.Zebus.Directory.Cassandra\**\*.cs" target="src" />
 	</files>
 </package>
