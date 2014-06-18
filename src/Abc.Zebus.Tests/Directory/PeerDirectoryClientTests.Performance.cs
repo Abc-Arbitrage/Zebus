@@ -47,7 +47,7 @@ namespace Abc.Zebus.Tests.Directory
             _directory = new PeerDirectoryClient(_configurationMock.Object);
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
 
-            // TODO CAO
+            // TODO LVK: uncomment but use PeerSubscriptionsForTypesUpdated
 
             //Console.WriteLine("Incremental updates (add)");
             //using (Measure.Throughput(subscriptions.Count))
@@ -67,6 +67,45 @@ namespace Abc.Zebus.Tests.Directory
             //        //_directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, subscriptions.GetRange(subscriptionIndex, 200).ToArray(), DateTime.UtcNow));
             //    }
             //}
+        }
+
+        [Test, Ignore("Performance test")]
+        public void MeasureMemoryConsumption()
+        {
+            Console.WriteLine("Breakpoint here");
+
+            for (var litePeerIndex = 0; litePeerIndex < 100; ++litePeerIndex)
+            {
+                var subscriptions = new List<Subscription>();
+                for (var subscriptionIndex = 0; subscriptionIndex < 10; ++subscriptionIndex)
+                {
+                    subscriptions.Add(new Subscription(new MessageTypeId("Abc.Common.SharedEvent" + subscriptionIndex)));
+                }
+                for (var subscriptionIndex = 0; subscriptionIndex < 10; ++subscriptionIndex)
+                {
+                    subscriptions.Add(new Subscription(new MessageTypeId("Abc.Specific" + litePeerIndex + ".PrivateEvent" + subscriptionIndex)));
+                }
+                _directory.Handle(new PeerStarted(new PeerDescriptor(new PeerId("Abc.Testing.Peer" + litePeerIndex), "tcp://testing:11" + litePeerIndex, true, true, true, DateTime.UtcNow, subscriptions.ToArray())));
+            }
+            for (var fatPeerIndex = 0; fatPeerIndex < 30; ++fatPeerIndex)
+            {
+                var subscriptions = new List<Subscription>();
+                for (var messageTypeIndex = 0; messageTypeIndex < 10; ++messageTypeIndex)
+                {
+                    var messageTypeId = new MessageTypeId("Abc.Common.SharedFatEvent" + messageTypeIndex);
+                    for (var routingKeyIndex = 0; routingKeyIndex < 1000; ++routingKeyIndex)
+                    {
+                        subscriptions.Add(new Subscription(messageTypeId, new BindingKey(routingKeyIndex.ToString() + "00")));
+                    }
+                }
+                _directory.Handle(new PeerStarted(new PeerDescriptor(new PeerId("Abc.Testing.FatPeer" + fatPeerIndex), "tcp://testing:22" + fatPeerIndex, true, true, true, DateTime.UtcNow, subscriptions.ToArray())));
+            }
+
+            Console.WriteLine("Breakpoint here");
+
+            GC.Collect();
+
+            Console.WriteLine("Breakpoint here");
         }
     }
 }

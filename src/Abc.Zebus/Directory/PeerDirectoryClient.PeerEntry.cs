@@ -10,6 +10,9 @@ namespace Abc.Zebus.Directory
     {
         private class PeerEntry
         {
+            // TODO LVK: replace with commented dictionnary
+            //private readonly Dictionary<MessageTypeId, HashSet<BindingKey>> _messageSubscriptions = new Dictionary<MessageTypeId, HashSet<BindingKey>>();
+
             private readonly Dictionary<MessageTypeId, MessageSubscriptions> _messageSubscriptions = new Dictionary<MessageTypeId, MessageSubscriptions>();
             private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType;
             private readonly PeerDescriptor _descriptor;
