@@ -83,14 +83,15 @@
     <Compile Include="Directory\PeerNotResponding.cs" />
     <Compile Include="Directory\PeerResponding.cs" />
     <Compile Include="Directory\PeerSubscriptionsAdded.cs" />
-    <Compile Include="Directory\PeerSubscriptionsForTypeUpdated.cs" />
+    <Compile Include="Directory\PeerSubscriptionsForTypesUpdated.cs" />
     <Compile Include="Directory\PeerSubscriptionsRemoved.cs" />
     <Compile Include="Directory\PeerSubscriptionsUpdated.cs" />
     <Compile Include="Directory\PeerSubscriptionTree.cs" />
     <Compile Include="Directory\PingPeerCommand.cs" />
     <Compile Include="Directory\PeerUpdateAction.cs" />
+    <Compile Include="Directory\SubscriptionsForType.cs" />
     <Compile Include="Directory\UpdatePeerSubscriptionsCommand.cs" />
-    <Compile Include="Directory\UpdatePeerSubscriptionsForTypeCommand.cs" />
+    <Compile Include="Directory\UpdatePeerSubscriptionsForTypesCommand.cs" />
     <Compile Include="Dispatch\AsyncMessageHandlerInvoker.cs" />
     <Compile Include="Dispatch\BusConstructorInstance.cs" />
     <Compile Include="Dispatch\DispatcherTaskScheduler.cs" />
@@ -101,7 +102,6 @@
     <Compile Include="BusExtensions.cs" />
     <Compile Include="HostInitializer.cs" />
     <Compile Include="IMultiEventHandler.cs" />
-    <Compile Include="Lotus\CustomDelegatedProcessingFailed.cs" />
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
     <Compile Include="Monitoring\IProvideQueueLength.cs" />
