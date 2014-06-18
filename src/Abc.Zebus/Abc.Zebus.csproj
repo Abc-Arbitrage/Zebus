@@ -74,7 +74,6 @@
     <Compile Include="Core\EventHandlerInvoker`1.cs" />
     <Compile Include="Core\IStoppingStrategy.cs" />
     <Compile Include="Core\RoundRobinPeerSelector.cs" />
-    <Compile Include="Directory\AddPeerSubscriptionsCommand.cs" />
     <Compile Include="Directory\DecommissionPeerCommand.cs" />
     <Compile Include="Directory\DirectoryErrorCodes.cs" />
     <Compile Include="Directory\IPeerDirectory.cs" />
@@ -89,8 +88,8 @@
     <Compile Include="Directory\PeerSubscriptionTree.cs" />
     <Compile Include="Directory\PingPeerCommand.cs" />
     <Compile Include="Directory\PeerUpdateAction.cs" />
-    <Compile Include="Directory\RemovePeerSubscriptionsCommand.cs" />
     <Compile Include="Directory\UpdatePeerSubscriptionsCommand.cs" />
+    <Compile Include="Directory\UpdatePeerSubscriptionsForTypeCommand.cs" />
     <Compile Include="Dispatch\AsyncMessageHandlerInvoker.cs" />
     <Compile Include="Dispatch\BusConstructorInstance.cs" />
     <Compile Include="Dispatch\DispatcherTaskScheduler.cs" />

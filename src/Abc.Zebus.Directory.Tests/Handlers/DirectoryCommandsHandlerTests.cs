@@ -261,27 +261,5 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             _repositoryMock.Verify(x => x.AddOrUpdatePeer(It.IsAny<PeerDescriptor>()), Times.Never());
             _bus.ExpectNothing();
         }
-
-        [Test]
-        public void should_add_dynamic_subscriptions()
-        {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
-
-            _handler.Handle(new AddPeerSubscriptionsCommand(peerDescriptor.PeerId, peerDescriptor.Subscriptions, peerDescriptor.TimestampUtc.Value));
-
-            _repositoryMock.Verify(repo => repo.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, peerDescriptor.Subscriptions));
-            _bus.ExpectExactly(new PeerSubscriptionsAdded(peerDescriptor.PeerId, peerDescriptor.Subscriptions, peerDescriptor.TimestampUtc.Value));
-        }
-
-        [Test]
-        public void should_remove_dynamic_subscriptions()
-        {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
-
-            _handler.Handle(new RemovePeerSubscriptionsCommand(peerDescriptor.PeerId, peerDescriptor.Subscriptions, peerDescriptor.TimestampUtc.Value));
-
-            _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, peerDescriptor.Subscriptions));
-            _bus.ExpectExactly(new PeerSubscriptionsRemoved(peerDescriptor.PeerId, peerDescriptor.Subscriptions, peerDescriptor.TimestampUtc.Value));            
-        }
     }
 }
