@@ -17,5 +17,7 @@ namespace Abc.Zebus.Directory
             MessageTypeId = messageTypeId;
             BindingKeys = bindingKeys;
         }
+
+        public SubscriptionsForType(){}
     }
 }
