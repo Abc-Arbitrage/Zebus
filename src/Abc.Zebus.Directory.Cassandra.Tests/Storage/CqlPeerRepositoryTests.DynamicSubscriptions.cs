@@ -19,7 +19,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[]
@@ -34,12 +34,17 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             return new Subscription(MessageUtil.GetTypeId(typeof(TMessage)), new BindingKey(bindingKeyParts));
         }
 
+        private SubscriptionsForType CreateSubscriptionsForType<TMessage>(params BindingKey[] bindings)
+        {
+            return new SubscriptionsForType(MessageUtil.GetTypeId(typeof(TMessage)), bindings.Any() ? bindings : new[] { BindingKey.Empty });
+        }
+
         [Test]
         public void should_not_crash_when_passing_null_subscriptions_array_to_AddDynamicSubscriptions()
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
 
-            Assert.DoesNotThrow(() => _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
+            Assert.DoesNotThrow(() => _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
         }
 
         [Test]
@@ -47,7 +52,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
 
-            Assert.DoesNotThrow(() => _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
+            Assert.DoesNotThrow(() => _repository.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
         }
 
         [Test]
@@ -55,9 +60,9 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
-            _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { MessageUtil.GetTypeId(typeof(int)) });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.ShouldHaveSamePropertiesAs(peerDescriptor);
@@ -68,14 +73,14 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
 			_repository.RemovePeer(peerDescriptor.PeerId);
 
             _repository.Get(peerDescriptor.PeerId).ShouldBeNull();
             var retrievedSubscriptions = DataContext.DynamicSubscriptions
                                                     .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                                                    .Where(sub => sub.PeerId == peerDescriptor.PeerId.ToString())
+                                                    .Where(sub => sub.UselessKey == false && sub.PeerId == peerDescriptor.PeerId.ToString())
                                                     .Execute();
 			retrievedSubscriptions.ShouldBeEmpty();
         }
@@ -88,8 +93,8 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var presentPeerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
 			_repository.AddOrUpdatePeer(presentPeerDescriptor);
 
-            _repository.RemoveDynamicSubscriptions(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
-            _repository.AddDynamicSubscriptions(pastPeerDescriptor.PeerId, pastPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.RemoveDynamicSubscriptionsForTypes(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { MessageUtil.GetTypeId(typeof(int)) });
+            _repository.AddDynamicSubscriptionsForTypes(pastPeerDescriptor.PeerId, pastPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
             var fetched = _repository.Get(presentPeerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[] { CreateSubscriptionFor<FakeCommand>() });
@@ -102,10 +107,10 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             pastPeerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddMinutes(-1).RoundToMillisecond();
             var presentPeerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(presentPeerDescriptor);
-            _repository.AddDynamicSubscriptions(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptionsForTypes(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
-            _repository.AddDynamicSubscriptions(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
-            _repository.RemoveDynamicSubscriptions(pastPeerDescriptor.PeerId, pastPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptionsForTypes(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
+            _repository.RemoveDynamicSubscriptionsForTypes(pastPeerDescriptor.PeerId, pastPeerDescriptor.TimestampUtc.Value, new[] { MessageUtil.GetTypeId(typeof(int)) });
             
 
             var fetched = _repository.Get(presentPeerDescriptor.Peer.Id);
@@ -135,7 +140,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var bindingKeyTokens = Enumerable.Range(1, 100).Select(i => random.Next().ToString()).ToArray();
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>(bindingKeyTokens) });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>(new BindingKey(bindingKeyTokens)) });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[] { CreateSubscriptionFor<int>(bindingKeyTokens) });
@@ -147,7 +152,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.RemoveDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<FakeCommand>() });
+            _repository.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { MessageUtil.GetTypeId(typeof(FakeCommand)) });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.ShouldHaveSamePropertiesAs(peerDescriptor);
@@ -159,7 +164,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<FakeCommand>(), CreateSubscriptionFor<FakeCommand>() });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>(), CreateSubscriptionsForType<FakeCommand>() });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[] { CreateSubscriptionFor<FakeCommand>() });
@@ -171,7 +176,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<FakeCommand>("bli"), CreateSubscriptionFor<FakeCommand>("bla") });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("bli"), new BindingKey("bla")) });
 
             var fetched = _repository.Get(peerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[]
@@ -186,7 +191,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         public void should_not_erase_the_dynamic_subscriptions_of_a_peer_on_update()
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
             _repository.AddOrUpdatePeer(peerDescriptor);
 
@@ -202,13 +207,44 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
 
-            _repository.AddDynamicSubscriptions(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionFor<int>() });
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
             var fetched = _repository.GetPeers().ExpectedSingle();
             fetched.Subscriptions.ShouldEqual(new[]
             {
                 CreateSubscriptionFor<FakeCommand>(),
                 CreateSubscriptionFor<int>()
+            });
+        }
+
+        [Test]
+        public void should_handle_dynamic_subscriptions_with_empty_binding_key_aside_static_one()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>() });
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+            });
+        }
+
+        [Test]
+        public void should_handle_dynamic_subscriptions_with_empty_binding_key_aside_specific_one()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>(BindingKey.Empty, new BindingKey("toto")) });
+
+            var fetched = _repository.Get(peerDescriptor.Peer.Id);
+            fetched.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<FakeCommand>("toto"),
             });
         }
 

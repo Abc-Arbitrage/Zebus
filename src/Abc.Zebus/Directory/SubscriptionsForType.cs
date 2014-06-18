@@ -1,4 +1,5 @@
-﻿using Abc.Zebus.Routing;
+﻿using System.Linq;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Util.Annotations;
 using ProtoBuf;
 
@@ -22,6 +23,11 @@ namespace Abc.Zebus.Directory
         [UsedImplicitly]
         private SubscriptionsForType()
         {
+        }
+
+        public Subscription[] ToSubscriptions()
+        {
+            return BindingKeys == null ? new Subscription[0] : BindingKeys.Select(bindingKey => new Subscription(MessageTypeId, bindingKey)).ToArray();
         }
     }
 }

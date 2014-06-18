@@ -25,30 +25,19 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             };
         }
 
-        private static byte[] SerializeSubscriptions(Subscription[] subscriptions)
-        {
-            var stream = new MemoryStream();
-            Serializer.Serialize(stream, subscriptions);
-            return stream.ToArray();
-        }
-
-        public static StorageSubscription ToStorageSubscription(this Subscription subscription, PeerId peerId)
+        public static StorageSubscription ToStorageSubscription(this SubscriptionsForType subscriptionFortype, PeerId peerId)
         {
             return new StorageSubscription
             {
                 PeerId = peerId.ToString(),
-                BindingKeyParts = subscription.BindingKey.GetParts().Select((part, i) => new { Index = i, Part = part }).ToDictionary(x => x.Index, x => x.Part),
-                MessageTypeId = subscription.MessageTypeId.FullName
+                MessageTypeId = subscriptionFortype.MessageTypeId.FullName,
+                SubscriptionBindings = SerializeBindingKeys(subscriptionFortype.BindingKeys)
             };
         }
 
-        public static Subscription ToSubscription(this StorageSubscription storageSubscription)
+        public static SubscriptionsForType ToSubscriptionsForType(this StorageSubscription storageSubscription)
         {
-            var bindingKeyParts = new string[0];
-            if (storageSubscription.BindingKeyParts != null)
-                bindingKeyParts = storageSubscription.BindingKeyParts.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToArray();
-            
-            return new Subscription(new MessageTypeId(storageSubscription.MessageTypeId), new BindingKey(bindingKeyParts));
+            return new SubscriptionsForType(new MessageTypeId(storageSubscription.MessageTypeId), DeserializeBindingKeys(storageSubscription.SubscriptionBindings));
         }
 
         public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
@@ -61,9 +50,57 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                       storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
-        private static Subscription[] DeserializeSubscriptions(byte[] staticSubscriptionsBytes)
+        private static byte[] SerializeSubscriptions(Subscription[] subscriptions)
         {
-            return Serializer.Deserialize<Subscription[]>(new MemoryStream(staticSubscriptionsBytes));
+            using (var stream = new MemoryStream())
+            {
+                Serializer.Serialize(stream, subscriptions);
+                return stream.ToArray();
+            }
+        }
+
+        private static Subscription[] DeserializeSubscriptions(byte[] subscriptionsBytes)
+        {
+            return Serializer.Deserialize<Subscription[]>(new MemoryStream(subscriptionsBytes));
+        }
+
+        private static byte[] SerializeBindingKeys(BindingKey[] bindingKeys)
+        {
+            using (var memoryStream = new MemoryStream())
+            using (var binaryWriter = new BinaryWriter(memoryStream))
+            {
+                binaryWriter.Write(bindingKeys.Length);
+                for (var keyIndex = 0; keyIndex < bindingKeys.Length; keyIndex++)
+                {
+                    var bindingKey = bindingKeys[keyIndex];
+                    binaryWriter.Write(bindingKey.PartCount);
+
+                    for (var partIndex = 0; partIndex < bindingKey.PartCount; partIndex++)
+                        binaryWriter.Write(bindingKey.GetPart(partIndex));
+                }
+                return memoryStream.ToArray();
+            }
+        }
+
+        private static BindingKey[] DeserializeBindingKeys(byte[] bindingKeysBytes)
+        {
+            using (var memoryStream = new MemoryStream(bindingKeysBytes))
+            using (var binaryReader = new BinaryReader(memoryStream))
+            {
+                var bindingKeyCount = binaryReader.ReadInt32();
+                var bindingKeys = new BindingKey[bindingKeyCount];
+                for (var keyIndex = 0; keyIndex < bindingKeyCount; keyIndex++)
+                {
+                    var partsCount = binaryReader.ReadInt32();
+                    var parts = new string[partsCount];
+                    
+                    for (var partIndex = 0; partIndex < partsCount; partIndex++)
+                        parts[partIndex] = binaryReader.ReadString();
+                    
+                    bindingKeys[keyIndex] = new BindingKey(parts);
+                }
+                return bindingKeys;
+            }
         }
     }
 }

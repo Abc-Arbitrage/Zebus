@@ -58,29 +58,32 @@ namespace Abc.Zebus.Directory.Storage
             if (peerEntry != null)
                 peerEntry.PeerDescriptor.Peer.IsResponding = isResponding;
         }
-
+        
         private PeerEntry GetEntry(PeerId peerId)
         {
             PeerEntry peerEntry;
             return _peers.TryGetValue(peerId, out peerEntry) ? peerEntry : null;
         }
 
-        public void AddDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
+        public void AddDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subscriptionsForTypes)
         {
             var peerEntry = GetEntry(peerId);
             if (peerEntry == null)
                 return;
-            if (timestampUtc >= peerEntry.PeerDescriptor.TimestampUtc)
-                peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Concat(subscriptions).ToList();
+            if (!(timestampUtc >= peerEntry.PeerDescriptor.TimestampUtc))
+                return;
+
+            var subscriptions = subscriptionsForTypes.SelectMany(sub => sub.BindingKeys.Select(binding => new Subscription(sub.MessageTypeId, binding))).ToList();
+            peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Concat(subscriptions).ToList();
         }
 
-        public void RemoveDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
+        public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds)
         {
             var peerEntry = GetEntry(peerId);
             if (peerEntry == null)
                 return;
             if (timestampUtc >= peerEntry.PeerDescriptor.TimestampUtc)
-                peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Except(subscriptions).ToList();
+                peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Where(sub => !messageTypeIds.Contains(sub.MessageTypeId)).ToList();
         }
     }
 }

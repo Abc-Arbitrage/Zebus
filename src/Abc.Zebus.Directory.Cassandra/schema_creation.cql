@@ -12,9 +12,9 @@ create table IF NOT EXISTS "Peers" (
 );
 
 create table IF NOT EXISTS "DynamicSubscriptions" (
+	"UselessKey" boolean,
 	"PeerId" text,
-	"SubscriptionIdentifier" uuid,
-	"MessageTypeId" text,
-	"BindingKeyParts" map<int, text>,
-	PRIMARY KEY("PeerId", "SubscriptionIdentifier")
+	"MessageTypeId" text,	
+	"SubscriptionBindings" blob,
+	PRIMARY KEY("UselessKey", "PeerId", "MessageTypeId")
 );

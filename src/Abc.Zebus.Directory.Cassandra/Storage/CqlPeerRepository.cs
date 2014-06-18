@@ -21,9 +21,9 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         {
             var peerDynamicSubscriptions = _dataContext.DynamicSubscriptions
                                                        .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                                                       .Where(sub => sub.PeerId == peerId.ToString())
+                                                       .Where(sub => sub.UselessKey == false && sub.PeerId == peerId.ToString())
                                                        .Execute()
-                                                       .Select(sub => sub.ToSubscription());
+                                                       .SelectMany(sub => sub.ToSubscriptionsForType().ToSubscriptions());
 
             return _dataContext.StoragePeers
                                .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
@@ -37,8 +37,10 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         {
             var dynamicSubscriptionsByPeer = _dataContext.DynamicSubscriptions
                                                          .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
+                                                         .Where(sub => sub.UselessKey == false)
                                                          .Execute()
-                                                         .ToLookup(sub => sub.PeerId, sub => sub.ToSubscription());
+                                                         .SelectMany(sub => sub.ToSubscriptionsForType().ToSubscriptions().Select(s => new { sub.PeerId, Subscription = s }))
+                                                         .ToLookup(peerSub => peerSub.PeerId, peerSub=> peerSub.Subscription);
                                                          
 
             return _dataContext.StoragePeers
@@ -69,7 +71,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                         .Execute();
             _dataContext.DynamicSubscriptions
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                        .Where(sub => sub.PeerId == peerId.ToString())
+                        .Where(sub => sub.UselessKey == false && sub.PeerId == peerId.ToString())
                         .Delete()
                         .SetTimestamp(now)
                         .Execute();
@@ -87,14 +89,14 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         }
 
-        public void AddDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
+        public void AddDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subscriptionsForTypes)
         {
-            if (subscriptions == null)
+            if (subscriptionsForTypes == null)
                 return;
             var batch = _dataContext.Session.CreateBatch();
             batch.SetConsistencyLevel(ConsistencyLevel.LocalQuorum);
 
-            foreach (var subscription in subscriptions)
+            foreach (var subscription in subscriptionsForTypes)
             {
                 batch.Append(_dataContext.DynamicSubscriptions
                                          .Insert(subscription.ToStorageSubscription(peerId))
@@ -104,17 +106,17 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             batch.Execute();
         }
 
-        public void RemoveDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions)
+        public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds)
         {
-            if (subscriptions == null)
+            if (messageTypeIds == null)
                 return;
             var batch = _dataContext.Session.CreateBatch();
             batch.SetConsistencyLevel(ConsistencyLevel.LocalQuorum);
 
-            foreach (var subscriptionToRemove in subscriptions.Select(sub => sub.ToStorageSubscription(peerId)))
+            foreach (var messageTypeId in messageTypeIds)
             {
                 var deleteQuery = _dataContext.DynamicSubscriptions
-                                              .Where(sub => sub.PeerId == subscriptionToRemove.PeerId && sub.SubscriptionIdentifier == subscriptionToRemove.SubscriptionIdentifier)
+                                              .Where(sub => sub.UselessKey == false && sub.PeerId == peerId.ToString() && sub.MessageTypeId == messageTypeId.FullName)
                                               .Delete()
                                               .SetTimestamp(timestampUtc);
                 batch.Append(deleteQuery);

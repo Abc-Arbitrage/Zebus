@@ -12,7 +12,7 @@ namespace Abc.Zebus.Directory.Storage
         void RemovePeer(PeerId peerId);
         void SetPeerResponding(PeerId peerId, bool isResponding);
 
-        void AddDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions);
-        void RemoveDynamicSubscriptions(PeerId peerId, DateTime timestampUtc, Subscription[] subscriptions);
+        void AddDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subscriptionsForTypes);
+        void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds);
     }
 }
