@@ -14,9 +14,8 @@ namespace Abc.Zebus.Directory
         IMessageHandler<PeerStopped>,
         IMessageHandler<PeerDecommissioned>,
         IMessageHandler<PingPeerCommand>,
-        IMessageHandler<PeerSubscriptionsAdded>,
-        IMessageHandler<PeerSubscriptionsRemoved>,
         IMessageHandler<PeerSubscriptionsUpdated>,
+        IMessageHandler<PeerSubscriptionsForTypeUpdated>,
         IMessageHandler<PeerNotResponding>,
         IMessageHandler<PeerResponding>
     {
@@ -187,7 +186,8 @@ namespace Abc.Zebus.Directory
                 return entry;
             });
 
-            peerEntry.ReplaceSubscriptions(subscriptions);
+            peerEntry.SetStaticSubscriptions(subscriptions);
+            peerEntry.SetDynamicSubscriptions(Enumerable.Empty<Subscription>());
         }
 
         public void Handle(PeerStarted message)
@@ -224,56 +224,6 @@ namespace Abc.Zebus.Directory
             PeerUpdated(message.PeerId, PeerUpdateAction.Decommissioned);
         }
 
-        public void Handle(PeerSubscriptionsAdded message)
-        {
-            if (_isRegistering)
-            {
-                _eventsReceivedWhileRegistering.Add(message);
-                return;
-            }
-
-            var peer = _peers.GetValueOrDefault(message.PeerId);
-            if (peer == null || message.Subscriptions == null)
-                return;
-
-            var peerSubscriptions = peer.Descriptor.Subscriptions.ToList();
-
-            foreach (var subscription in message.Subscriptions)
-            {
-                if (peer.SetSubscriptionEnabled(subscription, true, message.TimestampUtc))
-                    peerSubscriptions.Add(subscription);
-            }
-
-            peer.Descriptor.Subscriptions = peerSubscriptions.ToArray();
-
-            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
-        }
-
-        public void Handle(PeerSubscriptionsRemoved message)
-        {
-            if (_isRegistering)
-            {
-                _eventsReceivedWhileRegistering.Add(message);
-                return;
-            }
-
-            var peer = _peers.GetValueOrDefault(message.PeerId);
-            if (peer == null || message.Subscriptions == null)
-                return;
-
-            var peerSubscriptions = peer.Descriptor.Subscriptions.ToList();
-
-            foreach (var subscription in message.Subscriptions)
-            {
-                if (peer.SetSubscriptionEnabled(subscription, false, message.TimestampUtc))
-                    peerSubscriptions.Remove(subscription);
-            }
-
-            peer.Descriptor.Subscriptions = peerSubscriptions.ToArray();
-
-            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
-        }
-
         public void Handle(PeerSubscriptionsUpdated message)
         {
             if (_isRegistering)
@@ -286,12 +236,32 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.Descriptor.Subscriptions = message.PeerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
+            peer.SetDynamicSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>());
+
+            peer.Descriptor.Subscriptions = peer.GetSubscriptions();
             peer.Descriptor.TimestampUtc = message.PeerDescriptor.TimestampUtc;
 
-            peer.ReplaceSubscriptions(peer.Descriptor.Subscriptions);
-
             PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
+        }
+
+        public void Handle(PeerSubscriptionsForTypeUpdated message)
+        {
+            if (_isRegistering)
+            {
+                _eventsReceivedWhileRegistering.Add(message);
+                return;
+            }
+
+            var peer = GetPeerCheckTimestamp(message.PeerId, message.TimestampUtc);
+            if (peer == null)
+                return;
+
+            peer.SetDynamicSubscriptionsForType(message.MessageTypeId, message.BindingKeys);
+            
+            peer.Descriptor.Subscriptions = peer.GetSubscriptions();
+            peer.Descriptor.TimestampUtc = message.TimestampUtc;
+
+            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
         }
 
         public void Handle(PeerNotResponding message)

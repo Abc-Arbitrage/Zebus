@@ -66,6 +66,12 @@ namespace Abc.Zebus.Routing
             return _parts != null ? _parts.ToList() : Enumerable.Empty<string>();
         }
 
+        public override bool Equals(object obj)
+        {
+            var other = obj as BindingKey?;
+            return other != null && Equals(other.Value);
+        }
+
         public bool Equals(BindingKey other)
         {
             if (Equals(_parts, other._parts))

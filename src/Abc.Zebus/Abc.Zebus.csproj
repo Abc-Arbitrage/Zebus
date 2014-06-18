@@ -82,9 +82,13 @@
     <Compile Include="Directory\PeerDirectoryClient.PeerEntry.cs" />
     <Compile Include="Directory\PeerNotResponding.cs" />
     <Compile Include="Directory\PeerResponding.cs" />
+<<<<<<< HEAD
     <Compile Include="Directory\PeerSubscriptionsAdded.cs" />
     <Compile Include="Directory\PeerSubscriptionsForTypesUpdated.cs" />
     <Compile Include="Directory\PeerSubscriptionsRemoved.cs" />
+=======
+    <Compile Include="Directory\PeerSubscriptionsForTypeUpdated.cs" />
+>>>>>>> incremental subscription events replaced by PeerSubscriptionsForTypeUpdated
     <Compile Include="Directory\PeerSubscriptionsUpdated.cs" />
     <Compile Include="Directory\PeerSubscriptionTree.cs" />
     <Compile Include="Directory\PingPeerCommand.cs" />

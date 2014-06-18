@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Abc.Zebus.Util;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Directory
@@ -11,121 +10,169 @@ namespace Abc.Zebus.Directory
     {
         private class PeerEntry
         {
-            private readonly Dictionary<Subscription, SubscriptionStatus> _subscriptionStatuses = new Dictionary<Subscription, SubscriptionStatus>();
+            private readonly Dictionary<MessageTypeId, MessageSubscriptions> _messageSubscriptions = new Dictionary<MessageTypeId, MessageSubscriptions>();
             private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType;
+            private readonly PeerDescriptor _descriptor;
 
             public PeerEntry(PeerDescriptor descriptor, ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> subscriptionsByMessageType)
             {
-                Descriptor = descriptor;
+                _descriptor = descriptor;
                 _subscriptionsByMessageType = subscriptionsByMessageType;
             }
 
-            public PeerDescriptor Descriptor { get; private set; }
-
-            public bool SetSubscriptionEnabled(Subscription subscription, bool enabled, DateTime timestampUtc)
+            public PeerDescriptor Descriptor
             {
-                SubscriptionStatus status;
-                if (_subscriptionStatuses.TryGetValue(subscription, out status))
-                {
-                    if (status.TimestampUtc > timestampUtc || status.Enabled == enabled)
-                        return false;
-
-                    status.Enabled = enabled;
-                    status.TimestampUtc = timestampUtc;
-                }
-                else
-                {
-                    _subscriptionStatuses.Add(subscription, new SubscriptionStatus(enabled, timestampUtc));
-                }
-
-                if (enabled)
-                    AddToSubscriptionsByMessageType(subscription);
-                else
-                    RemoveFromSubscriptionsByMessageType(subscription);
-
-                return true;
+                get { return _descriptor; }
             }
 
-            public void ReplaceSubscriptions(Subscription[] newSubscriptions)
+            public Subscription[] GetSubscriptions()
             {
-                ClearDisabledSubscriptions();
-
-                var previousSubscriptions = _subscriptionStatuses.Keys.ToList();
-                var newSubscriptionSet = newSubscriptions.ToHashSet();
-
-                foreach (var previousSubscription in previousSubscriptions)
+                var subscriptions = new HashSet<Subscription>();
+                foreach (var messageSubscriptions in _messageSubscriptions)
                 {
-                    if (newSubscriptionSet.Contains(previousSubscription))
+                    foreach (var bindingKey in messageSubscriptions.Value.DynamicBindingKeys)
                     {
-                        newSubscriptionSet.Remove(previousSubscription);
-                        continue;
+                        subscriptions.Add(new Subscription(messageSubscriptions.Key, bindingKey));
                     }
-                    RemoveSubscription(previousSubscription);
+                    foreach (var bindingKey in messageSubscriptions.Value.StaticBindingKeys)
+                    {
+                        subscriptions.Add(new Subscription(messageSubscriptions.Key, bindingKey));
+                    }
                 }
+                return subscriptions.ToArray();
+            }
 
-                var timestampUtc = Descriptor.TimestampUtc ?? SystemDateTime.UtcNow;
-                foreach (var newSubscription in newSubscriptionSet)
+            public void SetStaticSubscriptions(IEnumerable<Subscription> staticSubscriptions)
+            {
+                var newBindingKeysByMessageType = staticSubscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(g => g.Key, g => g.Select(x => x.BindingKey).ToList());
+
+                foreach (var messageSubscriptions in _messageSubscriptions)
                 {
-                    AddSubscription(newSubscription, timestampUtc);
+                    var newBindingKeys = newBindingKeysByMessageType.GetValueOrDefault(messageSubscriptions.Key);
+
+                    foreach (var existingBindingKey in messageSubscriptions.Value.StaticBindingKeys.ToList())
+                    {
+                        if (newBindingKeys != null && newBindingKeys.Contains(existingBindingKey))
+                            continue;
+
+                        messageSubscriptions.Value.StaticBindingKeys.Remove(existingBindingKey);
+
+                        if (messageSubscriptions.Value.DynamicBindingKeys.Contains(existingBindingKey))
+                            continue;
+
+                        RemoveFromSubscriptionTree(messageSubscriptions.Key, existingBindingKey);
+                    }
+                }
+
+                foreach (var newBindingKeys in newBindingKeysByMessageType)
+                {
+                    var messageSubscriptions = _messageSubscriptions.GetValueOrAdd(newBindingKeys.Key, () => new MessageSubscriptions());
+                    foreach (var newBindingKey in newBindingKeys.Value)
+                    {
+                        if (!messageSubscriptions.StaticBindingKeys.Add(newBindingKey))
+                            continue;
+
+                        if (messageSubscriptions.DynamicBindingKeys.Contains(newBindingKey))
+                            continue;
+
+                        AddToSubscriptionTree(newBindingKeys.Key, newBindingKey);
+                    }
                 }
             }
 
-            private void ClearDisabledSubscriptions()
+            public void SetDynamicSubscriptions(IEnumerable<Subscription> subscriptions)
             {
-                var disabledSubscriptions = _subscriptionStatuses.Where(x => !x.Value.Enabled).Select(x => x.Key).ToList();
-                _subscriptionStatuses.RemoveRange(disabledSubscriptions);
+                var subscriptionsByType = new Dictionary<MessageTypeId, IEnumerable<BindingKey>>();
+                foreach (var messageTypeId in _messageSubscriptions.Keys)
+                {
+                    subscriptionsByType.Add(messageTypeId, Enumerable.Empty<BindingKey>());
+                }
+                foreach (var messageTypeSubscriptions in subscriptions.GroupBy(x => x.MessageTypeId))
+                {
+                    subscriptionsByType[messageTypeSubscriptions.Key] = messageTypeSubscriptions.Select(x => x.BindingKey);
+                }
+                foreach (var messageTypeSubscriptions in subscriptionsByType)
+                {
+                    SetDynamicSubscriptionsForType(messageTypeSubscriptions.Key, messageTypeSubscriptions.Value);
+                }
             }
 
-            private void RemoveSubscription(Subscription subscription)
+            public void SetDynamicSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys)
             {
-                _subscriptionStatuses.Remove(subscription);
+                var messageSubscriptions = _messageSubscriptions.GetValueOrAdd(messageTypeId, () => new MessageSubscriptions());
+                var newBindingKeys = bindingKeys.ToHashSet();
 
-                RemoveFromSubscriptionsByMessageType(subscription);
-            }
+                foreach (var previousBindingKey in messageSubscriptions.DynamicBindingKeys.ToList())
+                {
+                    if (newBindingKeys.Remove(previousBindingKey))
+                        continue;
 
-            private void AddSubscription(Subscription subscription, DateTime timestampUtc)
-            {
-                _subscriptionStatuses.Add(subscription, new SubscriptionStatus(true, timestampUtc));
+                    messageSubscriptions.DynamicBindingKeys.Remove(previousBindingKey);
 
-                AddToSubscriptionsByMessageType(subscription);
+                    if (messageSubscriptions.StaticBindingKeys.Contains(previousBindingKey))
+                        continue;
+
+                    RemoveFromSubscriptionTree(messageTypeId, previousBindingKey);
+                }
+
+                foreach (var newBindingKey in newBindingKeys)
+                {
+                    messageSubscriptions.DynamicBindingKeys.Add(newBindingKey);
+
+                    if (messageSubscriptions.StaticBindingKeys.Contains(newBindingKey))
+                        continue;
+
+                    AddToSubscriptionTree(messageTypeId, newBindingKey);
+                }
             }
 
             public void RemoveSubscriptions()
             {
-                foreach (var subscription in _subscriptionStatuses.Where(x => x.Value.Enabled).Select(x => x.Key))
+                foreach (var messageSubscriptions in _messageSubscriptions)
                 {
-                    RemoveFromSubscriptionsByMessageType(subscription);
+                    var subscriptionTree = _subscriptionsByMessageType.GetValueOrDefault(messageSubscriptions.Key);
+                    foreach (var bindingKey in messageSubscriptions.Value.GetAll())
+                    {
+                        RemoveFromSubscriptionTree(messageSubscriptions.Key, bindingKey);
+                    }
                 }
-                _subscriptionStatuses.Clear();
+                _subscriptionsByMessageType.Clear();
             }
 
-            private void AddToSubscriptionsByMessageType(Subscription subscription)
+            private void AddToSubscriptionTree(MessageTypeId messageTypeId, BindingKey bindingKey)
             {
-                var messageSubscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
-                messageSubscriptions.Add(Descriptor.Peer, subscription.BindingKey);
+                var subscriptionTree = _subscriptionsByMessageType.GetOrAdd(messageTypeId, _ => new PeerSubscriptionTree());
+                subscriptionTree.Add(Descriptor.Peer, bindingKey);
             }
 
-            private void RemoveFromSubscriptionsByMessageType(Subscription subscription)
+            private void RemoveFromSubscriptionTree(MessageTypeId messageTypeId, BindingKey bindingKey)
             {
-                var messageSubscriptions = _subscriptionsByMessageType.GetValueOrDefault(subscription.MessageTypeId);
-                if (messageSubscriptions == null)
+                var subscriptionTree = _subscriptionsByMessageType.GetValueOrDefault(messageTypeId);
+                if (subscriptionTree == null)
                     return;
 
-                messageSubscriptions.Remove(Descriptor.Peer, subscription.BindingKey);
+                subscriptionTree.Remove(Descriptor.Peer, bindingKey);
 
-                if (messageSubscriptions.IsEmpty)
-                    _subscriptionsByMessageType.Remove(subscription.MessageTypeId);
+                if (subscriptionTree.IsEmpty)
+                    _subscriptionsByMessageType.Remove(messageTypeId);
             }
 
-            private class SubscriptionStatus
+            public class MessageSubscriptions
             {
-                public bool Enabled;
-                public DateTime TimestampUtc;
+                public readonly HashSet<BindingKey> StaticBindingKeys = new HashSet<BindingKey>();
+                public readonly HashSet<BindingKey> DynamicBindingKeys = new HashSet<BindingKey>();
 
-                public SubscriptionStatus(bool enabled, DateTime timestampUtc)
+                public IEnumerable<BindingKey> GetAll()
                 {
-                    Enabled = enabled;
-                    TimestampUtc = timestampUtc;
+                    foreach (var dynamicSubscription in DynamicBindingKeys)
+                    {
+                        yield return dynamicSubscription;
+                    }
+                    foreach (var staticSubscription in StaticBindingKeys)
+                    {
+                        if (!DynamicBindingKeys.Contains(staticSubscription))
+                            yield return staticSubscription;
+                    }
                 }
             }
         }

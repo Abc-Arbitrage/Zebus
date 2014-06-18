@@ -47,24 +47,26 @@ namespace Abc.Zebus.Tests.Directory
             _directory = new PeerDirectoryClient(_configurationMock.Object);
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
 
-            Console.WriteLine("Incremental updates (add)");
-            using (Measure.Throughput(subscriptions.Count))
-            {
-                for (var subscriptionIndex = 0; subscriptionIndex <subscriptions.Count; ++subscriptionIndex)
-                {
-                    _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { subscriptions[subscriptionIndex] }, DateTime.UtcNow));
-                }
-            }
-            Console.WriteLine("Incremental updates (remove)");
-            using (Measure.Throughput(subscriptions.Count))
-            {
-                for (var subscriptionIndex = subscriptions.Count - 1; subscriptionIndex >= 0; --subscriptionIndex)
-                //for (var subscriptionIndex = 0; subscriptionIndex < subscriptions.Count; subscriptionIndex += 200)
-                {
-                    _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { subscriptions[subscriptionIndex] }, DateTime.UtcNow));
-                    //_directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, subscriptions.GetRange(subscriptionIndex, 200).ToArray(), DateTime.UtcNow));
-                }
-            }
+            // TODO CAO
+
+            //Console.WriteLine("Incremental updates (add)");
+            //using (Measure.Throughput(subscriptions.Count))
+            //{
+            //    for (var subscriptionIndex = 0; subscriptionIndex <subscriptions.Count; ++subscriptionIndex)
+            //    {
+            //        _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { subscriptions[subscriptionIndex] }, DateTime.UtcNow));
+            //    }
+            //}
+            //Console.WriteLine("Incremental updates (remove)");
+            //using (Measure.Throughput(subscriptions.Count))
+            //{
+            //    for (var subscriptionIndex = subscriptions.Count - 1; subscriptionIndex >= 0; --subscriptionIndex)
+            //    //for (var subscriptionIndex = 0; subscriptionIndex < subscriptions.Count; subscriptionIndex += 200)
+            //    {
+            //        _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { subscriptions[subscriptionIndex] }, DateTime.UtcNow));
+            //        //_directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, subscriptions.GetRange(subscriptionIndex, 200).ToArray(), DateTime.UtcNow));
+            //    }
+            //}
         }
     }
 }
