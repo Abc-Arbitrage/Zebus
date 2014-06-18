@@ -1,4 +1,5 @@
 ﻿using Abc.Zebus.Routing;
+using Abc.Zebus.Util.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus.Directory
@@ -17,7 +18,10 @@ namespace Abc.Zebus.Directory
             MessageTypeId = messageTypeId;
             BindingKeys = bindingKeys;
         }
-
-        public SubscriptionsForType(){}
+        
+        [UsedImplicitly]
+        private SubscriptionsForType()
+        {
+        }
     }
 }
