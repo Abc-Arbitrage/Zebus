@@ -9,9 +9,7 @@ namespace Abc.Zebus
     public class MessageTypeId : IEquatable<MessageTypeId>
     {
         private Type _messageType;
-
-        [ProtoMember(1, IsRequired = true)]
-        public readonly string FullName;
+        private string _fullName;
 
         public MessageTypeId(Type messageType)
         {
@@ -26,6 +24,13 @@ namespace Abc.Zebus
 
         private MessageTypeId()
         {
+        }
+
+        [ProtoMember(1, IsRequired = true)]
+        public string FullName
+        {
+            get { return _fullName; }
+            private set { _fullName = string.Intern(value); }
         }
 
         public static readonly MessageTypeId EndOfStream = new MessageTypeId("Abc.Zebus.Transport.EndOfStream");
