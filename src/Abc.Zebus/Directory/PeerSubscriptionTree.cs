@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Routing;
-using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Directory
 {
@@ -16,12 +14,12 @@ namespace Abc.Zebus.Directory
             get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0; }
         }
 
-        public void Add(Peer peer, Subscription subscription)
+        public void Add(Peer peer, BindingKey subscription)
         {
             UpdatePeerSubscription(peer, subscription, UpdateAction.Add);
         }
 
-        public void Remove(Peer peer, Subscription subscription)
+        public void Remove(Peer peer, BindingKey subscription)
         {
             UpdatePeerSubscription(peer, subscription, UpdateAction.Remove);
         }
@@ -35,9 +33,9 @@ namespace Abc.Zebus.Directory
             return peerCollector.GetPeers();
         }
 
-        private void UpdatePeerSubscription(Peer peer, Subscription subscription, UpdateAction action)
+        private void UpdatePeerSubscription(Peer peer, BindingKey subscription, UpdateAction action)
         {
-            if (subscription.IsMatchingAllMessages)
+            if (subscription.IsEmpty)
                 UpdatePeersMatchingAllMessages(peer, action);
             else
                 _rootNode.Update(peer, subscription, action);
@@ -131,15 +129,15 @@ namespace Abc.Zebus.Directory
                     childNode.Accept(peerCollector, routingKey);
             }
 
-            public void Update(Peer peer, Subscription subscription, UpdateAction action)
+            public void Update(Peer peer, BindingKey subscription, UpdateAction action)
             {
-                if (IsLeaf(subscription.BindingKey))
+                if (IsLeaf(subscription))
                 {
                     UpdateList(peer, action);
                     return;
                 }
 
-                var nextPart = subscription.BindingKey.GetPart(_nextPartIndex);
+                var nextPart = subscription.GetPart(_nextPartIndex);
 
                 if (nextPart == "#" || nextPart == null)
                 {

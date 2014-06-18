@@ -102,7 +102,7 @@ namespace Abc.Zebus.Directory
             private void AddToSubscriptionsByMessageType(Subscription subscription)
             {
                 var messageSubscriptions = _subscriptionsByMessageType.GetOrAdd(subscription.MessageTypeId, _ => new PeerSubscriptionTree());
-                messageSubscriptions.Add(Descriptor.Peer, subscription);
+                messageSubscriptions.Add(Descriptor.Peer, subscription.BindingKey);
             }
 
             private void RemoveFromSubscriptionsByMessageType(Subscription subscription)
@@ -111,7 +111,7 @@ namespace Abc.Zebus.Directory
                 if (messageSubscriptions == null)
                     return;
 
-                messageSubscriptions.Remove(Descriptor.Peer, subscription);
+                messageSubscriptions.Remove(Descriptor.Peer, subscription.BindingKey);
 
                 if (messageSubscriptions.IsEmpty)
                     _subscriptionsByMessageType.Remove(subscription.MessageTypeId);

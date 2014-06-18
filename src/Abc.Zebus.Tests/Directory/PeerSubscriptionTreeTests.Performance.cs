@@ -27,7 +27,7 @@ namespace Abc.Zebus.Tests.Directory
             foreach (var peerSubscription in subscriptions)
             {
                 subscriptionList.Add(peerSubscription.Item1, peerSubscription.Item2);
-                subscriptionTree.Add(peerSubscription.Item1, peerSubscription.Item2);
+                subscriptionTree.Add(peerSubscription.Item1, peerSubscription.Item2.BindingKey);
             }
 
             var bindingKey = BindingKey.Split(routingKey);
@@ -65,7 +65,7 @@ namespace Abc.Zebus.Tests.Directory
             foreach (var peer in peers)
             {
                 subscriptionList.Add(peer, Subscription.Any<FakeEvent>());
-                subscriptionTree.Add(peer, Subscription.Any<FakeEvent>());
+                subscriptionTree.Add(peer, BindingKey.Empty);
             }
 
             Console.WriteLine("{0} test -------------", subscriptionList.GetType().Name);

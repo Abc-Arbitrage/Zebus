@@ -20,7 +20,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = CreateSubscription("*");
+            var subscription = BindingKey.Split("*");
             peerSubscriptionTree.Add(peer, subscription);
 
             // Act
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("Abc.Testing.0"), "tcp://test:123");
-            peerSubscriptionTree.Add(peer, Subscription.Any<FakeEvent>());
+            peerSubscriptionTree.Add(peer, BindingKey.Empty);
 
             var matchingPeer = peerSubscriptionTree.GetPeers(BindingKey.Empty).ExpectedSingle();
             matchingPeer.Id.ShouldEqual(peer.Id);
@@ -46,7 +46,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("Abc.Testing.0"), "tcp://test:123");
-            peerSubscriptionTree.Add(peer, new Subscription(new MessageTypeId("Abc.Event"), new BindingKey("a")));
+            peerSubscriptionTree.Add(peer, new BindingKey("a"));
 
             var matchingPeer = peerSubscriptionTree.GetPeers(new BindingKey("a")).ExpectedSingle();
             matchingPeer.Id.ShouldEqual(peer.Id);
@@ -60,9 +60,8 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Empty);
-            
-            peerSubscriptionTree.Add(peer, subscription);
+
+            peerSubscriptionTree.Add(peer, BindingKey.Empty);
 
             // Act
             var matchingPeers = peerSubscriptionTree.GetPeers(BindingKey.Split(routingKey));
@@ -78,7 +77,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = CreateSubscription("*.*.*");
+            var subscription = BindingKey.Split("*.*.*");
 
             peerSubscriptionTree.Add(peer, subscription);
 
@@ -98,7 +97,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = CreateSubscription(subscriptionKey);
+            var subscription = BindingKey.Split(subscriptionKey);
 
             peerSubscriptionTree.Add(peer, subscription);
 
@@ -116,7 +115,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = CreateSubscription(subscriptionKey);
+            var subscription = BindingKey.Split(subscriptionKey);
 
             peerSubscriptionTree.Add(peer, subscription);
 
@@ -139,11 +138,11 @@ namespace Abc.Zebus.Tests.Directory
             var peer = new Peer(new PeerId("1"), "endpoint");
 
             peerSubscriptionTree.IsEmpty.ShouldBeTrue();
-            peerSubscriptionTree.Add(peer, CreateSubscription(subscriptionKey));
-            var subscription = CreateSubscription("lol");
+            peerSubscriptionTree.Add(peer, BindingKey.Split(subscriptionKey));
+            var subscription = BindingKey.Split("lol");
             peerSubscriptionTree.Add(peer, subscription);
             peerSubscriptionTree.IsEmpty.ShouldBeFalse();
-            peerSubscriptionTree.Remove(peer, CreateSubscription(subscriptionKey));
+            peerSubscriptionTree.Remove(peer, BindingKey.Split(subscriptionKey));
             peerSubscriptionTree.IsEmpty.ShouldBeFalse();
             peerSubscriptionTree.Remove(peer, subscription);
             peerSubscriptionTree.IsEmpty.ShouldBeTrue();
@@ -165,16 +164,16 @@ namespace Abc.Zebus.Tests.Directory
             var peer9 = new Peer(new PeerId("9"), "endpoint");
             var peer0 = new Peer(new PeerId("0"), "endpoint");
 
-            peerSubscriptionTree.Add(peer1, CreateSubscription("#"));
-            peerSubscriptionTree.Add(peer2, CreateSubscription("a.b"));
-            peerSubscriptionTree.Add(peer3, CreateSubscription("a.*"));
-            peerSubscriptionTree.Add(peer4, CreateSubscription("b.*.c"));
-            peerSubscriptionTree.Add(peer5, CreateSubscription("b.*.f"));
-            peerSubscriptionTree.Add(peer6, CreateSubscription("d.*.c"));
-            peerSubscriptionTree.Add(peer7, CreateSubscription("a"));
-            peerSubscriptionTree.Add(peer8, CreateSubscription("*.*"));
-            peerSubscriptionTree.Add(peer9, CreateSubscription("a.#"));
-            peerSubscriptionTree.Add(peer0, CreateSubscription("*"));
+            peerSubscriptionTree.Add(peer1, BindingKey.Split("#"));
+            peerSubscriptionTree.Add(peer2, BindingKey.Split("a.b"));
+            peerSubscriptionTree.Add(peer3, BindingKey.Split("a.*"));
+            peerSubscriptionTree.Add(peer4, BindingKey.Split("b.*.c"));
+            peerSubscriptionTree.Add(peer5, BindingKey.Split("b.*.f"));
+            peerSubscriptionTree.Add(peer6, BindingKey.Split("d.*.c"));
+            peerSubscriptionTree.Add(peer7, BindingKey.Split("a"));
+            peerSubscriptionTree.Add(peer8, BindingKey.Split("*.*"));
+            peerSubscriptionTree.Add(peer9, BindingKey.Split("a.#"));
+            peerSubscriptionTree.Add(peer0, BindingKey.Split("*"));
 
             // Act - Assert
             var peers = peerSubscriptionTree.GetPeers(BindingKey.Split("b.1.c"));
@@ -209,7 +208,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = CreateSubscription(subscriptionKey);
+            var subscription = BindingKey.Split(subscriptionKey);
 
             peerSubscriptionTree.Add(peer, subscription);
 
@@ -218,11 +217,6 @@ namespace Abc.Zebus.Tests.Directory
 
             // Assert
             matchingPeers.ShouldBeEmpty();
-        }
-
-        private Subscription CreateSubscription(string bindingKey)
-        {
-            return new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Split(bindingKey));
         }
     }
 }
