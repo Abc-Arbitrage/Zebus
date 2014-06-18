@@ -15,7 +15,7 @@ namespace Abc.Zebus.Directory
         IMessageHandler<PeerDecommissioned>,
         IMessageHandler<PingPeerCommand>,
         IMessageHandler<PeerSubscriptionsUpdated>,
-        IMessageHandler<PeerSubscriptionsForTypeUpdated>,
+        IMessageHandler<PeerSubscriptionsForTypesUpdated>,
         IMessageHandler<PeerNotResponding>,
         IMessageHandler<PeerResponding>
     {
@@ -244,7 +244,7 @@ namespace Abc.Zebus.Directory
             PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
         }
 
-        public void Handle(PeerSubscriptionsForTypeUpdated message)
+        public void Handle(PeerSubscriptionsForTypesUpdated message)
         {
             if (_isRegistering)
             {
@@ -256,7 +256,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.SetDynamicSubscriptionsForType(message.MessageTypeId, message.BindingKeys);
+            peer.SetDynamicSubscriptionsForType(message.SubscriptionsForType);
             
             peer.Descriptor.Subscriptions = peer.GetSubscriptions();
             peer.Descriptor.TimestampUtc = message.TimestampUtc;

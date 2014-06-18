@@ -1,4 +1,5 @@
-﻿using ProtoBuf;
+﻿using Abc.Zebus.Routing;
+using ProtoBuf;
 using System;
 
 namespace Abc.Zebus.Directory
@@ -14,6 +15,13 @@ namespace Abc.Zebus.Directory
 
         [ProtoMember(3, IsRequired = false)]
         public readonly DateTime TimestampUtc;
+
+        public PeerSubscriptionsForTypesUpdated(PeerId peerId, DateTime timestampUtc, MessageTypeId messageTypeId, params BindingKey[] bindingKeys)
+        {
+            PeerId = peerId;
+            SubscriptionsForType = new [] { new SubscriptionsForType(messageTypeId, bindingKeys) };
+            TimestampUtc = timestampUtc;
+        }
 
         public PeerSubscriptionsForTypesUpdated(PeerId peerId, DateTime timestampUtc, params SubscriptionsForType[] subscriptionsForType)
         {

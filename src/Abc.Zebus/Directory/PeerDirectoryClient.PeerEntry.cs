@@ -97,6 +97,14 @@ namespace Abc.Zebus.Directory
                 }
             }
 
+            public void SetDynamicSubscriptionsForType(IEnumerable<SubscriptionsForType> subscriptionsForTypes)
+            {
+                foreach (var subscriptionsForType in subscriptionsForTypes)
+                {
+                    SetDynamicSubscriptionsForType(subscriptionsForType.MessageTypeId, subscriptionsForType.BindingKeys);
+                }
+            }
+
             public void SetDynamicSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys)
             {
                 var messageSubscriptions = _messageSubscriptions.GetValueOrAdd(messageTypeId, () => new MessageSubscriptions());

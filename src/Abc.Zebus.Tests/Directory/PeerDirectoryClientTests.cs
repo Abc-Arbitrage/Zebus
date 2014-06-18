@@ -548,19 +548,19 @@ namespace Abc.Zebus.Tests.Directory
         public void should_handle_update_subscriptions_for_type()
         {
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
-            _directory.Handle(new PeerSubscriptionsForTypeUpdated(_otherPeer.Id, new MessageTypeId(typeof(OtherFakeEvent3)), new[] { new BindingKey("3") }, DateTime.UtcNow.AddTicks(1)));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddTicks(1), new MessageTypeId(typeof(OtherFakeEvent3)), new BindingKey("3")));
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
             _directory.GetPeersHandlingMessage(new FakeEvent(0)).ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
             _directory.GetPeersHandlingMessage(new OtherFakeEvent3(3)).ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
 
-            _directory.Handle(new PeerSubscriptionsForTypeUpdated(_otherPeer.Id, new MessageTypeId(typeof(OtherFakeEvent3)), new[] { new BindingKey("3"), new BindingKey("4") }, DateTime.UtcNow.AddTicks(2)));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddTicks(2), new MessageTypeId(typeof(OtherFakeEvent3)), new BindingKey("3"), new BindingKey("4")));
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(3);
             _directory.GetPeersHandlingMessage(new OtherFakeEvent3(3)).ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
             _directory.GetPeersHandlingMessage(new OtherFakeEvent3(4)).ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
 
-            _directory.Handle(new PeerSubscriptionsForTypeUpdated(_otherPeer.Id, new MessageTypeId(typeof(OtherFakeEvent3)), new[] { new BindingKey("4") }, DateTime.UtcNow.AddTicks(2)));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id,DateTime.UtcNow.AddTicks(2), new MessageTypeId(typeof(OtherFakeEvent3)), new BindingKey("4")));
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
             _directory.GetPeersHandlingMessage(new OtherFakeEvent3(3)).ShouldBeEmpty();
@@ -571,8 +571,8 @@ namespace Abc.Zebus.Tests.Directory
         public void should_ignore_outdated_subscriptions_by_type()
         {
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));;
-            _directory.Handle(new PeerSubscriptionsForTypeUpdated(_otherPeer.Id, new MessageTypeId(typeof(OtherFakeEvent3)), new[] { new BindingKey("3") }, DateTime.UtcNow.AddMinutes(1)));
-            _directory.Handle(new PeerSubscriptionsForTypeUpdated(_otherPeer.Id, new MessageTypeId(typeof(OtherFakeEvent3)), new BindingKey[0], DateTime.UtcNow.AddTicks(1)));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddMinutes(1), new MessageTypeId(typeof(OtherFakeEvent3)), new BindingKey("3")));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddTicks(1), new MessageTypeId(typeof(OtherFakeEvent3))));
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(2);
             _directory.GetPeersHandlingMessage(new OtherFakeEvent3(3)).ShouldNotBeEmpty();
@@ -584,7 +584,7 @@ namespace Abc.Zebus.Tests.Directory
             _bus.AddHandler<RegisterPeerCommand>(x =>
             {
                 var peerDescriptor = _otherPeer.ToPeerDescriptor(true);
-                _directory.Handle(new PeerSubscriptionsForTypeUpdated(_otherPeer.Id, new MessageTypeId(typeof(FakeEvent)), new[] { BindingKey.Empty }, DateTime.UtcNow.AddTicks(1)));
+                _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddTicks(1), new MessageTypeId(typeof(FakeEvent)), BindingKey.Empty));
                 return new RegisterPeerResponse(new[] { peerDescriptor });
             });
 
