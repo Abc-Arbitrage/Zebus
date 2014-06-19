@@ -108,6 +108,7 @@ namespace Abc.Zebus.Testing
             {
                 Subscriptions.Add(subscription);
             }
+
             return new DisposableAction(() =>
             {
                 lock (Subscriptions)
@@ -123,6 +124,7 @@ namespace Abc.Zebus.Testing
             {
                 Subscriptions.AddRange(subscriptions);
             }
+
             return new DisposableAction(() =>
             {
                 lock (Subscriptions)
@@ -147,6 +149,11 @@ namespace Abc.Zebus.Testing
 
         public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
         {
+            lock (Subscriptions)
+            {
+                Subscriptions.AddRange(subscriptions);
+            }
+
             var handlerKeys = subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default(PeerId))).ToList();
             foreach (var handlerKey in handlerKeys)
             {
@@ -195,7 +202,6 @@ namespace Abc.Zebus.Testing
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => handler((TMessage)x);
         }
-
 
         public void AddSuccessfulHandler<TMessage>() where TMessage : IMessage
         {
