@@ -157,7 +157,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_update_started_peer_with_no_timestamp()
+        public void should_update_started_peer_with_no_timestamp_on_PeerSubscriptionsUpdated()
         {
             var descriptor1 = _otherPeer.ToPeerDescriptor(true);
             descriptor1.TimestampUtc = default(DateTime);
@@ -169,6 +169,32 @@ namespace Abc.Zebus.Tests.Directory
 
             var targetPeer = _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
             targetPeer.Id.ShouldEqual(_otherPeer.Id);
+        }
+
+        [Test]
+        public void should_update_started_peer_with_no_timestamp_on_PeerSubscriptionsForTypesUpdated()
+        {
+            var peerDescriptor = _otherPeer.ToPeerDescriptor(true);
+            peerDescriptor.TimestampUtc = default(DateTime);
+            _directory.Handle(new PeerStarted(peerDescriptor));
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, default(DateTime), MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
+
+            var targetPeer = _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
+            targetPeer.Id.ShouldEqual(_otherPeer.Id);
+        }
+
+
+        [Test]
+        public void should_remove_subscriptions_to_type_when_no_binding_keys_are_provided()
+        {
+            var peerDescriptor = _otherPeer.ToPeerDescriptor(true, typeof(FakeCommand));
+            peerDescriptor.TimestampUtc = default(DateTime);
+            _directory.Handle(new PeerStarted(peerDescriptor));
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, default(DateTime), MessageUtil.TypeId<FakeCommand>()));
+
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldBeEmpty();
         }
 
         [Test]
@@ -426,7 +452,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_update_peer_handled_message()
+        public void should_update_peer_handled_message_on_PeerSubscriptionsUpdated()
         {
             var updatedPeerId = default(PeerId);
             var updateAction = PeerUpdateAction.Decommissioned;
@@ -437,7 +463,7 @@ namespace Abc.Zebus.Tests.Directory
             };
 
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
-            _directory.Handle(new PeerSubscriptionsUpdated(_otherPeer.ToPeerDescriptor(true, typeof(FakeCommand))));
+            _directory.Handle(new PeerSubscriptionsUpdated(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent), typeof(FakeCommand))));
 
             _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
             var peer = _directory.GetPeersHandlingMessage(new FakeCommand(0)).Single();
@@ -445,13 +471,38 @@ namespace Abc.Zebus.Tests.Directory
             updatedPeerId.ShouldEqual(_otherPeer.Id);
             updateAction.ShouldEqual(PeerUpdateAction.Updated);
 
-            _directory.Handle(new PeerSubscriptionsUpdated(_otherPeer.ToPeerDescriptor(true)));
+            _directory.Handle(new PeerSubscriptionsUpdated(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
             _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldBeEmpty();
         }
 
         [Test]
-        public void should_ignore_old_subscription_update()
+        public void should_update_peer_handled_message_on_PeerSubscriptionsForTypesUpdated()
+        {
+            var updatedPeerId = default(PeerId);
+            var updateAction = PeerUpdateAction.Decommissioned;
+            _directory.PeerUpdated += (id, action) =>
+            {
+                updatedPeerId = id;
+                updateAction = action;
+            };
+
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
+
+            _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldBeEmpty();
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow, MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
+
+            updatedPeerId.ShouldEqual(_otherPeer.Id);
+            updateAction.ShouldEqual(PeerUpdateAction.Updated);
+
+            _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldNotBeEmpty();
+        }
+
+        [Test]
+        public void should_ignore_old_subscription_update_on_PeerSubscriptionsUpdated()
         {
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
 
@@ -462,6 +513,19 @@ namespace Abc.Zebus.Tests.Directory
             var outdatedPeerDescriptor = _otherPeer.ToPeerDescriptor(true);
             outdatedPeerDescriptor.TimestampUtc = SystemDateTime.UtcNow;
             _directory.Handle(new PeerSubscriptionsUpdated(outdatedPeerDescriptor));
+
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldNotBeEmpty();
+        }
+        
+        
+        [Test]
+        public void should_ignore_old_subscription_update_on_PeerSubscriptionsForTypesUpdated()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, SystemDateTime.UtcNow.AddMinutes(1), MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, SystemDateTime.UtcNow, MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
 
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldNotBeEmpty();
         }
@@ -476,7 +540,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_not_return_duplicates_in_peers_handling_messages()
+        public void should_not_return_duplicates_in_peers_handling_messages_after_PeerSubscriptionsUpdated()
         {
             var descriptor = _otherPeer.ToPeerDescriptor(true, new[]
             {
@@ -497,6 +561,34 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Handle(new PeerSubscriptionsUpdated(updatedDescriptor));
 
             peers = _directory.GetPeersHandlingMessage(new FakeRoutableCommand(42, "Foo"));
+            peers.Count.ShouldEqual(1);
+            peers[0].Id.ShouldEqual(_otherPeer.Id);
+        }
+
+        [Test]
+        public void should_not_return_duplicates_in_peers_handling_messages_after_PeerSubscriptionsForTypesUpdated()
+        {
+            var descriptor = _otherPeer.ToPeerDescriptor(true, new[]
+            {
+                Subscription.Any<FakeRoutableCommand>(),
+                Subscription.Any<FakeRoutableCommand>(),
+            });
+            _directory.Handle(new PeerStarted(descriptor));
+
+            var peers = _directory.GetPeersHandlingMessage(new FakeRoutableCommand(42, "Foo"));
+            peers.Count.ShouldEqual(1);
+            peers[0].Id.ShouldEqual(_otherPeer.Id);
+
+            var subscriptionsForTypes = new []
+            {
+                new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), BindingKey.Empty ),
+                new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), Subscription.Matching<FakeRoutableCommand>(x => x.Id == 42).BindingKey),
+            };
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow, subscriptionsForTypes));
+
+            peers = _directory.GetPeersHandlingMessage(new FakeRoutableCommand(42, "Foo"));
+
             peers.Count.ShouldEqual(1);
             peers[0].Id.ShouldEqual(_otherPeer.Id);
         }

@@ -156,7 +156,6 @@ namespace Abc.Zebus.Directory
         }
 
         // Only internal for testing purposes
-
         internal IEnumerable<Peer> GetDirectoryPeers()
         {
             _directoryPeers = _configuration.DirectoryServiceEndPoints.Select(CreateDirectoryPeer);
@@ -186,8 +185,7 @@ namespace Abc.Zebus.Directory
                 return entry;
             });
 
-            peerEntry.SetStaticSubscriptions(subscriptions);
-            peerEntry.SetDynamicSubscriptions(Enumerable.Empty<Subscription>());
+            peerEntry.SetSubscriptions(subscriptions);
         }
 
         public void Handle(PeerStarted message)
@@ -236,7 +234,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.SetDynamicSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>());
+            peer.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>());
 
             peer.Descriptor.Subscriptions = peer.GetSubscriptions();
             peer.Descriptor.TimestampUtc = message.PeerDescriptor.TimestampUtc;
@@ -256,7 +254,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.SetDynamicSubscriptionsForType(message.SubscriptionsForType);
+            peer.SetSubscriptionsForType(message.SubscriptionsForType);
             
             peer.Descriptor.Subscriptions = peer.GetSubscriptions();
             peer.Descriptor.TimestampUtc = message.TimestampUtc;
