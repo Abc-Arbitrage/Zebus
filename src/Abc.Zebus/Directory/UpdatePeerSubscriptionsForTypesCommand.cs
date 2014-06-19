@@ -10,15 +10,15 @@ namespace Abc.Zebus.Directory
         public readonly PeerId PeerId;
 
         [ProtoMember(2, IsRequired = true)]
-        public readonly SubscriptionsForType[] SubscriptionsForType;
+        public readonly SubscriptionsForType[] SubscriptionsForTypes;
 
         [ProtoMember(3, IsRequired = false)]
         public readonly DateTime TimestampUtc;
 
-        public UpdatePeerSubscriptionsForTypesCommand(PeerId peerId, DateTime timestampUtc, params SubscriptionsForType[] subscriptionsForType)
+        public UpdatePeerSubscriptionsForTypesCommand(PeerId peerId, DateTime timestampUtc, params SubscriptionsForType[] subscriptionsForTypes)
         {
             PeerId = peerId;
-            SubscriptionsForType = subscriptionsForType;
+            SubscriptionsForTypes = subscriptionsForTypes;
             TimestampUtc = timestampUtc;
         }
 
