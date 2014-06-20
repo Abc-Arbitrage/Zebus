@@ -164,7 +164,11 @@ namespace Abc.Zebus.Testing
                 };
             }
 
-            return new DisposableAction(() => _handlers.RemoveRange(handlerKeys));
+            return new DisposableAction(() =>
+            {
+                _handlers.RemoveRange(handlerKeys);
+                Subscriptions.RemoveRange(subscriptions);
+            });
         }
 
         public void Reply(int errorCode)
