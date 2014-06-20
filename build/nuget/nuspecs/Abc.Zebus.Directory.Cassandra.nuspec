@@ -15,6 +15,7 @@
 		<tags></tags>
     <dependencies>
       <dependency id="Zebus" version="$version$" />
+      <dependency id="Zebus.Directory" version="$version$" />
     </dependencies>
 	</metadata>
 	<files>
