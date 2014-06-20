@@ -24,6 +24,8 @@ namespace Abc.Zebus.Tests.Directory
                 }
             }
 
+            var subscriptionsByTypeId = subscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(x => x.Key, x => x.Select(s=>s.BindingKey).ToArray());
+
             _directory = new PeerDirectoryClient(_configurationMock.Object);
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
 
@@ -47,26 +49,22 @@ namespace Abc.Zebus.Tests.Directory
             _directory = new PeerDirectoryClient(_configurationMock.Object);
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
 
-            // TODO LVK: uncomment but use PeerSubscriptionsForTypesUpdated
-
-            //Console.WriteLine("Incremental updates (add)");
-            //using (Measure.Throughput(subscriptions.Count))
-            //{
-            //    for (var subscriptionIndex = 0; subscriptionIndex <subscriptions.Count; ++subscriptionIndex)
-            //    {
-            //        _directory.Handle(new PeerSubscriptionsAdded(_otherPeer.Id, new[] { subscriptions[subscriptionIndex] }, DateTime.UtcNow));
-            //    }
-            //}
-            //Console.WriteLine("Incremental updates (remove)");
-            //using (Measure.Throughput(subscriptions.Count))
-            //{
-            //    for (var subscriptionIndex = subscriptions.Count - 1; subscriptionIndex >= 0; --subscriptionIndex)
-            //    //for (var subscriptionIndex = 0; subscriptionIndex < subscriptions.Count; subscriptionIndex += 200)
-            //    {
-            //        _directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, new[] { subscriptions[subscriptionIndex] }, DateTime.UtcNow));
-            //        //_directory.Handle(new PeerSubscriptionsRemoved(_otherPeer.Id, subscriptions.GetRange(subscriptionIndex, 200).ToArray(), DateTime.UtcNow));
-            //    }
-            //}
+            Console.WriteLine("Snapshot updates per message type id (add)");
+            using (Measure.Throughput(subscriptions.Count))
+            {
+                foreach (var subscriptionGroup in subscriptionsByTypeId)
+                {
+                    _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow, subscriptionGroup.Key, subscriptionGroup.Value));
+                }
+            }
+            Console.WriteLine("Snapshot updates per message type id (remove)");
+            using (Measure.Throughput(subscriptions.Count))
+            {
+                foreach (var subscriptionGroup in subscriptionsByTypeId)
+                {
+                    _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow, subscriptionGroup.Key));
+                }
+            }
         }
 
         [Test, Ignore("Performance test")]
@@ -81,12 +79,14 @@ namespace Abc.Zebus.Tests.Directory
                 {
                     subscriptions.Add(new Subscription(new MessageTypeId("Abc.Common.SharedEvent" + subscriptionIndex)));
                 }
+
                 for (var subscriptionIndex = 0; subscriptionIndex < 10; ++subscriptionIndex)
                 {
                     subscriptions.Add(new Subscription(new MessageTypeId("Abc.Specific" + litePeerIndex + ".PrivateEvent" + subscriptionIndex)));
                 }
                 _directory.Handle(new PeerStarted(new PeerDescriptor(new PeerId("Abc.Testing.Peer" + litePeerIndex), "tcp://testing:11" + litePeerIndex, true, true, true, DateTime.UtcNow, subscriptions.ToArray())));
             }
+
             for (var fatPeerIndex = 0; fatPeerIndex < 30; ++fatPeerIndex)
             {
                 var subscriptions = new List<Subscription>();
