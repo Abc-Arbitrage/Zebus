@@ -32,7 +32,7 @@
 
 ## 1.0.5
 ### Features
- - Added support for incremental subscription updates in the client Directory cache
+ - Added support for incremental subscription updates in the client Directory cache using a tree structure that allows to keep throughput stable with huge volumes of routings.
  - Added a Cassandra implementation of the Directory server repository (WIP, not production ready yet)
 
 ## 1.0.4
