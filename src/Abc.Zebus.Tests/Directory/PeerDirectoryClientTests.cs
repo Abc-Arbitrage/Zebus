@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -530,6 +531,12 @@ namespace Abc.Zebus.Tests.Directory
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldNotBeEmpty();
         }
 
+        [Test, Ignore]
+        public void should_consider_timestamp_at_message_type_level()
+        {
+            throw new NotImplementedException();
+        }
+
         [Test]
         public void should_ignore_old_stop_message()
         {
@@ -684,6 +691,37 @@ namespace Abc.Zebus.Tests.Directory
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
             _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
+        }
+
+        [Test, Repeat(20)]
+        public void should_handle_directory_events_during_the_register()
+        {
+            var otherPeerDescriptor = _otherPeer.ToPeerDescriptor(true, typeof(FakeCommand), typeof(FakeEvent));
+            otherPeerDescriptor.TimestampUtc = default(DateTime);
+            var peerStarted = new PeerStarted(otherPeerDescriptor);
+            var peerStopped = new PeerStopped(_otherPeer);
+
+            _bus.AddHandler<RegisterPeerCommand>(x =>
+            {
+                var peerDescriptor = _otherPeer.ToPeerDescriptor(true);
+                _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddTicks(1), new MessageTypeId(typeof(FakeEvent)), BindingKey.Empty));
+                return new RegisterPeerResponse(new[] { peerDescriptor });
+            });
+
+            var task = Task.Run(() =>
+            {
+                for (var i = 0; i < 10000; i++)
+                {
+                    _directory.Handle(peerStarted);
+                    _directory.Handle(peerStopped);
+                }
+            });
+
+            Wait.Until(() => task.Status == TaskStatus.Running || task.Status == TaskStatus.RanToCompletion, 1.Second());
+
+           _directory.Register(_bus, _self, otherPeerDescriptor.Subscriptions );
+
+            task.Wait(1.Second());
         }
 
         private class OtherFakeEvent1 : IEvent

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -23,9 +24,10 @@ namespace Abc.Zebus.Directory
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
-        private readonly List<IEvent> _eventsReceivedWhileRegistering = new List<IEvent>();
         private readonly IBusConfiguration _configuration;
-        private volatile bool _isRegistering;
+
+        BlockingCollection<IEvent> _messagesReceivedDuringRegister; 
+
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
 
@@ -45,9 +47,8 @@ namespace Abc.Zebus.Directory
 
             var selfDescriptor = CreateSelfDescriptor(subscriptions);
             AddOrUpdatePeerEntry(selfDescriptor);
-
-            _eventsReceivedWhileRegistering.Clear();
-            _isRegistering = true;
+         
+            _messagesReceivedDuringRegister = new BlockingCollection<IEvent>();
 
             try
             {
@@ -55,10 +56,25 @@ namespace Abc.Zebus.Directory
             }
             finally
             {
-                _isRegistering = false;
+                _messagesReceivedDuringRegister.CompleteAdding();
             }
 
-            ProcessEventsReceivedWhileRegistering();
+            ProcessMessagesReceivedDuringRegister();
+        }
+
+        private void ProcessMessagesReceivedDuringRegister()
+        {
+            foreach (dynamic message in _messagesReceivedDuringRegister.GetConsumingEnumerable())
+            {
+                try
+                {
+                    Handle(message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.WarnFormat("Unable to process message {0} {{{1}}}, Exception: {2}", message.GetType(), message.ToString(), ex);
+                }
+            }
         }
 
         private PeerDescriptor CreateSelfDescriptor(IEnumerable<Subscription> subscriptions)
@@ -96,22 +112,6 @@ namespace Abc.Zebus.Directory
                 response.PeerDescriptors.ForEach(AddOrUpdatePeerEntry);
 
             return true;
-        }
-
-        private void ProcessEventsReceivedWhileRegistering()
-        {
-            foreach (dynamic message in _eventsReceivedWhileRegistering)
-            {
-                try
-                {
-                    Handle(message);
-                }
-                catch (Exception ex)
-                {
-                    _logger.WarnFormat("Unable to process message {0} {{{1}}}, Exception: {2}", message.GetType(), message.ToString(), ex);
-                }
-            }
-            _eventsReceivedWhileRegistering.Clear();
         }
 
         public void Update(IBus bus, IEnumerable<Subscription> subscriptions)
@@ -190,8 +190,32 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerStarted message)
         {
+            if (EnqueueIfRegistering(message))
+                return;
+
             AddOrUpdatePeerEntry(message.PeerDescriptor);
             PeerUpdated(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
+        }
+
+        private bool EnqueueIfRegistering(IEvent message)
+        {
+            if (_messagesReceivedDuringRegister == null)
+                return false;
+
+            if (_messagesReceivedDuringRegister.IsAddingCompleted)
+                return false;
+
+            try
+            {
+                _messagesReceivedDuringRegister.Add(message);
+                return true;
+
+            }
+            catch (InvalidOperationException)
+            {
+                // if adding is complete; should only happen in a race
+                return false;
+            }
         }
 
         public void Handle(PingPeerCommand message)
@@ -200,6 +224,9 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerStopped message)
         {
+            if (EnqueueIfRegistering(message))
+                return;
+
             var peer = GetPeerCheckTimestamp(message.PeerId, message.TimestampUtc);
             if (peer == null)
                 return;
@@ -213,6 +240,9 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerDecommissioned message)
         {
+            if (EnqueueIfRegistering(message))
+                return;
+
             PeerEntry removedPeer;
             if (!_peers.TryRemove(message.PeerId, out removedPeer))
                 return;
@@ -224,12 +254,9 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerSubscriptionsUpdated message)
         {
-            if (_isRegistering)
-            {
-                _eventsReceivedWhileRegistering.Add(message);
+            if (EnqueueIfRegistering(message))
                 return;
-            }
-
+            
             var peer = GetPeerCheckTimestamp(message.PeerDescriptor.Peer.Id, message.PeerDescriptor.TimestampUtc);
             if (peer == null)
                 return;
@@ -244,11 +271,8 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerSubscriptionsForTypesUpdated message)
         {
-            if (_isRegistering)
-            {
-                _eventsReceivedWhileRegistering.Add(message);
+            if (EnqueueIfRegistering(message))
                 return;
-            }
 
             var peer = GetPeerCheckTimestamp(message.PeerId, message.TimestampUtc);
             if (peer == null)

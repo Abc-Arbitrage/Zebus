@@ -24,26 +24,32 @@ namespace Abc.Zebus.Directory
 
             public Subscription[] GetSubscriptions()
             {
-                return _messageSubscriptions.SelectMany(x => x.Value.Select(bk => new Subscription(x.Key, bk)))
-                                            .Distinct()
-                                            .ToArray();
+                lock (_messageSubscriptions)
+                {
+                    return _messageSubscriptions.SelectMany(x => x.Value.Select(bk => new Subscription(x.Key, bk)))
+                                                .Distinct()
+                                                .ToArray();
+                }
             }
 
             public void SetSubscriptions(IEnumerable<Subscription> subscriptions)
             {
-                var newBindingKeysByMessageType = subscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(g => g.Key, g => g.Select(x => x.BindingKey).ToList());
-                
-                foreach (var bindingKeysForMessageType in _messageSubscriptions)
+                lock (_messageSubscriptions)
                 {
-                    foreach (var bindingKey in bindingKeysForMessageType.Value)
-                    {
-                        RemoveFromSubscriptionTree(bindingKeysForMessageType.Key, bindingKey);
-                    }
-                }
+                    var newBindingKeysByMessageType = subscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(g => g.Key, g => g.Select(x => x.BindingKey).ToList());
 
-                foreach (var newBindingKeyForMessageType in newBindingKeysByMessageType)
-                {
-                    SetSubscriptionsForType(newBindingKeyForMessageType.Key, newBindingKeyForMessageType.Value);
+                    foreach (var bindingKeysForMessageType in _messageSubscriptions)
+                    {
+                        foreach (var bindingKey in bindingKeysForMessageType.Value)
+                        {
+                            RemoveFromSubscriptionTree(bindingKeysForMessageType.Key, bindingKey);
+                        }
+                    }
+
+                    foreach (var newBindingKeyForMessageType in newBindingKeysByMessageType)
+                    {
+                        SetSubscriptionsForType(newBindingKeyForMessageType.Key, newBindingKeyForMessageType.Value);
+                    }
                 }
             }
 
@@ -55,29 +61,36 @@ namespace Abc.Zebus.Directory
                 }
             }
 
-            public void SetSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys)
+            private void SetSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys)
             {
                 var newBindingKeys = bindingKeys.ToHashSet();
-                _messageSubscriptions[messageTypeId] = newBindingKeys;
 
-                _subscriptionsByMessageType.Remove(messageTypeId);
-
-                foreach (var newBindingKey in newBindingKeys)
+                lock (_messageSubscriptions)
                 {
-                    AddToSubscriptionTree(messageTypeId, newBindingKey);
+                    _messageSubscriptions[messageTypeId] = newBindingKeys;
+
+                    _subscriptionsByMessageType.Remove(messageTypeId);
+
+                    foreach (var newBindingKey in newBindingKeys)
+                    {
+                        AddToSubscriptionTree(messageTypeId, newBindingKey);
+                    }
                 }
             }
 
             public void RemoveSubscriptions()
             {
-                foreach (var messageSubscriptions in _messageSubscriptions)
+                lock (_messageSubscriptions)
                 {
-                    foreach (var bindingKey in messageSubscriptions.Value)
+                    foreach (var messageSubscriptions in _messageSubscriptions)
                     {
-                        RemoveFromSubscriptionTree(messageSubscriptions.Key, bindingKey);
+                        foreach (var bindingKey in messageSubscriptions.Value)
+                        {
+                            RemoveFromSubscriptionTree(messageSubscriptions.Key, bindingKey);
+                        }
                     }
+                    _subscriptionsByMessageType.Clear();
                 }
-                _subscriptionsByMessageType.Clear();
             }
 
             private void AddToSubscriptionTree(MessageTypeId messageTypeId, BindingKey bindingKey)
