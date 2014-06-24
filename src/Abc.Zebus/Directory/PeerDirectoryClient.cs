@@ -19,7 +19,7 @@ namespace Abc.Zebus.Directory
         IMessageHandler<PeerNotResponding>,
         IMessageHandler<PeerResponding>
     {
-        private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
+        private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionIndex = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
@@ -41,7 +41,7 @@ namespace Abc.Zebus.Directory
         {
             _self = self;
 
-            _subscriptionsByMessageType.Clear();
+            _globalSubscriptionIndex.Clear();
             _peers.Clear();
 
             var selfDescriptor = CreateSelfDescriptor(subscriptions);
@@ -136,7 +136,7 @@ namespace Abc.Zebus.Directory
 
         public IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding)
         {
-            var subscriptionList = _subscriptionsByMessageType.GetValueOrDefault(messageBinding.MessageTypeId);
+            var subscriptionList = _globalSubscriptionIndex.GetValueOrDefault(messageBinding.MessageTypeId);
             if (subscriptionList == null)
                 return ArrayUtil.Empty<Peer>();
 
@@ -177,7 +177,7 @@ namespace Abc.Zebus.Directory
         {
             var subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
 
-            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, (key) => new PeerEntry(peerDescriptor, _subscriptionsByMessageType), (key, entry) =>
+            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, (key) => new PeerEntry(peerDescriptor, _globalSubscriptionIndex), (key, entry) =>
             {
                 entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
                 entry.Peer.IsUp = peerDescriptor.Peer.IsUp;

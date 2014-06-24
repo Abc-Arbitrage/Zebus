@@ -11,17 +11,17 @@ namespace Abc.Zebus.Directory
     {
         private class PeerEntry
         {
-            private readonly Dictionary<MessageTypeId, MessageTypeEntry> _messageSubscriptions = new Dictionary<MessageTypeId, MessageTypeEntry>();
-            private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType;
+            private readonly Dictionary<MessageTypeId, MessageTypeEntry> _peerSubscriptionsByMessageType = new Dictionary<MessageTypeId, MessageTypeEntry>();
+            private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionsIndex;
 
-            public PeerEntry(PeerDescriptor descriptor, ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> subscriptionsByMessageType)
+            public PeerEntry(PeerDescriptor descriptor, ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> globalSubscriptionsIndex)
             {
                 Peer = new Peer(descriptor.Peer);
                 IsPersistent = descriptor.IsPersistent;
                 TimestampUtc = descriptor.TimestampUtc ?? DateTime.UtcNow;
                 HasDebuggerAttached = descriptor.HasDebuggerAttached;
                 
-                _subscriptionsByMessageType = subscriptionsByMessageType;
+                _globalSubscriptionsIndex = globalSubscriptionsIndex;
             }
 
             public Peer Peer { get; private set; }
@@ -31,9 +31,9 @@ namespace Abc.Zebus.Directory
 
             public PeerDescriptor ToPeerDescriptor()
             {
-                lock (_messageSubscriptions)
+                lock (_peerSubscriptionsByMessageType)
                 {
-                    var subscriptions = _messageSubscriptions.SelectMany(x => x.Value.BindingKeys.Select(bk => new Subscription(x.Key, bk)))
+                    var subscriptions = _peerSubscriptionsByMessageType.SelectMany(x => x.Value.BindingKeys.Select(bk => new Subscription(x.Key, bk)))
                                                              .Distinct()
                                                              .ToArray();
 
@@ -43,11 +43,11 @@ namespace Abc.Zebus.Directory
 
             public void SetSubscriptions(IEnumerable<Subscription> subscriptions, DateTime? timestampUtc)
             {
-                lock (_messageSubscriptions)
+                lock (_peerSubscriptionsByMessageType)
                 {
                     var newBindingKeysByMessageType = subscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(g => g.Key, g => g.Select(x => x.BindingKey));
 
-                    foreach (var messageSubscriptions in _messageSubscriptions)
+                    foreach (var messageSubscriptions in _peerSubscriptionsByMessageType)
                     {
                         if (!newBindingKeysByMessageType.ContainsKey(messageSubscriptions.Key))
                             SetSubscriptionsForType(messageSubscriptions.Key, Enumerable.Empty<BindingKey>(), timestampUtc);
@@ -62,7 +62,7 @@ namespace Abc.Zebus.Directory
 
             public void SetSubscriptionsForType(IEnumerable<SubscriptionsForType> subscriptionsForTypes, DateTime? timestampUtc)
             {
-                lock (_messageSubscriptions)
+                lock (_peerSubscriptionsByMessageType)
                 {
                     foreach (var subscriptionsForType in subscriptionsForTypes)
                     {
@@ -75,7 +75,7 @@ namespace Abc.Zebus.Directory
             {
                 var newBindingKeys = bindingKeys.ToHashSet();
                 
-                var messageTypeEntry = _messageSubscriptions.GetValueOrAdd(messageTypeId, MessageTypeEntry.Create);
+                var messageTypeEntry = _peerSubscriptionsByMessageType.GetValueOrAdd(messageTypeId, MessageTypeEntry.Create);
                 if (messageTypeEntry.TimestampUtc > timestampUtc)
                     return;
 
@@ -88,7 +88,7 @@ namespace Abc.Zebus.Directory
 
                     messageTypeEntry.BindingKeys.Remove(previousBindingKey);
 
-                    RemoveFromSubscriptionTree(messageTypeId, previousBindingKey);
+                    RemoveFromGlobalSubscriptionsIndex(messageTypeId, previousBindingKey);
                 }
 
                 foreach (var newBindingKey in newBindingKeys)
@@ -96,40 +96,41 @@ namespace Abc.Zebus.Directory
                     if (!messageTypeEntry.BindingKeys.Add(newBindingKey))
                         continue;
 
-                    AddToSubscriptionTree(messageTypeId, newBindingKey);
+                    AddToGlobalSubscriptionsIndex(messageTypeId, newBindingKey);
                 }
             }
 
             public void RemoveSubscriptions()
             {
-                lock (_messageSubscriptions)
+                lock (_peerSubscriptionsByMessageType)
                 {
-                    foreach (var messageSubscriptions in _messageSubscriptions)
+                    foreach (var messageSubscriptions in _peerSubscriptionsByMessageType)
                     {
                         foreach (var bindingKey in messageSubscriptions.Value.BindingKeys)
                         {
-                            RemoveFromSubscriptionTree(messageSubscriptions.Key, bindingKey);
+                            RemoveFromGlobalSubscriptionsIndex(messageSubscriptions.Key, bindingKey);
                         }
                     }
+                    _peerSubscriptionsByMessageType.Clear();
                 }
             }
 
-            private void AddToSubscriptionTree(MessageTypeId messageTypeId, BindingKey bindingKey)
+            private void AddToGlobalSubscriptionsIndex(MessageTypeId messageTypeId, BindingKey bindingKey)
             {
-                var subscriptionTree = _subscriptionsByMessageType.GetOrAdd(messageTypeId, _ => new PeerSubscriptionTree());
+                var subscriptionTree = _globalSubscriptionsIndex.GetOrAdd(messageTypeId, _ => new PeerSubscriptionTree());
                 subscriptionTree.Add(Peer, bindingKey);
             }
 
-            private void RemoveFromSubscriptionTree(MessageTypeId messageTypeId, BindingKey bindingKey)
+            private void RemoveFromGlobalSubscriptionsIndex(MessageTypeId messageTypeId, BindingKey bindingKey)
             {
-                var subscriptionTree = _subscriptionsByMessageType.GetValueOrDefault(messageTypeId);
+                var subscriptionTree = _globalSubscriptionsIndex.GetValueOrDefault(messageTypeId);
                 if (subscriptionTree == null)
                     return;
 
                 subscriptionTree.Remove(Peer, bindingKey);
 
                 if (subscriptionTree.IsEmpty)
-                    _subscriptionsByMessageType.Remove(messageTypeId);
+                    _globalSubscriptionsIndex.Remove(messageTypeId);
             }
 
             private class MessageTypeEntry
