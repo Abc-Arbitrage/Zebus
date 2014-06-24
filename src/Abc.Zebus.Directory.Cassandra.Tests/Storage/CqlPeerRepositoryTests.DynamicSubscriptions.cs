@@ -247,7 +247,6 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
                 CreateSubscriptionFor<FakeCommand>("toto"),
             });
         }
-
     }
 }
 

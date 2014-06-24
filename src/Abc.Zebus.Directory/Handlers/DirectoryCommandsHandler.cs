@@ -98,13 +98,13 @@ namespace Abc.Zebus.Directory.Handlers
 
         public void Handle(UpdatePeerSubscriptionsForTypesCommand message)
         {
-            var subscriptionsToAdd = message.SubscriptionsForTypes.Where(sub => sub.BindingKeys.Any()).ToArray();
-            var subscriptionsToRemove = message.SubscriptionsForTypes.Where(sub => !sub.BindingKeys.Any()).ToList();
+            var subscriptionsToAdd = message.SubscriptionsForTypes.Where(sub => sub.BindingKeys != null && sub.BindingKeys.Any()).ToArray();
+            var subscriptionsToRemove = message.SubscriptionsForTypes.Where(sub => sub.BindingKeys == null || !sub.BindingKeys.Any()).ToList();
 
             if (subscriptionsToAdd.Any())
-                _peerRepository.AddDynamicSubscriptionsForTypes(message.PeerId, message.TimestampUtc, subscriptionsToAdd);
+                _peerRepository.AddDynamicSubscriptionsForTypes(message.PeerId, DateTime.SpecifyKind(message.TimestampUtc, DateTimeKind.Utc), subscriptionsToAdd);
             if (subscriptionsToRemove.Any())
-                _peerRepository.RemoveDynamicSubscriptionsForTypes(message.PeerId, message.TimestampUtc, subscriptionsToRemove.Select(sub => sub.MessageTypeId).ToArray());
+                _peerRepository.RemoveDynamicSubscriptionsForTypes(message.PeerId, DateTime.SpecifyKind(message.TimestampUtc, DateTimeKind.Utc), subscriptionsToRemove.Select(sub => sub.MessageTypeId).ToArray());
             _bus.Publish(new PeerSubscriptionsForTypesUpdated(message.PeerId, message.TimestampUtc, message.SubscriptionsForTypes));
         }
     }

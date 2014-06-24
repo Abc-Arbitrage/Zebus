@@ -247,6 +247,42 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         }
 
         [Test]
+        public void should_specify_datetime_kind_when_adding_subscriptions_for_a_type()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty) };
+            var unspecifiedNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, unspecifiedNow, subscriptionsForTypes));
+
+            _repositoryMock.Verify(repo => repo.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), subscriptionsForTypes));
+        }
+
+        [Test]
+        public void should_specify_datetime_kind_when_removing_subscriptions_for_a_type()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), new BindingKey[0]) };
+            var unspecifiedNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, unspecifiedNow, subscriptionsForTypes));
+
+            _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), new[] { MessageUtil.GetTypeId(typeof(int)) }));
+        }
+
+        [Test]
+        public void should_handle_null_bindingkeys_array_when_removing_subscriptions()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), null) };
+            var now = DateTime.UtcNow;
+            
+            _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, now, subscriptionsForTypes));
+
+            _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, now, new[] { MessageUtil.GetTypeId(typeof(int)) }));
+        }
+
+        [Test]
         public void should_remove_peer_subscriptions_for_a_type_if_there_are_no_binding_keys()
         {
             var now = DateTime.UtcNow;

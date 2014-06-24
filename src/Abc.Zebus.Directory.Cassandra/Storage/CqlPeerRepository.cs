@@ -102,7 +102,6 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                          .Insert(subscription.ToStorageSubscription(peerId))
                                          .SetTimestamp(timestampUtc));
             }
-
             batch.Execute();
         }
 
