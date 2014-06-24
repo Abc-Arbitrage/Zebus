@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Routing;
@@ -10,7 +11,7 @@ namespace Abc.Zebus.Directory
     {
         private class PeerEntry
         {
-            private readonly Dictionary<MessageTypeId, HashSet<BindingKey>> _messageSubscriptions = new Dictionary<MessageTypeId, HashSet<BindingKey>>();
+            private readonly Dictionary<MessageTypeId, MessageTypeEntry> _messageSubscriptions = new Dictionary<MessageTypeId, MessageTypeEntry>();
             private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType;
             private readonly PeerDescriptor _descriptor;
 
@@ -26,53 +27,66 @@ namespace Abc.Zebus.Directory
             {
                 lock (_messageSubscriptions)
                 {
-                    return _messageSubscriptions.SelectMany(x => x.Value.Select(bk => new Subscription(x.Key, bk)))
+                    return _messageSubscriptions.SelectMany(x => x.Value.BindingKeys.Select(bk => new Subscription(x.Key, bk)))
                                                 .Distinct()
                                                 .ToArray();
                 }
             }
 
-            public void SetSubscriptions(IEnumerable<Subscription> subscriptions)
+            public void SetSubscriptions(IEnumerable<Subscription> subscriptions, DateTime? timestampUtc)
             {
                 lock (_messageSubscriptions)
                 {
-                    var newBindingKeysByMessageType = subscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(g => g.Key, g => g.Select(x => x.BindingKey).ToList());
+                    var newBindingKeysByMessageType = subscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(g => g.Key, g => g.Select(x => x.BindingKey));
 
-                    foreach (var bindingKeysForMessageType in _messageSubscriptions)
+                    foreach (var messageSubscriptions in _messageSubscriptions)
                     {
-                        foreach (var bindingKey in bindingKeysForMessageType.Value)
-                        {
-                            RemoveFromSubscriptionTree(bindingKeysForMessageType.Key, bindingKey);
-                        }
+                        if (!newBindingKeysByMessageType.ContainsKey(messageSubscriptions.Key))
+                            SetSubscriptionsForType(messageSubscriptions.Key, Enumerable.Empty<BindingKey>(), timestampUtc);
                     }
 
-                    foreach (var newBindingKeyForMessageType in newBindingKeysByMessageType)
+                    foreach (var newBindingKeys in newBindingKeysByMessageType)
                     {
-                        SetSubscriptionsForType(newBindingKeyForMessageType.Key, newBindingKeyForMessageType.Value);
+                        SetSubscriptionsForType(newBindingKeys.Key, newBindingKeys.Value, timestampUtc);
                     }
                 }
             }
 
-            public void SetSubscriptionsForType(IEnumerable<SubscriptionsForType> subscriptionsForTypes)
+            public void SetSubscriptionsForType(IEnumerable<SubscriptionsForType> subscriptionsForTypes, DateTime? timestampUtc)
             {
                 foreach (var subscriptionsForType in subscriptionsForTypes)
                 {
-                    SetSubscriptionsForType(subscriptionsForType.MessageTypeId, subscriptionsForType.BindingKeys);
+                    SetSubscriptionsForType(subscriptionsForType.MessageTypeId, subscriptionsForType.BindingKeys, timestampUtc);
                 }
             }
 
-            private void SetSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys)
+            private void SetSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys, DateTime? timestampUtc)
             {
                 var newBindingKeys = bindingKeys.ToHashSet();
 
                 lock (_messageSubscriptions)
                 {
-                    _messageSubscriptions[messageTypeId] = newBindingKeys;
+                    var messageSubscriptions = _messageSubscriptions.GetValueOrAdd(messageTypeId, MessageTypeEntry.Create);
+                    if (messageSubscriptions.TimestampUtc > timestampUtc)
+                        return;
 
-                    _subscriptionsByMessageType.Remove(messageTypeId);
+                    messageSubscriptions.TimestampUtc = timestampUtc;
+
+                    foreach (var previousBindingKey in messageSubscriptions.BindingKeys.ToList())
+                    {
+                        if (newBindingKeys.Remove(previousBindingKey))
+                            continue;
+
+                        messageSubscriptions.BindingKeys.Remove(previousBindingKey);
+
+                        RemoveFromSubscriptionTree(messageTypeId, previousBindingKey);
+                    }
 
                     foreach (var newBindingKey in newBindingKeys)
                     {
+                        if (!messageSubscriptions.BindingKeys.Add(newBindingKey))
+                            continue;
+
                         AddToSubscriptionTree(messageTypeId, newBindingKey);
                     }
                 }
@@ -84,7 +98,7 @@ namespace Abc.Zebus.Directory
                 {
                     foreach (var messageSubscriptions in _messageSubscriptions)
                     {
-                        foreach (var bindingKey in messageSubscriptions.Value)
+                        foreach (var bindingKey in messageSubscriptions.Value.BindingKeys)
                         {
                             RemoveFromSubscriptionTree(messageSubscriptions.Key, bindingKey);
                         }
@@ -109,6 +123,14 @@ namespace Abc.Zebus.Directory
 
                 if (subscriptionTree.IsEmpty)
                     _subscriptionsByMessageType.Remove(messageTypeId);
+            }
+
+            private class MessageTypeEntry
+            {
+                public static readonly Func<MessageTypeEntry> Create = () => new MessageTypeEntry();
+
+                public readonly HashSet<BindingKey> BindingKeys = new HashSet<BindingKey>();
+                public DateTime? TimestampUtc;
             }
         }
     }

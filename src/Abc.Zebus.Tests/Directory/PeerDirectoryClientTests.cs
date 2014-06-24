@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -523,18 +522,32 @@ namespace Abc.Zebus.Tests.Directory
         public void should_ignore_old_subscription_update_on_PeerSubscriptionsForTypesUpdated()
         {
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
-
             _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, SystemDateTime.UtcNow.AddMinutes(1), MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
-
             _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, SystemDateTime.UtcNow, MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
 
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldNotBeEmpty();
         }
 
-        [Test, Ignore]
+        [Test]
         public void should_consider_timestamp_at_message_type_level()
         {
-            throw new NotImplementedException();
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, SystemDateTime.UtcNow.AddSeconds(20), MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, SystemDateTime.UtcNow.AddSeconds(10), MessageUtil.TypeId<FakeEvent>(), BindingKey.Empty));
+
+            _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
+        }
+
+        [Test]
+        public void should_support_multiple_peers_for_same_message()
+        {
+            var otherPeer2 = new Peer(new PeerId("Abc.Testing.2"), "tcp://abctest:987");
+
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
+            _directory.Handle(new PeerStarted(otherPeer2.ToPeerDescriptor(true, typeof(FakeEvent))));
+
+            var peers = _directory.GetPeersHandlingMessage(new FakeEvent(0));
+            peers.Count.ShouldEqual(2);
         }
 
         [Test]

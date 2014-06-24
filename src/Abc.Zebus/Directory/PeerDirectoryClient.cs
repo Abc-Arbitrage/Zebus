@@ -185,7 +185,7 @@ namespace Abc.Zebus.Directory
                 return entry;
             });
 
-            peerEntry.SetSubscriptions(subscriptions);
+            peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
         }
 
         public void Handle(PeerStarted message)
@@ -261,7 +261,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>());
+            peer.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
 
             peer.Descriptor.Subscriptions = peer.GetSubscriptions();
             peer.Descriptor.TimestampUtc = message.PeerDescriptor.TimestampUtc;
@@ -274,14 +274,13 @@ namespace Abc.Zebus.Directory
             if (EnqueueIfRegistering(message))
                 return;
 
-            var peer = GetPeerCheckTimestamp(message.PeerId, message.TimestampUtc);
+            var peer = _peers.GetValueOrDefault(message.PeerId);
             if (peer == null)
                 return;
 
-            peer.SetSubscriptionsForType(message.SubscriptionsForType);
+            peer.SetSubscriptionsForType(message.SubscriptionsForType, message.TimestampUtc);
             
             peer.Descriptor.Subscriptions = peer.GetSubscriptions();
-            peer.Descriptor.TimestampUtc = message.TimestampUtc;
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
         }
