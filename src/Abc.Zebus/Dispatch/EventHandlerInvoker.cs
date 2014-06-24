@@ -1,7 +1,6 @@
 ﻿using System;
-using Abc.Zebus.Dispatch;
 
-namespace Abc.Zebus.Core
+namespace Abc.Zebus.Dispatch
 {
     public class EventHandlerInvoker : MessageHandlerInvoker
     {

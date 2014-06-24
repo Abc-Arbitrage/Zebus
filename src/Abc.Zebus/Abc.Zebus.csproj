@@ -70,8 +70,8 @@
     <Compile Include="CommandResult.cs" />
     <Compile Include="Core\BusFactory.cs" />
     <Compile Include="Core\DefaultStoppingStrategy.cs" />
-    <Compile Include="Core\EventHandlerInvoker.cs" />
-    <Compile Include="Core\EventHandlerInvoker`1.cs" />
+    <Compile Include="Dispatch\EventHandlerInvoker.cs" />
+    <Compile Include="Dispatch\EventHandlerInvoker`1.cs" />
     <Compile Include="Core\IStoppingStrategy.cs" />
     <Compile Include="Core\RoundRobinPeerSelector.cs" />
     <Compile Include="Directory\DecommissionPeerCommand.cs" />
