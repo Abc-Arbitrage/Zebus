@@ -111,7 +111,6 @@ namespace Abc.Zebus.Directory
                             RemoveFromSubscriptionTree(messageSubscriptions.Key, bindingKey);
                         }
                     }
-                    _subscriptionsByMessageType.Clear();
                 }
             }
 

@@ -553,6 +553,19 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
+        public void should_not_impact_other_peers_when_decommissioning_a_peer()
+        {
+            var anotherPeer = new Peer(new PeerId("Abc.Testing.2"), "tcp://abctest:987");
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
+            _directory.Handle(new PeerStarted(anotherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
+            
+            _directory.Handle(new PeerDecommissioned(anotherPeer.Id));
+
+            var peers = _directory.GetPeersHandlingMessage(new FakeEvent(0));
+            peers.Count.ShouldEqual(1);
+        }
+
+        [Test]
         public void should_ignore_old_stop_message()
         {
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
