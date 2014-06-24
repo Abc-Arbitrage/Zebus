@@ -54,41 +54,41 @@ namespace Abc.Zebus.Directory
 
             public void SetSubscriptionsForType(IEnumerable<SubscriptionsForType> subscriptionsForTypes, DateTime? timestampUtc)
             {
-                foreach (var subscriptionsForType in subscriptionsForTypes)
+                lock (_messageSubscriptions)
                 {
-                    SetSubscriptionsForType(subscriptionsForType.MessageTypeId, subscriptionsForType.BindingKeys, timestampUtc);
+                    foreach (var subscriptionsForType in subscriptionsForTypes)
+                    {
+                        SetSubscriptionsForType(subscriptionsForType.MessageTypeId, subscriptionsForType.BindingKeys, timestampUtc);
+                    }
                 }
             }
 
             private void SetSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys, DateTime? timestampUtc)
             {
                 var newBindingKeys = bindingKeys.ToHashSet();
+                
+                var messageTypeEntry = _messageSubscriptions.GetValueOrAdd(messageTypeId, MessageTypeEntry.Create);
+                if (messageTypeEntry.TimestampUtc > timestampUtc)
+                    return;
 
-                lock (_messageSubscriptions)
+                messageTypeEntry.TimestampUtc = timestampUtc;
+
+                foreach (var previousBindingKey in messageTypeEntry.BindingKeys.ToList())
                 {
-                    var messageSubscriptions = _messageSubscriptions.GetValueOrAdd(messageTypeId, MessageTypeEntry.Create);
-                    if (messageSubscriptions.TimestampUtc > timestampUtc)
-                        return;
+                    if (newBindingKeys.Remove(previousBindingKey))
+                        continue;
 
-                    messageSubscriptions.TimestampUtc = timestampUtc;
+                    messageTypeEntry.BindingKeys.Remove(previousBindingKey);
 
-                    foreach (var previousBindingKey in messageSubscriptions.BindingKeys.ToList())
-                    {
-                        if (newBindingKeys.Remove(previousBindingKey))
-                            continue;
+                    RemoveFromSubscriptionTree(messageTypeId, previousBindingKey);
+                }
 
-                        messageSubscriptions.BindingKeys.Remove(previousBindingKey);
+                foreach (var newBindingKey in newBindingKeys)
+                {
+                    if (!messageTypeEntry.BindingKeys.Add(newBindingKey))
+                        continue;
 
-                        RemoveFromSubscriptionTree(messageTypeId, previousBindingKey);
-                    }
-
-                    foreach (var newBindingKey in newBindingKeys)
-                    {
-                        if (!messageSubscriptions.BindingKeys.Add(newBindingKey))
-                            continue;
-
-                        AddToSubscriptionTree(messageTypeId, newBindingKey);
-                    }
+                    AddToSubscriptionTree(messageTypeId, newBindingKey);
                 }
             }
 
