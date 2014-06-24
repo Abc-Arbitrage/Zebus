@@ -24,9 +24,7 @@ namespace Abc.Zebus.Directory
         private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
-
-        BlockingCollection<IEvent> _messagesReceivedDuringRegister; 
-
+        private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
 
