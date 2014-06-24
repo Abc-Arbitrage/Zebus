@@ -25,11 +25,7 @@ namespace Abc.Zebus.Directory
 
         public PeerDescriptor(PeerId id, string endPoint, bool isPersistent, bool isUp, bool isResponding, DateTime timestampUtc, params Subscription[] subscriptions)
         {
-            Peer = new Peer(id, endPoint, isUp)
-            {
-                IsResponding = isResponding
-            };
-
+            Peer = new Peer(id, endPoint, isUp, isResponding);
             Subscriptions = subscriptions;
             IsPersistent = isPersistent;
             TimestampUtc = timestampUtc;
@@ -37,12 +33,8 @@ namespace Abc.Zebus.Directory
 
         internal PeerDescriptor(PeerDescriptor other)
         {
-            Peer = new Peer(other.Peer.Id, other.Peer.EndPoint, other.Peer.IsUp)
-            {
-                IsResponding = other.Peer.IsResponding
-            };
-
-            Subscriptions = other.Subscriptions != null ? (Subscription[])other.Subscriptions.Clone() : ArrayUtil.Empty<Subscription>();
+            Peer = new Peer(other.Peer);
+            Subscriptions = ArrayUtil.Copy(other.Subscriptions) ?? ArrayUtil.Empty<Subscription>();
             IsPersistent = other.IsPersistent;
             TimestampUtc = other.TimestampUtc;
             HasDebuggerAttached = other.HasDebuggerAttached;

@@ -13,23 +13,31 @@ namespace Abc.Zebus.Directory
         {
             private readonly Dictionary<MessageTypeId, MessageTypeEntry> _messageSubscriptions = new Dictionary<MessageTypeId, MessageTypeEntry>();
             private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _subscriptionsByMessageType;
-            private readonly PeerDescriptor _descriptor;
 
             public PeerEntry(PeerDescriptor descriptor, ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> subscriptionsByMessageType)
             {
-                _descriptor = descriptor;
+                Peer = new Peer(descriptor.Peer);
+                IsPersistent = descriptor.IsPersistent;
+                TimestampUtc = descriptor.TimestampUtc ?? DateTime.UtcNow;
+                HasDebuggerAttached = descriptor.HasDebuggerAttached;
+                
                 _subscriptionsByMessageType = subscriptionsByMessageType;
             }
 
-            public PeerDescriptor Descriptor { get { return _descriptor; } }
+            public Peer Peer { get; private set; }
+            public bool IsPersistent { get; set; }
+            public DateTime TimestampUtc { get; set; }
+            public bool HasDebuggerAttached { get; set; }
 
-            public Subscription[] GetSubscriptions()
+            public PeerDescriptor ToPeerDescriptor()
             {
                 lock (_messageSubscriptions)
                 {
-                    return _messageSubscriptions.SelectMany(x => x.Value.BindingKeys.Select(bk => new Subscription(x.Key, bk)))
-                                                .Distinct()
-                                                .ToArray();
+                    var subscriptions = _messageSubscriptions.SelectMany(x => x.Value.BindingKeys.Select(bk => new Subscription(x.Key, bk)))
+                                                             .Distinct()
+                                                             .ToArray();
+
+                    return new PeerDescriptor(Peer.Id, Peer.EndPoint, IsPersistent, Peer.IsUp, Peer.IsResponding, TimestampUtc, subscriptions);
                 }
             }
 
@@ -110,7 +118,7 @@ namespace Abc.Zebus.Directory
             private void AddToSubscriptionTree(MessageTypeId messageTypeId, BindingKey bindingKey)
             {
                 var subscriptionTree = _subscriptionsByMessageType.GetOrAdd(messageTypeId, _ => new PeerSubscriptionTree());
-                subscriptionTree.Add(Descriptor.Peer, bindingKey);
+                subscriptionTree.Add(Peer, bindingKey);
             }
 
             private void RemoveFromSubscriptionTree(MessageTypeId messageTypeId, BindingKey bindingKey)
@@ -119,7 +127,7 @@ namespace Abc.Zebus.Directory
                 if (subscriptionTree == null)
                     return;
 
-                subscriptionTree.Remove(Descriptor.Peer, bindingKey);
+                subscriptionTree.Remove(Peer, bindingKey);
 
                 if (subscriptionTree.IsEmpty)
                     _subscriptionsByMessageType.Remove(messageTypeId);

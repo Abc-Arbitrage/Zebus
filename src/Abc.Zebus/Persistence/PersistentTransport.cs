@@ -155,9 +155,8 @@ namespace Abc.Zebus.Persistence
             if (!message.MessageTypeId.IsPersistent())
                 return;
 
-            var persistentPeerIds = peerList.Select(peer => _peerDirectory.GetPeerDescriptor(peer.Id))
-                                            .Where(pd => pd != null && pd.IsPersistent)
-                                            .Select(pd => pd.Peer.Id)
+            var persistentPeerIds = peerList.Where(x => _peerDirectory.IsPersistent(x.Id))
+                                            .Select(x => x.Id)
                                             .ToArray();
 
             if (!persistentPeerIds.Any())

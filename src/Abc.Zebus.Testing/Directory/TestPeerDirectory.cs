@@ -56,6 +56,12 @@ namespace Abc.Zebus.Testing.Directory
             return Peers.Where(x => x.Value.Subscriptions.Any(s => s.Matches(messageBinding))).Select(x => x.Value.Peer).ToList();
         }
 
+        public bool IsPersistent(PeerId peerId)
+        {
+            var peer = Peers.GetValueOrDefault(peerId);
+            return peer != null && peer.IsPersistent;
+        }
+
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
         {
             return Peers.GetValueOrDefault(peerId);

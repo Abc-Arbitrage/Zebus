@@ -40,6 +40,14 @@ namespace Abc.Zebus.Directory
                                   .ToList();
         }
 
+        public bool IsPersistent(PeerId peerId)
+        {
+            // TODO: avoid loading subscriptions
+
+            var peer = _peerRepository.Get(peerId);
+            return peer != null && peer.IsPersistent;
+        }
+
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
         {
             return _peerRepository.Get(peerId);

@@ -19,12 +19,20 @@ namespace Abc.Zebus
         [ProtoMember(4, IsRequired = false)]
         public bool IsResponding;
 
-        public Peer(PeerId id, string endPoint, bool isUp = true)
+        public Peer(PeerId id, string endPoint, bool isUp = true) : this(id, endPoint, isUp, isUp)
+        {
+        }
+
+        public Peer(Peer other) : this(other.Id, other.EndPoint, other.IsUp, other.IsResponding)
+        {
+        }
+
+        public Peer(PeerId id, string endPoint, bool isUp, bool isResponding)
         {
             Id = id;
             EndPoint = endPoint;
             IsUp = isUp;
-            IsResponding = isUp;
+            IsResponding = isResponding;
         }
 
         [UsedImplicitly]

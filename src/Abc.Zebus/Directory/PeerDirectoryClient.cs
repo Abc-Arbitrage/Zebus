@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -144,15 +143,21 @@ namespace Abc.Zebus.Directory
             return subscriptionList.GetPeers(messageBinding.RoutingKey);
         }
 
+        public bool IsPersistent(PeerId peerId)
+        {
+            var entry = _peers.GetValueOrDefault(peerId);
+            return entry != null && entry.IsPersistent;
+        }
+
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
         {
             var entry = _peers.GetValueOrDefault(peerId);
-            return entry != null ? entry.Descriptor : null;
+            return entry != null ? entry.ToPeerDescriptor() : null;
         }
 
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()
         {
-            return _peers.Values.Select(x => x.Descriptor).ToList();
+            return _peers.Values.Select(x => x.ToPeerDescriptor()).ToList();
         }
 
         // Only internal for testing purposes
@@ -174,13 +179,12 @@ namespace Abc.Zebus.Directory
 
             var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, (key) => new PeerEntry(peerDescriptor, _subscriptionsByMessageType), (key, entry) =>
             {
-                entry.Descriptor.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
-                entry.Descriptor.Peer.IsUp = peerDescriptor.Peer.IsUp;
-                entry.Descriptor.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
-                entry.Descriptor.IsPersistent = peerDescriptor.IsPersistent;
-                entry.Descriptor.Subscriptions = subscriptions;
-                entry.Descriptor.TimestampUtc = peerDescriptor.TimestampUtc;
-                entry.Descriptor.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
+                entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
+                entry.Peer.IsUp = peerDescriptor.Peer.IsUp;
+                entry.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
+                entry.IsPersistent = peerDescriptor.IsPersistent;
+                entry.TimestampUtc = peerDescriptor.TimestampUtc ?? DateTime.UtcNow;
+                entry.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
 
                 return entry;
             });
@@ -231,9 +235,9 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.Descriptor.Peer.IsUp = false;
-            peer.Descriptor.Peer.IsResponding = false;
-            peer.Descriptor.TimestampUtc = message.TimestampUtc;
+            peer.Peer.IsUp = false;
+            peer.Peer.IsResponding = false;
+            peer.TimestampUtc = message.TimestampUtc ?? DateTime.UtcNow;
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Stopped);
         }
@@ -262,9 +266,7 @@ namespace Abc.Zebus.Directory
                 return;
 
             peer.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
-
-            peer.Descriptor.Subscriptions = peer.GetSubscriptions();
-            peer.Descriptor.TimestampUtc = message.PeerDescriptor.TimestampUtc;
+            peer.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
             PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
         }
@@ -279,8 +281,6 @@ namespace Abc.Zebus.Directory
                 return;
 
             peer.SetSubscriptionsForType(message.SubscriptionsForType, message.TimestampUtc);
-            
-            peer.Descriptor.Subscriptions = peer.GetSubscriptions();
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
         }
@@ -301,7 +301,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.Descriptor.Peer.IsResponding = isResponding;
+            peer.Peer.IsResponding = isResponding;
 
             PeerUpdated(peerId, PeerUpdateAction.Updated);
         }
@@ -312,7 +312,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return null;
 
-            if (peer.Descriptor.TimestampUtc > timestampUtc)
+            if (peer.TimestampUtc > timestampUtc)
             {
                 _logger.InfoFormat("Outdated message ignored");
                 return null;

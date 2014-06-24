@@ -55,11 +55,13 @@ namespace Abc.Zebus.Tests.Directory
 
                 var expectedRecipientId = new PeerId("Abc.Zebus.DirectoryService.0");
                 _bus.Commands.Count().ShouldEqual(1);
-                var register = _bus.Commands.OfType<RegisterPeerCommand>().SingleOrDefault();
+
+                var register = _bus.Commands.OfType<RegisterPeerCommand>().ExpectedSingle();
                 register.Peer.PeerId.ShouldEqual(_self.Id);
                 register.Peer.IsPersistent.ShouldEqual(isPersistent);
                 register.Peer.TimestampUtc.Value.ShouldBeGreaterOrEqualThan(SystemDateTime.UtcNow);
                 register.Peer.Subscriptions.ShouldBeEquivalentTo(subscriptions);
+
                 _bus.GetRecipientPeer(register).Id.ShouldEqual(expectedRecipientId);
             }
         }

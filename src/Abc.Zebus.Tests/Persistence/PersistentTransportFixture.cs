@@ -25,8 +25,6 @@ namespace Abc.Zebus.Tests.Persistence
 
         protected PersistentTransport Transport { get; private set; }
         protected TestTransport InnerTransport { get; private set; }
-        protected PeerDescriptor AnotherPersistentPeerDescriptor { get; private set; }
-        protected PeerDescriptor AnotherNonPersistentPeerDescriptor { get; private set; }
         protected ConcurrentQueue<TransportMessage> MessagesForwardedToBus { get; private set; }
         protected StartMessageReplayCommand StartMessageReplayCommand { get; private set; }
         protected IEnumerable<Peer> StartMessageReplayCommandTargets { get; private set; }
@@ -38,8 +36,6 @@ namespace Abc.Zebus.Tests.Persistence
         [SetUp]
         public void Setup()
         {
-            AnotherPersistentPeerDescriptor = AnotherPersistentPeer.ToPeerDescriptor(true);
-            AnotherNonPersistentPeerDescriptor = AnotherNonPersistentPeer.ToPeerDescriptor(false);
             InnerTransport = new TestTransport(Self.EndPoint);
 
             var configuration = new Mock<IBusConfiguration>();
@@ -50,8 +46,8 @@ namespace Abc.Zebus.Tests.Persistence
             PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(It.IsAny<StartMessageReplayCommand>())).Returns(new[] { PersistencePeer });
             PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(It.IsAny<PersistMessageCommand>())).Returns(new[] { PersistencePeer });
             PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(It.IsAny<MessageHandled>())).Returns(new[] { PersistencePeer });
-            PeerDirectory.Setup(dir => dir.GetPeerDescriptor(AnotherPersistentPeer.Id)).Returns(AnotherPersistentPeerDescriptor);
-            PeerDirectory.Setup(dir => dir.GetPeerDescriptor(AnotherNonPersistentPeer.Id)).Returns(AnotherNonPersistentPeerDescriptor);
+            PeerDirectory.Setup(dir => dir.IsPersistent(AnotherPersistentPeer.Id)).Returns(true);
+            PeerDirectory.Setup(dir => dir.IsPersistent(AnotherNonPersistentPeer.Id)).Returns(false);
 
             Transport = new PersistentTransport(configuration.Object, InnerTransport, PeerDirectory.Object);
             Transport.Configure(Self.Id, "test");

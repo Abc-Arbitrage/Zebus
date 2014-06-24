@@ -1,12 +1,10 @@
 ﻿using System;
-using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using NUnit.Framework.Constraints;
 
 namespace Abc.Zebus.Tests
 {
@@ -18,10 +16,11 @@ namespace Abc.Zebus.Tests
         {
             var prebuildObjectTypes = new object[]
             {
-                new MessageTypeId("X"),
                 MessageId.NextId(),
+                new MessageTypeId("X"),
                 new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3}, new PeerId("peer"), "endpoint", MessageId.NextId()),
-                BindingKey.Empty
+                new BindingKey("Abc", "123"),
+                new Peer(new PeerId("Abc.Testing.0"), "tcp://abctest:123", true, true),
             };
 
             MessageSerializationTester.CheckSerializationForTypesInSameAssemblyAs<IBus>(prebuildObjectTypes);

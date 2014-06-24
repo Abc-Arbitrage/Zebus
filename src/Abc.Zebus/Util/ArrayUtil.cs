@@ -19,6 +19,16 @@ namespace Abc.Zebus.Util
             return EmptyArray<T>.Value;
 		}
 
+	    public static T[] Copy<T>(T[] array)
+	    {
+	        if (array == null)
+	            return null;
+
+	        var clone = new T[array.Length];
+            array.CopyTo(clone, 0);
+	        return clone;
+	    }
+
         private class EmptyArray<T>
         {
             internal static readonly T[] Value = new T[0];
