@@ -149,6 +149,30 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
+        public void should_ignore_duplicates()
+        {
+            var peerSubscriptionTree = new PeerSubscriptionTree();
+            var peer = new Peer(new PeerId("1"), "endpoint");
+
+            peerSubscriptionTree.Add(peer, BindingKey.Empty);
+            peerSubscriptionTree.Add(peer, BindingKey.Empty);
+            peerSubscriptionTree.Add(peer, new BindingKey("123"));
+            peerSubscriptionTree.Add(peer, new BindingKey("123"));
+            peerSubscriptionTree.Add(peer, new BindingKey("123.456"));
+            peerSubscriptionTree.Add(peer, new BindingKey("123.456"));
+
+            var peers = peerSubscriptionTree.GetPeers(BindingKey.Empty);
+            peers.Count.ShouldEqual(1);
+
+            peerSubscriptionTree.Remove(peer, BindingKey.Empty);
+            peerSubscriptionTree.IsEmpty.ShouldBeFalse();
+            peerSubscriptionTree.Remove(peer, new BindingKey("123"));
+            peerSubscriptionTree.IsEmpty.ShouldBeFalse();
+            peerSubscriptionTree.Remove(peer, new BindingKey("123.456"));
+            peerSubscriptionTree.IsEmpty.ShouldBeTrue();
+        }
+
+        [Test]
         public void roundtrip_test()
         {
             // Arrange

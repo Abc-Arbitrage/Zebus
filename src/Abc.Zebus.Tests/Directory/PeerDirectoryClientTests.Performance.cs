@@ -68,6 +68,28 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test, Ignore("Performance test")]
+        public void MeasureUpdatePerformanceWithManyBindingKeys()
+        {
+            var bindingKeys = new List<BindingKey>();
+            var typeId = new MessageTypeId("Abc.Foo.Events.FakeEvent");
+            for (var bindingKey = 0; bindingKey < 1000; ++bindingKey)
+            {
+                bindingKeys.Add(new BindingKey(bindingKey.ToString()));
+            }
+            var bindingKeysArray = bindingKeys.ToArray();
+
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
+
+            Measure.Execution(50, () =>
+            {
+                //_directory = new PeerDirectoryClient(_configurationMock.Object);
+                //_directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
+                _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow, typeId, bindingKeysArray));
+                _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow, typeId, new BindingKey[0]));
+            });
+        }
+
+        [Test, Ignore("Performance test")]
         public void MeasureMemoryConsumption()
         {
             Console.WriteLine("Breakpoint here");
