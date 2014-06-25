@@ -14,5 +14,6 @@ namespace Abc.Zebus.Directory.Storage
 
         void AddDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subscriptionsForTypes);
         void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds);
+        void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId);
     }
 }

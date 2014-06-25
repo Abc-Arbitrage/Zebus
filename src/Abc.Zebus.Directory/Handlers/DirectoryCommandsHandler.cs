@@ -46,6 +46,7 @@ namespace Abc.Zebus.Directory.Handlers
             if (IsPeerInConflict(existingPeer, peerDescriptor))
                 throw new DomainException(DirectoryErrorCodes.PeerAlreadyExists, string.Format("Peer {0} already exists (running on {1})", peerDescriptor.PeerId, existingPeer.Peer.EndPoint));
 
+            _peerRepository.RemoveAllDynamicSubscriptionsForPeer(peerDescriptor.PeerId);
             _peerRepository.AddOrUpdatePeer(peerDescriptor);
             _bus.Publish(new PeerStarted(peerDescriptor));
 

@@ -247,6 +247,33 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
                 CreateSubscriptionFor<FakeCommand>("toto"),
             });
         }
+
+        [Test]
+        public void should_remove_dynamic_subscriptions_for_peer()
+        {
+            var firstPeer = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            var secondPeer = _peer2.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(firstPeer);
+            _repository.AddOrUpdatePeer(secondPeer);
+            _repository.AddDynamicSubscriptionsForTypes(firstPeer.PeerId, DateTime.UtcNow, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
+            _repository.AddDynamicSubscriptionsForTypes(secondPeer.PeerId, DateTime.UtcNow, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
+
+            _repository.RemoveAllDynamicSubscriptionsForPeer(secondPeer.PeerId);
+
+            var fetched = _repository.GetPeers().ToList();
+            fetched.Count.ShouldEqual(2);
+            var untouchedPeer = fetched.Single(peer => peer.PeerId == firstPeer.PeerId);
+            var peerWithTruncatedSubscriptions = fetched.Single(peer => peer.PeerId == secondPeer.PeerId);
+            untouchedPeer.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<FakeCommand>("toto")
+            });
+            peerWithTruncatedSubscriptions.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>()
+            });
+        }
     }
 }
 

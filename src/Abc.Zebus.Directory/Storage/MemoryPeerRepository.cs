@@ -85,5 +85,13 @@ namespace Abc.Zebus.Directory.Storage
             if (timestampUtc >= peerEntry.PeerDescriptor.TimestampUtc)
                 peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Where(sub => !messageTypeIds.Contains(sub.MessageTypeId)).ToList();
         }
+
+        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId)
+        {
+            var peerEntry = GetEntry(peerId);
+            if (peerEntry == null)
+                return;
+            peerEntry.DynamicSubscriptions.Clear();
+        }
     }
 }

@@ -67,6 +67,18 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         }
 
         [Test]
+        public void should_remove_existing_dynamic_subscriptions_on_register()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var registerCommand = new RegisterPeerCommand(peerDescriptor);
+            
+            _handler.Handle(registerCommand);
+
+            _repositoryMock.Verify(x => x.AddOrUpdatePeer(registerCommand.Peer));
+            _repositoryMock.Verify(x => x.RemoveAllDynamicSubscriptionsForPeer(registerCommand.Peer.PeerId));
+        }
+
+        [Test]
         public void should_reply_with_registred_peers()
         {
             var registredPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:456", typeof(FakeCommand));
