@@ -94,10 +94,10 @@ namespace Abc.Zebus.Directory
             private static readonly Action<SubscriptionNode, string> _removeSharpNode = (x, _) => x._sharpNode = null;
             private static readonly Action<SubscriptionNode, string> _removeStarNode = (x, _) => x._starNode = null;
 
-            private readonly ConcurrentDictionary<string, SubscriptionNode> _childrenNodes = new ConcurrentDictionary<string, SubscriptionNode>();
             private readonly Func<string, SubscriptionNode> _createChildNode;
             private readonly int _nextPartIndex;
             private readonly bool _matchesAll;
+            private ConcurrentDictionary<string, SubscriptionNode> _childrenNodes;
             private List<Peer> _peers = new List<Peer>();
             private SubscriptionNode _sharpNode;
             private SubscriptionNode _starNode;
@@ -131,6 +131,9 @@ namespace Abc.Zebus.Directory
 
                 var nextPart = routingKey.GetPart(_nextPartIndex);
                 if (nextPart == null)
+                    return;
+
+                if (_childrenNodes == null)
                     return;
 
                 SubscriptionNode childNode;
@@ -190,11 +193,17 @@ namespace Abc.Zebus.Directory
 
             private SubscriptionNode GetOrAddChildNode(string part)
             {
+                if (_childrenNodes == null)
+                    _childrenNodes = new ConcurrentDictionary<string, SubscriptionNode>();
+
                 return _childrenNodes.GetOrAdd(part, _createChildNode);
             }
 
             private void RemoveChildNode(string part)
             {
+                if (_childrenNodes == null)
+                    return;
+
                 SubscriptionNode node;
                 _childrenNodes.TryRemove(part, out node);
             }
