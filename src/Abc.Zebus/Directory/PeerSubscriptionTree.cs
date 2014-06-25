@@ -1,8 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Routing;
-using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Directory
 {
@@ -93,9 +93,11 @@ namespace Abc.Zebus.Directory
             private static readonly Action<SubscriptionNode, string> _removeNode = (x, part) => x.RemoveChildNode(part);
             private static readonly Action<SubscriptionNode, string> _removeSharpNode = (x, _) => x._sharpNode = null;
             private static readonly Action<SubscriptionNode, string> _removeStarNode = (x, _) => x._starNode = null;
+
+            private readonly ConcurrentDictionary<string, SubscriptionNode> _childrenNodes = new ConcurrentDictionary<string, SubscriptionNode>();
+            private readonly Func<string, SubscriptionNode> _createChildNode;
             private readonly int _nextPartIndex;
             private readonly bool _matchesAll;
-            private Dictionary<string, SubscriptionNode> _childrenNodes = new Dictionary<string, SubscriptionNode>();
             private List<Peer> _peers = new List<Peer>();
             private SubscriptionNode _sharpNode;
             private SubscriptionNode _starNode;
@@ -105,6 +107,7 @@ namespace Abc.Zebus.Directory
             {
                 _nextPartIndex = nextPartIndex;
                 _matchesAll = matchesAll;
+                _createChildNode = _ => new SubscriptionNode(_nextPartIndex + 1, false);
             }
 
             public bool IsEmpty
@@ -187,25 +190,13 @@ namespace Abc.Zebus.Directory
 
             private SubscriptionNode GetOrAddChildNode(string part)
             {
-                SubscriptionNode child;
-                if (_childrenNodes.TryGetValue(part, out child))
-                    return child;
-
-                child = new SubscriptionNode(_nextPartIndex + 1, false);
-                var newChildren = new Dictionary<string, SubscriptionNode>(_childrenNodes.Count + 1);
-                newChildren.AddRange(_childrenNodes);
-                newChildren.Add(part, child);
-                _childrenNodes = newChildren;
-
-                return child;
+                return _childrenNodes.GetOrAdd(part, _createChildNode);
             }
 
             private void RemoveChildNode(string part)
             {
-                var newChildren = new Dictionary<string, SubscriptionNode>(_childrenNodes);
-                newChildren.Remove(part);
-
-                _childrenNodes = newChildren;
+                SubscriptionNode node;
+                _childrenNodes.TryRemove(part, out node);
             }
 
             private SubscriptionNode GetOrCreateSharpNode()

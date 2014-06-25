@@ -72,7 +72,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             var bindingKeys = new List<BindingKey>();
             var typeId = new MessageTypeId("Abc.Foo.Events.FakeEvent");
-            for (var bindingKey = 0; bindingKey < 1000; ++bindingKey)
+            for (var bindingKey = 0; bindingKey < 10000; ++bindingKey)
             {
                 bindingKeys.Add(new BindingKey(bindingKey.ToString()));
             }
@@ -80,7 +80,7 @@ namespace Abc.Zebus.Tests.Directory
 
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
 
-            Measure.Execution(50, () =>
+            Measure.Execution(20, () =>
             {
                 //_directory = new PeerDirectoryClient(_configurationMock.Object);
                 //_directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
