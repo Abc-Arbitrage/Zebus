@@ -61,7 +61,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var stoppingSchedulerTask = Task.Factory.StartNew(() => _taskScheduler.Stop());
             Task.Factory.StartNew(() => canStop.Set());
 
-            stoppingSchedulerTask.Wait(100.Milliseconds()).ShouldBeTrue();
+            stoppingSchedulerTask.Wait(500.Milliseconds()).ShouldBeTrue();
         }
 
         [Test]
