@@ -19,7 +19,7 @@ namespace Abc.Zebus.Directory
         IMessageHandler<PeerNotResponding>,
         IMessageHandler<PeerResponding>
     {
-        private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionIndex = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
+        private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionsIndex = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
@@ -39,7 +39,7 @@ namespace Abc.Zebus.Directory
         {
             _self = self;
 
-            _globalSubscriptionIndex.Clear();
+            _globalSubscriptionsIndex.Clear();
             _peers.Clear();
 
             var selfDescriptor = CreateSelfDescriptor(subscriptions);
@@ -134,7 +134,7 @@ namespace Abc.Zebus.Directory
 
         public IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding)
         {
-            var subscriptionList = _globalSubscriptionIndex.GetValueOrDefault(messageBinding.MessageTypeId);
+            var subscriptionList = _globalSubscriptionsIndex.GetValueOrDefault(messageBinding.MessageTypeId);
             if (subscriptionList == null)
                 return ArrayUtil.Empty<Peer>();
 
@@ -175,7 +175,7 @@ namespace Abc.Zebus.Directory
         {
             var subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
 
-            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, (key) => new PeerEntry(peerDescriptor, _globalSubscriptionIndex), (key, entry) =>
+            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, (key) => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex), (key, entry) =>
             {
                 entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
                 entry.Peer.IsUp = peerDescriptor.Peer.IsUp;
@@ -278,7 +278,7 @@ namespace Abc.Zebus.Directory
             if (peer == null)
                 return;
 
-            peer.SetSubscriptionsForType(message.SubscriptionsForType, message.TimestampUtc);
+            peer.SetSubscriptionsForType(message.SubscriptionsForType ?? Enumerable.Empty<SubscriptionsForType>(), message.TimestampUtc);
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
         }

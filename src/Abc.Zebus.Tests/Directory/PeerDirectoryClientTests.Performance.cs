@@ -129,5 +129,37 @@ namespace Abc.Zebus.Tests.Directory
 
             Console.WriteLine("Breakpoint here");
         }
+
+        [Test, Ignore("Performance test")]
+        public void MeasureMemoryConsumptionForSingleFatPeer()
+        {
+            var subscriptions = new List<Subscription>();
+            for (var messageTypeIndex = 0; messageTypeIndex < 1; ++messageTypeIndex)
+            {
+                var messageTypeId = new MessageTypeId("Abc.Common.SharedFatEvent" + messageTypeIndex);
+                for (var routingKeyIndex = 0; routingKeyIndex < 100000; ++routingKeyIndex)
+                {
+                    subscriptions.Add(new Subscription(messageTypeId, new BindingKey(routingKeyIndex.ToString() + "00")));
+                }
+            }
+
+            Console.WriteLine("Breakpoint here");
+
+            _directory.Handle(new PeerStarted(new PeerDescriptor(new PeerId("Abc.Testing.FatPeer0"), "tcp://testing:22", true, true, true, DateTime.UtcNow, subscriptions.ToArray())));
+
+            Console.WriteLine("Breakpoint here");
+
+            GC.Collect();
+
+            Console.WriteLine("Breakpoint here");
+
+            _directory.Handle(new PeerDecommissioned(new PeerId("Abc.Testing.FatPeer0")));
+
+            Console.WriteLine("Breakpoint here");
+
+            GC.Collect();
+
+            Console.WriteLine("Breakpoint here");
+        }
     }
 }
