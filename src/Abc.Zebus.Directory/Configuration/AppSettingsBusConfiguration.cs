@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Configuration;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Directory.Configuration
 {
@@ -7,17 +7,16 @@ namespace Abc.Zebus.Directory.Configuration
     {
         public AppSettingsBusConfiguration()
         {
-            DirectoryServiceEndPoints = ConfigurationManager.AppSettings["Bus.Directory.EndPoints"].Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-            RegistrationTimeout = TimeSpan.Parse(ConfigurationManager.AppSettings["Bus.Directory.RegistrationTimeout"]);
-            StartReplayTimeout = TimeSpan.Parse(ConfigurationManager.AppSettings["Bus.Persistence.StartReplayTimeout"]);
-            IsPersistent = bool.Parse(ConfigurationManager.AppSettings["Bus.IsPersistent"]);
-            IsDirectoryPickedRandomly = bool.Parse(ConfigurationManager.AppSettings["Bus.Directory.PickRandom"]);
+            RegistrationTimeout = AppSettings.Get("Bus.Directory.RegistrationTimeout", 30.Seconds());
+            StartReplayTimeout = AppSettings.Get("Bus.Persistence.StartReplayTimeout", 30.Seconds());
+            IsDirectoryPickedRandomly = AppSettings.Get("Bus.Directory.PickRandom", true);
         }
 
-        public string[] DirectoryServiceEndPoints { get; private set; }
+        public string[] DirectoryServiceEndPoints { get { return new string[0]; } }
+        public bool IsPersistent { get { return false; } }
+
         public TimeSpan RegistrationTimeout { get; private set; }
         public TimeSpan StartReplayTimeout { get; private set; }
-        public bool IsPersistent { get; private set; }
         public bool IsDirectoryPickedRandomly { get; private set; }
     }
 }

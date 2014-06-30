@@ -43,6 +43,7 @@
       <HintPath>..\..\lib\nunit\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -57,6 +58,7 @@
     <Compile Include="..\SharedVersionInfo.cs">
       <Link>Properties\SharedVersionInfo.cs</Link>
     </Compile>
+    <Compile Include="Configuration\ConfigurationTests.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerDetectorEntryTests.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerDetectorTests.cs" />
     <Compile Include="PeerDirectoryServerTests.cs" />
@@ -82,7 +84,6 @@
       <Name>Abc.Zebus</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

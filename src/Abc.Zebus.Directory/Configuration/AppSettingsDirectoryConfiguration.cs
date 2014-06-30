@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Configuration;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Directory.Configuration
 {
@@ -7,12 +7,12 @@ namespace Abc.Zebus.Directory.Configuration
     {
         public AppSettingsDirectoryConfiguration()
         {
-            PeerPingInterval = TimeSpan.Parse(ConfigurationManager.AppSettings["Directory.PingPeers.Interval"]);
-            TransientPeerPingTimeout = TimeSpan.Parse(ConfigurationManager.AppSettings["Directory.TransientPeers.PingTimeout"]);
-            PersistentPeerPingTimeout = TimeSpan.Parse(ConfigurationManager.AppSettings["Directory.PersistentPeers.PingTimeout"]);
-            DebugPeerPingTimeout = TimeSpan.Parse(ConfigurationManager.AppSettings["Directory.DebugPeers.PingTimeout"]);
-            BlacklistedMachines = ConfigurationManager.AppSettings["Directory.BlacklistedMachines"].Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-            DisableDynamicSubscriptionsForDirectoryOutgoingMessages = Boolean.Parse(ConfigurationManager.AppSettings["Directory.DisableDynamicSubscriptionsForDirectoryOutgoingMessages"]);
+            PeerPingInterval = AppSettings.Get("Directory.PingPeers.Interval", 1.Minute());
+            TransientPeerPingTimeout = AppSettings.Get("Directory.TransientPeers.PingTimeout", 5.Minutes());
+            PersistentPeerPingTimeout = AppSettings.Get("Directory.PersistentPeers.PingTimeout", 5.Minutes());
+            DebugPeerPingTimeout = AppSettings.Get("Directory.DebugPeers.PingTimeout", 10.Minutes());
+            BlacklistedMachines = AppSettings.GetArray("Directory.BlacklistedMachines");
+            DisableDynamicSubscriptionsForDirectoryOutgoingMessages = AppSettings.Get("Directory.DisableDynamicSubscriptionsForDirectoryOutgoingMessages", false);
         }
 
         public TimeSpan PeerPingInterval { get; private set; }
