@@ -12,6 +12,7 @@ namespace Abc.Zebus.Directory.Configuration
             PersistentPeerPingTimeout = TimeSpan.Parse(ConfigurationManager.AppSettings["Directory.PersistentPeers.PingTimeout"]);
             DebugPeerPingTimeout = TimeSpan.Parse(ConfigurationManager.AppSettings["Directory.DebugPeers.PingTimeout"]);
             BlacklistedMachines = ConfigurationManager.AppSettings["Directory.BlacklistedMachines"].Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            DisableDynamicSubscriptionsForDirectoryOutgoingMessages = Boolean.Parse(ConfigurationManager.AppSettings["Directory.DisableDynamicSubscriptionsForDirectoryOutgoingMessages"]);
         }
 
         public TimeSpan PeerPingInterval { get; private set; }
@@ -19,5 +20,6 @@ namespace Abc.Zebus.Directory.Configuration
         public TimeSpan PersistentPeerPingTimeout { get; private set; }
         public TimeSpan DebugPeerPingTimeout { get; private set; }
         public string[] BlacklistedMachines { get; private set; }
+        public bool DisableDynamicSubscriptionsForDirectoryOutgoingMessages { get; private set; }
     }
 }

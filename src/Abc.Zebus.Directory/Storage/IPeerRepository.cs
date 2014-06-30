@@ -6,7 +6,7 @@ namespace Abc.Zebus.Directory.Storage
     public interface IPeerRepository
     {
         PeerDescriptor Get(PeerId peerId);
-        IEnumerable<PeerDescriptor> GetPeers();
+        IEnumerable<PeerDescriptor> GetPeers(bool loadDynamicSubscriptions = true);
 
         void AddOrUpdatePeer(PeerDescriptor peerDescriptor);
         void RemovePeer(PeerId peerId);

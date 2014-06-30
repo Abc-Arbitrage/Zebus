@@ -50,6 +50,15 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                       storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
+        public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer)
+        {
+            if (storagePeer == null)
+                return null;
+            var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
+            return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
+                                      storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), staticSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+        }
+
         private static byte[] SerializeSubscriptions(Subscription[] subscriptions)
         {
             using (var stream = new MemoryStream())

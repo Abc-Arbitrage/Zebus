@@ -18,6 +18,14 @@ namespace Abc.Zebus.Directory.Storage
                 DynamicSubscriptions = new List<Subscription>();
             }
 
+            public PeerDescriptor GetPeerDescriptorWithStaticSubscriptionOnly()
+            {
+                return new PeerDescriptor(PeerDescriptor)
+                {
+                    Subscriptions = PeerDescriptor.Subscriptions.ToArray()
+                };
+            }
+
             public PeerDescriptor GetMergedPeerDescriptor()
             {
                 return new PeerDescriptor(PeerDescriptor)
@@ -28,16 +36,16 @@ namespace Abc.Zebus.Directory.Storage
         }
 
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
- 
+
         public void AddOrUpdatePeer(PeerDescriptor peerDescriptor)
         {
             var newPeerEntry = new PeerEntry(peerDescriptor);
             _peers.AddOrUpdate(peerDescriptor.PeerId, newPeerEntry, (peerId, existingPeerEntry) => peerDescriptor.TimestampUtc >= existingPeerEntry.PeerDescriptor.TimestampUtc ? newPeerEntry : existingPeerEntry);
         }
 
-        public IEnumerable<PeerDescriptor> GetPeers()
+        public IEnumerable<PeerDescriptor> GetPeers(bool loadDynamicSubscriptions = true)
         {
-            return _peers.Values.Select(entry => entry.GetMergedPeerDescriptor());
+            return _peers.Values.Select(entry => loadDynamicSubscriptions ? entry.GetMergedPeerDescriptor() : entry.GetPeerDescriptorWithStaticSubscriptionOnly());
         }
 
         public PeerDescriptor Get(PeerId peerId)

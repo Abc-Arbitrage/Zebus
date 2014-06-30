@@ -218,6 +218,21 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
+        public void should_not_get_dynamic_subscriptions_in_GetPeers_if_called_with_proper_flag()
+        {
+            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(peerDescriptor);
+
+            _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
+
+            var fetched = _repository.GetPeers(loadDynamicSubscriptions: false).ExpectedSingle();
+            fetched.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>()
+            });   
+        }
+
+        [Test]
         public void should_handle_dynamic_subscriptions_with_empty_binding_key_aside_static_one()
         {
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));

@@ -33,8 +33,17 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                .ToPeerDescriptor(peerDynamicSubscriptions);
         }
 
-        public IEnumerable<PeerDescriptor> GetPeers()
+        public IEnumerable<PeerDescriptor> GetPeers(bool loadDynamicSubscriptions = true)
         {
+            if (!loadDynamicSubscriptions)
+            {
+                return _dataContext.StoragePeers
+                   .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
+                   .Execute()
+                   .Select(peer => peer.ToPeerDescriptor())
+                   .ToList();
+            }
+
             var dynamicSubscriptionsByPeer = _dataContext.DynamicSubscriptions
                                                          .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
                                                          .Where(sub => sub.UselessKey == false)

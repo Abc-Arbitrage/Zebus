@@ -7,6 +7,7 @@ using Abc.Zebus.Directory.Cassandra.Storage;
 using Abc.Zebus.Directory.Cassandra.Tests.Cql;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Testing.Measurements;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
@@ -45,6 +46,28 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             peers.Count.ShouldEqual(30);
             foreach (var peer in peers)
                 peer.Subscriptions.Length.ShouldEqual(8000);
+        }
+
+        [Test]
+        public void insert_1_peer_with_100_000_subscriptions()
+        {
+            var repo = new CqlPeerRepository(DataContext);
+            var subscriptionForTypes = Get1MessageTypesWith100000BindingKeys();
+            
+            var stopwatch = Stopwatch.StartNew();
+            repo.AddOrUpdatePeer(new PeerDescriptor(new PeerId("Abc.Peer.0"), "tcp://toto:123", true, true, true, DateTime.UtcNow));
+            repo.AddDynamicSubscriptionsForTypes(new PeerId("Abc.Peer.0"), DateTime.UtcNow, subscriptionForTypes);
+            Console.WriteLine("Elapsed: " + stopwatch.Elapsed);
+
+            Measure.Execution(20, () => repo.GetPeers(loadDynamicSubscriptions: false).ToList());
+            var peers = repo.GetPeers(loadDynamicSubscriptions: false).ToList();
+            peers.ExpectedSingle().Subscriptions.Length.ShouldEqual(0);
+        }
+
+        private SubscriptionsForType[] Get1MessageTypesWith100000BindingKeys()
+        {
+            var bindingKeys = Enumerable.Range(1, 100000).Select(i => new BindingKey(i.ToString())).ToArray();
+            return new[] { new SubscriptionsForType(new MessageTypeId("Abc.Namespace.MessageType"), bindingKeys) };
         }
 
         private static SubscriptionsForType[] Get10MessageTypesWith800BindingKeysEach()

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 
@@ -16,11 +17,13 @@ namespace Abc.Zebus.Directory
                                        IMessageHandler<PeerNotResponding>,
                                        IMessageHandler<PeerResponding>
     {
+        private readonly IDirectoryConfiguration _configuration;
         private readonly IPeerRepository _peerRepository;
         private Peer _self;
 
-        public PeerDirectoryServer(IPeerRepository peerRepository)
+        public PeerDirectoryServer(IDirectoryConfiguration configuration, IPeerRepository peerRepository)
         {
+            _configuration = configuration;
             _peerRepository = peerRepository;
         }
 
@@ -34,7 +37,7 @@ namespace Abc.Zebus.Directory
 
         public IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding)
         {
-            return _peerRepository.GetPeers()
+            return _peerRepository.GetPeers(!_configuration.DisableDynamicSubscriptionsForDirectoryOutgoingMessages)
                                   .Where(peer => peer.Subscriptions != null && peer.Subscriptions.Any(x => x.MessageTypeId == messageBinding.MessageTypeId && x.Matches(messageBinding.RoutingKey)))
                                   .Select(peerDesc => peerDesc.Peer)
                                   .ToList();

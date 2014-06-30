@@ -58,7 +58,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _debugTransientAlivePeer,
                 _persistencePeer
             };
-            _peerRepositoryMock.Setup(repo => repo.GetPeers()).Returns(peerDescriptors);
+            _peerRepositoryMock.Setup(repo => repo.GetPeers(It.IsAny<bool>())).Returns(peerDescriptors);
             _peerRepositoryMock.Setup(repo => repo.Get(It.IsAny<PeerId>())).Returns<PeerId>(peerId => peerDescriptors.FirstOrDefault(x => x.Peer.Id == peerId));
 
             _bus = new TestBus();
@@ -379,7 +379,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
         private void SetupPeerRepository(params PeerDescriptor[] peer)
         {
-            _peerRepositoryMock.Setup(repo => repo.GetPeers()).Returns(new List<PeerDescriptor>(peer));
+            _peerRepositoryMock.Setup(repo => repo.GetPeers(It.IsAny<bool>())).Returns(new List<PeerDescriptor>(peer));
         }
 
 

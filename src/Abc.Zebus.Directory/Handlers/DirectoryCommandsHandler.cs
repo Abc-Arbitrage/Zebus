@@ -50,7 +50,7 @@ namespace Abc.Zebus.Directory.Handlers
             _peerRepository.AddOrUpdatePeer(peerDescriptor);
             _bus.Publish(new PeerStarted(peerDescriptor));
 
-            var registredPeerDescriptors = _peerRepository.GetPeers();
+            var registredPeerDescriptors = _peerRepository.GetPeers(loadDynamicSubscriptions: true);
             _bus.Reply(new RegisterPeerResponse(registredPeerDescriptors.ToArray()));
         }
 

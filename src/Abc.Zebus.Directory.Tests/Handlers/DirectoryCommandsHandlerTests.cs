@@ -82,7 +82,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         public void should_reply_with_registred_peers()
         {
             var registredPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:456", typeof(FakeCommand));
-            _repositoryMock.Setup(x => x.GetPeers()).Returns(new[] { registredPeerDescriptor });
+            _repositoryMock.Setup(x => x.GetPeers(It.Is<bool>(loadDynamicSubs => loadDynamicSubs))).Returns(new[] { registredPeerDescriptor });
             var command = new RegisterPeerCommand(TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand)));
 
             _handler.Handle(command);
@@ -131,7 +131,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         {
             var existingPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
             existingPeer.Peer.IsResponding = false;
-            _repositoryMock.Setup(x => x.GetPeers()).Returns(new[] { existingPeer });
+            _repositoryMock.Setup(x => x.GetPeers(It.IsAny<bool>())).Returns(new[] { existingPeer });
             var newPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://newpeer:123", typeof(FakeCommand));
             var command = new RegisterPeerCommand(newPeer);
 
@@ -145,7 +145,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         {
             var existingPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
             existingPeer.Peer.IsResponding = false;
-            _repositoryMock.Setup(x => x.GetPeers()).Returns(new[] { existingPeer });
+            _repositoryMock.Setup(x => x.GetPeers(It.IsAny<bool>())).Returns(new[] { existingPeer });
             var newPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
             var command = new RegisterPeerCommand(newPeer);
 

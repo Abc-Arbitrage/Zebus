@@ -9,5 +9,6 @@ namespace Abc.Zebus.Directory.Configuration
         TimeSpan PersistentPeerPingTimeout { get; }
         TimeSpan DebugPeerPingTimeout { get; }
         string[] BlacklistedMachines { get; }
+        bool DisableDynamicSubscriptionsForDirectoryOutgoingMessages { get; }
     }
 }
