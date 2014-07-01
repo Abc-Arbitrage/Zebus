@@ -299,14 +299,14 @@ namespace Abc.Zebus.Tests.Directory
 
             var unregistration = Task.Factory.StartNew(() => _directory.Unregister(_bus));
 
-            var started = startUnregisterSignal.WaitOne(500);
+            var started = startUnregisterSignal.WaitOne(2.Seconds());
             started.ShouldBeTrue();
 
             unregistration.IsCompleted.ShouldBeFalse();
 
             stopUnregisterSignal.Set();
 
-            unregistration.Wait(500);
+            unregistration.Wait(300);
             unregistration.IsCompleted.ShouldBeTrue();
         }
 
