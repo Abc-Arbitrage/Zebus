@@ -223,12 +223,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test, Repeat(5)] 
         public void should_terminate_zmq_connection_of_a_forgotten_peer_after_some_time()
         {
-            var disconnectedPeerId = new PeerId();
-            string disconnectedEndpoint = null; 
-            
             var senderTransport = CreateAndStartZmqTransport();
-            senderTransport.SocketDisconnected += (peerId, endpoint) => { disconnectedPeerId = peerId; disconnectedEndpoint = endpoint; };
-
             var receiverTransport = CreateAndStartZmqTransport();
             var receiverPeer = new Peer(new PeerId("Abc.Testing.2"), receiverTransport.InboundEndPoint);
 
@@ -246,22 +241,12 @@ namespace Abc.Zebus.Tests.Transport
             {
                 Wait.Until(() => senderTransport.OutboundSocketCount == 0, 1.Seconds(), "Socket should be disconnected");
             }
-
-            Wait.Until(() => disconnectedEndpoint != null, 200.Milliseconds(), "SocketDisconnected should be raised");
-
-            disconnectedPeerId.ShouldEqual(receiverPeer.Id);
-            disconnectedEndpoint.ShouldEqual(receiverTransport.InboundEndPoint);
         }
 
         [Test, Repeat(5)]
         public void should_terminate_zmq_connection_of_a_started_peer_with_no_delay()
         {
-            var disconnectedPeerId = new PeerId();
-            string disconnectedEndpoint = null;
-
             var senderTransport = CreateAndStartZmqTransport();
-            senderTransport.SocketDisconnected += (peerId, endpoint) => { disconnectedPeerId = peerId; disconnectedEndpoint = endpoint; };
-
             var receiverTransport = CreateAndStartZmqTransport();
             var receiverPeer = new Peer(new PeerId("Abc.Testing.2"), receiverTransport.InboundEndPoint);
 
@@ -272,10 +257,6 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.OnPeerUpdated(receiverPeer.Id, PeerUpdateAction.Started);
 
             Wait.Until(() => senderTransport.OutboundSocketCount == 0, 300.Milliseconds(), "Socket should be disconnected");
-            Wait.Until(() => disconnectedEndpoint != null, 300.Milliseconds(), "SocketDisconnected should be raised");
-
-            disconnectedPeerId.ShouldEqual(receiverPeer.Id);
-            disconnectedEndpoint.ShouldEqual(receiverTransport.InboundEndPoint);
         }
 
         [Test]
@@ -504,11 +485,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_disconnect_peer_socket_of_a_stopped_peer_after_some_time()
         {
-            var disconnectedPeerId = new PeerId();
-            string disconnectedEndpoint = null;
-         
             var transport1 = CreateAndStartZmqTransport(peerId: "Abc.Testing.1");
-            transport1.SocketDisconnected += (peerId, endpoint) => { disconnectedPeerId = peerId; disconnectedEndpoint = endpoint; };
             var peer1 = new Peer(transport1.PeerId, transport1.InboundEndPoint);
 
             var transport2 = CreateAndStartZmqTransport(peerId: "Abc.Testing.2");
@@ -525,9 +502,6 @@ namespace Abc.Zebus.Tests.Transport
             {
                 Wait.Until(() => transport1.OutboundSocketCount == 0, 1000.Milliseconds());
             }
-
-            disconnectedPeerId.ShouldEqual(transport2.PeerId);
-            disconnectedEndpoint.ShouldEqual(transport2.InboundEndPoint);
         }
 
         private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = "The.Peer", string environment = _environment, Func<IZmqTransportConfiguration, ZmqTransport> transportFactory = null)
