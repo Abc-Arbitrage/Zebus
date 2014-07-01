@@ -220,7 +220,6 @@ namespace Abc.Zebus.Tests.Transport
             Console.WriteLine("{0} => {1}", endpoint.GetPort(), expectedPort);
         }
 
-        // TODO : fix unit tests
         [Test, Repeat(5)] 
         public void should_terminate_zmq_connection_of_a_forgotten_peer_after_some_time()
         {
@@ -254,7 +253,6 @@ namespace Abc.Zebus.Tests.Transport
             disconnectedEndpoint.ShouldEqual(receiverTransport.InboundEndPoint);
         }
 
-        // TODO : fix unit tests
         [Test, Repeat(5)]
         public void should_terminate_zmq_connection_of_a_started_peer_with_no_delay()
         {
@@ -503,35 +501,34 @@ namespace Abc.Zebus.Tests.Transport
             receivedMessages.Count.ShouldEqual(count);
         }
 
-        // TODO : fix unit tests
-//        [Test]
-//        public void should_disconnect_peer_socket_of_a_stopped_peer_after_some_time()
-//        {
-//            var disconnectedPeerId = new PeerId();
-//            string disconnectedEndpoint = null;
-//         
-//            var transport1 = CreateAndStartZmqTransport(peerId: "Abc.Testing.1");
-//            transport1.SocketDisconnected += (peerId, endpoint) => { disconnectedPeerId = peerId; disconnectedEndpoint = endpoint; };
-//            var peer1 = new Peer(transport1.PeerId, transport1.InboundEndPoint);
-//
-//            var transport2 = CreateAndStartZmqTransport(peerId: "Abc.Testing.2");
-//            var peer2 = new Peer(transport2.PeerId, transport2.InboundEndPoint);
-//
-//            transport1.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer2 });
-//            transport2.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer1 });
-//            Wait.Until(() => transport1.OutboundSocketCount == 1, 500.Milliseconds());
-//            Wait.Until(() => transport2.OutboundSocketCount == 1, 500.Milliseconds());
-//            
-//            transport2.Stop();
-//
-//            using (SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(30.Seconds())))
-//            {
-//                Wait.Until(() => transport1.OutboundSocketCount == 0, 1000.Milliseconds());
-//            }
-//
-//            disconnectedPeerId.ShouldEqual(transport2.PeerId);
-//            disconnectedEndpoint.ShouldEqual(transport2.InboundEndPoint);
-//        }
+        [Test]
+        public void should_disconnect_peer_socket_of_a_stopped_peer_after_some_time()
+        {
+            var disconnectedPeerId = new PeerId();
+            string disconnectedEndpoint = null;
+         
+            var transport1 = CreateAndStartZmqTransport(peerId: "Abc.Testing.1");
+            transport1.SocketDisconnected += (peerId, endpoint) => { disconnectedPeerId = peerId; disconnectedEndpoint = endpoint; };
+            var peer1 = new Peer(transport1.PeerId, transport1.InboundEndPoint);
+
+            var transport2 = CreateAndStartZmqTransport(peerId: "Abc.Testing.2");
+            var peer2 = new Peer(transport2.PeerId, transport2.InboundEndPoint);
+
+            transport1.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer2 });
+            transport2.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer1 });
+            Wait.Until(() => transport1.OutboundSocketCount == 1, 500.Milliseconds());
+            Wait.Until(() => transport2.OutboundSocketCount == 1, 500.Milliseconds());
+            
+            transport2.Stop();
+
+            using (SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(30.Seconds())))
+            {
+                Wait.Until(() => transport1.OutboundSocketCount == 0, 1000.Milliseconds());
+            }
+
+            disconnectedPeerId.ShouldEqual(transport2.PeerId);
+            disconnectedEndpoint.ShouldEqual(transport2.InboundEndPoint);
+        }
 
         private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = "The.Peer", string environment = _environment, Func<IZmqTransportConfiguration, ZmqTransport> transportFactory = null)
         {
