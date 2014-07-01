@@ -67,8 +67,8 @@ namespace Abc.Zebus.Transport
         }
 
         public event Action<TransportMessage> MessageReceived = delegate { };
-        public event Action<PeerId, string> SocketConnected = delegate { };
-        public event Action<PeerId, string> SocketDisconnected = delegate { };
+
+        internal event Action<PeerId, string> SocketDisconnected = delegate { };
 
         public virtual bool IsListening
         {
@@ -387,7 +387,6 @@ namespace Abc.Zebus.Transport
             {
                 outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, _socketOptions);
                 outboundSocket.Connect();
-                SocketConnected(peer.Id, peer.EndPoint);
 
                 _outboundSockets.TryAdd(peer.Id, outboundSocket);
             }

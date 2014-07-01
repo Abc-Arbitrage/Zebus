@@ -7,8 +7,6 @@ namespace Abc.Zebus.Transport
     public interface ITransport
     {
         event Action<TransportMessage> MessageReceived;
-        event Action<PeerId, string> SocketConnected;
-        event Action<PeerId, string> SocketDisconnected;
 
         void Configure(PeerId peerId, string environment);
         void OnRegistered();

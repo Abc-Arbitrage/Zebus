@@ -103,8 +103,6 @@
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
     <Compile Include="Monitoring\IProvideQueueLength.cs" />
-    <Compile Include="Monitoring\SocketConnected.cs" />
-    <Compile Include="Monitoring\SocketDisconnected.cs" />
     <Compile Include="Serialization\PeerIdConverter.cs" />
     <Compile Include="Persistence\PersistentTransport.cs" />
     <Compile Include="Scan\Pipes\AfterInvokeArgs.cs" />
