@@ -93,9 +93,6 @@ namespace Abc.Zebus.Testing.Transport
             return new TransportMessage(messageTypeId, new byte[0], PeerId, InboundEndPoint, MessageId.NextId());
         }
 
-        public event Action<PeerId, string> SocketConnected;
-        public event Action<PeerId, string> SocketDisconnected;
-
         public void RaiseMessageReceived(TransportMessage transportMessage)
         {
             MessageReceived(transportMessage);
@@ -137,16 +134,6 @@ namespace Abc.Zebus.Testing.Transport
                 if (matchingMessage != null)
                     Assert.Fail("Found message matching " + notExpectedMessage.TransportMessage.MessageTypeId.GetMessageType().Name);
             }
-        }
-
-        public void RaiseSocketConnected(PeerId remotePeerId, string endpoint)
-        {
-            SocketConnected(remotePeerId, endpoint);
-        }
-
-        public void RaiseSocketDisconnected(PeerId remotePeerId, string endpoint)
-        {
-            SocketDisconnected(remotePeerId, endpoint);
         }
     }
 }

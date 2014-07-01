@@ -253,19 +253,6 @@ namespace Abc.Zebus.Persistence
             throw new NotSupportedException();
         }
 
-        event Action<PeerId, string> ITransport.SocketConnected
-        {
-            add { _innerTransport.SocketConnected += value; }
-            remove { _innerTransport.SocketConnected -= value; }
-        }
-
-
-        event Action<PeerId, string> ITransport.SocketDisconnected
-        {
-            add { _innerTransport.SocketDisconnected += value; }
-            remove { _innerTransport.SocketDisconnected -= value; }
-        }
-
         private void SendToPersistenceService(IMessage message, IEnumerable<Peer> persistentPeers)
         {
             var transportMessage = _serializer.ToTransportMessage(message, MessageId.NextId(), PeerId, InboundEndPoint);

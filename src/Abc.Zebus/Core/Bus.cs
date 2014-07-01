@@ -40,24 +40,11 @@ namespace Abc.Zebus.Core
         {
             _transport = transport;
             _transport.MessageReceived += OnTransportMessageReceived;
-            _transport.SocketConnected += OnSocketConnected;
-            _transport.SocketDisconnected += OnSocketDisconnected;
             _directory = directory;
             _directory.PeerUpdated += OnPeerUpdated;
             _serializer = serializer;
             _messageDispatcher = messageDispatcher;
             _stoppingStrategy = stoppingStrategy;
-        }
-
-        private void OnSocketDisconnected(PeerId remotePeerId, string remoteEndpoint)
-        {
-            if(_isRunning) // When stopping the bus, we don't want to reestablish the connection with the services handling this event
-                Publish(new SocketDisconnected(_peerId, remotePeerId, remoteEndpoint));
-        }
-
-        private void OnSocketConnected(PeerId remotePeerId, string remoteEndpoint)
-        {
-            Publish(new SocketConnected(_peerId, remotePeerId, remoteEndpoint));
         }
 
         public PeerId PeerId

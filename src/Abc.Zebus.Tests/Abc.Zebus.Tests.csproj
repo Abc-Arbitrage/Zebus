@@ -177,7 +177,6 @@
     <Compile Include="Util\UniqueTimestampProviderTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\BusTests.TransportMonitoring.cs" />
     <None Include="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
