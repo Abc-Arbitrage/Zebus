@@ -285,6 +285,49 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             }
         }
 
+        private class PeerEvent
+        {
+            public PeerId PeerId { get; private set; }
+            public DateTime Timestamp { get; private set; }
+
+            public PeerEvent(PeerId peerId, DateTime timestamp)
+            {
+                PeerId = peerId;
+                Timestamp = timestamp;
+            }
+        }
+
+        [Test]
+        public void should_raise_PingMissed_before_a_peer_is_marked_as_timed_out()
+        {
+            SetupPeerRepository(_persistentAlivePeer, _transientAlivePeer0);
+            SetupPeerResponse(_transientAlivePeer0.PeerId, true, true);
+            SetupPeerResponse(_persistentAlivePeer.PeerId, false, false);
+
+            using (SystemDateTime.PauseTime())
+            {
+                var missedPings = new List<PeerEvent>();
+                _detector.PingMissed += (peer, timestamp) => missedPings.Add(new PeerEvent(peer, timestamp));
+
+                var startTime = SystemDateTime.UtcNow;
+                _detector.DetectDeadPeers();
+
+                SystemDateTime.Set(startTime.Add(_pingInterval - 1.Second()));
+                _detector.DetectDeadPeers();
+                missedPings.Count.ShouldEqual(0);
+
+                SystemDateTime.Set(startTime.Add(_pingInterval + 1.Second()));
+                _detector.DetectDeadPeers();
+                missedPings.Count.ShouldEqual(1);
+                missedPings.First().PeerId.ShouldEqual(_persistentAlivePeer.PeerId);
+
+                SystemDateTime.Set(startTime.Add(_pingInterval + _pingInterval + 1.Second()));
+                _detector.DetectDeadPeers();
+                missedPings.Count.ShouldEqual(2);
+                missedPings.All(evt => evt.PeerId == _persistentAlivePeer.PeerId).ShouldBeTrue();
+            }
+        }
+
         [Test]
         public void should_raise_PeerResponding_when_peer_starts_replying_again_to_ping()
         {

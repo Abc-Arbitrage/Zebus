@@ -35,6 +35,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         public event Action PersistenceDownDetected = delegate { };
         public event Action<PeerId, DateTime> PeerDownDetected = delegate { };
+        public event Action<PeerId, DateTime> PingMissed = delegate { };
         public event Action<PeerId, DateTime> PeerRespondingDetected = delegate { };
 
         public TaskScheduler TaskScheduler { get; set; }
@@ -68,6 +69,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             var entry = new DeadPeerDetectorEntry(descriptor, _configuration, _bus, TaskScheduler);
             entry.PeerTimeoutDetected += OnPeerTimeout;
             entry.PeerRespondingDetected += OnPeerResponding;
+            entry.PingMissed += (detectorEntry, time) => PingMissed(detectorEntry.Descriptor.PeerId, time);
 
             return entry;
         }

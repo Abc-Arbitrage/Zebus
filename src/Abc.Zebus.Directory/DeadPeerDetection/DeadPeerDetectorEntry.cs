@@ -12,7 +12,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private readonly IDirectoryConfiguration _configuration;
         private readonly IBus _bus;
         private readonly TaskScheduler _taskScheduler;
-        private DateTime? _pingTimestampUtc;
+        private DateTime? _oldestUnansweredPingTimeUtc;
         private DateTime? _timeoutTimestampUtc;
 
         public DeadPeerDetectorEntry(PeerDescriptor descriptor, IDirectoryConfiguration configuration, IBus bus, TaskScheduler taskScheduler)
@@ -25,6 +25,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         public event Action<DeadPeerDetectorEntry, DateTime> PeerTimeoutDetected = delegate { };
         public event Action<DeadPeerDetectorEntry, DateTime> PeerRespondingDetected = delegate { };
+        public event Action<DeadPeerDetectorEntry, DateTime> PingMissed = delegate { };
 
         public PeerDescriptor Descriptor { get; set; }
         public DeadPeerStatus Status { get; private set; }
@@ -61,8 +62,11 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             lock (this)
             {
-                if (_pingTimestampUtc == null)
-                    _pingTimestampUtc = timestampUtc;
+                if (_oldestUnansweredPingTimeUtc == null)
+                    _oldestUnansweredPingTimeUtc = timestampUtc;
+                var elapsedTimeSinceFirstPing = SystemDateTime.UtcNow - _oldestUnansweredPingTimeUtc;
+                if (elapsedTimeSinceFirstPing > _configuration.PeerPingInterval)
+                    PingMissed(this, timestampUtc);
             }
 
             SendPingCommand(timestampUtc);
@@ -74,10 +78,10 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
             lock (this)
             {
-                if (_pingTimestampUtc == null)
+                if (_oldestUnansweredPingTimeUtc == null)
                     return;
 
-                timeoutTimestampUtc = _pingTimestampUtc.Value;
+                timeoutTimestampUtc = _oldestUnansweredPingTimeUtc.Value;
                 _timeoutTimestampUtc = timeoutTimestampUtc;
                 Status = DeadPeerStatus.Down;
             }
@@ -95,7 +99,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
             lock (this)
             {
-                _pingTimestampUtc = null;
+                _oldestUnansweredPingTimeUtc = null;
                 _timeoutTimestampUtc = null;
 
                 wasDown = Status == DeadPeerStatus.Down;
@@ -110,10 +114,10 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             lock (this)
             {
-                if (_pingTimestampUtc == null)
+                if (_oldestUnansweredPingTimeUtc == null)
                     return false;
 
-                var elapsed = (SystemDateTime.UtcNow - _pingTimestampUtc.Value).Duration();
+                var elapsed = (SystemDateTime.UtcNow - _oldestUnansweredPingTimeUtc.Value).Duration();
 
                 if (Descriptor.HasDebuggerAttached)
                     return elapsed >= _configuration.DebugPeerPingTimeout;
