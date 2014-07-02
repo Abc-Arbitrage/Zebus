@@ -7,6 +7,10 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
     public class StoragePeer
     {
         [PartitionKey]
+        public bool UselessKey { get; set; }
+
+        [ClusteringKey(0)]
+        [Column("PeerId")]
         public string PeerId { get; set; }
 
         [Column("EndPoint")]

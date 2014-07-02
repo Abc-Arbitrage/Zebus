@@ -27,7 +27,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
             return _dataContext.StoragePeers
                                .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                               .Where(peer => peer.PeerId == peerId.ToString())
+                               .Where(peer => peer.UselessKey == false && peer.PeerId == peerId.ToString())
                                .Execute()
                                .FirstOrDefault()
                                .ToPeerDescriptor(peerDynamicSubscriptions);
@@ -39,6 +39,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             {
                 return _dataContext.StoragePeers
                    .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
+                   .Where(peer => peer.UselessKey == false)
                    .Execute()
                    .Select(peer => peer.ToPeerDescriptor())
                    .ToList();
@@ -54,6 +55,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
             return _dataContext.StoragePeers
                                .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
+                               .Where(peer => peer.UselessKey == false)
                                .Execute()
                                .Select(peer => peer.ToPeerDescriptor(dynamicSubscriptionsByPeer[peer.PeerId]))
                                .ToList();
@@ -74,7 +76,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             var now = DateTime.UtcNow;
             _dataContext.StoragePeers
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                        .Where(peer => peer.PeerId == peerId.ToString())
+                        .Where(peer => peer.UselessKey == false && peer.PeerId == peerId.ToString())
                         .Delete()
                         .SetTimestamp(now)
                         .Execute();
@@ -90,7 +92,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         {
             _dataContext.StoragePeers
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                        .Where(peer => peer.PeerId == peerId.ToString())
+                        .Where(peer => peer.UselessKey == false && peer.PeerId == peerId.ToString())
                         .Select(peer => new StoragePeer { IsResponding = isResponding })
                         .Update()
                         .SetTimestamp(DateTime.UtcNow)
