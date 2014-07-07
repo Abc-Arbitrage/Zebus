@@ -1,13 +1,25 @@
 ## Upcoming features
 ### Next minor
  - On-disk Directory
- - Persistence service
- - Routing performance improvement
- - Cassandra backed Directory
 
-### Far future
+### Future
+ - Persistence service
  - Reconsider ZMQ as a transport library
 
+## 1.1.0
+### Features 
+ - The Cassandra backed Directory server is fully operational
+ - The tree-backed local Directory cache is now fully operational (routing performance improvement, faster routing rules updates, smaller memory footprint, etc.)
+### Bug fixes
+ - Dynamic subscriptions for outgoing messages can be disabled on the Cassandra Directory implementation to handle massive dynamic subscriptions (not recommended)
+ - The SocketConnected/SocketDisconnected feature was removed (it was largely undocumented / unused, so it made to a minor)
+ - The local Directory cache doesn't lose subscriptions when a Peer is decommissioned
+ - Reduced the Directory cache memory footprint
+ - Fixed a bug in the Directory cache that prevented multiple Peers from receiving the same messages
+ - Messages received from the Directory during the Registration procedure could be lost
+ - The Directory server now deletes existing dynamic subscriptions when a Peer registers
+ - The Directory server now handles PeerSubscriptionsForTypesUpdated with "null" BindingKeys
+ 
 ## 1.0.10
 ### Features
  - The local Directory cache now handles the new dynamic subscriptions. We will release a 1.1 after thorough testing / benchmarking.
@@ -43,6 +55,8 @@
 ### Features
  - IMultiEventHandler is replaced by Bus.Subscribe(Subscription[], Action<IMessage>) (Should have been in a major release since it is a Core breaking change, but given that it was not even documented we just changed it in a patch release).
  - The project is now built/tested on [AppVeyor](https://ci.appveyor.com/project/alprema/zebus)
+### Bug fixes
+ - When creating two identical dynamic subscriptions, disposing one does not dispose the other anymore.
 
 ## 1.0.2
 ### Bug fixes
