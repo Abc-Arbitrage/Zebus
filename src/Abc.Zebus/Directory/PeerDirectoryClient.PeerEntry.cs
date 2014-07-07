@@ -66,7 +66,9 @@ namespace Abc.Zebus.Directory
                 {
                     foreach (var subscriptionsForType in subscriptionsForTypes)
                     {
-                        SetSubscriptionsForType(subscriptionsForType.MessageTypeId, subscriptionsForType.BindingKeys, timestampUtc);
+                        var messageTypeId = subscriptionsForType.MessageTypeId;
+                        var bindingKeys = subscriptionsForType.BindingKeys ?? Enumerable.Empty<BindingKey>();
+                        SetSubscriptionsForType(messageTypeId, bindingKeys, timestampUtc);
                     }
                 }
             }

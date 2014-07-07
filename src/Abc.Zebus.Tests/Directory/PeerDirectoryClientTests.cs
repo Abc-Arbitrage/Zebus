@@ -695,6 +695,19 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
+        public void should_support_null_binding_keys_in_subscriptions_for_types()
+        {
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddTicks(1), new MessageTypeId(typeof(FakeEvent)), BindingKey.Empty));
+            _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
+
+            Assert.DoesNotThrow(() => _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow.AddTicks(1), new MessageTypeId(typeof(FakeEvent)), null)));
+
+            _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldBeEmpty();
+        }
+
+        [Test]
         public void should_ignore_outdated_subscriptions_by_type()
         {
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));;
