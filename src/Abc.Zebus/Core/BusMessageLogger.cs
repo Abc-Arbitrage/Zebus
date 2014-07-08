@@ -13,6 +13,12 @@ namespace Abc.Zebus.Core
         private readonly ConcurrentDictionary<Type, MessageTypeLogInfo> _logInfos = new ConcurrentDictionary<Type, MessageTypeLogInfo>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
 
+        public bool IsLogEnabled(IMessage message)
+        {
+            var logInfo = _logInfos.GetOrAdd(message.GetType(), CreateLogger);
+            return logInfo.Logger.IsInfoEnabled;
+        }
+
         [StringFormatMethod("format")]
         public void LogFormat(string format, IMessage message, MessageId? messageId = null, int messageSize = 0, PeerId peerId = default(PeerId))
         {

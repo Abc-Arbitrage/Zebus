@@ -144,7 +144,7 @@ namespace Abc.Zebus.Core
                 HandleLocalMessage(message, null);
 
             var targetPeers = localDispatchEnabled ? peersHandlingMessage.Where(x => x.Id != _peerId).ToList() : peersHandlingMessage;
-            SendTransportMessage(null, message, targetPeers);
+            SendTransportMessage(null, message, targetPeers, true);
         }
 
         public Task<CommandResult> Send(ICommand message)
@@ -182,7 +182,7 @@ namespace Abc.Zebus.Core
             {
                 var messageId = MessageId.NextId();
                 _messageIdToTaskCompletionSources.TryAdd(messageId, taskCompletionSource);
-                SendTransportMessage(messageId, message, peer);
+                SendTransportMessage(messageId, message, peer, true);
             }
 
             return taskCompletionSource.Task;
@@ -359,7 +359,8 @@ namespace Abc.Zebus.Core
                 if (dispatch.Message is ICommand)
                 {
                     var messageExecutionCompleted = MessageExecutionCompleted.Create(dispatch.Context, dispatchResult, _serializer);
-                    SendTransportMessage(null, messageExecutionCompleted, dispatch.Context.GetSender());
+                    var shouldLogMessageExecutionCompleted = _messageLogger.IsLogEnabled(dispatch.Message);
+                    SendTransportMessage(null, messageExecutionCompleted, dispatch.Context.GetSender(), shouldLogMessageExecutionCompleted);
                 }
 
                 AckTransportMessage(transportMessage);
@@ -437,21 +438,25 @@ namespace Abc.Zebus.Core
             };
         }
 
-        private void SendTransportMessage(MessageId? messageId, IMessage message, Peer peer)
+        private void SendTransportMessage(MessageId? messageId, IMessage message, Peer peer, bool logEnabled)
         {
-            SendTransportMessage(messageId, message, new[] { peer });
+            SendTransportMessage(messageId, message, new[] { peer }, logEnabled);
         }
 
-        private void SendTransportMessage(MessageId? messageId, IMessage message, IList<Peer> peers)
+        private void SendTransportMessage(MessageId? messageId, IMessage message, IList<Peer> peers, bool logEnabled)
         {
             if (peers.Count == 0)
             {
-                _messageLogger.LogFormat("SEND: {0} with no target peer", message);
+                if (logEnabled)
+                    _messageLogger.LogFormat("SEND: {0} with no target peer", message);
+
                 return;
             }
 
             var transportMessage = ToTransportMessage(message, messageId ?? MessageId.NextId());
-            _messageLogger.LogFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.MessageBytes.Length, peers);
+
+            if (logEnabled)
+                _messageLogger.LogFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.MessageBytes.Length, peers);
 
             SendTransportMessage(transportMessage, peers);
         }
