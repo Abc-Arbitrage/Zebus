@@ -72,14 +72,12 @@ namespace Abc.Zebus.Persistence
             }
 
             public abstract void OnRealTimeMessage(TransportMessage transportMessage);
-
         }
 
         private class ReplayPhase : Phase
         {
             private readonly ManualResetEventSlim _replayEventReceivedSignal = new ManualResetEventSlim();
             private int _replayCount;
-
 
             public ReplayPhase(PersistentTransport transport)
                 : base(transport)

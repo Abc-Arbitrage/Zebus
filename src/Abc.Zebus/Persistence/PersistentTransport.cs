@@ -168,10 +168,17 @@ namespace Abc.Zebus.Persistence
 
         private void SetPhase(Phase phase)
         {
+            var phaseType = phase.GetType();
             if (_phase == null)
-                _logger.InfoFormat("Initial phase: {0}", phase.GetType().Name);
+            {
+                _logger.InfoFormat("Initial phase: {0}", phaseType.Name);
+            }
             else
-                _logger.InfoFormat("Switching phase: {0} -> {1}", _phase.GetType().Name, phase.GetType().Name);
+            {
+                var curentPhaseType = _phase.GetType();
+                if (curentPhaseType != phaseType)
+                    _logger.InfoFormat("Switching phase: {0} -> {1}", curentPhaseType.Name, phaseType.Name);
+            }
 
             _phase = phase;
         }
