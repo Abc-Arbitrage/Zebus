@@ -1,4 +1,5 @@
 ﻿using Abc.Zebus.Directory.Cassandra.Cql;
+using Cassandra.Data.EntityContext;
 using Cassandra.Data.Linq;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
