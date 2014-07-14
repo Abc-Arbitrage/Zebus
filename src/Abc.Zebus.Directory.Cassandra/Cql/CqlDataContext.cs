@@ -1,4 +1,5 @@
 ﻿using Cassandra;
+using Cassandra.Data.EntityContext;
 using Cassandra.Data.Linq;
 
 namespace Abc.Zebus.Directory.Cassandra.Cql
@@ -10,15 +11,15 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
         {
         }
 
-        private CqlDataContext(Session session)
+        private CqlDataContext(ISession session)
             : base(session)
         {
             Session = session;
         }
 
-        public Session Session { get; private set; }
+        public ISession Session { get; private set; }
 
-        protected static Session CreateSession(CassandraCqlSessionManager sessionManager, ICassandraConfiguration cassandraConfiguration)
+        protected static ISession CreateSession(CassandraCqlSessionManager sessionManager, ICassandraConfiguration cassandraConfiguration)
         {
             return sessionManager.GetSession(cassandraConfiguration);
         }

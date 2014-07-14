@@ -65,7 +65,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         {
             var storagePeer = peerDescriptor.ToStoragePeer();
             _dataContext.StoragePeers
-                        .Insert(storagePeer)
+                        .CreateInsert(storagePeer)
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
                         .SetTimestamp(storagePeer.TimestampUtc)
                         .Execute();
@@ -110,7 +110,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             foreach (var subscription in subscriptionsForTypes)
             {
                 batch.Append(_dataContext.DynamicSubscriptions
-                                         .Insert(subscription.ToStorageSubscription(peerId))
+                                         .CreateInsert(subscription.ToStorageSubscription(peerId))
                                          .SetTimestamp(timestampUtc));
             }
             batch.Execute();

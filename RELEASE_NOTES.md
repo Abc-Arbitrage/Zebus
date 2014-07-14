@@ -6,6 +6,10 @@
  - Persistence service
  - Reconsider ZMQ as a transport library
 
+## 1.1.1
+### Features
+ - Now using libZmq 4.0.4 and providing the matching pdbs in the Zebus repository
+
 ## 1.1.0
 ### Features 
  - The Cassandra backed Directory server is fully operational
