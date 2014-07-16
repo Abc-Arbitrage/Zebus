@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.DeadPeerDetection;
 using Abc.Zebus.Testing;
@@ -97,17 +98,23 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         {
             var pingTimestampUtc = SystemDateTime.UtcNow;
 
-            _bus.HandlerExecutor = new TestBus.DoNotReplyHandlerExecutor();
             _entry.Descriptor.Peer.IsResponding = false;
 
+            var manualResetEvent = new ManualResetEventSlim();
             var peerRespondingCount = 0;
-            _entry.PeerRespondingDetected += (e, o) => peerRespondingCount++;
+            _entry.PeerRespondingDetected += (e, o) =>
+            {
+                manualResetEvent.Wait();
+                peerRespondingCount++;
+            };
 
-            _entry.Process(pingTimestampUtc, true);
-            _entry.Process(pingTimestampUtc, true);
-            
-            _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, null)), pingTimestampUtc);
-            _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, null)), pingTimestampUtc);
+            var ackTask1 = Task.Run(() => _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, null)), pingTimestampUtc));
+            var ackTask2 = Task.Run(() => _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, null)), pingTimestampUtc));
+
+            Thread.Sleep(10);
+            manualResetEvent.Set();
+
+            Task.WaitAll(ackTask1, ackTask2);
 
             peerRespondingCount.ShouldEqual(1);
         }

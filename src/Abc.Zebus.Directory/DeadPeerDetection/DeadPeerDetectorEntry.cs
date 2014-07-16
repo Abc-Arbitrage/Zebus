@@ -12,6 +12,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private readonly IDirectoryConfiguration _configuration;
         private readonly IBus _bus;
         private readonly TaskScheduler _taskScheduler;
+        private readonly object _lock = new object();
         private DateTime? _oldestUnansweredPingTimeUtc;
         private DateTime? _timeoutTimestampUtc;
 
@@ -39,7 +40,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             get
             {
-                lock (this)
+                lock (_lock)
                 {
                     return Descriptor.TimestampUtc > _timeoutTimestampUtc;
                 }
@@ -60,7 +61,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         public void Ping(DateTime timestampUtc)
         {
-            lock (this)
+            lock (_lock)
             {
                 if (_oldestUnansweredPingTimeUtc == null)
                     _oldestUnansweredPingTimeUtc = timestampUtc;
@@ -76,7 +77,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             DateTime timeoutTimestampUtc;
 
-            lock (this)
+            lock (_lock)
             {
                 if (_oldestUnansweredPingTimeUtc == null)
                     return;
@@ -97,7 +98,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             bool wasDown;
 
-            lock (this)
+            lock (_lock)
             {
                 _oldestUnansweredPingTimeUtc = null;
                 _timeoutTimestampUtc = null;
@@ -112,7 +113,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         public bool HasReachedTimeout()
         {
-            lock (this)
+            lock (_lock)
             {
                 if (_oldestUnansweredPingTimeUtc == null)
                     return false;
@@ -141,6 +142,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 _logger.DebugFormat("Ping failed, PeerId: {0}, Exception: {1}", Descriptor.PeerId, pingTask.Exception);
                 return;
             }
+
             if (!pingTask.Result.IsSuccess)
             {
                 _logger.DebugFormat("Ping failed, PeerId: {0}", Descriptor.PeerId);
@@ -148,14 +150,20 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
 
             var pingTimestampUtc = (DateTime)state;
+            var peerRespondingDetected = false;
 
-            var peer = Descriptor.Peer;
-            if (!peer.IsResponding)
+            lock (_lock)
             {
-                PeerRespondingDetected(this, pingTimestampUtc);
-
-                peer.IsResponding = true;
+                var peer = Descriptor.Peer;
+                if (!peer.IsResponding)
+                {
+                    peerRespondingDetected = true;
+                    peer.IsResponding = true;
+                }
             }
+
+            if (peerRespondingDetected)
+                PeerRespondingDetected(this, pingTimestampUtc);
 
             Reset();
         }
