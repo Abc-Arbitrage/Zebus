@@ -38,6 +38,13 @@ namespace Abc.Zebus.Core
             Payload = payload;
         }
 
+        public override string ToString()
+        {
+            return ErrorCode == 0
+                ? string.Format("CommandId: {0}", SourceCommandId)
+                : string.Format("CommandId: {0}, ErrorCode: {1}", SourceCommandId, ErrorCode);
+        }
+
         public static MessageExecutionCompleted Create(MessageContext messageContext, DispatchResult dispatchResult, IMessageSerializer serializer)
         {
             if (dispatchResult.Errors.Any())
