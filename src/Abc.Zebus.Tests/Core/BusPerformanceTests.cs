@@ -14,8 +14,8 @@ namespace Abc.Zebus.Tests.Core
     [TestFixture, Ignore("Manual test")]
     public class BusPerformanceTests
     {
+        // this must be a valid directory endpoint
         private const string _directoryEndPoint = "tcp://<directory-address>:<port>";
-        private const string _environment = "Dev";
 
         [Test]
         public void MeasureCommandThroughputWithoutPersistence()
@@ -129,7 +129,7 @@ namespace Abc.Zebus.Tests.Core
         {
             return new BusFactory()
                 .WithPeerId("Abc.Zebus.Perf.Sender.*")
-                .WithConfiguration(_directoryEndPoint, _environment)
+                .WithConfiguration(_directoryEndPoint, "Dev")
                 .CreateAndStartBus();
         }
 
@@ -137,7 +137,7 @@ namespace Abc.Zebus.Tests.Core
         {
             return new BusFactory()
                 .WithPeerId("Abc.Zebus.Perf.Receiver.*")
-                .WithConfiguration(_directoryEndPoint, _environment)
+                .WithConfiguration(_directoryEndPoint, "Dev")
                 .WithHandlers(typeof(PerfCommandHandler), typeof(PerfEventHandler))
                 .CreateAndStartBus();
         }

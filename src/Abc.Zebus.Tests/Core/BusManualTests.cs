@@ -17,6 +17,9 @@ namespace Abc.Zebus.Tests.Core
     [TestFixture, Ignore("Manual test")]
     public class BusManualTests
     {
+        // this must be a valid directory endpoint
+        private const string _directoryEndPoint = "tcp://localhost:129";
+
         [Test]
         public void SendSeveralTimeoutRequestAndCheckForResponseUnicity()
         {
@@ -89,7 +92,7 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
-        public void PublishManualEvent()
+        public void PublishEventWithoutLocalDispatch()
         {
             using (var bus = CreateBusFactory().WithHandlers(typeof(ManualEventHandler)).CreateAndStartBus())
             {
@@ -102,10 +105,23 @@ namespace Abc.Zebus.Tests.Core
             }
         }
 
+        [Test]
+        public void SendCommandWithoutLocalDispatch()
+        {
+            using (var bus = CreateBusFactory().WithHandlers(typeof(ManualCommandHandler)).CreateAndStartBus())
+            {
+                using (LocalDispatch.Disable())
+                {
+                    bus.Send(new ManualCommand(42)).Wait();
+                }
+
+                Console.WriteLine(ManualCommandHandler.LastId);
+            }
+        }
+
         private static BusFactory CreateBusFactory()
         {
-            return new BusFactory()
-                .WithConfiguration("tcp://localhost:129", "Dev");
+            return new BusFactory().WithConfiguration(_directoryEndPoint, "Dev");
         }
 
         [ProtoContract]
@@ -125,6 +141,18 @@ namespace Abc.Zebus.Tests.Core
         {
             [ProtoMember(1, IsRequired = true)]
             public int Value;
+        }
+
+        [ProtoContract]
+        public class ManualCommand : ICommand
+        {
+            [ProtoMember(1, IsRequired = true)]
+            public readonly int Id;
+
+            public ManualCommand(int id)
+            {
+                Id = id;
+            }
         }
 
         public class TimeoutCommandHandler : IMessageHandler<TimeoutCommand>
@@ -161,6 +189,16 @@ namespace Abc.Zebus.Tests.Core
                 Interlocked.Increment(ref ReceivedEventCount);
 
                 Console.WriteLine(message.Id);
+            }
+        }
+
+        public class ManualCommandHandler : IMessageHandler<ManualCommand>
+        {
+            public static int LastId;
+
+            public void Handle(ManualCommand message)
+            {
+                LastId = message.Id;
             }
         }
     }
