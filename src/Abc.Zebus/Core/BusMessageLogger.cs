@@ -5,13 +5,26 @@ using System.Reflection;
 using Abc.Zebus.Util.Annotations;
 using Abc.Zebus.Util.Extensions;
 using log4net;
+using log4net.Core;
 
 namespace Abc.Zebus.Core
 {
     public class BusMessageLogger
     {
-        private readonly ConcurrentDictionary<Type, MessageTypeLogInfo> _logInfos = new ConcurrentDictionary<Type, MessageTypeLogInfo>();
-        private readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
+        private readonly Type _loggerType;
+        private static readonly ConcurrentDictionary<Type, MessageTypeLogInfo> _logInfos = new ConcurrentDictionary<Type, MessageTypeLogInfo>();
+        private readonly ILog _logger;
+
+        private BusMessageLogger(Type loggerType)
+        {
+            _loggerType = loggerType;
+            _logger = LogManager.GetLogger(loggerType);
+        }
+
+        public static BusMessageLogger Get<T>()
+        {
+            return Instance<T>.Value;
+        }
 
         public bool IsLogEnabled(IMessage message)
         {
@@ -20,18 +33,18 @@ namespace Abc.Zebus.Core
         }
 
         [StringFormatMethod("format")]
-        public void LogFormat(string format, IMessage message, MessageId? messageId = null, int messageSize = 0, PeerId peerId = default(PeerId))
+        public void LogFormat(string format, IMessage message, MessageId? messageId = null, int messageSize = 0, PeerId peerId = default(PeerId), Level logLevel = null)
         {
             var logInfo = _logInfos.GetOrAdd(message.GetType(), CreateLogger);
             if (!logInfo.Logger.IsInfoEnabled)
                 return;
 
             var messageText = logInfo.GetMessageText(message);
-            _logger.InfoFormat(format, messageText, messageId, messageSize, peerId);
+            _logger.Logger.Log(_loggerType, logLevel ?? Level.Info, string.Format(format, messageText, messageId, messageSize, peerId), null);
         }
 
         [StringFormatMethod("format")]
-        public void LogFormat(string format, IMessage message, MessageId messageId, int messageSize, IList<Peer> peers)
+        public void LogFormat(string format, IMessage message, MessageId messageId, int messageSize, IList<Peer> peers, Level logLevel = null)
         {
             if (peers.Count == 0)
             {
@@ -54,10 +67,10 @@ namespace Abc.Zebus.Core
                 ? peers[0].Id + " and " + otherPeersCount + " other peers"
                 : peers[0].Id + " and " + otherPeersCount + " other peer";
 
-            _logger.InfoFormat(format, messageText, messageId, messageSize, peerIdText);
+            _logger.Logger.Log(_loggerType, logLevel ?? Level.Info, string.Format(format, messageText, messageId, messageSize, peerIdText), null);
         }
 
-        public string ToString(IMessage message)
+        public static string ToString(IMessage message)
         {
             var logInfo = _logInfos.GetOrAdd(message.GetType(), CreateLogger);
             return logInfo.GetMessageText(message);
@@ -94,6 +107,11 @@ namespace Abc.Zebus.Core
             {
                 return _hasToStringOverride ? string.Format("{0} {{{1}}}", _messageTypeName, message) : string.Format("{0}", _messageTypeName);
             }
+        }
+
+        private static class Instance<T>
+        {
+            public static readonly BusMessageLogger Value = new BusMessageLogger(typeof(T));
         }
     }
 }

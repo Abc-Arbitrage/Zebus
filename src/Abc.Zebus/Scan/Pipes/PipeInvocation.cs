@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Util.Extensions;
+using log4net.Core;
 
 namespace Abc.Zebus.Scan.Pipes
 {
@@ -13,6 +15,7 @@ namespace Abc.Zebus.Scan.Pipes
         private readonly IMessage _message;
         private readonly MessageContext _messageContext;
         private readonly IList<IPipe> _pipes;
+        private readonly BusMessageLogger _messageLogger = BusMessageLogger.Get<PipeInvocation>();
         
         private object[] _pipeStates;
 
@@ -51,6 +54,7 @@ namespace Abc.Zebus.Scan.Pipes
 
         protected internal virtual void Run()
         {
+            _messageLogger.LogFormat("HANDLE : {0} [{1}]", _message, _messageContext.MessageId, logLevel: Level.Debug);
             _pipeStates = BeforeInvoke();
 
             try
@@ -93,6 +97,7 @@ namespace Abc.Zebus.Scan.Pipes
 
         protected internal virtual Task RunAsync()
         {
+            _messageLogger.LogFormat("HANDLE : {0} [{1}]", _message, _messageContext.MessageId, logLevel: Level.Debug);
             var runTask = _invoker.InvokeMessageHandlerAsync(this);
             runTask.ContinueWith(task => AfterInvoke(_pipeStates, task.IsFaulted, task.Exception), TaskContinuationOptions.ExecuteSynchronously);
 
