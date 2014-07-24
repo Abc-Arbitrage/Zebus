@@ -80,6 +80,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             _repository.AddOrUpdatePeer(peerDescriptor);
 
             var updatedPeer = _peer1.ToPeerDescriptorWithRoundedTime(false, typeof(int));
+            updatedPeer.TimestampUtc = updatedPeer.TimestampUtc.Value.AddMilliseconds(1); // Ensures that the timestamps are different to prevent a conflict in Cassandra
             _repository.AddOrUpdatePeer(updatedPeer);
 
             var fetchedPeers = _repository.GetPeers();
