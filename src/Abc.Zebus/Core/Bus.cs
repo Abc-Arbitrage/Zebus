@@ -21,7 +21,7 @@ namespace Abc.Zebus.Core
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
         private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
-        private readonly BusMessageLogger _messageLogger = new BusMessageLogger();
+        private readonly BusMessageLogger _messageLogger = BusMessageLogger.Get<Bus>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
         private readonly ITransport _transport;
         private readonly IPeerDirectory _directory;
@@ -151,7 +151,7 @@ namespace Abc.Zebus.Core
         {
             var peers = _directory.GetPeersHandlingMessage(message);
             if (peers.Count == 0)
-                throw new InvalidOperationException("Unable to find peer for specified command, " + _messageLogger.ToString(message) + ". Did you change the namespace?");
+                throw new InvalidOperationException("Unable to find peer for specified command, " + BusMessageLogger.ToString(message) + ". Did you change the namespace?");
 
             var self = peers.FirstOrDefault(x => x.Id == _peerId);
 
@@ -160,7 +160,7 @@ namespace Abc.Zebus.Core
 
             if (peers.Count > 1)
             {
-                var exceptionMessage = string.Format("{0} peers are handling {1}. Peers: {2}.", peers.Count, _messageLogger.ToString(message), string.Join(", ", peers.Select(p => p.ToString())));
+                var exceptionMessage = string.Format("{0} peers are handling {1}. Peers: {2}.", peers.Count, BusMessageLogger.ToString(message), string.Join(", ", peers.Select(p => p.ToString())));
                 throw new InvalidOperationException(exceptionMessage);
             }
 
@@ -346,7 +346,7 @@ namespace Abc.Zebus.Core
             if (dispatch == null)
                 return;
 
-            _messageLogger.LogFormat("HANDLE remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
+            _messageLogger.LogFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
             _messageDispatcher.Dispatch(dispatch);
         }
 
@@ -416,7 +416,7 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
         {
-            _messageLogger.LogFormat("HANDLE local: {0}", message);
+            _messageLogger.LogFormat("RECV local: {0}", message);
 
             var context = MessageContext.CreateOverride(PeerId, EndPoint);
             var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource));
