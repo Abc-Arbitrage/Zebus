@@ -33,6 +33,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         private DeadPeerDetector _detector;
         private Mock<IDirectoryConfiguration> _configurationMock;
         private PeerDescriptor _persistencePeer;
+        private PeerDescriptor _directoryPeer;
 
         [SetUp]
         public void Setup()
@@ -45,6 +46,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             _debugPersistentAlivePeer = CreatePeerDescriptor("Abc.DebugPersistentAlive.0", isUp: true, isPersistent: true, hasDebuggerAttached: true);
             _debugTransientAlivePeer = CreatePeerDescriptor("Abc.DebugTransientAlive.0", isUp: true, isPersistent: false, hasDebuggerAttached: true);
             _persistencePeer = CreatePeerDescriptor("Abc.Zebus.PersistenceService.0", isUp: true, isPersistent: false, hasDebuggerAttached: false);
+            _directoryPeer = CreatePeerDescriptor("NonStandardDirectoryName", isUp: true, isPersistent: false, hasDebuggerAttached: false);
+            _directoryPeer.Subscriptions = new[] { new Subscription(new MessageTypeId(typeof(RegisterPeerCommand))) };
 
             _peerRepositoryMock = new Mock<IPeerRepository>();
             var peerDescriptors = new List<PeerDescriptor>
@@ -209,6 +212,33 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.Expect(new UnregisterPeerCommand(_transientAlivePeer0.Peer, firstPingTimestampUtc));
+            }
+        }
+
+        [Test]
+        public void should_not_decommission_directory_peer()
+        {
+            SetupPeerRepository(_directoryPeer, _transientAlivePeer0);
+            SetupPeerResponse(_transientAlivePeer0.PeerId, false, false);
+            SetupPeerResponse(_directoryPeer.PeerId, false, false);
+           
+            using (SystemDateTime.PauseTime())
+            {
+                var startTime = SystemDateTime.UtcNow;
+                var firstPingTimestampUtc = startTime;
+
+                _detector.DetectDeadPeers();
+                _bus.ExpectExactly(new PingPeerCommand());
+                _bus.ClearMessages();
+
+                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+                _detector.DetectDeadPeers();
+                _bus.ExpectExactly(new PingPeerCommand());
+                _bus.ClearMessages();
+
+                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
+                _detector.DetectDeadPeers();
+                _bus.ExpectExactly(new UnregisterPeerCommand(_transientAlivePeer0.Peer, firstPingTimestampUtc));
             }
         }
         

@@ -44,7 +44,10 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         internal void DetectDeadPeers()
         {
             var timestampUtc = SystemDateTime.UtcNow;
-            var entries = _peerRepository.GetPeers(loadDynamicSubscriptions: false).Select(ToPeerEntry).ToList();
+            var entries = _peerRepository.GetPeers(loadDynamicSubscriptions: false)
+                                         .Where(peer => !peer.Subscriptions.Any(sub => sub.MessageTypeId == MessageUtil.TypeId<RegisterPeerCommand>()))
+                                         .Select(ToPeerEntry)
+                                         .ToList();
             
             var shouldSendPing = ShouldSendPing(timestampUtc);
             if (shouldSendPing)
