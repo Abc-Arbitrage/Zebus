@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography;
 using Abc.Zebus.Util;
 using ProtoBuf;
 
@@ -18,8 +19,8 @@ namespace Abc.Zebus
 
         static MessageId()
         {
-            var random = new Random();
-            random.NextBytes(_randomBytes);
+            var random = new RNGCryptoServiceProvider();
+            random.GetBytes(_randomBytes);
         }
 
         public MessageId(Guid value)

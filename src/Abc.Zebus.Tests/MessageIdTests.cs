@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Testing.Extensions;
@@ -11,9 +13,43 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Tests
 {
+    public class MessageIdProxy : MarshalByRefObject
+    {
+        public Guid GetNextId()
+        {
+            return MessageId.NextId().Value;
+        }
+    }
+
     [TestFixture]
     public class MessageIdTests
     {
+        [Test]
+        public void should_not_generate_identical_MessageIds_when_multiple_buses_are_started_in_different_app_domains_simultaneously()
+        {
+            const int appDomainsToGenerate = 100;
+            var appDomainProxies = Enumerable.Range(0, appDomainsToGenerate).Select(i => CreateMessageIdCallerFromNewAppDomain()).ToList();
+            var proxiesTasks = appDomainProxies.Select(proxy => new Task<Guid>(proxy.GetNextId)).ToArray();
+
+            foreach (var task in proxiesTasks)
+                task.Start();
+            var generatedMessageIds = proxiesTasks.Select(task => task.Result).ToList();
+
+            generatedMessageIds.Distinct().Count().ShouldEqual(appDomainsToGenerate);
+        }
+
+        private static MessageIdProxy CreateMessageIdCallerFromNewAppDomain()
+        {
+            var appDomainInfo = new AppDomainSetup
+            {
+                ApplicationBase = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                ShadowCopyFiles = "true"
+            };
+
+            var newAppDomain = AppDomain.CreateDomain("MyAppDomain", null, appDomainInfo);
+            return (MessageIdProxy)newAppDomain.CreateInstanceAndUnwrap(typeof(MessageIdProxy).Assembly.FullName, "Abc.Zebus.Tests.MessageIdProxy");
+        }
+
         [Test]
         public void should_generate_unique_ids()
         {
