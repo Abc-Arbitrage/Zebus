@@ -41,14 +41,9 @@ namespace Abc.Zebus.Tests
 
         private static MessageIdProxy CreateMessageIdCallerFromNewAppDomain()
         {
-            var applicationBase = Path.GetDirectoryName(typeof(MessageIdProxy).Assembly.Location);
-            Console.WriteLine("Application base: " + applicationBase);
-            foreach (var file in System.IO.Directory.GetFiles(applicationBase))
-                Console.WriteLine(file);
-
             var appDomainInfo = new AppDomainSetup
             {
-                ApplicationBase = applicationBase,
+                ApplicationBase = Path.GetDirectoryName(new Uri(typeof(MessageIdProxy).Assembly.CodeBase).LocalPath),
                 ShadowCopyFiles = "true"
             };
 
