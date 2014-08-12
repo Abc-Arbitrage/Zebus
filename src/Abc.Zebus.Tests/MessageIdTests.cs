@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -40,9 +41,14 @@ namespace Abc.Zebus.Tests
 
         private static MessageIdProxy CreateMessageIdCallerFromNewAppDomain()
         {
+            var applicationBase = Path.GetDirectoryName(typeof(MessageIdProxy).Assembly.Location);
+            Console.WriteLine("Application base: " + applicationBase);
+            foreach (var file in System.IO.Directory.GetFiles(applicationBase))
+                Console.WriteLine(file);
+
             var appDomainInfo = new AppDomainSetup
             {
-                ApplicationBase = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                ApplicationBase = applicationBase,
                 ShadowCopyFiles = "true"
             };
 
