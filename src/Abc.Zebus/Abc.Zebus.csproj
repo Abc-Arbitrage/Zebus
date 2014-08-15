@@ -178,6 +178,8 @@
     <Compile Include="Routing\Routable.cs" />
     <Compile Include="Routing\RoutingPositionAttribute.cs" />
     <Compile Include="EventSourcing\SerializationIdAttribute.cs" />
+    <Compile Include="SubscriptionMode.cs" />
+    <Compile Include="SubscriptionModeAttribute.cs" />
     <Compile Include="TransientAttribute.cs" />
     <Compile Include="Subscription.cs" />
     <Compile Include="Serialization\IMessageSerializer.cs" />
