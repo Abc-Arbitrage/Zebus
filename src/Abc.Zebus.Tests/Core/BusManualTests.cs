@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using ABC.ServiceBus.Contracts;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
@@ -119,6 +120,20 @@ namespace Abc.Zebus.Tests.Core
             }
         }
 
+        [Test]
+        public void SendSleepCommands()
+        {
+            var tasks = new List<Task>();
+            using (var bus = CreateBusFactory().WithHandlers(typeof(SleepCommandHandler)).CreateAndStartBus())
+            {
+                for (var i = 0; i < 20; ++i)
+                {
+                    tasks.Add(bus.Send(new SleepCommand()));
+                }
+                Task.WaitAll(tasks.ToArray());
+            }
+        }
+
         private static BusFactory CreateBusFactory()
         {
             return new BusFactory().WithConfiguration(_directoryEndPoint, "Dev");
@@ -199,6 +214,18 @@ namespace Abc.Zebus.Tests.Core
             public void Handle(ManualCommand message)
             {
                 LastId = message.Id;
+            }
+        }
+
+        public class SleepCommand : ICommand
+        {
+        }
+
+        public class SleepCommandHandler : IMessageHandler<SleepCommand>
+        {
+            public void Handle(SleepCommand message)
+            {
+                Thread.Sleep(1000);
             }
         }
     }

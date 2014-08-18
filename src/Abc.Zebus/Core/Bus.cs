@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
-using Abc.Zebus.Monitoring;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
@@ -346,7 +345,7 @@ namespace Abc.Zebus.Core
             if (dispatch == null)
                 return;
 
-            _messageLogger.LogFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
+            _messageLogger.InfoFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
             _messageDispatcher.Dispatch(dispatch);
         }
 
@@ -359,7 +358,7 @@ namespace Abc.Zebus.Core
                 if (dispatch.Message is ICommand)
                 {
                     var messageExecutionCompleted = MessageExecutionCompleted.Create(dispatch.Context, dispatchResult, _serializer);
-                    var shouldLogMessageExecutionCompleted = _messageLogger.IsLogEnabled(dispatch.Message);
+                    var shouldLogMessageExecutionCompleted = _messageLogger.IsInfoEnabled(dispatch.Message);
                     SendTransportMessage(null, messageExecutionCompleted, dispatch.Context.GetSender(), shouldLogMessageExecutionCompleted);
                 }
 
@@ -416,7 +415,7 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
         {
-            _messageLogger.LogFormat("RECV local: {0}", message);
+            _messageLogger.InfoFormat("RECV local: {0}", message);
 
             var context = MessageContext.CreateOverride(PeerId, EndPoint);
             var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource));
@@ -448,7 +447,7 @@ namespace Abc.Zebus.Core
             if (peers.Count == 0)
             {
                 if (logEnabled)
-                    _messageLogger.LogFormat("SEND: {0} with no target peer", message);
+                    _messageLogger.InfoFormat("SEND: {0} with no target peer", message);
 
                 return;
             }
@@ -456,7 +455,7 @@ namespace Abc.Zebus.Core
             var transportMessage = ToTransportMessage(message, messageId ?? MessageId.NextId());
 
             if (logEnabled)
-                _messageLogger.LogFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.MessageBytes.Length, peers);
+                _messageLogger.InfoFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.MessageBytes.Length, peers);
 
             SendTransportMessage(transportMessage, peers);
         }
