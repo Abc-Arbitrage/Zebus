@@ -59,7 +59,7 @@ namespace Abc.Zebus.Dispatch
                 return container.GetInstance(MessageHandlerType);
 
             var busProxy = new MessageContextAwareBus(_bus, messageContext);
-            var messageHandlerInstance = new BusConstructorInstance(MessageHandlerType, busProxy);
+            var messageHandlerInstance = new MessageHandlerConstructorInstance(MessageHandlerType, busProxy, messageContext);
 
             return container.GetInstance(MessageHandlerType, messageHandlerInstance);
         }
