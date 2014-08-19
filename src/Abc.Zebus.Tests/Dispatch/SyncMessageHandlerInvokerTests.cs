@@ -35,6 +35,20 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
+        public void should_inject_context_in_handler_constructor()
+        {
+            var container = new Container(x => x.For<IBus>().Use(new Mock<IBus>().Object));
+            var invoker = new SyncMessageHandlerInvoker(container, typeof(CommandHandlerWithMessageContextInConstructor), typeof(CommandHandlerWithMessageContextInConstructorCommand));
+            var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
+            var command = new CommandHandlerWithMessageContextInConstructorCommand();
+            var invocation = command.ToInvocation(messageContext);
+
+            invoker.InvokeMessageHandler(invocation);
+
+            command.Context.ShouldEqual(messageContext);
+        }
+
+        [Test]
         public void should_proxy_bus_with_message_context_aware_bus()
         {
             var busMock = new Mock<IBus>();
@@ -123,6 +137,26 @@ namespace Abc.Zebus.Tests.Dispatch
             invoker.CreateHandler(messageContext);
 
             Measure.Execution(500000, () => invoker.CreateHandler(messageContext));
+        }
+
+        private class CommandHandlerWithMessageContextInConstructorCommand : ICommand
+        {
+            public MessageContext Context { get; set; }
+        }
+
+        private class CommandHandlerWithMessageContextInConstructor : IMessageHandler<CommandHandlerWithMessageContextInConstructorCommand>
+        {
+            public MessageContext Context { get; private set; }
+
+            public CommandHandlerWithMessageContextInConstructor(MessageContext context)
+            {
+                Context = context;
+            }
+
+            public void Handle(CommandHandlerWithMessageContextInConstructorCommand message)
+            {
+                message.Context = Context;
+            }
         }
 
         private class MessageContextAwareCommandHandler : IMessageHandler<ScanCommand1>, IMessageContextAware
