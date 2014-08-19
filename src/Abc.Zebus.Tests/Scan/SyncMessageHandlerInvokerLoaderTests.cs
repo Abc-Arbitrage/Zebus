@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
@@ -16,9 +17,27 @@ namespace Abc.Zebus.Tests.Scan
         public void should_load_queue_name()
         {
             var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
-            var invokers = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandlerWithQueueName1>()).ToList();
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandlerWithQueueName1>()).ExpectedSingle();
 
-            invokers[0].DispatchQueueName.ShouldEqual("DispatchQueue1");
+            invoker.DispatchQueueName.ShouldEqual("DispatchQueue1");
+        }
+
+        [Test]
+        public void should_switch_to_manual_subscription_mode_when_specified()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandlerWithManualSubscriptionMode>()).ExpectedSingle();
+
+            invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
+        }
+
+        [Test]
+        public void should_switch_to_auto_subscription_mode_when_specified()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableHandlerWithAutoSubscriptionMode>()).ExpectedSingle();
+
+            invoker.ShouldBeSubscribedOnStartup.ShouldBeTrue();
         }
 
         [Test]
@@ -40,6 +59,11 @@ namespace Abc.Zebus.Tests.Scan
         }
 
         public class FakeMessage2 : IMessage
+        {
+        }
+
+        [Routable]
+        public class FakeRoutableMessage : IMessage
         {
         }
 
@@ -68,6 +92,22 @@ namespace Abc.Zebus.Tests.Scan
         public class FakeHandlerWithQueueName1 : IMessageHandler<FakeMessage>
         {
             public void Handle(FakeMessage message)
+            {
+            }
+        }
+
+        [SubscriptionMode(SubscriptionMode.Manual)]
+        public class FakeHandlerWithManualSubscriptionMode : IMessageHandler<FakeMessage>
+        {
+            public void Handle(FakeMessage message)
+            {
+            }
+        }
+
+        [SubscriptionMode(SubscriptionMode.Auto)]
+        public class FakeRoutableHandlerWithAutoSubscriptionMode : IMessageHandler<FakeRoutableMessage>
+        {
+            public void Handle(FakeRoutableMessage message)
             {
             }
         }

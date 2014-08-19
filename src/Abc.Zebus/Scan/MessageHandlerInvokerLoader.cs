@@ -24,14 +24,13 @@ namespace Abc.Zebus.Scan
 
         public IEnumerable<IMessageHandlerInvoker> LoadMessageHandlerInvokers(TypeSource typeSource)
         {
-            foreach (var type in typeSource.GetTypes())
+            foreach (var handlerType in typeSource.GetTypes())
             {
-                if (!type.IsClass || type.IsAbstract || !type.IsVisible || !_handlerType.IsAssignableFrom(type))
+                if (!handlerType.IsClass || handlerType.IsAbstract || !handlerType.IsVisible || !_handlerType.IsAssignableFrom(handlerType))
                     continue;
 
-                var isNoScanHandler = Attribute.IsDefined(type, typeof(NoScanAttribute));
-
-                var interfaces = type.GetInterfaces();
+                var subscriptionMode = GetExplicitSubscriptionMode(handlerType);
+                var interfaces = handlerType.GetInterfaces();
 
                 var excludedMessageTypes = interfaces.Where(IsExtendedMessageHandlerInterface)
                                                      .Select(handleInterface => handleInterface.GetGenericArguments()[0])
@@ -44,13 +43,25 @@ namespace Abc.Zebus.Scan
                     if (excludedMessageTypes.Contains(messageType))
                         continue;
 
-                    var shouldBeSubscribedOnStartup = MessageHandlerInvoker.MessageShouldBeSubscribedOnStartup(messageType, isNoScanHandler);
-                    var invoker = BuildMessageHandlerInvoker(type, messageType, shouldBeSubscribedOnStartup);
+                    var shouldBeSubscribedOnStartup = MessageHandlerInvoker.MessageShouldBeSubscribedOnStartup(messageType, subscriptionMode);
+                    var invoker = BuildMessageHandlerInvoker(handlerType, messageType, shouldBeSubscribedOnStartup);
                     yield return invoker;
                 }
             }
         }
 
+        private SubscriptionMode? GetExplicitSubscriptionMode(Type handlerType)
+        {
+            var subscriptionModeAttribute = (SubscriptionModeAttribute)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
+            if (subscriptionModeAttribute != null)
+                return subscriptionModeAttribute.SubscriptionMode;
+
+            var isNoScanHandler = Attribute.IsDefined(handlerType, typeof(NoScanAttribute));
+            if (isNoScanHandler)
+                return SubscriptionMode.Manual;
+
+            return null;
+        }
 
         protected abstract IMessageHandlerInvoker BuildMessageHandlerInvoker(Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup);
 
