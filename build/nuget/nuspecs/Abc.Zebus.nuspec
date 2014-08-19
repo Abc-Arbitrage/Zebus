@@ -13,6 +13,9 @@
 		<releaseNotes></releaseNotes>
 		<copyright>$copyright$</copyright>
 		<tags></tags>
+    <dependencies>
+      <dependency id="log4net" version="2.0.3"/>
+    </dependencies>
 		<references>
 			<reference file="Abc.Zebus.dll" />
 		</references>
@@ -22,7 +25,6 @@
 		<file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.pdb" target="lib\net45\" />
 		
 		<file src="lib\zmq\clrzmq.dll" target="lib\net45\" />
-		<file src="lib\log4net\log4net.dll" target="lib\net45\" />
 		<file src="lib\json.net\Newtonsoft.Json.dll" target="lib\net45\" />
 		<file src="lib\protobuf\protobuf-net.dll" target="lib\net45\" />
 		<file src="lib\structuremap\StructureMap.dll" target="lib\net45\" />
