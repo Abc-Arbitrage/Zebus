@@ -81,5 +81,35 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             }
             return subscriptionForTypes.ToArray();
         }
+
+        // UselessKey
+        //        100 iterations in 953 ms (105,0 iterations/sec)
+        //        Latencies :
+        //        Min :               6 068µs
+        //        Avg :               9 526µs
+        //        Median :            6 785µs
+        //        95 percentile :     11 572µs
+        //        99 percentile :     50 912µs
+        //        Max :             156 487µs (Iteration #0)
+        //        G0 : 18
+        //        G1 : 0
+        //        G2 : 0
+        //          Expected: 8000
+        //          But was:  0
+
+        // Clean
+        //        100 iterations in 1 242 ms (80,5 iterations/sec)
+        //        Latencies :
+        //        Min :               9 659µs
+        //        Avg :              12 416µs
+        //        Median :           10 291µs
+        //        95 percentile :     12 751µs
+        //        99 percentile :     65 848µs
+        //        Max :             109 858µs (Iteration #0)
+        //        G0 : 17
+        //        G1 : 0
+        //        G2 : 0
+        //          Expected: 8000
+        //          But was:  0
     }
 }
