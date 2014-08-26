@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 
-[assembly: AssemblyProduct("Zebus")]
-[assembly: AssemblyDescription("A lightweight Peer to Peer Service Bus")]
+[assembly: AssemblyProduct("Zebus.Directory")]
+[assembly: AssemblyDescription("The Directory service used by Zebus")]
 [assembly: AssemblyCompany("ABC Arbitrage Asset Management")]
 [assembly: AssemblyCopyright("Copyright © ABC Arbitrage Asset Management 2014")]
 

@@ -29,15 +29,6 @@ $version = ($attributes | ? { $_.AttributeType.Name -eq  "AssemblyInformationalV
 
 $properties = "`"version="+$version.Value+";author="+$company.Value+";description="+$description.Value+";copyright="+$copyright.Value+";configuration="+$configuration.Value+"`"";
 
-# Build nuget for Zebus
-Write-Host "############# Building Zebus package #############" -ForegroundColor Green
-& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -sym;
-
-# Build nuget for Zebus.Testing
-Write-Host
-Write-Host "############# Building Zebus.Testing package #############" -ForegroundColor Green
-& '.\tools\nuget\NuGet.exe' pack .\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec -BasePath $location -OutputDirectory $outputLocation -Properties $properties -sym;
-
 # Build nuget for Zebus.Directory.Standalone
 Write-Host
 Write-Host "############# Building Zebus.Directory.Standalone package #############" -ForegroundColor Green

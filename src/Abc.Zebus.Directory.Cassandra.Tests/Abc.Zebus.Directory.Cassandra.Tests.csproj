@@ -30,6 +30,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Abc.Zebus">
+      <HintPath>..\packages\Zebus.1.1.4\lib\net45\Abc.Zebus.dll</HintPath>
+    </Reference>
+    <Reference Include="Abc.Zebus.Testing">
+      <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\Abc.Zebus.Testing.dll</HintPath>
+    </Reference>
     <Reference Include="Cassandra, Version=2.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\CassandraCSharpDriver.2.0.3\lib\net40\Cassandra.dll</HintPath>
@@ -44,22 +50,32 @@
     <Reference Include="Cassandra.Data.Linq">
       <HintPath>..\packages\CassandraCSharpDriver.2.0.3\lib\net40\Cassandra.Data.Linq.dll</HintPath>
     </Reference>
+    <Reference Include="KellermanSoftware.Compare-NET-Objects">
+      <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+    </Reference>
     <Reference Include="LZ4">
       <HintPath>..\packages\lz4net.1.0.3.93\lib\net40-client\LZ4.dll</HintPath>
     </Reference>
-    <Reference Include="Moq, Version=4.0.10827.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
+    <Reference Include="Moq">
+      <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\moq\Moq.dll</HintPath>
+      <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="nunit.framework">
-      <HintPath>..\..\lib\nunit\nunit.framework.dll</HintPath>
+      <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Ploeh.AutoFixture">
+      <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\Ploeh.AutoFixture.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net, Version=2.0.0.622, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\protobuf\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="StructureMap">
-      <HintPath>..\..\lib\structuremap\StructureMap.dll</HintPath>
+      <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\StructureMap.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -87,14 +103,6 @@
     <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj">
       <Project>{ee6730d9-6a21-46a5-ae3f-af78060b6ea3}</Project>
       <Name>Abc.Zebus.Directory</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj">
-      <Project>{4ce123df-8021-411c-929b-53e5c5fc1e04}</Project>
-      <Name>Abc.Zebus.Testing</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj">
-      <Project>{1f4c6307-6113-40d5-bf42-4b6bf5df13b2}</Project>
-      <Name>Abc.Zebus</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

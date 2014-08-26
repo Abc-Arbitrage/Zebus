@@ -34,6 +34,9 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Abc.Zebus">
+      <HintPath>..\packages\Zebus.1.1.4\lib\net45\Abc.Zebus.dll</HintPath>
+    </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\log4net\log4net.dll</HintPath>
@@ -70,17 +73,12 @@
     <Compile Include="Storage\MemoryPeerRepository.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj">
-      <Project>{1f4c6307-6113-40d5-bf42-4b6bf5df13b2}</Project>
-      <Name>Abc.Zebus</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="App.config" />
     <None Include="log4net.config">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

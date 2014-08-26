@@ -14,7 +14,7 @@
 		<copyright>$copyright$</copyright>
 		<tags></tags>
     <dependencies>
-      <dependency id="Zebus" version="$version$" />
+      <dependency id="Zebus" version="[1.1.4,2.0)" />
     </dependencies>
 	</metadata>
 	<files>

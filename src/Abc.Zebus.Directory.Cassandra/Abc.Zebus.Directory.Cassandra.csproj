@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Abc.Zebus">
+      <HintPath>..\packages\Zebus.1.1.4\lib\net45\Abc.Zebus.dll</HintPath>
+    </Reference>
     <Reference Include="Cassandra, Version=2.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\CassandraCSharpDriver.2.0.3\lib\net40\Cassandra.dll</HintPath>
@@ -85,10 +88,6 @@
     <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj">
       <Project>{ee6730d9-6a21-46a5-ae3f-af78060b6ea3}</Project>
       <Name>Abc.Zebus.Directory</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj">
-      <Project>{1f4c6307-6113-40d5-bf42-4b6bf5df13b2}</Project>
-      <Name>Abc.Zebus</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
