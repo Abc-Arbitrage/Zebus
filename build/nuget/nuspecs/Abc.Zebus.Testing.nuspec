@@ -6,7 +6,7 @@
 		<title>Zebus.Testing</title>
 		<authors>$author$</authors>
 		<owners>$author$</owners>
-		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
+		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</licenseUrl>
 		<projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<description>$description$</description>

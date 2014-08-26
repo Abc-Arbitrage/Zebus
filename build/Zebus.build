@@ -60,8 +60,6 @@
 	<target name="init-tests">
 		<fileset id="testsToBuild" basedir="${src.dir}">
 			<include name="Abc.Zebus.Tests\Abc.Zebus.Tests.csproj" />
-			<include name="Abc.Zebus.Directory.Tests\Abc.Zebus.Directory.Tests.csproj" />
-			<include name="Abc.Zebus.Directory.Cassandra.Tests\Abc.Zebus.Directory.Cassandra.Tests.csproj" />
 		</fileset>
 	</target>
 	
