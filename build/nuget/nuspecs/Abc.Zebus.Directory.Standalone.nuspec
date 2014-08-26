@@ -6,8 +6,8 @@
 		<title>Zebus.Directory.Standalone</title>
 		<authors>$author$</authors>
 		<owners>$author$</owners>
-		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.txt</licenseUrl>
-		<projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+    <licenseUrl>https://github.com/Abc-Arbitrage/Zebus.Directory/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/Abc-Arbitrage/Zebus.Directory</projectUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<description>$description$</description>
 		<releaseNotes></releaseNotes>

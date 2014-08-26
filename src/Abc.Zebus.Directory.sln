@@ -28,8 +28,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuspecs", "nuspecs", "{CF60
 		..\build\nuget\nuspecs\Abc.Zebus.Directory.Cassandra.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Directory.Cassandra.nuspec
 		..\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Directory.nuspec
 		..\build\nuget\nuspecs\Abc.Zebus.Directory.Standalone.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Directory.Standalone.nuspec
-		..\build\nuget\nuspecs\Abc.Zebus.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.nuspec
-		..\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{7218C17B-72FC-4BED-AD81-F4BC6196D3AA}"
