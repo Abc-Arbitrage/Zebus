@@ -100,6 +100,8 @@
     <Compile Include="Dispatch\DispatchMessages\ForwardCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\ForwardCommandHandler.cs" />
     <Compile Include="Dispatch\DispatcherTaskSchedulerTests.cs" />
+    <Compile Include="Dispatch\DispatchMessages\ManualCommand.cs" />
+    <Compile Include="Dispatch\DispatchMessages\ManualCommandHandler.cs" />
     <Compile Include="Dispatch\MessageDispatcherTests.CustomQueues.cs" />
     <Compile Include="Dispatch\DispatchMessages\Namespace1\UseOtherQueue.cs" />
     <Compile Include="Dispatch\DispatchMessages\Namespace1\Namespace2\SyncCommandHandlerWithOtherQueueName.cs" />
