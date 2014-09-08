@@ -12,7 +12,7 @@ namespace Abc.Zebus.Dispatch
 
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
         private readonly object _exceptionsLock = new object();
-        private Dictionary<Type, Exception> _exceptions;
+        private volatile Dictionary<Type, Exception> _exceptions;
         private int _remainingHandlerCount;
 
         public Func<IMessageHandlerInvoker, bool> InvokerFilter { get; set; }
@@ -22,6 +22,7 @@ namespace Abc.Zebus.Dispatch
             ShouldRunSynchronously = shouldRunSynchronously;
             Context = context;
             Message = message;
+
             _continuation = continuation;
         }
 
@@ -32,11 +33,10 @@ namespace Abc.Zebus.Dispatch
 
         public void SetHandled(IMessageHandlerInvoker invoker, Exception error)
         {
-            var remainingHandlerCount = Interlocked.Decrement(ref _remainingHandlerCount);
             if (error != null)
                 AddException(invoker.MessageHandlerType, error);
 
-            if (remainingHandlerCount == 0)
+            if (Interlocked.Decrement(ref _remainingHandlerCount) == 0)
                 _continuation(this, new DispatchResult(true, _exceptions));
         }
 
