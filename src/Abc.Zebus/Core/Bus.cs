@@ -371,12 +371,11 @@ namespace Abc.Zebus.Core
 
         private void SendMessageProcessingFailedIfNeeded(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage failingTransportMessage = null)
         {
-            if (dispatchResult.Errors.All(error => error is DomainException))
+            if (dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is DomainException))
                 return;
 
             if (failingTransportMessage == null)
                 failingTransportMessage = ToTransportMessage(dispatch.Message, MessageId.NextId());
-
 
             string jsonMessage;
             try

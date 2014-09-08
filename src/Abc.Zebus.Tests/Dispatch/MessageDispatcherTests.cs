@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.Dispatch
         private Mock<IContainer> _containerMock;
         private Mock<IPipeManager> _pipeManagerMock;
         private TestPipeInvocation _invocation;
-        private DispatchResultRef _dispatchResultRef;
+        private DispatchResult _dispatchResult;
         private DispatcherTaskSchedulerFactory _taskSchedulerFactory;
 
         [SetUp]
@@ -218,7 +218,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new FailingCommand(new InvalidOperationException(":'("));
             Dispatch(command);
 
-            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
+            var error = _dispatchResult.Errors.ExpectedSingle();
             error.ShouldEqual(command.Exception);
         }
 
@@ -230,9 +230,9 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new AsyncFailingCommand(new InvalidOperationException(":'("));
             Dispatch(command);
 
-            Wait.Until(() => _dispatchResultRef != null, 2.Seconds());
+            Wait.Until(() => _dispatchResult != null, 2.Seconds());
 
-            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
+            var error = _dispatchResult.Errors.ExpectedSingle();
             error.ShouldEqual(command.Exception);
         }
 
@@ -254,8 +254,8 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new AsyncDoNotStartTaskCommand();
             Dispatch(command);
 
-            _dispatchResultRef.ShouldNotBeNull();
-            _dispatchResultRef.Value.Errors.Count().ShouldEqual(1);
+            _dispatchResult.ShouldNotBeNull();
+            _dispatchResult.Errors.Count().ShouldEqual(1);
         }
 
         [Test]
@@ -328,20 +328,10 @@ namespace Abc.Zebus.Tests.Dispatch
 
         private void Dispatch(IMessage message, MessageContext context, MessageDispatcher dispatcher = null)
         {
-            _dispatchResultRef = null;
+            _dispatchResult = null;
 
-            var dispatch = new MessageDispatch(context, message, (x, r) => _dispatchResultRef = new DispatchResultRef(r));
+            var dispatch = new MessageDispatch(context, message, (x, r) => _dispatchResult = r);
             (dispatcher ?? _messageDispatcher).Dispatch(dispatch);
-        }
-
-        private class DispatchResultRef
-        {
-            public readonly DispatchResult Value;
-
-            public DispatchResultRef(DispatchResult value)
-            {
-                Value = value;
-            }
         }
     }
 }
