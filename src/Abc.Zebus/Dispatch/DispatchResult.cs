@@ -8,11 +8,8 @@ namespace Abc.Zebus.Dispatch
         private static readonly Dictionary<Type, Exception> _noErrors = new Dictionary<Type, Exception>();
         private readonly IDictionary<Type, Exception> _errors;
 
-        public readonly bool WasHandled;
-
-        public DispatchResult(bool wasHandled, IDictionary<Type, Exception> errorsByHandlerType)
+        public DispatchResult(IDictionary<Type, Exception> errorsByHandlerType)
         {
-            WasHandled = wasHandled;
             _errors = errorsByHandlerType ?? _noErrors;
         }
         

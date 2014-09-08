@@ -6,10 +6,6 @@ namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatch
     {
-        public readonly bool ShouldRunSynchronously;
-        public readonly MessageContext Context;
-        public readonly IMessage Message;
-
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
         private readonly object _exceptionsLock = new object();
         private volatile Dictionary<Type, Exception> _exceptions;
@@ -17,27 +13,38 @@ namespace Abc.Zebus.Dispatch
 
         public MessageDispatch(MessageContext context, IMessage message, Action<MessageDispatch, DispatchResult> continuation, bool shouldRunSynchronously = false)
         {
+            _continuation = continuation;
+
             ShouldRunSynchronously = shouldRunSynchronously;
             Context = context;
             Message = message;
-
-            _continuation = continuation;
         }
 
+        public bool ShouldRunSynchronously { get; private set; }
+        public MessageContext Context { get; private set; }
+        public IMessage Message { get; private set; }
         public Func<IMessageHandlerInvoker, bool> InvokerFilter { get; set; }
 
         public void SetIgnored()
         {
-            _continuation(this, new DispatchResult(false, null));
+            _continuation(this, new DispatchResult(null));
         }
 
         public void SetHandled(IMessageHandlerInvoker invoker, Exception error)
         {
             if (error != null)
-                AddException(invoker.MessageHandlerType, error);
+            {
+                lock (_exceptionsLock)
+                {
+                    if (_exceptions == null)
+                        _exceptions = new Dictionary<Type, Exception>();
+
+                    _exceptions[invoker.MessageHandlerType] = error;
+                }
+            }
 
             if (Interlocked.Decrement(ref _remainingHandlerCount) == 0)
-                _continuation(this, new DispatchResult(true, _exceptions));
+                _continuation(this, new DispatchResult(_exceptions));
         }
 
         public void SetHandlerCount(int handlerCount)
@@ -48,17 +55,6 @@ namespace Abc.Zebus.Dispatch
         public bool ShouldInvoke(IMessageHandlerInvoker invoker)
         {
             return InvokerFilter == null || InvokerFilter(invoker);
-        }
-
-        private void AddException(Type messageHandlerType, Exception exception)
-        {
-            lock (_exceptionsLock)
-            {
-                if (_exceptions == null)
-                    _exceptions = new Dictionary<Type, Exception>();
-
-                _exceptions[messageHandlerType] = exception;
-            }
         }
     }
 }

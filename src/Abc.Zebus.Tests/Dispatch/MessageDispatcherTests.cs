@@ -162,7 +162,6 @@ namespace Abc.Zebus.Tests.Dispatch
             Dispatch(command);
 
             handler.HandledCommand1.ShouldEqual(command);
-            _dispatchResultRef.Value.WasHandled.ShouldBeTrue();
         }
 
         [Test]
@@ -212,14 +211,6 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
-        public void should_detect_non_handled_messages()
-        {
-            Dispatch(new ScanCommand1());
-
-            _dispatchResultRef.Value.WasHandled.ShouldBeFalse();
-        }
-
-        [Test]
         public void should_catch_exceptions()
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
@@ -263,7 +254,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new AsyncDoNotStartTaskCommand();
             Dispatch(command);
 
-            _dispatchResultRef.Value.WasHandled.ShouldBeTrue();
+            _dispatchResultRef.ShouldNotBeNull();
             _dispatchResultRef.Value.Errors.Count().ShouldEqual(1);
         }
 
