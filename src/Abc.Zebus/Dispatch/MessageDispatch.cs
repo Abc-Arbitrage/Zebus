@@ -6,9 +6,9 @@ namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatch
     {
+        private readonly Dictionary<Type, Exception> _exceptions = new Dictionary<Type, Exception>();
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
         private readonly object _exceptionsLock = new object();
-        private volatile Dictionary<Type, Exception> _exceptions;
         private int _remainingHandlerCount;
 
         public MessageDispatch(MessageContext context, IMessage message, Action<MessageDispatch, DispatchResult> continuation, bool shouldRunSynchronously = false)
@@ -36,9 +36,6 @@ namespace Abc.Zebus.Dispatch
             {
                 lock (_exceptionsLock)
                 {
-                    if (_exceptions == null)
-                        _exceptions = new Dictionary<Type, Exception>();
-
                     _exceptions[invoker.MessageHandlerType] = error;
                 }
             }
