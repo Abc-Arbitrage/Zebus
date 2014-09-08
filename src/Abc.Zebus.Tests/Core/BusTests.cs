@@ -14,6 +14,7 @@ using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Testing.UnitTesting;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 
@@ -22,6 +23,8 @@ namespace Abc.Zebus.Tests.Core
     [TestFixture]
     public partial class BusTests
     {
+        private const string _deserializationFailureDumpsDirectoryName = "deserialization_failure_dumps";
+
         private readonly Peer _self = new Peer(new PeerId("Abc.Testing.Self"), "tcp://abctest:123");
         private readonly Peer _peerUp = new Peer(new PeerId("Abc.Testing.Up"), "AnotherPeer");
         private readonly Peer _peerDown = new Peer(new PeerId("Abc.Testing.Down"), "tcp://abctest:999", false);
@@ -32,6 +35,7 @@ namespace Abc.Zebus.Tests.Core
         private Mock<IMessageDispatcher> _messageDispatcherMock;
         private MessageSerializer _messageSerializer;
         private List<IMessageHandlerInvoker> _invokers;
+        private string _expectedDumpDirectory;
 
         [SetUp]
         public void Setup()
@@ -47,7 +51,18 @@ namespace Abc.Zebus.Tests.Core
             _invokers = new List<IMessageHandlerInvoker>();
             _messageDispatcherMock.Setup(x => x.GetMessageHanlerInvokers()).Returns(_invokers);
 
+            _expectedDumpDirectory = PathUtil.InBaseDirectory(_deserializationFailureDumpsDirectoryName);
+            if (System.IO.Directory.Exists(_expectedDumpDirectory))
+                System.IO.Directory.Delete(_expectedDumpDirectory, true);
+
             SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            if (System.IO.Directory.Exists(_expectedDumpDirectory))
+                System.IO.Directory.Delete(_expectedDumpDirectory, true);
         }
 
         [Test]

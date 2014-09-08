@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
@@ -160,6 +161,24 @@ namespace Abc.Zebus.Tests.Core
                 var processingFailedTransportMessage = new TransportMessage(processingFailed.TypeId(), new byte[0], _self);
                 _transport.ExpectExactly(new TransportMessageSent(processingFailedTransportMessage, _peerUp));
             }
+        }
+
+        [Test]
+        public void should_dump_incoming_message_if_unable_to_deserialize_it()
+        {
+            SetupPeersHandlingMessage<CustomProcessingFailed>(_peerUp);
+            var serializerMock = new Mock<IMessageSerializer>();
+            serializerMock.Setup(serializer => serializer.Deserialize(It.IsAny<MessageTypeId>(), It.IsAny<byte[]>()))
+                          .Throws(new Exception("message"));
+            var bus = new Bus(_transport, _directoryMock.Object, serializerMock.Object, _messageDispatcherMock.Object, new DefaultStoppingStrategy());
+            bus.Configure(_self.Id, "test");
+            var transportMessage = new FakeCommand(123).ToTransportMessage();
+            
+            _transport.RaiseMessageReceived(transportMessage);
+            
+            var dumpFileName = System.IO.Directory.GetFiles(_expectedDumpDirectory).ExpectedSingle();
+            dumpFileName.ShouldContain("Abc.Zebus.Tests.Messages.FakeCommand");
+            File.ReadAllBytes(dumpFileName).Length.ShouldEqual(2);
         }
 
         [Test]

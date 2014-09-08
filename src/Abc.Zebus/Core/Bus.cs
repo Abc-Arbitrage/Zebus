@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory;
@@ -17,6 +18,8 @@ namespace Abc.Zebus.Core
 {
     public class Bus : IBus, IMessageDispatchFactory
     {
+        private const string _deserializationFailureDumpsDirectoryName = "deserialization_failure_dumps";
+        private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new UniqueTimestampProvider();
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
         private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
@@ -29,7 +32,7 @@ namespace Abc.Zebus.Core
         private readonly IStoppingStrategy _stoppingStrategy;
         private PeerId _peerId;
         private bool _isRunning;
-
+        
         public event Action Starting = delegate { };
         public event Action Started = delegate { };
         public event Action Stopping = delegate { };
@@ -488,13 +491,33 @@ namespace Abc.Zebus.Core
             }
             catch (Exception exception)
             {
-                var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}", messageTypeId.FullName, originator.SenderId);
+                var dumpLocation = DumpMessageOnDisk(messageTypeId, messageBytes);
+                var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}", messageTypeId.FullName, originator.SenderId, dumpLocation);
                 _logger.Error(errorMessage, exception);
 
                 var processingFailed = new CustomProcessingFailed(GetType().FullName, exception.Message, SystemDateTime.UtcNow);
                 Publish(processingFailed);
             }
             return null;
+        }
+
+        private string DumpMessageOnDisk(MessageTypeId messageTypeId, byte[] messageBytes)
+        {
+            try
+            {
+                var dumpDirectory = PathUtil.InBaseDirectory(_deserializationFailureDumpsDirectoryName);
+                if (!System.IO.Directory.Exists(dumpDirectory))
+                    System.IO.Directory.CreateDirectory(dumpDirectory);
+
+                var dumpFileName = string.Format("{0:yyyyMMdd-HH-mm-ss.fffffff}_{1}", _deserializationFailureTimestampProvider.NextUtcTimestamp(), messageTypeId.FullName);
+                var dumpFilePath = Path.Combine(dumpDirectory, dumpFileName);
+                File.WriteAllBytes(dumpFilePath, messageBytes);
+                return dumpFilePath;
+            }
+            catch
+            {
+                return "Message could not be dumped";
+            }
         }
 
         public void Dispose()
