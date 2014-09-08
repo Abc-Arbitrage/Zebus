@@ -15,8 +15,6 @@ namespace Abc.Zebus.Dispatch
         private volatile Dictionary<Type, Exception> _exceptions;
         private int _remainingHandlerCount;
 
-        public Func<IMessageHandlerInvoker, bool> InvokerFilter { get; set; }
-
         public MessageDispatch(MessageContext context, IMessage message, Action<MessageDispatch, DispatchResult> continuation, bool shouldRunSynchronously = false)
         {
             ShouldRunSynchronously = shouldRunSynchronously;
@@ -25,6 +23,8 @@ namespace Abc.Zebus.Dispatch
 
             _continuation = continuation;
         }
+
+        public Func<IMessageHandlerInvoker, bool> InvokerFilter { get; set; }
 
         public void SetIgnored()
         {

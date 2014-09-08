@@ -227,8 +227,8 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new FailingCommand(new InvalidOperationException(":'("));
             Dispatch(command);
 
-            _dispatchResultRef.Value.WasHandled.ShouldBeTrue();
-            _dispatchResultRef.Value.Errors.First().ShouldEqual(command.Exception);
+            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
+            error.ShouldEqual(command.Exception);
         }
 
         [Test]
@@ -241,7 +241,18 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Wait.Until(() => _dispatchResultRef != null, 2.Seconds());
 
-            _dispatchResultRef.Value.Errors.First().ShouldEqual(command.Exception);
+            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
+            error.ShouldEqual(command.Exception);
+        }
+
+        [Test]
+        public void should_have_only_one_failing_handler()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+            
+            var invokersCount = _messageDispatcher.GetMessageHanlerInvokers().Count(x => x.MessageType == typeof(AsyncFailingCommand));
+
+            invokersCount.ShouldEqual(1);
         }
 
         [Test]
