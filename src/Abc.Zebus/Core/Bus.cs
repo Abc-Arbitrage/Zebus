@@ -514,9 +514,9 @@ namespace Abc.Zebus.Core
                 File.WriteAllBytes(dumpFilePath, messageBytes);
                 return dumpFilePath;
             }
-            catch
+            catch (Exception ex)
             {
-                return "Message could not be dumped";
+                return "Message could not be dumped: " + ex;
             }
         }
 
