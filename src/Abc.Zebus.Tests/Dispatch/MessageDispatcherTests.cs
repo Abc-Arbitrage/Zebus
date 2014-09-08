@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.Dispatch
         private Mock<IContainer> _containerMock;
         private Mock<IPipeManager> _pipeManagerMock;
         private TestPipeInvocation _invocation;
-        private DispatchResult _dispatchResult;
+        private volatile DispatchResult _dispatchResult;
         private DispatcherTaskSchedulerFactory _taskSchedulerFactory;
 
         [SetUp]
