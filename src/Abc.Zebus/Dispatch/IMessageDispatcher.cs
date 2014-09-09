@@ -21,6 +21,6 @@ namespace Abc.Zebus.Dispatch
 
         void Stop();
         void Start();
-        int PurgeQueues();
+        int Purge();
     }
 }

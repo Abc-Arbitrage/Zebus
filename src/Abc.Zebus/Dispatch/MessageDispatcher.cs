@@ -220,7 +220,7 @@ namespace Abc.Zebus.Dispatch
             return invokerDispatchQueueName != null && invokerDispatchQueueName.Equals(currentDispatchQueueName, StringComparison.OrdinalIgnoreCase);
         }
 
-        public int PurgeQueues()
+        public int Purge()
         {
             return _schedulersByQueueName.Values.Sum(taskScheduler => taskScheduler.PurgeTasks());
         }

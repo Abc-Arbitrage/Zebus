@@ -97,7 +97,7 @@ namespace Abc.Zebus.Tests.Lotus
                 throw new NotImplementedException();
             }
 
-            public int PurgeQueues()
+            public int Purge()
             {
                 throw new NotSupportedException();
             }
