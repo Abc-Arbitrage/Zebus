@@ -142,11 +142,12 @@ namespace Abc.Zebus.Core
             var peersHandlingMessage = _directory.GetPeersHandlingMessage(message).ToList();
 
             var localDispatchEnabled = LocalDispatch.Enabled;
-            if (localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == _peerId))
+            var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == _peerId);
+            if (shouldBeHandledLocally)
                 HandleLocalMessage(message, null);
 
             var targetPeers = localDispatchEnabled ? peersHandlingMessage.Where(x => x.Id != _peerId).ToList() : peersHandlingMessage;
-            SendTransportMessage(null, message, targetPeers, true);
+            SendTransportMessage(null, message, targetPeers, true, shouldBeHandledLocally);
         }
 
         public Task<CommandResult> Send(ICommand message)
@@ -444,11 +445,11 @@ namespace Abc.Zebus.Core
             SendTransportMessage(messageId, message, new[] { peer }, logEnabled);
         }
 
-        private void SendTransportMessage(MessageId? messageId, IMessage message, IList<Peer> peers, bool logEnabled)
+        private void SendTransportMessage(MessageId? messageId, IMessage message, IList<Peer> peers, bool logEnabled, bool locallyHandled = false)
         {
             if (peers.Count == 0)
             {
-                if (logEnabled)
+                if (!locallyHandled && logEnabled)
                     _messageLogger.InfoFormat("SEND: {0} with no target peer", message);
 
                 return;
