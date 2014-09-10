@@ -3,5 +3,7 @@
     public interface IProvideQueueLength
     {
         int GetReceiveQueueLength();
+
+        int Purge();
     }
 }

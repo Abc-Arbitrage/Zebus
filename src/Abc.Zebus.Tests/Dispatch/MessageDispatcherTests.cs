@@ -293,7 +293,7 @@ namespace Abc.Zebus.Tests.Dispatch
             messageDispatcher.LoadMessageHandlerInvokers();
             Dispatch(new DispatchCommand(), messageDispatcher);
             
-            var purgedMessagesCount = messageDispatcher.PurgeQueues();
+            var purgedMessagesCount = messageDispatcher.Purge();
 
             purgedMessagesCount.ShouldEqual(3);
             taskSchedulerMock.Verify(scheduler => scheduler.PurgeTasks(), Times.Exactly(3));
