@@ -492,10 +492,10 @@ namespace Abc.Zebus.Core
             catch (Exception exception)
             {
                 var dumpLocation = DumpMessageOnDisk(messageTypeId, messageBytes);
-                var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}", messageTypeId.FullName, originator.SenderId, dumpLocation);
-                _logger.Error(errorMessage, exception);
+                var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}\r\n{3}", messageTypeId.FullName, originator.SenderId, dumpLocation, exception);
+                _logger.Error(errorMessage);
 
-                var processingFailed = new CustomProcessingFailed(GetType().FullName, exception.Message, SystemDateTime.UtcNow);
+                var processingFailed = new CustomProcessingFailed(GetType().FullName, errorMessage, SystemDateTime.UtcNow);
                 Publish(processingFailed);
             }
             return null;
