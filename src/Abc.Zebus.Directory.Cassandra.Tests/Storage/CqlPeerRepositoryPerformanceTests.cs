@@ -8,6 +8,7 @@ using Abc.Zebus.Directory.Cassandra.Tests.Cql;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
+using Cassandra;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
@@ -28,6 +29,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void insert_30_peers_with_8000_subscriptions_each()
         {
+            Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Off;
             const int numberOfPeersToInsert = 30;
             var repo = new CqlPeerRepository(DataContext);
             var subscriptionForTypes = Get10MessageTypesWith800BindingKeysEach();
@@ -51,9 +53,11 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         [Test]
         public void insert_1_peer_with_100_000_subscriptions()
         {
+            Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
             var repo = new CqlPeerRepository(DataContext);
             var subscriptionForTypes = Get1MessageTypesWith100000BindingKeys();
             
+
             var stopwatch = Stopwatch.StartNew();
             repo.AddOrUpdatePeer(new PeerDescriptor(new PeerId("Abc.Peer.0"), "tcp://toto:123", true, true, true, DateTime.UtcNow));
             repo.AddDynamicSubscriptionsForTypes(new PeerId("Abc.Peer.0"), DateTime.UtcNow, subscriptionForTypes);

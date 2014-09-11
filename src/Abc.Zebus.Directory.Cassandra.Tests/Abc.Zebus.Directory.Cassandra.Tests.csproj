@@ -36,25 +36,31 @@
     <Reference Include="Abc.Zebus.Testing">
       <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\Abc.Zebus.Testing.dll</HintPath>
     </Reference>
-    <Reference Include="Cassandra, Version=2.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Cassandra, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.0.3\lib\net40\Cassandra.dll</HintPath>
+      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.dll</HintPath>
     </Reference>
-    <Reference Include="Cassandra.Data, Version=1.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Cassandra.Data, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.0.3\lib\net40\Cassandra.Data.dll</HintPath>
+      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.Data.dll</HintPath>
     </Reference>
-    <Reference Include="Cassandra.Data.EntityContext">
-      <HintPath>..\packages\CassandraEntityContext.2.0.3\lib\net40\Cassandra.Data.EntityContext.dll</HintPath>
+    <Reference Include="Cassandra.Data.EntityContext, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\CassandraEntityContext.2.1.0\lib\net40\Cassandra.Data.EntityContext.dll</HintPath>
     </Reference>
-    <Reference Include="Cassandra.Data.Linq">
-      <HintPath>..\packages\CassandraCSharpDriver.2.0.3\lib\net40\Cassandra.Data.Linq.dll</HintPath>
+    <Reference Include="Cassandra.Data.Linq, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.Data.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="Crc32C.NET">
+      <HintPath>..\packages\Crc32C.NET.1.0.5.0\lib\net20\Crc32C.NET.dll</HintPath>
     </Reference>
     <Reference Include="KellermanSoftware.Compare-NET-Objects">
       <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
     </Reference>
-    <Reference Include="LZ4">
-      <HintPath>..\packages\lz4net.1.0.3.93\lib\net40-client\LZ4.dll</HintPath>
+    <Reference Include="LZ4, Version=1.0.5.93, Culture=neutral, PublicKeyToken=fd2bda0a70c5a705, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\lz4net.1.0.5.93\lib\net40-client\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="Moq">
       <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\Moq.dll</HintPath>
@@ -73,6 +79,9 @@
     <Reference Include="protobuf-net, Version=2.0.0.622, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\protobuf\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="Snappy.NET">
+      <HintPath>..\packages\Snappy.NET.1.1.1.8\lib\net45\Snappy.NET.dll</HintPath>
     </Reference>
     <Reference Include="StructureMap">
       <HintPath>..\packages\Zebus.Testing.1.1.4\lib\net45\StructureMap.dll</HintPath>

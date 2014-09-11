@@ -36,7 +36,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         [TestFixtureSetUp]
         public void CreateSchema()
         {
-            Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Verbose;
+            Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
             Diagnostics.CassandraStackTraceIncluded = true;
 
             ConfigurationMock = CreateConfigurationMock();

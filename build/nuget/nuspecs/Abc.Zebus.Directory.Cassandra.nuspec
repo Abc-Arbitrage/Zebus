@@ -16,8 +16,8 @@
     <dependencies>
       <dependency id="Zebus" version="[1.1.4,2.0)" />
       <dependency id="Zebus.Directory" version="$version$" />
-      <dependency id="CassandraCSharpDriver" version="[2.0.3,2.1)" />
-      <dependency id="CassandraEntityContext" version="[2.0.3,2.1)" />
+      <dependency id="CassandraCSharpDriver" version="[2.1.2,2.2)" />
+      <dependency id="CassandraEntityContext" version="[2.1.0,2.2)" />
     </dependencies>
 	</metadata>
 	<files>
