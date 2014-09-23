@@ -5,8 +5,8 @@ using Abc.Zebus.Util;
 namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
 {
     public class AsyncCommandHandler : IAsyncMessageHandler<AsyncCommand>, IAsyncMessageHandler<DispatchCommand>
-    {        
-        public readonly ManualResetEvent CalledSignal = new ManualResetEvent(false);
+    {
+        public readonly ManualResetEventSlim CalledSignal = new ManualResetEventSlim();
         public bool WaitForSignal;
 
         public Task Handle(AsyncCommand message)

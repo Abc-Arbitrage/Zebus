@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
@@ -26,7 +27,7 @@ namespace Abc.Zebus.Tests.Dispatch
         private Mock<IContainer> _containerMock;
         private Mock<IPipeManager> _pipeManagerMock;
         private TestPipeInvocation _invocation;
-        private volatile DispatchResult _dispatchResult;
+        private volatile DispatchResultRef _dispatchResultRef;
         private DispatcherTaskSchedulerFactory _taskSchedulerFactory;
 
         [SetUp]
@@ -179,11 +180,34 @@ namespace Abc.Zebus.Tests.Dispatch
             Dispatch(command);
 
             syncHandler.Called.ShouldBeTrue();
-            asyncHandler.CalledSignal.WaitOne(50.Milliseconds()).ShouldBeFalse();
+            asyncHandler.CalledSignal.Wait(50.Milliseconds()).ShouldBeFalse();
 
             command.Signal.Set();
 
-            asyncHandler.CalledSignal.WaitOne(1000.Milliseconds()).ShouldBeTrue();
+            asyncHandler.CalledSignal.Wait(1000.Milliseconds()).ShouldBeTrue();
+        }
+
+        [Test]
+        public void should_filter_invoker()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var asyncHandler = new AsyncCommandHandler();
+            _containerMock.Setup(x => x.GetInstance(typeof(AsyncCommandHandler))).Returns(asyncHandler);
+
+            var syncHandler = new SyncCommandHandler();
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandler))).Returns(syncHandler);
+
+            var context = MessageContext.CreateTest("u.name");
+            var command = new DispatchCommand();
+            var dispatched = new ManualResetEvent(false);
+            var dispatch = new MessageDispatch(context, command, (x, r) => dispatched.Set());
+            _messageDispatcher.Dispatch(dispatch, x => x == typeof(AsyncCommandHandler));
+
+            dispatched.WaitOne(500.Milliseconds()).ShouldBeTrue();
+
+            syncHandler.Called.ShouldBeFalse();
+            asyncHandler.CalledSignal.IsSet.ShouldBeTrue();
         }
 
         [Test]
@@ -218,7 +242,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new FailingCommand(new InvalidOperationException(":'("));
             Dispatch(command);
 
-            var error = _dispatchResult.Errors.ExpectedSingle();
+            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
             error.ShouldEqual(command.Exception);
         }
 
@@ -230,9 +254,9 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new AsyncFailingCommand(new InvalidOperationException(":'("));
             Dispatch(command);
 
-            Wait.Until(() => _dispatchResult != null, 2.Seconds());
+            Wait.Until(() => _dispatchResultRef != null, 2.Seconds());
 
-            var error = _dispatchResult.Errors.ExpectedSingle();
+            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
             error.ShouldEqual(command.Exception);
         }
 
@@ -254,8 +278,8 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new AsyncDoNotStartTaskCommand();
             Dispatch(command);
 
-            _dispatchResult.ShouldNotBeNull();
-            _dispatchResult.Errors.Count().ShouldEqual(1);
+            _dispatchResultRef.ShouldNotBeNull();
+            _dispatchResultRef.Value.Errors.Count().ShouldEqual(1);
         }
 
         [Test]
@@ -328,10 +352,20 @@ namespace Abc.Zebus.Tests.Dispatch
 
         private void Dispatch(IMessage message, MessageContext context, MessageDispatcher dispatcher = null)
         {
-            _dispatchResult = null;
+            _dispatchResultRef = null;
 
-            var dispatch = new MessageDispatch(context, message, (x, r) => _dispatchResult = r);
+            var dispatch = new MessageDispatch(context, message, (x, r) => _dispatchResultRef = new DispatchResultRef(r));
             (dispatcher ?? _messageDispatcher).Dispatch(dispatch);
+        }
+
+        private class DispatchResultRef
+        {
+            public readonly DispatchResult Value;
+
+            public DispatchResultRef(DispatchResult value)
+            {
+                Value = value;
+            }
         }
     }
 }

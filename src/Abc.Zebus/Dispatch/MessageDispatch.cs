@@ -6,9 +6,9 @@ namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatch
     {
-        private readonly Dictionary<Type, Exception> _exceptions = new Dictionary<Type, Exception>();
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
         private readonly object _exceptionsLock = new object();
+        private Dictionary<Type, Exception> _exceptions;
         private int _remainingHandlerCount;
 
         public MessageDispatch(MessageContext context, IMessage message, Action<MessageDispatch, DispatchResult> continuation, bool shouldRunSynchronously = false)
@@ -23,7 +23,6 @@ namespace Abc.Zebus.Dispatch
         public bool ShouldRunSynchronously { get; private set; }
         public MessageContext Context { get; private set; }
         public IMessage Message { get; private set; }
-        public Func<IMessageHandlerInvoker, bool> InvokerFilter { get; set; }
 
         public void SetIgnored()
         {
@@ -33,25 +32,26 @@ namespace Abc.Zebus.Dispatch
         public void SetHandled(IMessageHandlerInvoker invoker, Exception error)
         {
             if (error != null)
-            {
-                lock (_exceptionsLock)
-                {
-                    _exceptions[invoker.MessageHandlerType] = error;
-                }
-            }
+                AddException(invoker.MessageHandlerType, error);
 
             if (Interlocked.Decrement(ref _remainingHandlerCount) == 0)
                 _continuation(this, new DispatchResult(_exceptions));
         }
 
+        private void AddException(Type messageHandlerType, Exception error)
+        {
+            lock (_exceptionsLock)
+            {
+                if (_exceptions == null)
+                    _exceptions = new Dictionary<Type, Exception>();
+
+                _exceptions[messageHandlerType] = error;
+            }
+        }
+
         public void SetHandlerCount(int handlerCount)
         {
             _remainingHandlerCount = handlerCount;
-        }
-
-        public bool ShouldInvoke(IMessageHandlerInvoker invoker)
-        {
-            return InvokerFilter == null || InvokerFilter(invoker);
         }
     }
 }

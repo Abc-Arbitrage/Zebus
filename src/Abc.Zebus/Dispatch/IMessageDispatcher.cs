@@ -7,7 +7,7 @@ namespace Abc.Zebus.Dispatch
     public interface IMessageDispatcher
     {
         void ConfigureAssemblyFilter(Func<Assembly, bool> assemblyFilter);
-        void ConfigureHandlerFilter(Func<Type, bool> handlerFiler);
+        void ConfigureHandlerFilter(Func<Type, bool> handlerFilter);
 
         void LoadMessageHandlerInvokers();
 
@@ -15,6 +15,7 @@ namespace Abc.Zebus.Dispatch
         IEnumerable<IMessageHandlerInvoker> GetMessageHanlerInvokers();
 
         void Dispatch(MessageDispatch dispatch);
+        void Dispatch(MessageDispatch dispatch, Func<Type, bool> handlerFilter);
 
         void AddInvoker(IMessageHandlerInvoker eventHandlerInvoker);
         void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker);

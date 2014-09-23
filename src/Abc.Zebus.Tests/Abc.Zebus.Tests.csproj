@@ -161,7 +161,6 @@
     <Compile Include="Transport\ZmqTests.cs" />
     <Compile Include="Transport\ZmqTransportPerformanceTests.cs" />
     <Compile Include="Transport\ZmqTransportTests.cs" />
-    <Compile Include="Util\Collections\ConcurrentListTests.cs" />
     <Compile Include="Util\Collections\ConcurrentSetTests.cs" />
     <Compile Include="Util\Collections\FlushableBlockingCollectionPerformanceTests.cs" />
     <Compile Include="Util\Collections\FlushableBlockingCollectionTests.cs" />

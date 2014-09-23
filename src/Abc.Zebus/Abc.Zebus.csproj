@@ -209,7 +209,6 @@
     <Compile Include="Util\Annotations\JetBrains.Annotations.cs" />
     <Compile Include="Util\ArrayUtil.cs" />
     <Compile Include="Util\BackgroundThread.cs" />
-    <Compile Include="Util\Collections\ConcurrentList.cs" />
     <Compile Include="Util\Collections\ConcurrentSet.cs" />
     <Compile Include="Util\Collections\FlushableBlockingCollection.cs" />
     <Compile Include="Util\CultureScope.cs" />

@@ -1,4 +1,6 @@
-﻿using Abc.Zebus.Transport;
+﻿using System;
+using System.Linq;
+using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using ProtoBuf;
 
@@ -17,6 +19,14 @@ namespace Abc.Zebus.Lotus
         {
             MessageToReplay = messageToReplay;
             HandlerTypes = handlerTypes ?? ArrayUtil.Empty<string>();
+        }
+
+        public bool ShouldApplyToHandler(Type handlerType)
+        {
+            if (HandlerTypes == null || HandlerTypes.Length == 0)
+                return true;
+
+            return HandlerTypes.Contains(handlerType.FullName);
         }
     }
 }

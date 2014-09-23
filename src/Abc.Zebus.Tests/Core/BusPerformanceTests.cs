@@ -112,6 +112,7 @@ namespace Abc.Zebus.Tests.Core
         public void MeasureLocalDispatch()
         {
             // 25/11/2013 - PC CAO: 190k/s
+            // 23/09/2014 - PC CAO: 275k/s
 
             var bus = new BusFactory()
                 .WithHandlers(typeof(PerfCommandHandler), typeof(PerfEventHandler))

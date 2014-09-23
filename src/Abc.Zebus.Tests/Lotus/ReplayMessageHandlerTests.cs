@@ -24,8 +24,8 @@ namespace Abc.Zebus.Tests.Lotus
             var handler = new ReplayMessageHandler(dispatcher, new FakeDispatchFactory());
             handler.Handle(new ReplayMessageCommand(message, new[] { typeof(FakeHandler).FullName }));
 
-            dispatcher.LastDispatch.ShouldInvoke(new TestMessageHandlerInvoker(typeof(FakeHandler), typeof(FakeCommand))).ShouldBeTrue();
-            dispatcher.LastDispatch.ShouldInvoke(new TestMessageHandlerInvoker(typeof(OtherFakeHandler), typeof(FakeCommand))).ShouldBeFalse();
+            dispatcher.LastDispatchFilter.Invoke(typeof(FakeHandler)).ShouldBeTrue();
+            dispatcher.LastDispatchFilter.Invoke(typeof(OtherFakeHandler)).ShouldBeFalse();
         }
 
         [Test]
@@ -38,21 +38,22 @@ namespace Abc.Zebus.Tests.Lotus
             var handler = new ReplayMessageHandler(dispatcher, new FakeDispatchFactory());
             handler.Handle(new ReplayMessageCommand(message, new string[0]));
 
-            dispatcher.LastDispatch.ShouldInvoke(new TestMessageHandlerInvoker(typeof(FakeHandler), typeof(FakeCommand))).ShouldBeTrue();
-            dispatcher.LastDispatch.ShouldInvoke(new TestMessageHandlerInvoker(typeof(OtherFakeHandler), typeof(FakeCommand))).ShouldBeTrue();
+            dispatcher.LastDispatchFilter.Invoke(typeof(FakeHandler)).ShouldBeTrue();
+            dispatcher.LastDispatchFilter.Invoke(typeof(OtherFakeHandler)).ShouldBeTrue();
         }
 
 
         private class FakeMessageDispatcher : IMessageDispatcher
         {
             public MessageDispatch LastDispatch;
+            public Func<Type, bool> LastDispatchFilter;
 
             public void ConfigureAssemblyFilter(Func<Assembly, bool> assemblyFilter)
             {
                 throw new NotSupportedException();
             }
 
-            public void ConfigureHandlerFilter(Func<Type, bool> handlerFiler)
+            public void ConfigureHandlerFilter(Func<Type, bool> handlerFilter)
             {
                 throw new NotSupportedException();
             }
@@ -75,6 +76,13 @@ namespace Abc.Zebus.Tests.Lotus
             public void Dispatch(MessageDispatch dispatch)
             {
                 LastDispatch = dispatch;
+                LastDispatchFilter = _ => true;
+            }
+
+            public void Dispatch(MessageDispatch dispatch, Func<Type, bool> handlerFilter)
+            {
+                LastDispatch = dispatch;
+                LastDispatchFilter = handlerFilter;
             }
 
             public void Stop()

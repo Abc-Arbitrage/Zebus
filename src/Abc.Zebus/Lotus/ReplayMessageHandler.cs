@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Abc.Zebus.Dispatch;
+﻿using Abc.Zebus.Dispatch;
 
 namespace Abc.Zebus.Lotus
 {
@@ -17,11 +16,7 @@ namespace Abc.Zebus.Lotus
         public void Handle(ReplayMessageCommand message)
         {
             var dispatch = _dispatchFactory.CreateMessageDispatch(message.MessageToReplay);
-
-            if (message.HandlerTypes != null && message.HandlerTypes.Length > 0)
-                dispatch.InvokerFilter = invoker => message.HandlerTypes.Contains(invoker.MessageHandlerType.FullName);
-
-            _dispatcher.Dispatch(dispatch);
+            _dispatcher.Dispatch(dispatch, message.ShouldApplyToHandler);
         }
     }
 }

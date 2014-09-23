@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Scan.Pipes;
-using Abc.Zebus.Util.Collections;
 using Abc.Zebus.Util.Extensions;
 using log4net;
 
@@ -15,13 +15,13 @@ namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatcher : IMessageDispatcher, IProvideQueueLength
     {
-        private static readonly ConcurrentList<IMessageHandlerInvoker> _emptyInvokers = new ConcurrentList<IMessageHandlerInvoker>();
+        private static readonly List<IMessageHandlerInvoker> _emptyInvokers = new List<IMessageHandlerInvoker>();
         private readonly IMessageHandlerInvokerLoader[] _invokerLoaders;
-        private ConcurrentDictionary<MessageTypeId, ConcurrentList<IMessageHandlerInvoker>> _invokers = new ConcurrentDictionary<MessageTypeId, ConcurrentList<IMessageHandlerInvoker>>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(MessageDispatcher));
         private readonly IPipeManager _pipeManager;
         private readonly ConcurrentDictionary<string, DispatcherTaskScheduler> _schedulersByQueueName = new ConcurrentDictionary<string, DispatcherTaskScheduler>(StringComparer.OrdinalIgnoreCase);
         private readonly IDispatcherTaskSchedulerFactory _taskSchedulerFactory;
+        private ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>> _invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _handlerFilter;
         private volatile bool _isRunning;
@@ -38,14 +38,14 @@ namespace Abc.Zebus.Dispatch
             _assemblyFilter = assemblyFilter;
         }
 
-        public void ConfigureHandlerFilter(Func<Type, bool> handlerFiler)
+        public void ConfigureHandlerFilter(Func<Type, bool> handlerFilter)
         {
-            _handlerFilter = handlerFiler;
+            _handlerFilter = handlerFilter;
         }
 
         public void LoadMessageHandlerInvokers()
         {
-            _invokers = new ConcurrentDictionary<MessageTypeId, ConcurrentList<IMessageHandlerInvoker>>();
+            var invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
             var typeSource = CreateTypeSource();
 
             foreach (var invokerLoader in _invokerLoaders)
@@ -56,10 +56,13 @@ namespace Abc.Zebus.Dispatch
                     if (_handlerFilter != null && !_handlerFilter(invoker.MessageHandlerType))
                         continue;
 
-                    var messageTypeInvokers = _invokers.GetOrAdd(new MessageTypeId(invoker.MessageType), x => new ConcurrentList<IMessageHandlerInvoker>());
+                    var messageTypeInvokers = invokers.GetOrAdd(new MessageTypeId(invoker.MessageType), x => new List<IMessageHandlerInvoker>());
                     messageTypeInvokers.Add(invoker);
                 }
             }
+
+            Thread.MemoryBarrier();
+            _invokers = invokers;
         }
 
         public IEnumerable<MessageTypeId> GetHandledMessageTypes()
@@ -74,12 +77,20 @@ namespace Abc.Zebus.Dispatch
 
         public void Dispatch(MessageDispatch dispatch)
         {
+            var invokers = _invokers.GetValueOrDefault(dispatch.Message.TypeId(), _emptyInvokers);
+            Dispatch(dispatch, invokers);
+        }
+
+        public void Dispatch(MessageDispatch dispatch, Func<Type, bool> handlerFilter)
+        {
+            var invokers = _invokers.GetValueOrDefault(dispatch.Message.TypeId(), _emptyInvokers).Where(x => handlerFilter(x.MessageHandlerType)).ToList();
+            Dispatch(dispatch, invokers);
+        }
+
+        private void Dispatch(MessageDispatch dispatch, List<IMessageHandlerInvoker> invokers)
+        {
             if (!_isRunning)
                 throw new InvalidOperationException("MessageDispatcher is stopped");
-
-            var invokers = _invokers.GetValueOrDefault(dispatch.Message.TypeId(), _emptyInvokers)
-                                    .Where(dispatch.ShouldInvoke)
-                                    .ToList();
 
             if (invokers.Count == 0)
             {
@@ -119,17 +130,39 @@ namespace Abc.Zebus.Dispatch
 
         public void AddInvoker(IMessageHandlerInvoker eventHandlerInvoker)
         {
-            var messageTypeInvokers = _invokers.GetOrAdd(eventHandlerInvoker.MessageTypeId, x => new ConcurrentList<IMessageHandlerInvoker>());
-            messageTypeInvokers.Add(eventHandlerInvoker);
+            lock (_invokers)
+            {
+                var messageTypeInvokers = _invokers.GetValueOrDefault(eventHandlerInvoker.MessageTypeId) ?? new List<IMessageHandlerInvoker>();
+                var newMessageTypeInvokers = new List<IMessageHandlerInvoker>(messageTypeInvokers.Count + 1);
+                newMessageTypeInvokers.AddRange(messageTypeInvokers);
+                newMessageTypeInvokers.AddRange(eventHandlerInvoker);
+
+                _invokers[eventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
+            }
+            
         }
 
         public void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker)
         {
-            ConcurrentList<IMessageHandlerInvoker> messageTypeInvokers;
-            if (!_invokers.TryGetValue(eventHandlerInvoker.MessageTypeId, out messageTypeInvokers))
-                return;
+            lock (_invokers)
+            {
+                var messageTypeInvokers = _invokers.GetValueOrDefault(eventHandlerInvoker.MessageTypeId);
+                if (messageTypeInvokers == null)
+                    return;
 
-            messageTypeInvokers.Remove(eventHandlerInvoker);
+                var newMessageTypeInvokers = new List<IMessageHandlerInvoker>(messageTypeInvokers.Where(x => x != eventHandlerInvoker));
+                _invokers[eventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
+            }
+        }
+
+        public int Purge()
+        {
+            return _schedulersByQueueName.Values.Sum(taskScheduler => taskScheduler.PurgeTasks());
+        }
+
+        public int GetReceiveQueueLength()
+        {
+            return _schedulersByQueueName.Values.Sum(taskScheduler => taskScheduler.TaskCount);
         }
 
         private DispatcherTaskScheduler CreateAndStartTaskScheduler(string queueName)
@@ -218,16 +251,6 @@ namespace Abc.Zebus.Dispatch
         private static bool ShouldRunInCurrentDispatchQueue(string invokerDispatchQueueName, string currentDispatchQueueName)
         {
             return invokerDispatchQueueName != null && invokerDispatchQueueName.Equals(currentDispatchQueueName, StringComparison.OrdinalIgnoreCase);
-        }
-
-        public int Purge()
-        {
-            return _schedulersByQueueName.Values.Sum(taskScheduler => taskScheduler.PurgeTasks());
-        }
-
-        public int GetReceiveQueueLength()
-        {
-            return _schedulersByQueueName.Values.Sum(taskScheduler => taskScheduler.TaskCount);
         }
     }
 }

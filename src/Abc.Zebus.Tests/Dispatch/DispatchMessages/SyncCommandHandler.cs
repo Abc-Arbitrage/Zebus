@@ -2,7 +2,7 @@
 {
     public class SyncCommandHandler : IMessageHandler<DispatchCommand>
     {
-        public bool Called = true;
+        public bool Called;
 
         public void Handle(DispatchCommand message)
         {
