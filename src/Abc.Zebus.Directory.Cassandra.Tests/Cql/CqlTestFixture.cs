@@ -17,7 +17,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         where TDataContext : CqlDataContext<TConfig>
         where TConfig : class, ICassandraConfiguration
     {
-        private readonly string _keySpace = "UnitTestingKeyspace_" + Guid.NewGuid().ToString().Substring(0, 8);
+        private readonly string _keySpace = "UnitTesting_" + Guid.NewGuid().ToString().Substring(0, 8);
 
         private readonly CassandraCqlSessionManager _sessionManager = new CassandraCqlSessionManager();
 
