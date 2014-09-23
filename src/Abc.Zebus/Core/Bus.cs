@@ -167,7 +167,15 @@ namespace Abc.Zebus.Core
                 throw new InvalidOperationException(exceptionMessage);
             }
 
-            return Send(message, peers[0]);
+            var peer = peers[0];
+
+            if (!peer.IsResponding && !MessageUtil.IsPersistent(message.TypeId()))
+            {
+                var exceptionMessage = string.Format("Unable to send this transient message {0} while peer {1} is not responding.", BusMessageLogger.ToString(message), peer.Id);
+                throw new InvalidOperationException(exceptionMessage);
+            }
+
+            return Send(message, peer);
         }
 
         public Task<CommandResult> Send(ICommand message, Peer peer)
