@@ -405,6 +405,7 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleMessageExecutionCompleted(TransportMessage transportMessage, MessageExecutionCompleted message)
         {
+            _messageLogger.DebugFormat("RECV : {0}", message);
             TaskCompletionSource<CommandResult> taskCompletionSource;
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out taskCompletionSource))
                 return;
