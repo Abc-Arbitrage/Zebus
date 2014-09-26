@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
@@ -43,6 +44,16 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
+        public void should_throw_exception_if_no_peer_is_setup_to_handle_a_command()
+        {
+            var command = new FakeCommand(456);
+
+            SetupPeersHandlingMessage<FakeCommand>(new Peer[0]);
+
+            Assert.Throws<InvalidOperationException>(() => _bus.Send(command));
+        }
+
+        [Test]
         public void should_not_consider_if_peer_is_up_to_send_commands([Values(true, false)]bool isTargetPeerUp)
         {
             using (MessageId.PauseIdGeneration())
@@ -54,6 +65,29 @@ namespace Abc.Zebus.Tests.Core
 
                 _transport.ExpectExactly(new TransportMessageSent(command.ToTransportMessage(_self), new[] { isTargetPeerUp ? _peerUp : _peerDown }));
             }
+        }
+
+        [Test]
+        public void should_not_throw_when_handling_a_persistent_command_even_if_peer_is_not_responding()
+        {
+            var command = new FakeCommand(456);
+            var peer = new Peer(new PeerId("Abc.Testing.Peer1"), "Peer1Endpoint", true, isResponding: false);
+            SetupPeersHandlingMessage<FakeCommand>(new[] { peer });
+
+            _bus.Send(command);
+
+            var sentMessage = _transport.MessagesSent.ExpectedSingle();
+            sentMessage.ShouldHaveSamePropertiesAs(command);
+        }
+
+        [Test]
+        public void should_throw_when_handling_a_transient_command_and_peer_is_not_responding()
+        {
+            var command = new FakeNonPersistentCommand(456);
+            var peer = new Peer(new PeerId("Abc.Testing.Peer1"), "Peer1Endpoint", true, isResponding: false);
+            SetupPeersHandlingMessage<FakeNonPersistentCommand>(new[] { peer });
+
+            Assert.Throws<InvalidOperationException>(() => _bus.Send(command));
         }
 
         [Test]
@@ -71,5 +105,6 @@ namespace Abc.Zebus.Tests.Core
             handled.ShouldBeTrue();
             _transport.Messages.ShouldBeEmpty();
         }
+       
     }
 }
