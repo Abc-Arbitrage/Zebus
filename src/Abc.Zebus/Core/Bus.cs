@@ -183,7 +183,7 @@ namespace Abc.Zebus.Core
             }
             else
             {
-                if (!peer.IsResponding && !MessageUtil.IsPersistent(message.TypeId()))
+                if (!peer.IsResponding && !message.TypeId().IsPersistent())
                 {
                     var exceptionMessage = string.Format("Unable to send this transient message {0} while peer {1} is not responding.", BusMessageLogger.ToString(message), peer.Id);
                     throw new InvalidOperationException(exceptionMessage);
