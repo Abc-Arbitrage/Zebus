@@ -1,4 +1,4 @@
-﻿namespace Abc.Zebus.Scan.Pipes
+﻿namespace Abc.Zebus.Dispatch.Pipes
 {
     public struct BeforeInvokeArgs
     {

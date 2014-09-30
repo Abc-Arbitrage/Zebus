@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StructureMap;
 
-namespace Abc.Zebus.Scan.Pipes
+namespace Abc.Zebus.Dispatch.Pipes
 {
     public class AttributePipeSource : IPipeSource
     {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Abc.Zebus.Scan.Pipes;
+using Abc.Zebus.Dispatch.Pipes;
 
-namespace Abc.Zebus.Tests.Pipes
+namespace Abc.Zebus.Tests.Dispatch.Pipes
 {
     public class FakePipeSource : IPipeSource
     {

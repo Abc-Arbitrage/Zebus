@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Abc.Zebus.Scan.Pipes
+namespace Abc.Zebus.Dispatch.Pipes
 {
     public interface IPipeSource
     {

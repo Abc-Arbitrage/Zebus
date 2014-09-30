@@ -28,10 +28,14 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var invoker = new SyncMessageHandlerInvoker(container, typeof(MessageContextAwareCommandHandler), typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
-            var invocation = new ScanCommand1().ToInvocation(messageContext);
-            invoker.InvokeMessageHandlerAsync(invocation).RunSynchronously();
 
-            invocation.ApplyContextCalled.ShouldBeTrue();
+            var invocationMock = new Mock<IMessageHandlerInvocation>();
+            invocationMock.SetupGet(x => x.Context).Returns(messageContext);
+            invocationMock.SetupGet(x => x.Message).Returns(new ScanCommand1());
+
+            invoker.InvokeMessageHandlerAsync(invocationMock.Object).RunSynchronously();
+
+            invocationMock.Verify(x => x.SetupForInvocation(handler));
         }
 
         [Test]

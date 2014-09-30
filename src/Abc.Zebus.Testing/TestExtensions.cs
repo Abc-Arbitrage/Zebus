@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Directory;
@@ -11,6 +12,7 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
+using Moq;
 
 namespace Abc.Zebus.Testing
 {
@@ -84,14 +86,20 @@ namespace Abc.Zebus.Testing
                              }).CreateAndStartBus();
         }
 
-        public static TestMessageHandlerInvocation ToInvocation(this IMessage message, MessageContext context)
+        public static IMessageHandlerInvocation ToInvocation(this IMessage message, MessageContext context)
         {
-            return new TestMessageHandlerInvocation(message, context);
+            var invocationMock = new Mock<IMessageHandlerInvocation>();
+            invocationMock.SetupGet(x => x.Context).Returns(context);
+            invocationMock.SetupGet(x => x.Message).Returns(message);
+            invocationMock.Setup(x => x.SetupForInvocation()).Returns(() => MessageContext.SetCurrent(context));
+            invocationMock.Setup(x => x.SetupForInvocation(It.IsAny<object>())).Returns(() => MessageContext.SetCurrent(context));
+
+            return invocationMock.Object;
         }
 
-        public static TestMessageHandlerInvocation ToInvocation(this IMessage message)
+        public static IMessageHandlerInvocation ToInvocation(this IMessage message)
         {
-            return new TestMessageHandlerInvocation(message, MessageContext.CreateTest("u.name"));
+            return ToInvocation(message, MessageContext.CreateTest("u.name"));
         }
     }
 }

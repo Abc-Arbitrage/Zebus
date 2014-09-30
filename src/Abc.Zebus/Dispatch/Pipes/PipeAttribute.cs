@@ -1,7 +1,7 @@
 ﻿using System;
 using Abc.Zebus.Util.Annotations;
 
-namespace Abc.Zebus.Scan.Pipes
+namespace Abc.Zebus.Dispatch.Pipes
 {
     [AttributeUsage(AttributeTargets.Class), UsedImplicitly]
     public class PipeAttribute : Attribute

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using StructureMap;
 
-namespace Abc.Zebus.Scan.Pipes
+namespace Abc.Zebus.Dispatch.Pipes
 {
     public class PipeSource<TPipe> : IPipeSource where TPipe : class, IPipe 
     {

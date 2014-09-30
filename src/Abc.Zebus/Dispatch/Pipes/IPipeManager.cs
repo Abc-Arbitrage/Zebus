@@ -1,6 +1,4 @@
-using Abc.Zebus.Dispatch;
-
-namespace Abc.Zebus.Scan.Pipes
+namespace Abc.Zebus.Dispatch.Pipes
 {
     public interface IPipeManager
     {

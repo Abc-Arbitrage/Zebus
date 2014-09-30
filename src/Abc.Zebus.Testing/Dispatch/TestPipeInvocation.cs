@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
-using Abc.Zebus.Scan.Pipes;
-using Abc.Zebus.Testing.Dispatch;
+using Abc.Zebus.Dispatch.Pipes;
 
-namespace Abc.Zebus.Testing.Pipes
+namespace Abc.Zebus.Testing.Dispatch
 {
     public class TestPipeInvocation : PipeInvocation
     {

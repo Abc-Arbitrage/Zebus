@@ -2,11 +2,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Abc.Zebus.Dispatch;
 using Abc.Zebus.Util.Collections;
 using log4net;
 
-namespace Abc.Zebus.Scan.Pipes
+namespace Abc.Zebus.Dispatch.Pipes
 {
     internal class PipeManager : IPipeManager
     {

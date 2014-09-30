@@ -5,9 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Scan;
-using Abc.Zebus.Scan.Pipes;
 using Abc.Zebus.Util.Extensions;
 using log4net;
 

@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using Abc.Zebus.Dispatch;
-using Abc.Zebus.Scan.Pipes;
+using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using NUnit.Framework;
 
-namespace Abc.Zebus.Tests.Pipes
+namespace Abc.Zebus.Tests.Dispatch.Pipes
 {
     [TestFixture]
     public class PipeInvocationTests
