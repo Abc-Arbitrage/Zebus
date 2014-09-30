@@ -106,7 +106,7 @@ namespace Abc.Zebus.Scan.Pipes
             if (_pipeStates == null)
                 _pipeStates = BeforeInvoke();
 
-            _messageLogger.DebugFormat("HANDLE : {0} [{1}]", _message, _messageContext.MessageId);
+            _messageLogger.DebugFormat("HANDLE: {0} [{1}]", _message, _messageContext.MessageId);
 
             return MessageContext.SetCurrent(_messageContext);
         }
@@ -116,7 +116,7 @@ namespace Abc.Zebus.Scan.Pipes
             if (_pipeStates == null)
                 _pipeStates = BeforeInvoke();
 
-            _messageLogger.DebugFormat("HANDLE : {0} [{1}]", _message, _messageContext.MessageId);
+            _messageLogger.DebugFormat("HANDLE: {0} [{1}]", _message, _messageContext.MessageId);
 
             ApplyMutations(messageHandler);
 
