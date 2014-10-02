@@ -1,0 +1,2 @@
+The purpose of this file is to workaround the Nuget limitation mentioned in http://nuget.codeplex.com/workitem/595
+If you found this file after installing the Abc.Directory.Standalone package, you can delete it.
