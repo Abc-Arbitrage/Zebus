@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Testing.Extensions;
@@ -14,14 +12,6 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Tests
 {
-    public class MessageIdProxy : MarshalByRefObject
-    {
-        public Guid GetNextId()
-        {
-            return MessageId.NextId().Value;
-        }
-    }
-
     [TestFixture]
     public class MessageIdTests
     {
@@ -33,7 +23,10 @@ namespace Abc.Zebus.Tests
             var proxiesTasks = appDomainProxies.Select(proxy => new Task<Guid>(proxy.GetNextId)).ToArray();
 
             foreach (var task in proxiesTasks)
+            {
                 task.Start();
+            }
+
             var generatedMessageIds = proxiesTasks.Select(task => task.Result).ToList();
 
             generatedMessageIds.Distinct().Count().ShouldEqual(appDomainsToGenerate);
@@ -48,7 +41,7 @@ namespace Abc.Zebus.Tests
             };
 
             var newAppDomain = AppDomain.CreateDomain("MyAppDomain", null, appDomainInfo);
-            return (MessageIdProxy)newAppDomain.CreateInstanceAndUnwrap(typeof(MessageIdProxy).Assembly.FullName, "Abc.Zebus.Tests.MessageIdProxy");
+            return (MessageIdProxy)newAppDomain.CreateInstanceAndUnwrap(typeof(MessageIdProxy).Assembly.FullName, "Abc.Zebus.Tests.MessageIdTests+MessageIdProxy");
         }
 
         [Test]
@@ -100,7 +93,7 @@ namespace Abc.Zebus.Tests
             unpausedId.Value.ShouldNotEqual(pausedId.Value);
         }
 
-        [Test]
+        [Test, Repeat(20)]
         public void should_convert_message_id_to_DateTime()
         {
             Thread.Sleep(1); // To ensure that noone called NextId() in this millisecond, because MessageId has a static state and would increment its value
@@ -127,6 +120,14 @@ namespace Abc.Zebus.Tests
                     }
                 };
             });
+        }
+
+        public class MessageIdProxy : MarshalByRefObject
+        {
+            public Guid GetNextId()
+            {
+                return MessageId.NextId().Value;
+            }
         }
     }
 }

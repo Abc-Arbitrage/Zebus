@@ -8,7 +8,7 @@ namespace Abc.Zebus
     [ProtoContract]
     public struct MessageId : IEquatable<MessageId>
     {
-        private static readonly DateTime _gregorianStart = new DateTime(1582, 10, 15, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly long _ticksSinceEpoch = new DateTime(1582, 10, 15, 0, 0, 0, DateTimeKind.Utc).Ticks;
         private static readonly byte[] _randomBytes = new byte[6];
         private static readonly object _lock = new object();
         private static Guid? _pausedId;
@@ -19,8 +19,10 @@ namespace Abc.Zebus
 
         static MessageId()
         {
-            var random = new RNGCryptoServiceProvider();
-            random.GetBytes(_randomBytes);
+            using (var random = new RNGCryptoServiceProvider())
+            {
+                random.GetBytes(_randomBytes);
+            }
         }
 
         public MessageId(Guid value)
@@ -80,7 +82,7 @@ namespace Abc.Zebus
         private static Guid CreateNewSequentialId()
         {
             var timestampTicks = SystemDateTime.UtcNow.Ticks;
-            timestampTicks = timestampTicks - _gregorianStart.Ticks;
+            timestampTicks = timestampTicks - _ticksSinceEpoch;
 
             lock (_lock)
             {
@@ -129,26 +131,23 @@ namespace Abc.Zebus
             return value;
         }
 
-        private const long _num100NsIntervalsSinceUuidEpoch = 0x01b21dd213814000L;
-        private const long _magicalOffset = 621355968000000000L;
-
         public DateTime GetDateTime()
         {
             var timestamp = GetJavaTicks(Value);
-            return new DateTime(timestamp - _num100NsIntervalsSinceUuidEpoch + _magicalOffset, DateTimeKind.Utc);
+            return new DateTime(timestamp + _ticksSinceEpoch, DateTimeKind.Utc);
         }
 
 #pragma warning disable 675
         private static long GetJavaTicks(Guid uuid)
         {
             var bytes = uuid.ToByteArray();
-            long mostSigBits = 0;
-            for (int i = 0; i < 8; i++)
+            var mostSigBits = 0L;
+            for (var i = 0; i < 8; i++)
+            {
                 mostSigBits = (mostSigBits << 8) | (bytes[i] & 0xff);
-
-            return (mostSigBits & 0x0FFFL) << 48
-                   | ((mostSigBits >> 16) & 0x0FFFFL) << 32
-                   | (long)((ulong)mostSigBits >> 32);
+            }
+            return (mostSigBits & 0x0FFFL) << 48 | ((mostSigBits >> 16) & 0x0FFFFL) << 32 | (long)((ulong)mostSigBits >> 32);
         }
+#pragma warning restore 675
     }
 }
