@@ -2,15 +2,8 @@
 
 namespace Abc.Zebus.Routing
 {
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class Routable : Attribute
     {
-        public RoutingType RoutingType { get; set; }
-    }
-
-    public enum RoutingType
-    {
-        Topic,
-        Direct,
-        Fanout,
     }
 }
