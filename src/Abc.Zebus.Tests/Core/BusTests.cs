@@ -4,8 +4,6 @@ using System.Linq;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
-using Abc.Zebus.Lotus;
-using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Dispatch;
@@ -13,6 +11,7 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Testing.UnitTesting;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Tests.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Moq;
@@ -33,7 +32,7 @@ namespace Abc.Zebus.Tests.Core
         private TestTransport _transport;
         private Mock<IPeerDirectory> _directoryMock;
         private Mock<IMessageDispatcher> _messageDispatcherMock;
-        private MessageSerializer _messageSerializer;
+        private TestMessageSerializer _messageSerializer;
         private List<IMessageHandlerInvoker> _invokers;
         private string _expectedDumpDirectory;
 
@@ -43,8 +42,8 @@ namespace Abc.Zebus.Tests.Core
             _transport = new TestTransport(_self.EndPoint);
             _directoryMock = new Mock<IPeerDirectory>();
             _messageDispatcherMock = new Mock<IMessageDispatcher>();
+            _messageSerializer = new TestMessageSerializer();
 
-            _messageSerializer = new MessageSerializer();
             _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultStoppingStrategy());
             _bus.Configure(_self.Id, "test");
 
@@ -55,7 +54,7 @@ namespace Abc.Zebus.Tests.Core
             if (System.IO.Directory.Exists(_expectedDumpDirectory))
                 System.IO.Directory.Delete(_expectedDumpDirectory, true);
 
-            SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+            _directoryMock.Setup(x => x.GetPeersHandlingMessage(It.IsAny<IMessage>())).Returns(new Peer[0]);
         }
 
         [TearDown]

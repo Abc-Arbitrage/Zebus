@@ -14,6 +14,8 @@ namespace Abc.Zebus.Tests.Core
         [Test]
         public void should_send_a_MessageProcessingFailed_on_unknown_command_error()
         {
+            SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+
             using (SystemDateTime.PauseTime())
             using (MessageId.PauseIdGeneration())
             {
@@ -33,6 +35,8 @@ namespace Abc.Zebus.Tests.Core
         [Test]
         public void should_send_a_MessageProcessingFailed_on_unknown_event_error()
         {
+            SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+
             using (SystemDateTime.PauseTime())
             using (MessageId.PauseIdGeneration())
             {
@@ -52,6 +56,8 @@ namespace Abc.Zebus.Tests.Core
         [Test]
         public void should_send_a_MessageProcessingFailed_on_unknown_error_with_local_processing()
         {
+            SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+
             using (SystemDateTime.PauseTime())
             using (MessageId.PauseIdGeneration())
             {
@@ -68,10 +74,11 @@ namespace Abc.Zebus.Tests.Core
             }
         }
 
-
         [Test]
         public void should_not_send_a_MessageProcessingFailed_on_domain_exception_with_local_processing()
         {
+            SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+
             using (SystemDateTime.PauseTime())
             using (MessageId.PauseIdGeneration())
             {

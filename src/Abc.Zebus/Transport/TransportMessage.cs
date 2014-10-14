@@ -21,13 +21,13 @@ namespace Abc.Zebus.Transport
         [ProtoMember(5, IsRequired = false)]
         public string Environment { get; set; }
 
-        public TransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer self)
-            : this(messageTypeId, messageBytes, self.Id, self.EndPoint, MessageId.NextId())
+        public TransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer sender)
+            : this(messageTypeId, messageBytes, sender.Id, sender.EndPoint, MessageId.NextId())
         {
         }
 
-        public TransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, PeerId selfPeerId, string selfPeerEndPoint, MessageId messageId)
-            : this (messageTypeId, messageBytes, CreateOriginator(selfPeerId, selfPeerEndPoint), messageId)
+        public TransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, PeerId senderId, string senderEndPoint, MessageId messageId)
+            : this (messageTypeId, messageBytes, CreateOriginator(senderId, senderEndPoint), messageId)
         {
         }
 

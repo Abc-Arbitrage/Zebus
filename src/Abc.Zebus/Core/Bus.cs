@@ -352,7 +352,10 @@ namespace Abc.Zebus.Core
         {
             var dispatch = CreateMessageDispatch(transportMessage, synchronous);
             if (dispatch == null)
+            {
+                _transport.AckMessage(transportMessage);
                 return;
+            }
 
             _messageLogger.InfoFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
             _messageDispatcher.Dispatch(dispatch);
