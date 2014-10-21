@@ -39,6 +39,8 @@ namespace Abc.Zebus.Tests.Core
             SetupDispatch(command, _ => handled = true);
             SetupPeersHandlingMessage<FakeCommand>(_self);
 
+            _bus.Start();
+
             var completed = _bus.Send(command).Wait(500);
 
             handled.ShouldBeTrue();
@@ -53,6 +55,8 @@ namespace Abc.Zebus.Tests.Core
             var handled = false;
             SetupDispatch(command, _ => handled = true);
             SetupPeersHandlingMessage<FakeCommand>(_self);
+
+            _bus.Start();
 
             using (LocalDispatch.Disable())
             using (MessageId.PauseIdGeneration())
@@ -73,6 +77,7 @@ namespace Abc.Zebus.Tests.Core
             SetupDispatch(message, x => handled = true);
             SetupPeersHandlingMessage<FakeEvent>(_self, _peerUp);
 
+            _bus.Start();
             _bus.Publish(message);
 
             handled.ShouldBeTrue();
@@ -88,6 +93,8 @@ namespace Abc.Zebus.Tests.Core
             var handled = false;
             SetupDispatch(message, x => handled = true);
             SetupPeersHandlingMessage<FakeEvent>(_self);
+
+            _bus.Start();
 
             using (LocalDispatch.Disable())
             using (MessageId.PauseIdGeneration())
@@ -106,6 +113,8 @@ namespace Abc.Zebus.Tests.Core
             var command = new FakeCommand(123);
             SetupDispatch(command);
             SetupPeersHandlingMessage<FakeCommand>(_peerUp);
+
+            _bus.Start();
 
             var task = _bus.Send(command);
             var transportMessage = command.ToTransportMessage();
@@ -143,6 +152,8 @@ namespace Abc.Zebus.Tests.Core
         {
             SetupPeersHandlingMessage<CustomProcessingFailed>(_peerUp);
 
+            _bus.Start();
+
             var command = new FakeCommand(123);
             _messageSerializer.AddSerializationExceptionFor(command.TypeId(), "Serialization error");
 
@@ -171,6 +182,8 @@ namespace Abc.Zebus.Tests.Core
         {
             SetupPeersHandlingMessage<CustomProcessingFailed>(_peerUp);
 
+            _bus.Start();
+
             var exception = new Exception("Expected exception");
             _messageSerializer.AddSerializationExceptionFor<FakeCommand>(exception);
 
@@ -184,6 +197,8 @@ namespace Abc.Zebus.Tests.Core
         public void should_include_dump_path_in_CustomProcessingFailed()
         {
             SetupPeersHandlingMessage<CustomProcessingFailed>(_peerUp);
+
+            _bus.Start();
 
             var exception = new Exception("Expected exception");
             _messageSerializer.AddSerializationExceptionFor<FakeCommand>(exception);

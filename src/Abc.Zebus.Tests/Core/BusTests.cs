@@ -117,6 +117,15 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
+        public void should_not_start_bus_twice()
+        {
+            _bus.Start();
+
+            var exception = Assert.Throws<InvalidOperationException>(() => _bus.Start());
+            exception.Message.ShouldContain("already running");
+        }
+
+        [Test]
         public void should_fire_events_starting_and_started_when_calling_start()
         {
             var startingEventCalled = 0;
@@ -158,6 +167,8 @@ namespace Abc.Zebus.Tests.Core
         [Test]
         public void should_forward_initiator_id()
         {
+            _bus.Start();
+
             using (MessageId.PauseIdGeneration())
             {
                 var receivedCommand = new FakeCommand(123);

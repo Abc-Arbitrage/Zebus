@@ -67,6 +67,7 @@ namespace Abc.Zebus.Tests.Core
                 SetupDispatch(command, error: exception);
                 SetupPeersHandlingMessage<FakeCommand>(_self);
 
+                _bus.Start();
                 _bus.Send(command);
 
                 var expectedTransportMessage = new MessageProcessingFailed(command.ToTransportMessage(_self), commandJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
@@ -86,6 +87,7 @@ namespace Abc.Zebus.Tests.Core
                 SetupDispatch(command, error: new DomainException(123, "Exception message"));
                 SetupPeersHandlingMessage<FakeCommand>(_self);
 
+                _bus.Start();
                 _bus.Send(command);
 
                 _transport.ExpectNothing();

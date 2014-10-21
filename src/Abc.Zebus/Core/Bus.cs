@@ -72,6 +72,9 @@ namespace Abc.Zebus.Core
 
         public virtual void Start()
         {
+            if (_isRunning)
+                throw new InvalidOperationException("Unable to start, the bus is already running");
+
             Starting();
 
             _completionResultTaskScheduler = new CustomThreadPoolTaskScheduler(4);
@@ -139,6 +142,9 @@ namespace Abc.Zebus.Core
 
         public void Publish(IEvent message)
         {
+            if (!_isRunning)
+                throw new InvalidOperationException("Unable to publish message, the bus is not running");
+
             var peersHandlingMessage = _directory.GetPeersHandlingMessage(message).ToList();
 
             var localDispatchEnabled = LocalDispatch.Enabled;
@@ -152,6 +158,9 @@ namespace Abc.Zebus.Core
 
         public Task<CommandResult> Send(ICommand message)
         {
+            if (!_isRunning)
+                throw new InvalidOperationException("Unable to send message, the bus is not running");
+
             var peers = _directory.GetPeersHandlingMessage(message);
             if (peers.Count == 0)
                 throw new InvalidOperationException("Unable to find peer for specified command, " + BusMessageLogger.ToString(message) + ". Did you change the namespace?");
@@ -174,6 +183,9 @@ namespace Abc.Zebus.Core
         {
             if (peer == null)
                 throw new ArgumentNullException("peer");
+
+            if (!_isRunning)
+                throw new InvalidOperationException("Unable to send message, the bus is not running");
 
             var taskCompletionSource = new TaskCompletionSource<CommandResult>();
 
@@ -500,14 +512,22 @@ namespace Abc.Zebus.Core
             }
             catch (Exception exception)
             {
-                var dumpLocation = DumpMessageOnDisk(messageTypeId, messageBytes);
-                var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}\r\n{3}", messageTypeId.FullName, originator.SenderId, dumpLocation, exception);
-                _logger.Error(errorMessage);
-
-                var processingFailed = new CustomProcessingFailed(GetType().FullName, errorMessage, SystemDateTime.UtcNow);
-                Publish(processingFailed);
+                HandleDeserializationError(messageTypeId, messageBytes, originator, exception);
             }
             return null;
+        }
+
+        private void HandleDeserializationError(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, Exception exception)
+        {
+            var dumpLocation = DumpMessageOnDisk(messageTypeId, messageBytes);
+            var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}\r\n{3}", messageTypeId.FullName, originator.SenderId, dumpLocation, exception);
+            _logger.Error(errorMessage);
+
+            if (!_isRunning)
+                return;
+
+            var processingFailed = new CustomProcessingFailed(GetType().FullName, errorMessage, SystemDateTime.UtcNow);
+            Publish(processingFailed);
         }
 
         private string DumpMessageOnDisk(MessageTypeId messageTypeId, byte[] messageBytes)
@@ -531,7 +551,8 @@ namespace Abc.Zebus.Core
 
         public void Dispose()
         {
-            Stop();
+            if (_isRunning)
+                Stop();
         }
     }
 }

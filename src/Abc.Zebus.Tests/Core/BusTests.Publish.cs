@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
@@ -17,10 +18,18 @@ namespace Abc.Zebus.Tests.Core
                 var @event = new FakeEvent(456);
                 SetupPeersHandlingMessage<FakeEvent>(_peerUp, _peerDown);
 
+                _bus.Start();
                 _bus.Publish(@event);
 
                 _transport.ExpectExactly(new TransportMessageSent(@event.ToTransportMessage(_self), new[] { _peerUp, _peerDown }));
             }
+        }
+
+        [Test]
+        public void should_not_publish_message_when_bus_is_not_running()
+        {
+            var exception = Assert.Throws<InvalidOperationException>(() => _bus.Publish(new FakeEvent(42)));
+            exception.Message.ShouldContain("not running");
         }
 
         [Test]
@@ -32,6 +41,7 @@ namespace Abc.Zebus.Tests.Core
                 SetupPeersHandlingMessage<FakeEvent>(_peerUp);
                 var expectedTransportMessage = message.ToTransportMessage(_self);
 
+                _bus.Start();
                 _bus.Publish(message);
 
                 var sentMessage = _transport.Messages.Single();
