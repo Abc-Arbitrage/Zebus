@@ -123,7 +123,7 @@ namespace Abc.Zebus.Core
         public virtual void Stop()
         {
             if (!_isRunning)
-                return;
+                throw new InvalidOperationException("Unable to stop, the bus is not running");
             
             Stopping();
 

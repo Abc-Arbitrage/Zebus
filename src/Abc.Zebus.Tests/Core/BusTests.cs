@@ -117,12 +117,19 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
-        public void should_not_start_bus_twice()
+        public void should_fail_when_starting_started_bus()
         {
             _bus.Start();
 
             var exception = Assert.Throws<InvalidOperationException>(() => _bus.Start());
             exception.Message.ShouldContain("already running");
+        }
+
+        [Test]
+        public void should_fail_when_stopping_non_started_bus()
+        {
+            var exception = Assert.Throws<InvalidOperationException>(() => _bus.Stop());
+            exception.Message.ShouldContain("not running");
         }
 
         [Test]
