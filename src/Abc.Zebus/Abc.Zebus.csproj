@@ -70,6 +70,8 @@
     <Compile Include="CommandResult.cs" />
     <Compile Include="Core\BusFactory.cs" />
     <Compile Include="Core\DefaultStoppingStrategy.cs" />
+    <Compile Include="Directory\MarkPeerAsNotRespondingCommand.cs" />
+    <Compile Include="Directory\MarkPeerAsRespondingCommand.cs" />
     <Compile Include="Dispatch\EventHandlerInvoker.cs" />
     <Compile Include="Dispatch\EventHandlerInvoker`1.cs" />
     <Compile Include="Core\IStoppingStrategy.cs" />
