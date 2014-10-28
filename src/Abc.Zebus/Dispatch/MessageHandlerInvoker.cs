@@ -4,6 +4,7 @@ using Abc.Zebus.Core;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using StructureMap;
+using StructureMap.Pipeline;
 
 namespace Abc.Zebus.Dispatch
 {
@@ -62,9 +63,12 @@ namespace Abc.Zebus.Dispatch
                 return container.GetInstance(MessageHandlerType);
 
             var busProxy = new MessageContextAwareBus(_bus, messageContext);
-            var messageHandlerInstance = new MessageHandlerConstructorInstance(MessageHandlerType, busProxy, messageContext);
 
-            return container.GetInstance(MessageHandlerType, messageHandlerInstance);
+            var explicitArgs = new ExplicitArguments()
+                .Set(typeof(IBus), busProxy)
+                .Set(typeof(MessageContext), messageContext);
+
+            return container.GetInstance(MessageHandlerType, explicitArgs);
         }
 
         private bool IsHandlerSingleton(IContainer container)
@@ -72,7 +76,7 @@ namespace Abc.Zebus.Dispatch
             if (_isSingleton == null)
             {
                 var model = container.Model != null ? container.Model.For(MessageHandlerType) : null;
-                _isSingleton = model != null && model.Lifecycle == "Singleton";
+                _isSingleton = model != null && model.Lifecycle == Lifecycles.Singleton;
             }
             return _isSingleton.Value;
         }

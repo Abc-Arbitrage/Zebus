@@ -62,7 +62,7 @@ namespace Abc.Zebus.Tests.Dispatch
             {
                 x.ForSingletonOf<IBus>().Use(busMock.Object);
                 x.ForSingletonOf<IBusConfiguration>().Use(configurationMock.Object);
-                x.For<IEqualityComparer<string>>().Use(() => equalityComparer);
+                x.For<IEqualityComparer<string>>().Use(equalityComparer);
             });
 
             var invoker = new SyncMessageHandlerInvoker(container, typeof(CommandHandlerWithThreeConstructorArguments), typeof(ScanCommand1));

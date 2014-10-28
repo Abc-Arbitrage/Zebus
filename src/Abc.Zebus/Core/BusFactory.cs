@@ -107,7 +107,7 @@ namespace Abc.Zebus.Core
             {
                 x.ForSingletonOf<IBusConfiguration>().Use(_configuration);
                 x.ForSingletonOf<IZmqTransportConfiguration>().Use(_transportConfiguration);
-                x.ForSingletonOf<IMessageDispatcher>().Use(ctx =>
+                x.ForSingletonOf<IMessageDispatcher>().Use("MessageDispatcher factory", ctx =>
                 {
                     var dispatcher = new MessageDispatcher(ctx.GetInstance<IPipeManager>(), ctx.GetAllInstances<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetInstance<IDispatcherTaskSchedulerFactory>());
                     dispatcher.ConfigureHandlerFilter(assembly => _scanTargets.Any(scanTarget => scanTarget.Matches(assembly)));
