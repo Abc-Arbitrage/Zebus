@@ -12,11 +12,11 @@ namespace Abc.Zebus.Testing.Comparison
 {
     public class MessageComparer
     {
-        private readonly CompareObjects _comparer = ComparisonExtensions.CreateComparer();
+        private readonly CompareLogic _comparer = ComparisonExtensions.CreateComparer();
 
         public MessageComparer()
         {
-            _comparer.ElementsToIgnore.Add("Sourcing");
+            _comparer.Config.MembersToIgnore.Add("Sourcing");
         }
 
         public void CheckExpectations(IEnumerable<object> actualMessages, IEnumerable<object> expectedMessages, bool exactMatch)
@@ -68,7 +68,7 @@ namespace Abc.Zebus.Testing.Comparison
 
             foreach (var expected in expectedItems)
             {
-                var foundEvent = notExpectedEvents.FirstOrDefault(evt => _comparer.Compare(evt, expected));
+                var foundEvent = notExpectedEvents.FirstOrDefault(evt => _comparer.Compare(evt, expected).AreEqual);
                 if (foundEvent != null)
                     notExpectedEvents.Remove(foundEvent);
                 else
