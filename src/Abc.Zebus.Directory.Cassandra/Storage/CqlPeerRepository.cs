@@ -58,6 +58,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                .Where(peer => peer.UselessKey == false)
                                .Execute()
                                .Select(peer => peer.ToPeerDescriptor(dynamicSubscriptionsByPeer[peer.PeerId]))
+                               .Where(descriptor => descriptor != null)
                                .ToList();
         }
 

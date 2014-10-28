@@ -44,6 +44,8 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         {
             if (storagePeer == null)
                 return null;
+            if (storagePeer.StaticSubscriptionsBytes == null)
+                return null;
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
             var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
             return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,

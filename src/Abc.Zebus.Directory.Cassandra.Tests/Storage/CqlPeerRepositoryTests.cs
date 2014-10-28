@@ -169,5 +169,18 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeTrue();
         }
+
+        [Test]
+        public void should_handle_peers_with_null_subscriptions_gracefully()
+        {
+            var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
+            descriptor.TimestampUtc = DateTime.UtcNow;
+            _repository.AddOrUpdatePeer(descriptor);
+
+            _repository.SetPeerResponding(new PeerId("Abc.DecommissionnedPeer.0"), false);
+
+            _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
+            _repository.GetPeers().ExpectedSingle().PeerId.ShouldEqual(_peer1.Id);
+        }
     }
 }
