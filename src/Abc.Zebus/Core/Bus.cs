@@ -23,7 +23,7 @@ namespace Abc.Zebus.Core
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
         private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
-        private readonly BusMessageLogger _messageLogger = BusMessageLogger.Get<Bus>();
+        private readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(Bus));
         private readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
         private readonly ITransport _transport;
         private readonly IPeerDirectory _directory;
@@ -369,7 +369,7 @@ namespace Abc.Zebus.Core
                 return;
             }
 
-            _messageLogger.InfoFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
+            _messageLogger.DebugFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
             _messageDispatcher.Dispatch(dispatch);
         }
 
@@ -425,7 +425,8 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleMessageExecutionCompleted(TransportMessage transportMessage, MessageExecutionCompleted message)
         {
-            _messageLogger.DebugFormat("RECV : {0}", message);
+            _messageLogger.DebugFormat("RECV: {0}", message);
+
             TaskCompletionSource<CommandResult> taskCompletionSource;
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out taskCompletionSource))
                 return;
@@ -439,7 +440,7 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
         {
-            _messageLogger.InfoFormat("RECV local: {0}", message);
+            _messageLogger.DebugFormat("RECV local: {0}", message);
 
             var context = MessageContext.CreateOverride(PeerId, EndPoint);
             var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource));
