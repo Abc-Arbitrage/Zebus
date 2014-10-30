@@ -76,7 +76,7 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
-        public void should_initialize_transport_and_register_to_directory()
+        public void should_initialize_transport_and_register_on_directory()
         {
             AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: true);
 
@@ -92,6 +92,18 @@ namespace Abc.Zebus.Tests.Core
             sequence.Verify();
             _transport.IsStarted.ShouldBeTrue();
             _transport.IsRegistered.ShouldBeTrue();
+        }
+
+        [Test]
+        public void should_be_running_when_registering_on_directory()
+        {
+            var wasRunningDuringRegister = false;
+            _directoryMock.Setup(x => x.Register(_bus, It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
+                          .Callback(() => wasRunningDuringRegister = _bus.IsRunning);
+
+            _bus.Start();
+
+            wasRunningDuringRegister.ShouldBeTrue();
         }
 
         [Test]
