@@ -21,15 +21,14 @@ namespace Abc.Zebus.Core
             _logInfoFactory = CreateLogger;
         }
 
-        private BusMessageLogger(Type loggerType)
+        public BusMessageLogger(Type loggerType) : this(loggerType, loggerType.FullName)
         {
-            _loggerType = loggerType;
-            _logger = LogManager.GetLogger(loggerType);
         }
 
-        public static BusMessageLogger Get<T>()
+        public BusMessageLogger(Type loggerType, string loggerFullName)
         {
-            return Instance<T>.Value;
+            _loggerType = loggerType;
+            _logger = LogManager.GetLogger(loggerFullName);
         }
 
         public bool IsInfoEnabled(IMessage message)
@@ -129,11 +128,6 @@ namespace Abc.Zebus.Core
             {
                 return _hasToStringOverride ? string.Format("{0} {{{1}}}", _messageTypeName, message) : string.Format("{0}", _messageTypeName);
             }
-        }
-
-        private static class Instance<T>
-        {
-            public static readonly BusMessageLogger Value = new BusMessageLogger(typeof(T));
         }
     }
 }

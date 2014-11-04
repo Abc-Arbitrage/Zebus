@@ -18,25 +18,19 @@ namespace Abc.Zebus.Core
 {
     public class Bus : IBus, IMessageDispatchFactory
     {
-        private const string _deserializationFailureDumpsDirectoryName = "deserialization_failure_dumps";
-        private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new UniqueTimestampProvider();
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
-        private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
+        private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new UniqueTimestampProvider();
         private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
-        private readonly BusMessageLogger _messageLogger = BusMessageLogger.Get<Bus>();
+        private readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(Bus));
         private readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
         private readonly ITransport _transport;
         private readonly IPeerDirectory _directory;
         private readonly IMessageSerializer _serializer;
         private readonly IMessageDispatcher _messageDispatcher;
         private readonly IStoppingStrategy _stoppingStrategy;
+        private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
         private PeerId _peerId;
         private bool _isRunning;
-        
-        public event Action Starting = delegate { };
-        public event Action Started = delegate { };
-        public event Action Stopping = delegate { };
-        public event Action Stopped = delegate { };
  
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IStoppingStrategy stoppingStrategy)
         {
@@ -48,6 +42,11 @@ namespace Abc.Zebus.Core
             _messageDispatcher = messageDispatcher;
             _stoppingStrategy = stoppingStrategy;
         }
+
+        public event Action Starting = delegate { };
+        public event Action Started = delegate { };
+        public event Action Stopping = delegate { };
+        public event Action Stopped = delegate { };
 
         public PeerId PeerId
         {
@@ -89,13 +88,13 @@ namespace Abc.Zebus.Core
             _logger.DebugFormat("Starting transport...");
             _transport.Start();
 
+            _isRunning = true;
+
             _logger.DebugFormat("Registering on directory...");
             var self = new Peer(PeerId, EndPoint);
             _directory.Register(this, self, GetSubscriptions());
 
             _transport.OnRegistered();
-
-            _isRunning = true;
 
             Started();
         }
@@ -369,7 +368,7 @@ namespace Abc.Zebus.Core
                 return;
             }
 
-            _messageLogger.InfoFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
+            _messageLogger.DebugFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.MessageBytes.Length, transportMessage.Originator.SenderId);
             _messageDispatcher.Dispatch(dispatch);
         }
 
@@ -425,7 +424,8 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleMessageExecutionCompleted(TransportMessage transportMessage, MessageExecutionCompleted message)
         {
-            _messageLogger.DebugFormat("RECV : {0}", message);
+            _messageLogger.DebugFormat("RECV: {0}", message);
+
             TaskCompletionSource<CommandResult> taskCompletionSource;
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out taskCompletionSource))
                 return;
@@ -439,7 +439,7 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
         {
-            _messageLogger.InfoFormat("RECV local: {0}", message);
+            _messageLogger.DebugFormat("RECV local: {0}", message);
 
             var context = MessageContext.CreateOverride(PeerId, EndPoint);
             var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource));
@@ -534,7 +534,7 @@ namespace Abc.Zebus.Core
         {
             try
             {
-                var dumpDirectory = PathUtil.InBaseDirectory(_deserializationFailureDumpsDirectoryName);
+                var dumpDirectory = PathUtil.InBaseDirectory("deserialization_failure_dumps");
                 if (!System.IO.Directory.Exists(dumpDirectory))
                     System.IO.Directory.CreateDirectory(dumpDirectory);
 
