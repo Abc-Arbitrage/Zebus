@@ -6,12 +6,12 @@ namespace Abc.Zebus.Core
     public class MessageContextAwareBus : IBus
     {
         private readonly IBus _bus;
-        private readonly MessageContext _messageContext;
+        public readonly MessageContext MessageContext;
 
         public MessageContextAwareBus(IBus bus, MessageContext messageContext)
         {
             _bus = bus;
-            _messageContext = messageContext;
+            MessageContext = messageContext;
         }
 
         public IBus InnerBus
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Core
 
         public void Publish(IEvent message)
         {
-            using (MessageContext.SetCurrent(_messageContext))
+            using (MessageContext.SetCurrent(MessageContext))
             {
                 _bus.Publish(message);
             }
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Core
 
         public Task<CommandResult> Send(ICommand message)
         {
-            using (MessageContext.SetCurrent(_messageContext))
+            using (MessageContext.SetCurrent(MessageContext))
             {
                 return _bus.Send(message);
             }
@@ -52,7 +52,7 @@ namespace Abc.Zebus.Core
 
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
-            using (MessageContext.SetCurrent(_messageContext))
+            using (MessageContext.SetCurrent(MessageContext))
             {
                 return _bus.Send(message, peer);
             }
@@ -80,12 +80,12 @@ namespace Abc.Zebus.Core
 
         public void Reply(int errorCode)
         {
-            _messageContext.ReplyCode = errorCode;
+            MessageContext.ReplyCode = errorCode;
         }
 
         public void Reply(IMessage response)
         {
-            _messageContext.ReplyResponse = response;
+            MessageContext.ReplyResponse = response;
         }
 
         public void Start()

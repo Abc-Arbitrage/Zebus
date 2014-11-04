@@ -124,7 +124,7 @@ namespace Abc.Zebus.Tests.Dispatch
             {
                 x.ForSingletonOf<IBus>().Use(busMock.Object);
                 x.ForSingletonOf<IBusConfiguration>().Use(configurationMock.Object);
-                x.For<IEqualityComparer<string>>().Use(() => equalityComparer);
+                x.For<IEqualityComparer<string>>().Use(equalityComparer);
             });
 
             // 21/02/2014 CAO OneConstructor 612 024.8 iterations/sec
