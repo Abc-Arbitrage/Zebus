@@ -17,11 +17,11 @@ namespace Abc.Zebus.Testing
         private readonly Dictionary<ICommand, Peer> _peerByCommand = new Dictionary<ICommand, Peer>();
         private readonly List<IEvent> _events = new List<IEvent>();
         private readonly List<ICommand> _commands = new List<ICommand>();
+        private readonly HashSet<Subscription> _subscriptions = new HashSet<Subscription>();
 
         public TestBus()
         {
             HandlerExecutor = new DefaultHandlerExecutor();
-            Subscriptions = new HashSet<Subscription>();
         }
 
         public event Action Starting = delegate { };
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Testing
             {
                 lock (_commands)
                 {
-                    return _commands;
+                    return _commands.ToList();
                 }
             }
         }
@@ -56,7 +56,17 @@ namespace Abc.Zebus.Testing
             get { return _commands.Count + _events.Count; }
         }
 
-        public HashSet<Subscription> Subscriptions { get; private set; }
+        public HashSet<Subscription> Subscriptions
+        {
+            get
+            {
+                lock (_subscriptions)
+                {
+                    return _subscriptions.ToHashSet();
+                }
+            }
+        }
+
         public int LastReplyCode { get; set; }
         public object LastReplyResponse { get; set; }
         public IHandlerExecutor HandlerExecutor { get; set; }
@@ -64,7 +74,6 @@ namespace Abc.Zebus.Testing
         public bool IsStopped { get; private set; }
         public PeerId PeerId { get; private set; }
         public bool IsRunning { get; private set; }
-        public int ReceiveQueueLength { get; set; }
 
         public IEnumerable<IMessage> Messages
         {
@@ -104,32 +113,32 @@ namespace Abc.Zebus.Testing
 
         public IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default)
         {
-            lock (Subscriptions)
+            lock (_subscriptions)
             {
-                Subscriptions.Add(subscription);
+                _subscriptions.Add(subscription);
             }
 
             return new DisposableAction(() =>
             {
-                lock (Subscriptions)
+                lock (_subscriptions)
                 {
-                    Subscriptions.Remove(subscription);
+                    _subscriptions.Remove(subscription);
                 }
             });
         }
 
         public IDisposable Subscribe(Subscription[] subscriptions, SubscriptionOptions options = SubscriptionOptions.Default)
         {
-            lock (Subscriptions)
+            lock (_subscriptions)
             {
-                Subscriptions.AddRange(subscriptions);
+                _subscriptions.AddRange(subscriptions);
             }
 
             return new DisposableAction(() =>
             {
-                lock (Subscriptions)
+                lock (_subscriptions)
                 {
-                    Subscriptions.RemoveRange(subscriptions);
+                    _subscriptions.RemoveRange(subscriptions);
                 }
             });
         }
@@ -149,9 +158,9 @@ namespace Abc.Zebus.Testing
 
         public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
         {
-            lock (Subscriptions)
+            lock (_subscriptions)
             {
-                Subscriptions.AddRange(subscriptions);
+                _subscriptions.AddRange(subscriptions);
             }
 
             var handlerKeys = subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default(PeerId))).ToList();
@@ -167,7 +176,10 @@ namespace Abc.Zebus.Testing
             return new DisposableAction(() =>
             {
                 _handlers.RemoveRange(handlerKeys);
-                Subscriptions.RemoveRange(subscriptions);
+                lock (_subscriptions)
+                {
+                    _subscriptions.RemoveRange(subscriptions);
+                }
             });
         }
 
