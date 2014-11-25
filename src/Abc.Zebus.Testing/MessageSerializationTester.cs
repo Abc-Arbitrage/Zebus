@@ -15,7 +15,7 @@ namespace Abc.Zebus.Testing
 {
     public static class MessageSerializationTester
     {
-        private static readonly MethodInfo _createAnonymousMethod = typeof(SpecimenFactory).GetMethod("CreateAnonymous", new[] { typeof(ISpecimenBuilderComposer) });
+        private static readonly MethodInfo _createMethod = typeof(SpecimenFactory).GetMethod("Create", new[] { typeof(ISpecimenBuilder) });
         private static readonly MethodInfo _injectMethod = typeof(FixtureRegistrar).GetMethod("Inject");
         private static readonly Serializer _serializer = new Serializer();
 
@@ -24,8 +24,8 @@ namespace Abc.Zebus.Testing
             var fixture = BuildFixture();
 
             var messageTypes = typeof(T).Assembly.GetTypes()
-                .Where(type => (type.Is<IMessage>() || type.GetInterfaces().Any(x => x.Name == "ISnapshot") || type.GetInterfaces().Any(x => x.Name == "IZmqMessage")))
-                .Where(type => !type.IsAbstract && !type.IsInterface && !type.IsGenericTypeDefinition);
+                                        .Where(type => (type.Is<IMessage>() || type.GetInterfaces().Any(x => x.Name == "ISnapshot") || type.GetInterfaces().Any(x => x.Name == "IZmqMessage")))
+                                        .Where(type => !type.IsAbstract && !type.IsInterface && !type.IsGenericTypeDefinition);
 
             var prebuildObjectsTypes = prebuiltObjects.Select(x => x.GetType()).ToList();
             var typesToInstanciate = messageTypes.Where(msgType => !prebuildObjectsTypes.Contains(msgType)).ToList();
@@ -59,19 +59,19 @@ namespace Abc.Zebus.Testing
         {
             var fixture = new Fixture();
             var sourcing = new DomainEventSourcing
-                               {
-                                   AggregateId = Guid.NewGuid(),
-                                   DateTime = DateTime.Now,
-                                   EventId = Guid.NewGuid(),
-                                   UserId = Environment.UserName,
-                                   Version = 12
-                               };
+            {
+                AggregateId = Guid.NewGuid(),
+                DateTime = DateTime.Now,
+                EventId = Guid.NewGuid(),
+                UserId = Environment.UserName,
+                Version = 12
+            };
 
             fixture.Inject(sourcing);
             fixture.Inject(new Uri(@"http://this.is.just.a.valid.url/"));
             fixture.Customize(new MultipleCustomization());
             fixture.Inject('X');
-            
+
             return fixture;
         }
 
@@ -87,7 +87,7 @@ namespace Abc.Zebus.Testing
 
             if (message == null)
             {
-                var genericMethod = _createAnonymousMethod.MakeGenericMethod(messageType);
+                var genericMethod = _createMethod.MakeGenericMethod(messageType);
                 message = genericMethod.Invoke(null, new object[] { fixture });
             }
 
@@ -99,20 +99,19 @@ namespace Abc.Zebus.Testing
             NUnitExtensions.ShouldNotBeNull(messageCopy);
 
             var comparer = ComparisonExtensions.CreateComparer();
-            comparer.ElementsToIgnore = new List<string> { "Item" };
-            comparer.Compare(message, messageCopy);
+            comparer.Config.MembersToIgnore = new List<string> { "Item" };
+            var result = comparer.Compare(message, messageCopy);
 
-            if (comparer.Differences.Count > 0)
-                Assert.Fail(comparer.DifferencesString);
+            if (!result.AreEqual)
+                Assert.Fail(result.DifferencesString);
         }
 
         public static void DetectDuplicatedSerializationIds(params Assembly[] assemblies)
         {
             var domainEvents = assemblies.SelectMany(asm => asm.GetTypes())
-                .Where(type => type.Is<IDomainEvent>())
-                .Where(type => !type.IsAbstract && !type.IsInterface && !type.IsGenericTypeDefinition)
-                .Select(type => new { Type = type, Attribute = type.GetAttribute<SerializationIdAttribute>(true) });
-
+                                         .Where(type => type.Is<IDomainEvent>())
+                                         .Where(type => !type.IsAbstract && !type.IsInterface && !type.IsGenericTypeDefinition)
+                                         .Select(type => new { Type = type, Attribute = type.GetAttribute<SerializationIdAttribute>(true) });
 
             var dic = new Dictionary<string, Type>();
             foreach (var domainEvent in domainEvents)

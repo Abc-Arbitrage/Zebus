@@ -4,13 +4,16 @@ using Abc.Zebus.Core;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using StructureMap;
+using StructureMap.Pipeline;
 
 namespace Abc.Zebus.Dispatch
 {
     public abstract class MessageHandlerInvoker : IMessageHandlerInvoker
     {
+        private readonly Instance _instance;
         private bool? _isSingleton;
         private IBus _bus;
+        private MessageContextAwareBus _dispatchBus;
 
         protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null)
         {
@@ -19,6 +22,8 @@ namespace Abc.Zebus.Dispatch
             MessageType = messageType;
             MessageTypeId = new MessageTypeId(MessageType);
             ShouldBeSubscribedOnStartup = shouldBeSubscribedOnStartup ?? MessageShouldBeSubscribedOnStartup(messageType);
+
+            _instance = CreateConstructorInstance(handlerType);
         }
 
         public Type MessageHandlerType { get; private set; }
@@ -61,10 +66,15 @@ namespace Abc.Zebus.Dispatch
             if (_bus == null)
                 return container.GetInstance(MessageHandlerType);
 
-            var busProxy = new MessageContextAwareBus(_bus, messageContext);
-            var messageHandlerInstance = new MessageHandlerConstructorInstance(MessageHandlerType, busProxy, messageContext);
-
-            return container.GetInstance(MessageHandlerType, messageHandlerInstance);
+            try
+            {
+                _dispatchBus = new MessageContextAwareBus(_bus, messageContext);
+                return container.GetInstance(MessageHandlerType, _instance);
+            }
+            finally
+            {
+                _dispatchBus = null;
+            }
         }
 
         private bool IsHandlerSingleton(IContainer container)
@@ -72,9 +82,17 @@ namespace Abc.Zebus.Dispatch
             if (_isSingleton == null)
             {
                 var model = container.Model != null ? container.Model.For(MessageHandlerType) : null;
-                _isSingleton = model != null && model.Lifecycle == "Singleton";
+                _isSingleton = model != null && model.Lifecycle == Lifecycles.Singleton;
             }
             return _isSingleton.Value;
+        }
+
+        private Instance CreateConstructorInstance(Type messageHandlerType)
+        {
+            var inst = new ConstructorInstance(messageHandlerType);
+            inst.Dependencies.Add<IBus>(new LambdaInstance<IBus>("Dispatch IBus", () => _dispatchBus));
+            inst.Dependencies.Add<MessageContext>(new LambdaInstance<MessageContext>("Dispatch MessageContext", () => _dispatchBus.MessageContext));
+            return inst;
         }
     }
 }

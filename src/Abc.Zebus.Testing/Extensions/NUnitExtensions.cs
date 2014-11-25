@@ -49,10 +49,10 @@ namespace Abc.Zebus.Testing.Extensions
         public static object ShouldEqualDeeply(this object actual, object expected)
         {
             var comparer = ComparisonExtensions.CreateComparer();
-            var areEqual = comparer.Compare(actual, expected);
-            if (!areEqual)
-                Console.WriteLine(comparer.DifferencesString);
-            Assert.IsTrue(areEqual);
+            var result = comparer.Compare(actual, expected);
+            if (!result.AreEqual)
+                Console.WriteLine(result.DifferencesString);
+            Assert.IsTrue(result.AreEqual);
             return expected;
         }
 
@@ -179,7 +179,10 @@ namespace Abc.Zebus.Testing.Extensions
         public static void ShouldBeEquivalentTo(this IEnumerable collection, IEnumerable expected, bool compareDeeply = false)
         {
             if (compareDeeply)
-                collection.ShouldBeEquivalentTo(expected, new CompareObjects().Compare);
+            {
+                var compareLogic = new CompareLogic();
+                collection.ShouldBeEquivalentTo(expected, (a, b) => compareLogic.Compare(a, b).AreEqual);
+            }
             else
                 Assert.That(collection, Is.EquivalentTo(expected));
         }
@@ -340,10 +343,11 @@ namespace Abc.Zebus.Testing.Extensions
         public static void ShouldHaveSamePropertiesAs(this object actual, object expected, params string[] ignoredProperties)
         {
             var comparer = ComparisonExtensions.CreateComparer();
-            comparer.ElementsToIgnore.AddRange(ignoredProperties);
+            comparer.Config.MembersToIgnore.AddRange(ignoredProperties);
 
-            if (!comparer.Compare(actual, expected))
-                Assert.Fail("Properties should be equal, invalid properties: " + comparer.DifferencesString);
+            var result = comparer.Compare(actual, expected);
+            if (!result.AreEqual)
+                Assert.Fail("Properties should be equal, invalid properties: " + result.DifferencesString);
         }
 
         public static void ShouldHaveApproximatePropertiesAs(this object actual, object expected, params string[] ignoredProperties)

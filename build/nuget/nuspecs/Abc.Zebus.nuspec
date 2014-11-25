@@ -1,34 +1,34 @@
 <?xml version="1.0"?>
-<package >
-	<metadata>
-		<id>Zebus</id>
-		<version>$version$</version>
-		<title>Zebus</title>
-		<authors>$author$</authors>
-		<owners>$author$</owners>
-		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</licenseUrl>
-		<projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
-		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<description>$description$</description>
-		<releaseNotes></releaseNotes>
-		<copyright>$copyright$</copyright>
-		<tags></tags>
-		<references>
-			<reference file="Abc.Zebus.dll" />
-		</references>
+<package>
+  <metadata>
+    <id>Zebus</id>
+    <version>$version$</version>
+    <title>Zebus</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes></releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags></tags>
+    <references>
+      <reference file="Abc.Zebus.dll" />
+    </references>
     <dependencies>
       <dependency id="log4net" version="2.0.3" />
+      <dependency id="Newtonsoft.Json" version="6.0.6" />
+      <dependency id="protobuf-net" version="2.0.0.668" />
+      <dependency id="structuremap" version="3.1.4.143" />
     </dependencies>
-	</metadata>
-	<files>
-		<file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.dll" target="lib\net45\" />
-		<file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.pdb" target="lib\net45\" />
-		
-		<file src="lib\zmq\clrzmq.dll" target="lib\net45\" />
-		<file src="lib\json.net\Newtonsoft.Json.dll" target="lib\net45\" />
-		<file src="lib\protobuf\protobuf-net.dll" target="lib\net45\" />
-		<file src="lib\structuremap\StructureMap.dll" target="lib\net45\" />
-		
-		<file src="src\Abc.Zebus\**\*.cs" target="src" />
-	</files>
+  </metadata>
+  <files>
+    <file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.dll" target="lib\net45\" />
+    <file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.pdb" target="lib\net45\" />
+
+    <file src="lib\zmq\clrzmq.dll" target="lib\net45\" />
+    
+    <file src="src\Abc.Zebus\**\*.cs" target="src" />
+  </files>
 </package>

@@ -130,7 +130,7 @@ namespace Abc.Zebus.Testing.Transport
             var comparer = ComparisonExtensions.CreateComparer();
             foreach (var notExpectedMessage in notExpectedMessages)
             {
-                var matchingMessage = Messages.FirstOrDefault(x => comparer.Compare(notExpectedMessage, x));
+                var matchingMessage = Messages.FirstOrDefault(x => comparer.Compare(notExpectedMessage, x).AreEqual);
                 if (matchingMessage != null)
                     Assert.Fail("Found message matching " + notExpectedMessage.TransportMessage.MessageTypeId.GetMessageType().Name);
             }
