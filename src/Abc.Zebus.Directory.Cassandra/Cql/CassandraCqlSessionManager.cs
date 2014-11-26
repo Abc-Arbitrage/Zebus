@@ -2,11 +2,9 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using Cassandra;
-using StructureMap;
 
 namespace Abc.Zebus.Directory.Cassandra.Cql
 {
-    [PluginFamily(IsSingleton = true)]
     public class CassandraCqlSessionManager : IDisposable
     {
         private readonly ConcurrentDictionary<string, Cluster> _clusters = new ConcurrentDictionary<string, Cluster>();

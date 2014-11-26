@@ -10,6 +10,7 @@ using Abc.Zebus.Dispatch;
 using Abc.Zebus.Util;
 using log4net;
 using log4net.Config;
+using StructureMap;
 
 namespace Abc.Zebus.Directory
 {
@@ -64,7 +65,7 @@ namespace Abc.Zebus.Directory
                 c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
                 c.Forward<PeerDirectoryServer, IPeerDirectory>();
 
-                c.ForSingletonOf<IMessageDispatcher>().Use(ctx =>
+                c.ForSingletonOf<IMessageDispatcher>().Use(typeof(Func<IContext, MessageDispatcher>).Name, ctx =>
                 {
                     var dispatcher = ctx.GetInstance<MessageDispatcher>();
                     dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
