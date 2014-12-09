@@ -31,8 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Abc.Zebus">
-      <HintPath>..\packages\Zebus.1.2.0\lib\net45\Abc.Zebus.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\packages\Zebus.1.2.1\lib\net45\Abc.Zebus.dll</HintPath>
     </Reference>
     <Reference Include="Abc.Zebus.Testing">
       <HintPath>..\packages\Zebus.Testing.1.2.0\lib\net45\Abc.Zebus.Testing.dll</HintPath>
@@ -109,6 +108,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

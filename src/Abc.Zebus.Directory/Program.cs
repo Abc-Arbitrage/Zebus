@@ -63,7 +63,7 @@ namespace Abc.Zebus.Directory
                 c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
                 c.ForSingletonOf<IPeerRepository>().Use<MemoryPeerRepository>();
                 c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
-                c.Forward<PeerDirectoryServer, IPeerDirectory>();
+                c.ForSingletonOf<IPeerDirectory>().Use(ctx => ctx.GetInstance<PeerDirectoryServer>());
 
                 c.ForSingletonOf<IMessageDispatcher>().Use(typeof(Func<IContext, MessageDispatcher>).Name, ctx =>
                 {

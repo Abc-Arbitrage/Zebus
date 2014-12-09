@@ -31,7 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Abc.Zebus">
-      <HintPath>..\packages\Zebus.1.2.0\lib\net45\Abc.Zebus.dll</HintPath>
+      <HintPath>..\packages\Zebus.1.2.1\lib\net45\Abc.Zebus.dll</HintPath>
     </Reference>
     <Reference Include="Cassandra, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
