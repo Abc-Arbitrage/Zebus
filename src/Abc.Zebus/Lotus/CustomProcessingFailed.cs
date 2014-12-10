@@ -3,14 +3,15 @@ using ProtoBuf;
 
 namespace Abc.Zebus.Lotus
 {
+    [ProtoContract]
     public class CustomProcessingFailed : IEvent
     {
         [ProtoMember(1, IsRequired = true)]
-        public readonly string SourceTypeFullName;
+        public string SourceTypeFullName { get; set; }
         [ProtoMember(2, IsRequired = true)]
-        public readonly string ExceptionMessage;
+        public string ExceptionMessage { get; set; }
         [ProtoMember(3, IsRequired = true)]
-        public readonly DateTime ExceptionUtcTime;
+        public DateTime ExceptionUtcTime { get; set; }
 
         public CustomProcessingFailed(string sourceTypeFullName, string exceptionMessage, DateTime exceptionUtcTime)
         {
