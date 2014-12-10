@@ -217,7 +217,14 @@ namespace Abc.Zebus.Routing
 
             public string GetValue(IMessage message)
             {
-                return _valueAccessorFunc(message);
+                try
+                {
+                    return _valueAccessorFunc(message);
+                }
+                catch (NullReferenceException)
+                {
+                    throw new InvalidOperationException(String.Format("Message of type {0} is not valid. Member {1} part of the routing key at position {2} can not be null", message.GetType().Name, Name, Position));
+                }
             }
 
             private Func<IMessage, string> GenerateValueAccessor(Func<Expression, Expression> valueAccessor, Type messageType, Type memberType)
