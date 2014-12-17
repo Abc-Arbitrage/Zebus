@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus
 {
@@ -14,6 +15,12 @@ namespace Abc.Zebus
             : base(string.Format(message, values))
         {
             ErrorCode = errorCode;
+        }
+
+        public DomainException(Enum enumVal, params object[] values)
+            : base(string.Format(enumVal.GetAttributeDescription(), values))
+        {
+            ErrorCode = Convert.ToInt32(enumVal);
         }
 
         public DomainException(Expression<Func<int>> errorCodeExpression, params object[] values)

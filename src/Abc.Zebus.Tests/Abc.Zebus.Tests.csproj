@@ -78,6 +78,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BindingKeyTests.cs" />
+    <Compile Include="CommandResultTests.cs" />
     <Compile Include="Core\BusFactoryTests.cs" />
     <Compile Include="Core\BusManualTests.cs" />
     <Compile Include="Core\BusPerformanceTests.cs" />
@@ -118,7 +119,6 @@
     <Compile Include="Lotus\ReplayMessageHandlerTests.cs" />
     <Compile Include="MessageContextTests.cs" />
     <Compile Include="Messages\FakeCommandWithTimestamp.cs" />
-    <Compile Include="Routing\BindingKeyTests.cs" />
     <Compile Include="Scan\StaticAsyncMessageHandlerInvokerLoaderTests.cs" />
     <Compile Include="Scan\SyncMessageHandlerInvokerLoaderTests.cs" />
     <Compile Include="Dispatch\DispatchMessages\SyncCommandHandlerWithQueueName1.cs" />
