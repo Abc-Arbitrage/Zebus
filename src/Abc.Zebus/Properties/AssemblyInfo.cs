@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Cassandra.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Testing")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Tests")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Integration")]
 [assembly: InternalsVisibleTo("Abc.Zebus.TestTools")]
 [assembly: InternalsVisibleTo("Abc.Zebus.PersistenceService.Tests")]
