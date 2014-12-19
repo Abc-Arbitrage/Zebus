@@ -20,6 +20,8 @@ namespace Abc.Zebus.Testing.Comparison
             {
                 Config =
                 {
+                    CompareStaticProperties = false,
+                    CompareStaticFields = false,
                     CustomComparers =
                     {
                         // TODO : Is this still used?

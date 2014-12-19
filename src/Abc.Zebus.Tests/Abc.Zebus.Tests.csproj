@@ -41,6 +41,10 @@
     <Reference Include="clrzmq">
       <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
     </Reference>
+    <Reference Include="KellermanSoftware.Compare-NET-Objects, Version=3.1.0.0, Culture=neutral, PublicKeyToken=d970ace04cc85217, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\CompareNETObjects.3.01.0.0\lib\net45\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+    </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
@@ -78,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BindingKeyTests.cs" />
+    <Compile Include="Comparison\ComparisonExtensionsTests.cs" />
     <Compile Include="Core\BusFactoryTests.cs" />
     <Compile Include="Core\BusManualTests.cs" />
     <Compile Include="Core\BusPerformanceTests.cs" />
