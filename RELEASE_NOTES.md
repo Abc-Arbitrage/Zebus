@@ -1,10 +1,15 @@
 ## Upcoming features
-### Next minor
- - On-disk Directory
-
 ### Future
  - Persistence service
  - Reconsider ZMQ as a transport library
+
+## 1.1.3
+### Features
+ - MessageExecutionCompleted now logs the MessageId of the corresponding command
+ 
+## 1.1.2
+### Features
+ - Now using Cassandra driver 2.0.3 in Directory.Cassandra
 
 ## 1.1.1
 ### Features
