@@ -430,7 +430,7 @@ namespace Abc.Zebus.Core
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out taskCompletionSource))
                 return;
 
-            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId, message.Payload, transportMessage.Originator) : null;
+            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId, message.Payload, transportMessage) : null;
             var commandResult = new CommandResult(message.ErrorCode, response);
 
             var task = new Task(() => taskCompletionSource.SetResult(commandResult));
@@ -501,10 +501,10 @@ namespace Abc.Zebus.Core
 
         private IMessage ToMessage(TransportMessage transportMessage)
         {
-            return ToMessage(transportMessage.MessageTypeId, transportMessage.MessageBytes, transportMessage.Originator);
+            return ToMessage(transportMessage.MessageTypeId, transportMessage.MessageBytes, transportMessage);
         }
 
-        private IMessage ToMessage(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator)
+        private IMessage ToMessage(MessageTypeId messageTypeId, byte[] messageBytes, TransportMessage transportMessage)
         {
             try
             {
@@ -512,12 +512,12 @@ namespace Abc.Zebus.Core
             }
             catch (Exception exception)
             {
-                HandleDeserializationError(messageTypeId, messageBytes, originator, exception);
+                HandleDeserializationError(messageTypeId, messageBytes, transportMessage.Originator, exception, transportMessage);
             }
             return null;
         }
 
-        private void HandleDeserializationError(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, Exception exception)
+        private void HandleDeserializationError(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, Exception exception, TransportMessage transportMessage)
         {
             var dumpLocation = DumpMessageOnDisk(messageTypeId, messageBytes);
             var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}\r\n{3}", messageTypeId.FullName, originator.SenderId, dumpLocation, exception);
@@ -526,7 +526,7 @@ namespace Abc.Zebus.Core
             if (!_isRunning)
                 return;
 
-            var processingFailed = new CustomProcessingFailed(GetType().FullName, errorMessage, SystemDateTime.UtcNow);
+            var processingFailed = new MessageProcessingFailed(transportMessage,String.Empty, errorMessage, SystemDateTime.UtcNow, null);
             Publish(processingFailed);
         }
 

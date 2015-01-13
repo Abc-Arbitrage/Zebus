@@ -94,6 +94,7 @@
     <Compile Include="Core\BusTests.Dispatch.cs" />
     <Compile Include="Core\BusTests.Publish.cs" />
     <Compile Include="Core\BusTests.Subscribe.cs" />
+    <Compile Include="Core\BusTests.DeserializationErrors.cs" />
     <Compile Include="Core\MessageContextAwareBusTests.cs" />
     <Compile Include="Core\RoundRobinPeerSelectorTests.cs" />
     <Compile Include="Directory\PeerDirectoryClientTests.Performance.cs" />
