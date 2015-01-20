@@ -128,9 +128,9 @@ namespace Abc.Zebus.Core
 
             _directory.Unregister(this);
 
-            _isRunning = false;
-
             _stoppingStrategy.Stop(_transport, _messageDispatcher);
+
+            _isRunning = false;
 
             _subscriptions.Clear();
             _messageIdToTaskCompletionSources.Clear();

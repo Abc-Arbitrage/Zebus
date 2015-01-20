@@ -83,6 +83,7 @@
     <Compile Include="BindingKeyTests.cs" />
     <Compile Include="Comparison\ComparisonExtensionsTests.cs" />
     <Compile Include="Core\BusFactoryTests.cs" />
+    <Compile Include="Core\BusInMemoryTests.cs" />
     <Compile Include="Core\BusManualTests.cs" />
     <Compile Include="Core\BusPerformanceTests.cs" />
     <Compile Include="Core\BusTests.cs" />
