@@ -15,11 +15,11 @@
     <tags></tags>
     <dependencies>
       <dependency id="Zebus" version="$version$" />
-      <dependency id="AutoFixture" version="3.21.0" />
+      <dependency id="AutoFixture" version="3.22.0" />
       <dependency id="CompareNETObjects" version="3.01.0.0" />
       <dependency id="Moq" version="4.2.1409.1722" />
-      <dependency id="Newtonsoft.Json" version="6.0.6" />
-      <dependency id="NUnit" version="2.6.3" />
+      <dependency id="Newtonsoft.Json" version="6.0.8" />
+      <dependency id="NUnit" version="2.6.4" />
       <dependency id="structuremap" version="3.1.4.143" />
     </dependencies>
   </metadata>
