@@ -3,6 +3,12 @@
  - Persistence service
  - Reconsider ZMQ as a transport library
 
+## 1.1.4 
+### Features
+ - Split the "HANDLE" log into "RECV" and "HANDLE"
+### Bug fixes
+ - Directories don't decommission other Directories/self
+ - Starting multiple Buses on the same machine simultaneously could result in identical message ids
 ## 1.1.3
 ### Features
  - MessageExecutionCompleted now logs the MessageId of the corresponding command
