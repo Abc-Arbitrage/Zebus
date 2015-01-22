@@ -3,12 +3,69 @@
  - Persistence service
  - Reconsider ZMQ as a transport library
 
+## 1.2.4
+### Features 
+ - Deserialization errors now produce a `MessageProcessingFailed` instead of a `CustomProcessingFailed` since it makes more sense to handle it like a conventional handler error
+ - NuGet dependencies updated
+### Bug fixes
+ - The handler being run while the Bus shutdown is initiated could not send messages because the Bus was signaled as "Stopped" too early
+ 
+## 1.2.3
+### Features 
+ - Added `Abc.Zebus.Persistence.Tests` to the InternalsVisibleTo list to prepare the release of the Persistence
+
+## 1.2.2
+### Features 
+ - Zebus.Testing: The default object comparer now ignores static fields/properties
+ - Added `Abc.Zebus.Persistence` to the InternalsVisibleTo list to prepare the release of the Persistence
+### Bug fixes
+ - Sending a message with a `null` Routing Key now throws an explicit exception (instead of `NullReferenceException`) 
+
+## 1.2.1
+### Features 
+ - `Abc.Zebus.Lotus.CustomProcessingFailed` is now mutable, allowing users to pool it
+ 
+## 1.2.0
+### Features 
+ - The Pipes move from `Scan\Pipes` to `Dispatch\Pipes` (theoretically a breaking change, but the API is quite internal)
+ - Removed `RoutingType` since it wasn't used
+ - The Bus will now throw if you try to use it before it is started
+ - Moq, ProtoBuf-Net, AutoFixture, Json.Net, NUnit and CompareNetObjects are now referenced as NuGets
+ - The new `MarkPeerAsRespondingCommand`/ `MarkPeerAsNotRespondingCommand` commands allow to mark a Peer as (not) responding (NOT a standard operation, use with care)
+### Bug fixes
+ - The Persistence is now acked when a message cannot be deserialized, to prevent the Persistence from sending it over and over
+ - A race condition could prevent the Bus from starting properly
+
+## 1.1.8
+### Features 
+ - When sending a transient command, `Send()` will throw if the target Peer is not responding
+
+## 1.1.7
+### Features 
+ - A message that cannot be deserialized is now dumped on disk
+ - IProvideQueueLength now exposes a `Purge()` method, that is called when the queue length provider exceeds queue thresholds
+### Bug fixes
+ - Fixed thread-safety issue in MessageDispatch.SetHandled
+ 
+## 1.1.6
+### Features
+ - log4net is now referenced as a NuGet package
+ 
+## 1.1.5
+### Features
+ - The repository is split, from now on Zebus.Directory has its own repository
+ - The MessageContext can be injected in the constructor of a handler
+ - The new SubscriptionModeAttribute allows to control automatic subscriptions more explicitly
+### Bug fixes
+ - The "HANDLE" log is now accurate for async
+ 
 ## 1.1.4 
 ### Features
- - Split the "HANDLE" log into "RECV" and "HANDLE"
+ - Split the "HANDLE" log into "RECV" and "HANDLE", making the distinction between the time a message is received and the time it is handled by user code
 ### Bug fixes
  - Directories don't decommission other Directories/self
  - Starting multiple Buses on the same machine simultaneously could result in identical message ids
+ 
 ## 1.1.3
 ### Features
  - MessageExecutionCompleted now logs the MessageId of the corresponding command
