@@ -13,7 +13,6 @@
 ## 1.2.0
 ### Features
  - Switched external dependencies to NuGet, this change is synchronized with Zebus'.
-### Bug fixes
  
 ## 1.1.7
 ### Bug fixes
