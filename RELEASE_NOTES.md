@@ -6,6 +6,46 @@
  - Persistence service
  - Reconsider ZMQ as a transport library
 
+## 1.2.1
+### Bug fixes
+ - Fix injection configuration issue in the Directory.Standalone project
+ 
+## 1.2.0
+### Features
+ - Switched external dependencies to NuGet, this change is synchronized with Zebus'.
+### Bug fixes
+ 
+## 1.1.7
+### Bug fixes
+ - StoragePeer deserialization is more robust to prevent a crash if the data storage is corrupt
+ 
+## 1.1.6
+### Features
+ - Switched to Cassandra CSharp driver 2.1
+ 
+## 1.1.5
+### Features
+ - The repository is split, from now on Zebus.Directory has its own repository
+ - The MessageContext can be injected in the constructor of a handler
+ - The new SubscriptionModeAttribute allows to control automatic subscriptions more explicitly
+### Bug fixes
+ - The "HANDLE" log is now accurate for async
+ 
+## 1.1.4 
+### Features
+ - Split the "HANDLE" log into "RECV" and "HANDLE", making the distinction between the time a message is received and the time it is handled by user code
+### Bug fixes
+ - Directories don't decommission other Directories/self
+ - Starting multiple Buses on the same machine simultaneously could result in identical message ids
+ 
+## 1.1.3
+### Features
+ - MessageExecutionCompleted now logs the MessageId of the corresponding command
+ 
+## 1.1.2
+### Features
+ - Now using Cassandra driver 2.0.3 in Directory.Cassandra
+ 
 ## 1.1.1
 ### Features
  - Now using libZmq 4.0.4 and providing the matching pdbs in the Zebus repository
