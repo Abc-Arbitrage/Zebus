@@ -70,7 +70,7 @@ We try to stick to the [semantic versioning](http://semver.org/) principles and 
 
 # Copyright
 
-Copyright © 2014 Abc Arbitrage Asset Management
+Copyright © 2015 Abc Arbitrage Asset Management
 
 # License
 
