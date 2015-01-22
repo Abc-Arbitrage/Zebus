@@ -4,7 +4,7 @@ This repository is part of the [Zebus](https://github.com/Abc-Arbitrage/Zebus) p
 
 # Copyright
 
-Copyright © 2014 Abc Arbitrage Asset Management
+Copyright © 2015 Abc Arbitrage Asset Management
 
 # License
 
