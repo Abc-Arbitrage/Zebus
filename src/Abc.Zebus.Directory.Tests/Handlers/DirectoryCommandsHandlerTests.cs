@@ -75,7 +75,20 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             _handler.Handle(registerCommand);
 
             _repositoryMock.Verify(x => x.AddOrUpdatePeer(registerCommand.Peer));
-            _repositoryMock.Verify(x => x.RemoveAllDynamicSubscriptionsForPeer(registerCommand.Peer.PeerId));
+            _repositoryMock.Verify(x => x.RemoveAllDynamicSubscriptionsForPeer(registerCommand.Peer.PeerId, It.Is<DateTime>(d => d == registerCommand.Peer.TimestampUtc.Value)));
+        }
+
+        [Test]
+        public void should_specify_datetime_kind_when_removing_all_subscriptions_for_a_peer_during_register()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            peerDescriptor.TimestampUtc = new DateTime(DateTime.Now.Ticks, DateTimeKind.Unspecified);
+            var registerCommand = new RegisterPeerCommand(peerDescriptor);
+
+            _handler.Handle(registerCommand);
+
+            _repositoryMock.Verify(x => x.AddOrUpdatePeer(registerCommand.Peer));
+            _repositoryMock.Verify(x => x.RemoveAllDynamicSubscriptionsForPeer(registerCommand.Peer.PeerId, It.Is<DateTime>(d => d.Kind == DateTimeKind.Utc)));
         }
 
         [Test]
@@ -256,6 +269,16 @@ namespace Abc.Zebus.Directory.Tests.Handlers
 
             _repositoryMock.Verify(repo => repo.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, now, subscriptionsForTypes));
             _bus.ExpectExactly(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, now, subscriptionsForTypes));
+        }
+
+        [Test]
+        public void should_handle_null_timestamp_when_removing_all_subscriptions_for_a_peer()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            peerDescriptor.TimestampUtc = null;
+            var registerCommand = new RegisterPeerCommand(peerDescriptor);
+
+            Assert.That(() => _handler.Handle(registerCommand), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("The TimestampUtc must me provided when registering"));
         }
 
         [Test]

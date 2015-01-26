@@ -94,7 +94,7 @@ namespace Abc.Zebus.Directory.Storage
                 peerEntry.DynamicSubscriptions = peerEntry.DynamicSubscriptions.Where(sub => !messageTypeIds.Contains(sub.MessageTypeId)).ToList();
         }
 
-        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId)
+        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc)
         {
             var peerEntry = GetEntry(peerId);
             if (peerEntry == null)

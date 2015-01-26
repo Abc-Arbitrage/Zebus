@@ -38,6 +38,9 @@ namespace Abc.Zebus.Directory.Handlers
             if (_blacklistedMachines.Contains(Context.Originator.SenderMachineName))
                 throw new InvalidOperationException("Peer " + Context.Originator.SenderMachineName + " is not allowed to register on this directory");
 
+            if (!message.Peer.TimestampUtc.HasValue)
+                throw new InvalidOperationException("The TimestampUtc must me provided when registering");
+
             var peerDescriptor = message.Peer;
             peerDescriptor.Peer.IsUp = true;
             peerDescriptor.Peer.IsResponding = true;
@@ -46,7 +49,7 @@ namespace Abc.Zebus.Directory.Handlers
             if (IsPeerInConflict(existingPeer, peerDescriptor))
                 throw new DomainException(DirectoryErrorCodes.PeerAlreadyExists, string.Format("Peer {0} already exists (running on {1})", peerDescriptor.PeerId, existingPeer.Peer.EndPoint));
 
-            _peerRepository.RemoveAllDynamicSubscriptionsForPeer(peerDescriptor.PeerId);
+            _peerRepository.RemoveAllDynamicSubscriptionsForPeer(peerDescriptor.PeerId, DateTime.SpecifyKind(peerDescriptor.TimestampUtc.Value, DateTimeKind.Utc));
             _peerRepository.AddOrUpdatePeer(peerDescriptor);
             _bus.Publish(new PeerStarted(peerDescriptor));
 

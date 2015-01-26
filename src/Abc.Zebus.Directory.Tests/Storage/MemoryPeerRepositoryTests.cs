@@ -303,7 +303,7 @@ namespace Abc.Zebus.Directory.Tests.Storage
             _repository.AddDynamicSubscriptionsForTypes(firstPeer.PeerId, DateTime.UtcNow, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
             _repository.AddDynamicSubscriptionsForTypes(secondPeer.PeerId, DateTime.UtcNow, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
 
-            _repository.RemoveAllDynamicSubscriptionsForPeer(secondPeer.PeerId);
+            _repository.RemoveAllDynamicSubscriptionsForPeer(secondPeer.PeerId, secondPeer.TimestampUtc.Value);
 
             var fetched = _repository.GetPeers().ToList();
             fetched.Count.ShouldEqual(2);

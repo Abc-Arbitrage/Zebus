@@ -122,6 +122,21 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
+        public void should_not_use_local_time_to_remove_dynamic_subscriptions()
+        {
+            var utcDateInThePast = DateTime.Now.AddDays(-1).ToUniversalTime();
+            var peerInThePast = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            peerInThePast.TimestampUtc = utcDateInThePast.RoundToMillisecond();
+
+            _repository.RemoveAllDynamicSubscriptionsForPeer(_peer1.Id, peerInThePast.TimestampUtc.Value);
+            _repository.AddOrUpdatePeer(peerInThePast);
+            _repository.AddDynamicSubscriptionsForTypes(peerInThePast.PeerId, peerInThePast.TimestampUtc.Value.AddMilliseconds(1), new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
+
+            var retrievedPeer = _repository.GetPeers().ExpectedSingle();
+            retrievedPeer.Subscriptions.Length.ShouldEqual(2);
+        }
+
+        [Test]
         public void should_get_a_peer_with_no_subscriptions_using_GetPeers()
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
@@ -270,10 +285,10 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             var secondPeer = _peer2.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(firstPeer);
             _repository.AddOrUpdatePeer(secondPeer);
-            _repository.AddDynamicSubscriptionsForTypes(firstPeer.PeerId, DateTime.UtcNow, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
-            _repository.AddDynamicSubscriptionsForTypes(secondPeer.PeerId, DateTime.UtcNow, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
+            _repository.AddDynamicSubscriptionsForTypes(firstPeer.PeerId, secondPeer.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
+            _repository.AddDynamicSubscriptionsForTypes(secondPeer.PeerId, secondPeer.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
 
-            _repository.RemoveAllDynamicSubscriptionsForPeer(secondPeer.PeerId);
+            _repository.RemoveAllDynamicSubscriptionsForPeer(secondPeer.PeerId, secondPeer.TimestampUtc.Value.AddMilliseconds(1));
 
             var fetched = _repository.GetPeers().ToList();
             fetched.Count.ShouldEqual(2);

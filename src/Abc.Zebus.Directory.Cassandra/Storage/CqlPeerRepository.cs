@@ -136,13 +136,13 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             batch.Execute();
         }
 
-        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId)
+        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc)
         {
             _dataContext.DynamicSubscriptions
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
                         .Where(sub => sub.UselessKey == false && sub.PeerId == peerId.ToString())
                         .Delete()
-                        .SetTimestamp(DateTime.UtcNow)
+                        .SetTimestamp(timestampUtc)
                         .Execute();
         }
     }
