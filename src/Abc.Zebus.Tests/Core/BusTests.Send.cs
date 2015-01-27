@@ -95,7 +95,7 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
-        public void should_throw_when_handling_a_transient_command_and_peer_is_not_responding()
+        public void should_throw_when_sending_a_transient_command_to_a_non_responding_peer()
         {
             var command = new FakeNonPersistentCommand(456);
             var peer = new Peer(new PeerId("Abc.Testing.Peer1"), "Peer1Endpoint", true, isResponding: false);
@@ -104,6 +104,18 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
 
             Assert.Throws<InvalidOperationException>(() => _bus.Send(command));
+        }
+
+        [Test]
+        public void should_not_throw_when_sending_a_transient_infrastructure_command_to_a_non_responding_peer()
+        {
+            var command = new FakeInfrastructureTransientCommand();
+            var peer = new Peer(new PeerId("Abc.Testing.Peer1"), "Peer1Endpoint", true, isResponding: false);
+            SetupPeersHandlingMessage<FakeInfrastructureTransientCommand>(new[] { peer });
+
+            _bus.Start();
+
+            Assert.DoesNotThrow(() => _bus.Send(command));
         }
 
         [Test]
