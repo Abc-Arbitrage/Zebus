@@ -22,10 +22,13 @@ Thumbs.db
 [Dd]ebug*/
 *.lib
 *.sbr
+*.ncrunchproject
+*.ncrunchsolution
 obj/
 [Rr]elease*/
 _ReSharper*/
 [Tt]est[Rr]esult*
 output/**
 
+src/_NCrunch_Abc.Zebus/**
 src/packages/**

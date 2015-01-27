@@ -175,7 +175,7 @@ namespace Abc.Zebus.Directory
         {
             var subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
 
-            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, (key) => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex), (key, entry) =>
+            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, key => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex), (key, entry) =>
             {
                 entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
                 entry.Peer.IsUp = peerDescriptor.Peer.IsUp;
@@ -230,12 +230,12 @@ namespace Abc.Zebus.Directory
                 return;
 
             var peer = GetPeerCheckTimestamp(message.PeerId, message.TimestampUtc);
-            if (peer == null)
+            if (peer.Value == null)
                 return;
 
-            peer.Peer.IsUp = false;
-            peer.Peer.IsResponding = false;
-            peer.TimestampUtc = message.TimestampUtc ?? DateTime.UtcNow;
+            peer.Value.Peer.IsUp = false;
+            peer.Value.Peer.IsResponding = false;
+            peer.Value.TimestampUtc = message.TimestampUtc ?? DateTime.UtcNow;
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Stopped);
         }
@@ -260,11 +260,14 @@ namespace Abc.Zebus.Directory
                 return;
             
             var peer = GetPeerCheckTimestamp(message.PeerDescriptor.Peer.Id, message.PeerDescriptor.TimestampUtc);
-            if (peer == null)
+            if (peer.Value == null)
+            {
+                WarnWhenPeerDoesNotExist(peer, message.PeerDescriptor.PeerId);
                 return;
+            }
 
-            peer.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
-            peer.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
+            peer.Value.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
+            peer.Value.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
             PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
         }
@@ -274,13 +277,22 @@ namespace Abc.Zebus.Directory
             if (EnqueueIfRegistering(message))
                 return;
 
-            var peer = _peers.GetValueOrDefault(message.PeerId);
-            if (peer == null)
+            var peer = GetPeerCheckTimestamp(message.PeerId, message.TimestampUtc);
+            if (peer.Value == null)
+            {
+                WarnWhenPeerDoesNotExist(peer, message.PeerId);
                 return;
+            }
 
-            peer.SetSubscriptionsForType(message.SubscriptionsForType ?? Enumerable.Empty<SubscriptionsForType>(), message.TimestampUtc);
+            peer.Value.SetSubscriptionsForType(message.SubscriptionsForType ?? Enumerable.Empty<SubscriptionsForType>(), message.TimestampUtc);
 
             PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
+        }
+
+        private void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
+        {
+            if (peer.FailureReason == PeerEntryResult.FailureReasonType.PeerNotPresent)
+                _logger.WarnFormat("Received message but no peer existed: {0}", peerId);
         }
 
         public void Handle(PeerNotResponding message)
@@ -304,19 +316,41 @@ namespace Abc.Zebus.Directory
             PeerUpdated(peerId, PeerUpdateAction.Updated);
         }
 
-        private PeerEntry GetPeerCheckTimestamp(PeerId peerId, DateTime? timestampUtc)
+        private PeerEntryResult GetPeerCheckTimestamp(PeerId peerId, DateTime? timestampUtc)
         {
             var peer = _peers.GetValueOrDefault(peerId);
             if (peer == null)
-                return null;
+                return new PeerEntryResult(PeerEntryResult.FailureReasonType.PeerNotPresent);
 
             if (peer.TimestampUtc > timestampUtc)
             {
                 _logger.InfoFormat("Outdated message ignored");
-                return null;
+                return new PeerEntryResult(PeerEntryResult.FailureReasonType.OutdatedMessage);
             }
 
-            return peer;
+            return new PeerEntryResult(peer);
+        }
+
+        struct PeerEntryResult
+        {
+            internal enum FailureReasonType
+            {
+                PeerNotPresent,
+                OutdatedMessage,
+            }
+
+            public PeerEntryResult(PeerEntry value) : this()
+            {
+                Value = value;
+            }
+
+            public PeerEntryResult(FailureReasonType failureReason) : this()
+            {
+                FailureReason = failureReason;
+            }
+
+            public PeerEntry Value { get; private set; }
+            public FailureReasonType? FailureReason { get; private set; }
         }
     }
 }

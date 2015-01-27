@@ -174,6 +174,46 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
+        public void should_discard_outdated_updates_on_PeerSubscriptionsUpdated()
+        {
+            int updates = 0;
+            _directory.PeerUpdated += (id, action) => updates++;
+
+            var descriptor1 = _otherPeer.ToPeerDescriptor(true);
+            descriptor1.TimestampUtc = DateTime.UtcNow;
+            _directory.Handle(new PeerStarted(descriptor1));
+
+            var descriptor2 = _otherPeer.ToPeerDescriptor(true, typeof(FakeCommand));
+            descriptor2.TimestampUtc = DateTime.UtcNow;
+            _directory.Handle(new PeerSubscriptionsUpdated(descriptor2));
+            
+            descriptor2.TimestampUtc = default(DateTime);
+            _directory.Handle(new PeerSubscriptionsUpdated(descriptor2));
+
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
+
+            updates.ShouldEqual(2);
+        }
+
+        [Test]
+        public void should_discard_outdated_updates_on_PeerSubscriptionsForTypesUpdated()
+        {
+            int updates = 0;
+            _directory.PeerUpdated += (id, action) => updates++;
+
+            var peerDescriptor = _otherPeer.ToPeerDescriptor(true);
+            peerDescriptor.TimestampUtc = DateTime.UtcNow;
+            _directory.Handle(new PeerStarted(peerDescriptor));
+
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, DateTime.UtcNow, MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, default(DateTime), MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
+
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
+
+            updates.ShouldEqual(2);
+        }
+
+        [Test]
         public void should_update_started_peer_with_no_timestamp_on_PeerSubscriptionsForTypesUpdated()
         {
             var peerDescriptor = _otherPeer.ToPeerDescriptor(true);
