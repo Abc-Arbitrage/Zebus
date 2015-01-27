@@ -1,5 +1,4 @@
-﻿using Abc.Zebus.Directory.Cassandra.Cql;
-using Abc.Zebus.Directory.Storage;
+﻿using Abc.Zebus.Directory.Storage;
 using Cassandra;
 using Cassandra.Data.Linq;
 using System;

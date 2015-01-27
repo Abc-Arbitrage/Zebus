@@ -304,6 +304,25 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
                 CreateSubscriptionFor<FakeCommand>()
             });
         }
+
+        [Test]
+        public void should_use_specified_timestamp_to_remove_dynamic_subscriptions()
+        {
+            var peer = _peer1.ToPeerDescriptor(true);
+            var subscriptionsForType = CreateSubscriptionsForType<FakeCommand>(new BindingKey("X"));
+
+            _repository.AddOrUpdatePeer(peer);
+            _repository.AddDynamicSubscriptionsForTypes(peer.PeerId, peer.TimestampUtc.Value.AddMilliseconds(1), new[] { subscriptionsForType });
+
+            using (SystemDateTime.Set(utcNow: DateTime.UtcNow.AddHours(1)))
+            {
+                _repository.RemoveAllDynamicSubscriptionsForPeer(peer.PeerId, peer.TimestampUtc.Value.AddMilliseconds(2));
+            }
+            
+            _repository.AddDynamicSubscriptionsForTypes(peer.PeerId, peer.TimestampUtc.Value.AddMilliseconds(3), new[] { subscriptionsForType });
+
+            var fetched = _repository.GetPeers().ExpectedSingle();
+            fetched.Subscriptions.ShouldNotBeEmpty();
+        }
     }
 }
-
