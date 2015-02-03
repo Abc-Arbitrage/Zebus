@@ -22,6 +22,12 @@ namespace Abc.Zebus.Tests.Util
         }
 
         [Test]
+        public void should_resolve_type_from_exe_assembly()
+        {
+            Assert.That(TypeUtil.Resolve("Abc.Zebus.Tests.TestExe.Program"), Is.Not.Null);
+        }
+
+        [Test]
         public void should_resolve_generic_types()
         {
             var localNamespace = typeof(TypeUtilTests).Namespace;

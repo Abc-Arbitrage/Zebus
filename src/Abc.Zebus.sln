@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus", "Abc.Zebus\Abc.Zebus.csproj", "{1F4C6307-6113-40D5-BF42-4B6BF5DF13B2}"
 EndProject
@@ -37,6 +37,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Zebus.Directory", "Zebus.Di
 	ProjectSection(SolutionItems) = preProject
 		..\build\nuget\tools\Zebus.Directory\readme.txt = ..\build\nuget\tools\Zebus.Directory\readme.txt
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Tests.TestExe", "Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj", "{652017D8-EB34-4A79-B14F-DB0477E43915}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -89,6 +91,18 @@ Global
 		{4CE123DF-8021-411C-929B-53E5C5FC1E04}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{4CE123DF-8021-411C-929B-53E5C5FC1E04}.Release|x64.ActiveCfg = Release|Any CPU
 		{4CE123DF-8021-411C-929B-53E5C5FC1E04}.Release|x86.ActiveCfg = Release|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Release|Any CPU.Build.0 = Release|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Release|x64.ActiveCfg = Release|Any CPU
+		{652017D8-EB34-4A79-B14F-DB0477E43915}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

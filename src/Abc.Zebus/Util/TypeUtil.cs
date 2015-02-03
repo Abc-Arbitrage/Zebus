@@ -76,7 +76,13 @@ namespace Abc.Zebus.Util
         {
             static AssemblyLoader()
             {
-                foreach (var assemblyPath in System.IO.Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "Abc.*.dll"))
+                LoadAssemblies("dll");
+                LoadAssemblies("exe");
+            }
+
+            private static void LoadAssemblies(string extension)
+            {
+                foreach (var assemblyPath in System.IO.Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "Abc.*." + extension))
                 {
                     var assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
                     try

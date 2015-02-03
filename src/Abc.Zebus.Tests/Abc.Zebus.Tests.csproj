@@ -206,6 +206,10 @@
       <Project>{4ce123df-8021-411c-929b-53e5c5fc1e04}</Project>
       <Name>Abc.Zebus.Testing</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj">
+      <Project>{652017d8-eb34-4a79-b14f-db0477e43915}</Project>
+      <Name>Abc.Zebus.Tests.TestExe</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj">
       <Project>{1f4c6307-6113-40d5-bf42-4b6bf5df13b2}</Project>
       <Name>Abc.Zebus</Name>
