@@ -18,15 +18,14 @@ namespace Abc.Zebus
         }
 
         public DomainException(Enum enumVal, params object[] values)
-            : base(string.Format(enumVal.GetAttributeDescription(), values))
+            : this (Convert.ToInt32(enumVal), enumVal.GetAttributeDescription(), values)
         {
-            ErrorCode = Convert.ToInt32(enumVal);
         }
 
         public DomainException(Expression<Func<int>> errorCodeExpression, params object[] values)
-            : base(string.Format(ReadDescriptionFromAttribute(errorCodeExpression), values))
+            : this (errorCodeExpression.Compile()(), ReadDescriptionFromAttribute(errorCodeExpression), values)
+   
         {
-            ErrorCode = errorCodeExpression.Compile()();
         }
 
         static string ReadDescriptionFromAttribute(Expression<Func<int>> errorCodeExpression)
