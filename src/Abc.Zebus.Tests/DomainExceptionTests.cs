@@ -79,7 +79,7 @@ namespace Abc.Zebus.Tests
             SomeErrorValue = 1,
             [System.ComponentModel.Description("This is a fake error message with a formatted parameter {0}")]
             AnotherErrorValue = 2,
-            AnotherAnotherErrorValue = 3
+            YetAnotherErrorValue = 3
         }
 
         [Test]
@@ -103,9 +103,9 @@ namespace Abc.Zebus.Tests
         [Test]
         public void should_not_fail_if_enum_attribute_is_not_defined()
         {
-            var ex = new DomainException(FakeEnumErrorCode.AnotherAnotherErrorValue);
+            var ex = new DomainException(FakeEnumErrorCode.YetAnotherErrorValue);
 
-            ex.ErrorCode.ShouldEqual((int)FakeEnumErrorCode.AnotherAnotherErrorValue);
+            ex.ErrorCode.ShouldEqual((int)FakeEnumErrorCode.YetAnotherErrorValue);
             ex.Message.ShouldEqual(string.Empty);
         }
     }

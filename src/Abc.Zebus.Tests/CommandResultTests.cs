@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Abc.Zebus.Testing.Extensions;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests
@@ -20,7 +20,7 @@ namespace Abc.Zebus.Tests
         {
             var cmdResult = new CommandResult(0, null);
 
-            Assert.AreEqual(string.Empty, cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>());
+            cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>().ShouldBeEmpty();
         }
 
         [Test]
@@ -28,7 +28,7 @@ namespace Abc.Zebus.Tests
         {
             var cmdResult = new CommandResult((int)FakeEnumErrorCode.SomeErrorValue, null);
 
-            Assert.AreEqual("This is a fake error message", cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>());
+            cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>().ShouldEqual("This is a fake error message");
         }
 
         [Test]
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Tests
         {
             var cmdResult = new CommandResult((int)FakeEnumErrorCode.SomeErrorValueWithFormat, null);
 
-            Assert.AreEqual("This is a fake formated error message", cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>("formated"));
+            cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>("formated").ShouldEqual("This is a fake formated error message");
         }
 
         [Test]
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Tests
         {
             var cmdResult = new CommandResult((int)FakeEnumErrorCode.NoDescriptionErrorValue, null);
 
-            Assert.AreEqual(string.Empty, cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>());
+            cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>().ShouldBeEmpty();
         }
     }
 }
