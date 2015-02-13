@@ -55,6 +55,17 @@ namespace Abc.Zebus.Tests
             Measure.Execution(1000000, () => BindingKey.Create(message));
         }
 
+        [Test]
+        public void should_send_routing_key_exception()
+        {
+            var msg = new FakeRoutableCommand(0, null);
+
+            var exception = Assert.Throws<InvalidOperationException>(() => BindingKey.Create(msg));
+            exception.Message.ShouldContain(typeof(FakeRoutableCommand).Name);
+            exception.Message.ShouldContain("Name");
+            exception.Message.ShouldContain("can not be null");
+        }
+
         [Routable]
         public class FakeRoutableCommandWithProperties : ICommand
         {

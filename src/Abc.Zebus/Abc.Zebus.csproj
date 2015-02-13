@@ -219,6 +219,7 @@
     <Compile Include="Util\DisposableAction.cs" />
     <Compile Include="Util\Extensions\ExtendDictionary.cs" />
     <Compile Include="Util\Extensions\ExtendICollection.cs" />
+    <Compile Include="Util\Extensions\ExtendEnum.cs" />
     <Compile Include="Util\Extensions\ExtendIEnumerable.cs" />
     <Compile Include="Util\Extensions\ExtendString.cs" />
     <Compile Include="Util\Extensions\ExtendType.cs" />

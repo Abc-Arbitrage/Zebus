@@ -72,5 +72,41 @@ namespace Abc.Zebus.Tests
             ex.ErrorCode.ShouldEqual(3712);
             ex.Message.ShouldEqual(string.Empty);
         }
+
+        private enum FakeEnumErrorCode
+        {
+            [System.ComponentModel.Description("This is a fake error message")]
+            SomeErrorValue = 1,
+            [System.ComponentModel.Description("This is a fake error message with a formatted parameter {0}")]
+            AnotherErrorValue = 2,
+            YetAnotherErrorValue = 3
+        }
+
+        [Test]
+        public void should_obtain_error_message_via_enum_attribute()
+        {
+            var ex = new DomainException(FakeEnumErrorCode.SomeErrorValue);
+
+            ex.ErrorCode.ShouldEqual((int)FakeEnumErrorCode.SomeErrorValue);
+            ex.Message.ShouldEqual("This is a fake error message");
+        }
+
+        [Test]
+        public void should_obtain_error_message_via_enum_attribute_with_formatted_parameter()
+        {
+            var ex = new DomainException(FakeEnumErrorCode.AnotherErrorValue, "formatted param");
+
+            ex.ErrorCode.ShouldEqual((int)FakeEnumErrorCode.AnotherErrorValue);
+            ex.Message.ShouldEqual("This is a fake error message with a formatted parameter formatted param");
+        }
+
+        [Test]
+        public void should_not_fail_if_enum_attribute_is_not_defined()
+        {
+            var ex = new DomainException(FakeEnumErrorCode.YetAnotherErrorValue);
+
+            ex.ErrorCode.ShouldEqual((int)FakeEnumErrorCode.YetAnotherErrorValue);
+            ex.Message.ShouldEqual(string.Empty);
+        }
     }
 }
