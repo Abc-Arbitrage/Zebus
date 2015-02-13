@@ -1,6 +1,5 @@
-﻿using System;
-using System.ComponentModel;
-using Abc.Zebus.Util.Extensions;
+﻿using Abc.Zebus.Util.Extensions;
+using System;
 
 namespace Abc.Zebus
 {
@@ -27,18 +26,7 @@ namespace Abc.Zebus
 
             var value = (T)Enum.Parse(typeof(T), ErrorCode.ToString());
 
-            return string.Format(GetDescriptionFromEnum<T>(value), formatValues);
-        }
-
-        private string GetDescriptionFromEnum<T>(T value) where T : struct, IConvertible, IFormattable, IComparable
-        {
-            var memInfo = typeof(T).GetMember(value.ToString());
-
-            var descAttr = memInfo[0].GetAttribute<DescriptionAttribute>(false);
-            if (descAttr == null)
-                return string.Empty;
-
-            return descAttr.Description;
+            return string.Format(((Enum)(object)value).GetAttributeDescription(), formatValues);
         }
     }
 }
