@@ -39,7 +39,7 @@ namespace Abc.Zebus.Directory.Handlers
                 throw new InvalidOperationException("Peer " + Context.Originator.SenderMachineName + " is not allowed to register on this directory");
 
             if (!message.Peer.TimestampUtc.HasValue)
-                throw new InvalidOperationException("The TimestampUtc must me provided when registering");
+                throw new InvalidOperationException("The TimestampUtc must be provided when registering");
 
             var peerDescriptor = message.Peer;
             peerDescriptor.Peer.IsUp = true;
