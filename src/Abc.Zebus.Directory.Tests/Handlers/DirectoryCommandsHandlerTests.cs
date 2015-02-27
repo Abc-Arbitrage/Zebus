@@ -278,7 +278,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             peerDescriptor.TimestampUtc = null;
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
 
-            Assert.That(() => _handler.Handle(registerCommand), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("The TimestampUtc must me provided when registering"));
+            Assert.That(() => _handler.Handle(registerCommand), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("The TimestampUtc must be provided when registering"));
         }
 
         [Test]
