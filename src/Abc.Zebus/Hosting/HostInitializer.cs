@@ -1,7 +1,12 @@
 ﻿using StructureMap;
 
-namespace Abc.Zebus
+namespace Abc.Zebus.Hosting
 {
+    /// <summary>
+    /// The host initializer is a mechanism that can be used to invoke code before
+    /// and after the bus start and stop, provided you use HostInitializerHelper in your
+    /// runtime implementation
+    /// </summary>
     public abstract class HostInitializer
     {
         /// <summary>

@@ -121,6 +121,8 @@
     <Compile Include="Dispatch\DispatchMessages\RoutableCommandHandler.cs" />
     <Compile Include="Dispatch\DispatchMessages\SyncCommandHandlerWithQueueName2.cs" />
     <Compile Include="DomainExceptionTests.cs" />
+    <Compile Include="Hosting\HostInitializerHelperTests.cs" />
+    <Compile Include="Hosting\PeriodicActionHostInitializerTests.cs" />
     <Compile Include="Initialization\ZebusRegistryTests.cs" />
     <Compile Include="Lotus\ReplayMessageHandlerTests.cs" />
     <Compile Include="MessageContextTests.cs" />

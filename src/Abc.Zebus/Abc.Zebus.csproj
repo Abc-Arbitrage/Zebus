@@ -102,7 +102,9 @@
     <Compile Include="Dispatch\IMessageDispatchFactory.cs" />
     <Compile Include="Dispatch\IMessageHandlerInvocation.cs" />
     <Compile Include="BusExtensions.cs" />
-    <Compile Include="HostInitializer.cs" />
+    <Compile Include="Hosting\HostInitializer.cs" />
+    <Compile Include="Hosting\HostInitializerHelper.cs" />
+    <Compile Include="Hosting\PeriodicActionHostInitializer.cs" />
     <Compile Include="IMultiEventHandler.cs" />
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
