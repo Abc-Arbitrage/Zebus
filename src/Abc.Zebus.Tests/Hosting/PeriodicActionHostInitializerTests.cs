@@ -13,6 +13,13 @@ namespace Abc.Zebus.Tests.Hosting
     public class PeriodicActionHostInitializerTests
     {
         [Test]
+        public void should_return_period()
+        {
+            var periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
+            periodicInitializer.Object.Period.ShouldEqual(20.Milliseconds());
+        }
+
+        [Test]
         public void should_call_the_periodic_action()
         {
             var callCount = 0;
