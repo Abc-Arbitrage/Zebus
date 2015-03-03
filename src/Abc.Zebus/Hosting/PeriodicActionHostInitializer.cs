@@ -30,7 +30,7 @@ namespace Abc.Zebus.Hosting
 
         public abstract void DoPeriodicAction();
 
-        public TimeSpan Period { get; protected set; }
+        public TimeSpan Period { get { return _period; } }
         public bool ErrorPublicationEnabled { get; set; }
         public int ErrorCountBeforePause { get; set; }
         public TimeSpan ErrorPauseDuration { get; set; }
