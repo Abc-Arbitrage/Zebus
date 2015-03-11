@@ -247,6 +247,16 @@ namespace Abc.Zebus.Testing
             };
         }
 
+        public void AddHandlerThatThrowsDomainException<TMessage>(DomainException ex) where TMessage : IMessage
+        {
+            _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex; };
+        }
+
+        public void AddHandlerThatThrows<TMessage>(Exception ex = null) where TMessage : IMessage
+        {
+            _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex ?? new Exception(); };
+        }
+
         public void Expect(IEnumerable<IMessage> expectedMessages)
         {
             _messageComparer.CheckExpectations(Messages, expectedMessages, false);
