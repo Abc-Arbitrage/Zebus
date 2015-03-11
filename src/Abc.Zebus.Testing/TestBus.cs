@@ -247,12 +247,12 @@ namespace Abc.Zebus.Testing
             };
         }
 
-        public void AddDomainExceptionHandler<TMessage>(DomainException ex) where TMessage : IMessage
+        public void AddHandlerThatThrowsDomainException<TMessage>(DomainException ex) where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex; };
         }
 
-        public void AddExceptionHandler<TMessage>(Exception ex = null) where TMessage : IMessage
+        public void AddHandlerThatThrows<TMessage>(Exception ex = null) where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex ?? new Exception(); };
         }
