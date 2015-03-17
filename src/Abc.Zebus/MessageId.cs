@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
+using System.Threading;
 using Abc.Zebus.Util;
 using ProtoBuf;
 
@@ -66,6 +67,18 @@ namespace Abc.Zebus
         {
             _pausedId = CreateNewSequentialId();
             return new DisposableAction(() => _pausedId = null);
+        }
+
+        public static IDisposable PauseIdGenerationAtDate(DateTime utcDatetime)
+        {
+            var systemDatetimeContext = SystemDateTime.Set(utcNow: utcDatetime);
+            var messageIdContext = PauseIdGeneration();
+
+            return new DisposableAction(() =>
+            {
+                messageIdContext.Dispose();
+                systemDatetimeContext.Dispose();
+            });
         }
 
         public static void ResetLastTimestamp()

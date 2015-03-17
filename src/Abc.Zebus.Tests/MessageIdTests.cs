@@ -93,10 +93,29 @@ namespace Abc.Zebus.Tests
             unpausedId.Value.ShouldNotEqual(pausedId.Value);
         }
 
+        [Test]
+        [Repeat(20)]
+        public void should_pause_id_generation_at_given_date()
+        {
+            MessageId.ResetLastTimestamp();
+            MessageId pausedId;
+            var dateInThePast = DateTime.UtcNow.Date.AddDays(-10);
+            using (MessageId.PauseIdGenerationAtDate(dateInThePast))
+            {
+                pausedId = MessageId.NextId();
+                pausedId.GetDateTime().ShouldEqual(dateInThePast);
+                MessageId.NextId().Value.ShouldEqual(pausedId.Value);
+            }
+
+            var unpausedId = MessageId.NextId();
+            unpausedId.Value.ShouldNotEqual(pausedId.Value);
+            SystemDateTime.Today.ShouldEqual(DateTime.Today);
+        }
+
         [Test, Repeat(20)]
         public void should_convert_message_id_to_DateTime()
         {
-            Thread.Sleep(1); // To ensure that noone called NextId() in this millisecond, because MessageId has a static state and would increment its value
+            MessageId.ResetLastTimestamp();
             using (SystemDateTime.PauseTime())
             {
                 var id = MessageId.NextId();
