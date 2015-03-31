@@ -12,7 +12,7 @@ namespace Abc.Zebus.Testing.Directory
     {
         public readonly ConcurrentDictionary<PeerId, PeerDescriptor> Peers = new ConcurrentDictionary<PeerId, PeerDescriptor>();
         public Peer Self;
-        private Peer _remote = new Peer(new PeerId("remote"), "endpoint");
+        private readonly Peer _remote = new Peer(new PeerId("remote"), "endpoint");
 
         public event Action Registered = delegate { };
         public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
@@ -33,6 +33,7 @@ namespace Abc.Zebus.Testing.Directory
 
         public void Unregister(IBus bus)
         {
+            PeerUpdated(Self.Id, PeerUpdateAction.Stopped);
         }
 
         public void RegisterRemoteListener<TMEssage>() where TMEssage : IMessage
