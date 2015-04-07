@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
@@ -236,6 +239,47 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
             
             subscriptions.Count.ShouldEqual(0);
+        }
+
+        [Test]
+        public void subscriptions_sent_to_the_directory_should_always_be_more_recent_than_the_previous()
+        {
+            const int threadCount = 10;
+            const int subscriptionCountPerThread = 100;
+
+            var highestSubscriptionVersionOnEachUpdate = new ConcurrentQueue<int>();
+            CaptureHighestVersionOnUpdate(highestSubscriptionVersionOnEachUpdate);
+
+            SendParallelSubscriptionUpdates(threadCount, subscriptionCountPerThread);
+
+            var callOrder = highestSubscriptionVersionOnEachUpdate.ToList();
+            for (var i = 0; i < highestSubscriptionVersionOnEachUpdate.Count - 1; i++)
+                callOrder[i].ShouldBeLessOrEqualThan(callOrder[i + 1]);
+        }
+
+        private void SendParallelSubscriptionUpdates(int threadCount, int subscriptionCountPerThread)
+        {
+            var subscriptionVersion = 0;
+            var subscribertasks = Enumerable.Range(0, threadCount).Select(ite => Task.Factory.StartNew(() =>
+            {
+                for (var i = 0; i < subscriptionCountPerThread; ++i)
+                {
+                    var currentVersion = Interlocked.Increment(ref subscriptionVersion);
+                    _bus.Subscribe(new[] { new Subscription(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey(currentVersion.ToString(), string.Empty)) }, SubscriptionOptions.ThereIsNoHandlerButIKnowWhatIAmDoing);
+                }
+            })).ToArray();
+
+            Task.WaitAll(subscribertasks);
+        }
+
+        private void CaptureHighestVersionOnUpdate(ConcurrentQueue<int> highestSubscriptionVersionOnEachUpdate)
+        {
+            _directoryMock.Setup(dir => dir.Update(It.IsAny<IBus>(), It.IsAny<IEnumerable<Subscription>>())).Callback(
+                (IBus bus, IEnumerable<Subscription> subs) =>
+                {
+                    var highestSubscriptionVersionNumber = subs.Select(x => int.Parse(x.BindingKey.GetPart(0))).OrderBy(x => x).Last();
+                    highestSubscriptionVersionOnEachUpdate.Enqueue(highestSubscriptionVersionNumber);
+                });
         }
     }
 }
