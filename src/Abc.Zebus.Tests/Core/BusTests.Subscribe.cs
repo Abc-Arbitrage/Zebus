@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -31,8 +32,22 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
             _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
             subscriptions.Count.ShouldEqual(2);
-            subscriptions[1].MessageTypeId.ShouldEqual(MessageUtil.TypeId<FakeRoutableCommand>());
-            subscriptions[1].BindingKeys[0].ShouldEqual(new BindingKey("1", "name", "*"));
+            subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey("1", "name", "*")));
+        }
+
+        [Test]
+        public void should_resend_existing_bindings_when_making_a_new_subscription_to_a_type()
+        {
+            AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
+            _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "firstRoutingValue")));
+            var subscriptions = new List<SubscriptionsForType>();
+            _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+            _bus.Start();
+
+            _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "secondRoutingValue")));
+
+            subscriptions.Count.ShouldEqual(1);
+            subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey("1", "firstRoutingValue", "*"), new BindingKey("1", "secondRoutingValue", "*")));
         }
 
         [Test]
@@ -51,11 +66,10 @@ namespace Abc.Zebus.Tests.Core
             subscriptions.Add(Subscription.ByExample(x => new FakeRoutableCommand(2, "name")));
 
             _bus.Subscribe(subscriptions.ToArray());
-            var directorySubscription = directorySubscriptions.ExpectedSingle();
-            directorySubscription.MessageTypeId.ShouldEqual(MessageUtil.TypeId<FakeRoutableCommand>());
-            directorySubscription.BindingKeys[0].ShouldEqual(new BindingKey("1", "name", "*"));
-            directorySubscription.BindingKeys[1].ShouldEqual(new BindingKey("1", "toto", "*"));
-            directorySubscription.BindingKeys[2].ShouldEqual(new BindingKey("2", "name", "*"));
+            directorySubscriptions.ExpectedSingle()
+                                  .ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey("1", "name", "*"),
+                                                                                                                   new BindingKey("1", "toto", "*"),
+                                                                                                                   new BindingKey("2", "name", "*")));
         }
 
         [Test]

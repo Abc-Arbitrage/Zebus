@@ -113,7 +113,7 @@ namespace Abc.Zebus.Directory
 
         public void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
         {
-            var command = new UpdatePeerSubscriptionsCommand(_self.Id, subscriptionsForTypes.SelectMany(x => x.ToSubscriptions()).ToArray(), _timestampProvider.NextUtcTimestamp());
+            var command = new UpdatePeerSubscriptionsForTypesCommand(_self.Id, _timestampProvider.NextUtcTimestamp(), subscriptionsForTypes.ToArray());
             var directoryPeers = GetDirectoryPeers();
             if (!directoryPeers.Any(peer => bus.Send(command, peer).Wait(5.Seconds())))
                 throw new TimeoutException("Unable to update peer subscriptions on directory");
