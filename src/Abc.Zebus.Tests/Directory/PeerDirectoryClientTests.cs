@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Testing.Directory;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
@@ -109,7 +110,7 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Register(_bus, _self, new Subscription[0]);
 
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
-            _directory.Update(_bus, subscriptions);
+            _directory.UpdateSubscriptions(_bus, subscriptions.GroupIntoSubscriptionsForTypes());
 
             var command = _bus.Commands.OfType<UpdatePeerSubscriptionsCommand>().Single();
             command.PeerId.ShouldEqual(_self.Id);
@@ -125,7 +126,7 @@ namespace Abc.Zebus.Tests.Directory
 
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
             for (var i = 0; i < 100; ++i)
-                _directory.Update(_bus, subscriptions);
+                _directory.UpdateSubscriptions(_bus, subscriptions.GroupIntoSubscriptionsForTypes());
 
 
             var commands = _bus.Commands.OfType<UpdatePeerSubscriptionsCommand>();
@@ -148,7 +149,7 @@ namespace Abc.Zebus.Tests.Directory
             for (int i = 0; i < 100; i++)
             {
                 var subscriptions = new[] { new Subscription(MessageUtil.TypeId<FakeCommand>(), new BindingKey(i.ToString())) };
-                _directory.Update(_bus, subscriptions);
+                _directory.UpdateSubscriptions(_bus, subscriptions.GroupIntoSubscriptionsForTypes());
 
                 var command = _bus.Commands.OfType<UpdatePeerSubscriptionsCommand>().Single();
                 command.TimestampUtc.Value.ShouldBeGreaterThan(lastTimestamp);

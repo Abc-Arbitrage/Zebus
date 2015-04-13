@@ -307,7 +307,8 @@ namespace Abc.Zebus.Core
 
         protected void OnSubscriptionsUpdated()
         {
-            _directory.Update(this, GetSubscriptions());
+            var subscriptions = GetSubscriptions().GroupBy(sub => sub.MessageTypeId).Select(grp => new SubscriptionsForType(grp.Key, grp.Select(sub => sub.BindingKey).ToArray()));
+            _directory.UpdateSubscriptions(this, subscriptions);
         }
 
         public void Reply(int errorCode)
