@@ -279,22 +279,26 @@ namespace Abc.Zebus.Core
 
         private void AddSubscriptions(IEnumerable<Subscription> subscriptions)
         {
+            var updatedTypes = new HashSet<MessageTypeId>();
             lock (_subscriptions)
             {
                 foreach (var subscription in subscriptions)
                 {
+                    updatedTypes.Add(subscription.MessageTypeId);
                     _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
                 }
             }
-            OnSubscriptionsUpdated();
+            OnSubscriptionsUpdatedForTypes(updatedTypes);
         }
 
         private void RemoveSubscriptions(IEnumerable<Subscription> subscriptions)
         {
+            var updatedTypes = new HashSet<MessageTypeId>();
             lock (_subscriptions)
             {
                 foreach (var subscription in subscriptions)
                 {
+                    updatedTypes.Add(subscription.MessageTypeId);
                     var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
                     if (subscriptionCount <= 1)
                         _subscriptions.Remove(subscription);
@@ -302,13 +306,20 @@ namespace Abc.Zebus.Core
                         _subscriptions[subscription] = subscriptionCount - 1;
                 }
             }
-            OnSubscriptionsUpdated();
+            OnSubscriptionsUpdatedForTypes(updatedTypes);
         }
-
-        protected void OnSubscriptionsUpdated()
+        
+        private void OnSubscriptionsUpdatedForTypes(HashSet<MessageTypeId> updatedTypes)
         {
-            var subscriptions = GetSubscriptions().GroupBy(sub => sub.MessageTypeId).Select(grp => new SubscriptionsForType(grp.Key, grp.Select(sub => sub.BindingKey).ToArray()));
-            _directory.UpdateSubscriptions(this, subscriptions);
+            var subscriptionsByType = GetSubscriptions().Where(sub => updatedTypes.Contains(sub.MessageTypeId))
+                                                        .GroupBy(sub => sub.MessageTypeId)
+                                                        .ToDictionary(grp => grp.Key, grp => new SubscriptionsForType(grp.Key, grp.Select(sub => sub.BindingKey).ToArray()));
+            
+            var subscriptionUpdates = new List<SubscriptionsForType>();
+            foreach (var updatedMessageId in updatedTypes)
+                subscriptionUpdates.Add(subscriptionsByType.GetValueOrDefault(updatedMessageId, new SubscriptionsForType(updatedMessageId)));
+            
+            _directory.UpdateSubscriptions(this, subscriptionUpdates);
         }
 
         public void Reply(int errorCode)

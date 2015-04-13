@@ -21,17 +21,32 @@ namespace Abc.Zebus.Tests.Core
     public partial class BusTests
     {
         [Test]
-        public void should_subscribe_to_message()
+        public void should_subscribe_to_message_for_all_binding_keys()
+        {
+            AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+            AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
+            var subscriptions = new List<SubscriptionsForType>();
+            _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+
+            _bus.Start();
+            _bus.Subscribe(Subscription.Any<FakeCommand>());
+
+            subscriptions.ExpectedSingle();
+            subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
+        }
+
+        [Test]
+        public void should_subscribe_to_message_but_not_resend_existing_subscriptions()
         {
             AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: true);
             AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
-
             var subscriptions = new List<SubscriptionsForType>();
             _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
 
             _bus.Start();
             _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
-            subscriptions.Count.ShouldEqual(2);
+
+            subscriptions.ExpectedSingle();
             subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey("1", "name", "*")));
         }
 
@@ -94,31 +109,63 @@ namespace Abc.Zebus.Tests.Core
         public void should_unsubscribe_to_batch()
         {
             AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
-
             _bus.Start();
-
             var subscriptions = new List<Subscription>();
             subscriptions.Add(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
             subscriptions.Add(Subscription.ByExample(x => new FakeRoutableCommand(1, "toto")));
             subscriptions.Add(Subscription.ByExample(x => new FakeRoutableCommand(2, "name")));
             var subscription = _bus.Subscribe(subscriptions.ToArray());
+            var directorySubscriptions = new List<SubscriptionsForType>();
+            _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), directorySubscriptions);
 
             subscription.Dispose();
 
-            _directoryMock.Verify(x => x.UpdateSubscriptions(_bus, It.Is<IEnumerable<SubscriptionsForType>>(c => !c.Any())));
+            directorySubscriptions.ExpectedSingle().ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>()));
         }
 
         [Test]
-        public void should_unsubscribe_to_message()
+        public void should_not_unsubscribe_static_subscription()
         {
-            AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
-
+            AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: true);
             _bus.Start();
             var subscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
+            var directorySubscriptions = new List<SubscriptionsForType>();
+            _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), directorySubscriptions);
 
             subscription.Dispose();
 
-            _directoryMock.Verify(x => x.UpdateSubscriptions(_bus, It.Is<IEnumerable<SubscriptionsForType>>(c => !c.Any())));
+            directorySubscriptions.ExpectedSingle().ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), BindingKey.Empty));
+        }
+
+        [Test]
+        public void should_unsubscribe_from_message()
+        {
+            AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
+            _bus.Start();
+            var subscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
+            var subscriptions = new List<SubscriptionsForType>();
+            _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+
+            subscription.Dispose();
+
+            subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>()));
+        }
+
+        [Test]
+        public void should_not_resend_other_message_subscriptions_when_unsubscribing_from_a_message()
+        {
+            AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+            AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
+            _bus.Start();
+            var firstSubscription = _bus.Subscribe<FakeCommand>(cmd => {});
+            var secondSubscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "plop")));
+            var subscriptions = new List<SubscriptionsForType>();
+            _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+
+            firstSubscription.Dispose();
+
+            subscriptions.ExpectedSingle();
+            subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeCommand>()));
         }
 
         [Test]
@@ -134,13 +181,13 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
 
             var subscription1 = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
-            var subscription2 = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
+            var subscription2 = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "toto")));
 
             subscription1.Dispose();
-            lastDirectorySubscriptions.ShouldNotBeEmpty();
+            lastDirectorySubscriptions.ExpectedSingle().BindingKeys.ShouldBeEquivalentTo(new[] { new BindingKey("1", "toto", "*") });
 
             subscription2.Dispose();
-            lastDirectorySubscriptions.ShouldBeEmpty();
+            lastDirectorySubscriptions.ExpectedSingle().BindingKeys.ShouldBeEmpty();
         }
 
         [Test]
