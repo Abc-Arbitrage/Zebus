@@ -36,16 +36,6 @@ namespace Abc.Zebus.Transport
 
             _socket.Bind(_endPoint.Value);
 
-
-            try
-            {
-                _endPoint.SavePort(_peerId, _environment);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("Impossible to write inbound port file.", ex);
-            }
-
             var endPointWithIp = new ZmqEndPoint(_socket.LastEndpoint);
             _logger.InfoFormat("Socket bound, Inbound EndPoint: {0}", endPointWithIp.Value);
 
