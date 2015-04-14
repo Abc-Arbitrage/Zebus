@@ -10,7 +10,6 @@ namespace Abc.Zebus.Transport
 {
     public class ZmqEndPoint
     {
-        private const string _dataDirectory = "Data";
         private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqEndPoint));
 
         public ZmqEndPoint(string value)
@@ -32,18 +31,6 @@ namespace Abc.Zebus.Transport
             return int.Parse(portPart, CultureInfo.InvariantCulture);
         }
 
-        public bool SetPortIfAvailable(int port)
-        {
-            if (!TcpUtil.IsPortUnused(port))
-            {
-                _logger.WarnFormat("Specified port {0} is unavailable", port);
-                return false;
-            }
-
-            SetPort(port);
-            return true;
-        }
-
         private void SetPort(int value)
         {
             var portStart = Value.LastIndexOf(':') + 1;
@@ -51,45 +38,7 @@ namespace Abc.Zebus.Transport
 
             Value = endPointValue;
         }
-
-        public void SavePort(PeerId peerId, string environment)
-        {
-            var filePath = GetTargetPortFilePath(peerId, environment);
-            File.WriteAllText(filePath, GetPort().ToString());
-        }
-
-        private bool LoadPreviousPortIfAvailable(PeerId peerId, string environment)
-        {
-            var filePath = GetPortFilePath(peerId, environment);
-
-            if (!File.Exists(filePath))
-                return false;
-
-            int port;
-            if (!int.TryParse(File.ReadAllText(filePath), NumberStyles.Integer, CultureInfo.InvariantCulture, out port))
-                return false;
-
-            _logger.InfoFormat("Trying to use port {0} specified in inboundport file", port);
-
-            return SetPortIfAvailable(port);
-        }
-
-        private static string GetTargetPortFilePath(PeerId peerId, string environment)
-        {
-            var dataDir = PathUtil.InBaseDirectory(_dataDirectory);
-            if (!System.IO.Directory.Exists(dataDir))
-                System.IO.Directory.CreateDirectory(dataDir);
-            return Path.Combine(dataDir, peerId + ".inboundport." + environment);
-        }
-
-        private static string GetPortFilePath(PeerId peerId, string environment)
-        {
-            var portFileInDataDir = Path.Combine(PathUtil.InBaseDirectory("Data"), peerId + ".inboundport." + environment);
-            if (File.Exists(portFileInDataDir))
-                return portFileInDataDir;
-            return PathUtil.InBaseDirectory(peerId + ".inboundport." + environment);
-        }
-
+        
         private static string CleanEndPoint(string value)
         {
             if (value == null)
@@ -105,26 +54,23 @@ namespace Abc.Zebus.Transport
         /// </remarks>>
         public void SelectRandomPort(PeerId peerId, string environment)
         {
-            if (!LoadPreviousPortIfAvailable(peerId, environment))
+            _logger.InfoFormat("Selecting random port for {0}", environment);
+
+            var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            var forbiddenPorts = directory.GetFiles("*.inboundport.*").Select(ReadPort).Where(port => port.HasValue).ToHashSet();
+
+            if(forbiddenPorts.Any())
+                _logger.InfoFormat("Ports already reserved for other environments: {0}", string.Join(", ", forbiddenPorts));
+
+            int? selectedPort = null;
+            do
             {
-                _logger.InfoFormat("Selecting random port for {0}", environment);
+                var port = TcpUtil.GetRandomUnusedPort();
+                if (!forbiddenPorts.Contains(port))
+                    selectedPort = port;
+            } while (!selectedPort.HasValue);
 
-                var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-                var forbiddenPorts = directory.GetFiles("*.inboundport.*").Select(ReadPort).Where(port => port.HasValue).ToHashSet();
-
-                if(forbiddenPorts.Any())
-                    _logger.InfoFormat("Ports already reserved for other environments: {0}", string.Join(", ", forbiddenPorts));
-
-                int? selectedPort = null;
-                do
-                {
-                    var port = TcpUtil.GetRandomUnusedPort();
-                    if (!forbiddenPorts.Contains(port))
-                        selectedPort = port;
-                } while (!selectedPort.HasValue);
-
-                SetPort(selectedPort.Value);
-            }
+            SetPort(selectedPort.Value);
         }
 
         private int? ReadPort(FileInfo filePath)
