@@ -159,7 +159,9 @@ namespace Abc.Zebus.Tests
             subscription1.Equals((object)subscription2).ShouldBeTrue();
         }
 
-        [Ignore("Manual test")]
+        [Test]
+        [Ignore]
+        [Category("ManualOnly")]
         [TestCase("a.b", "a.b.c.d")]
         [TestCase("d.*", "a.b.c.d")]
         [TestCase("d.#", "a.b.c.d")]

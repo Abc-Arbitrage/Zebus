@@ -11,7 +11,9 @@ namespace Abc.Zebus.Tests.Directory
 {
     public partial class PeerDirectoryClientTests
     {
-        [Test, Ignore("Performance test")]
+        [Test]
+        [Ignore]
+        [Category("ManualOnly")]
         public void MeasureUpdatePerformance()
         {
             var subscriptions = new List<Subscription>();
@@ -67,7 +69,9 @@ namespace Abc.Zebus.Tests.Directory
             }
         }
 
-        [Test, Ignore("Performance test")]
+        [Test]
+        [Ignore]
+        [Category("ManualOnly")]
         public void MeasureUpdatePerformanceWithManyBindingKeys()
         {
             var bindingKeys = new List<BindingKey>();
@@ -89,7 +93,9 @@ namespace Abc.Zebus.Tests.Directory
             });
         }
 
-        [Test, Ignore("Performance test")]
+        [Test]
+        [Ignore]
+        [Category("ManualOnly")]
         public void MeasureMemoryConsumption()
         {
             Console.WriteLine("Breakpoint here");

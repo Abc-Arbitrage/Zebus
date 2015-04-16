@@ -48,7 +48,9 @@ namespace Abc.Zebus.Tests
             empty.ToString().ShouldEqual("#");
         }
 
-        [Test, Ignore("Manual test")]
+        [Test]
+        [Ignore]
+        [Category("ManualOnly")]
         public void MeasurePerformances()
         {
             var message = new FakeMarketDataEvent("USA", "NASDAQ", "MSFT");
