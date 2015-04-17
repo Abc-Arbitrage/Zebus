@@ -9,4 +9,4 @@ test:
     except:
     - ManualOnly
 cache:
-  - packages -> **\packages.config 
+  - src\packages -> **\packages.config 
