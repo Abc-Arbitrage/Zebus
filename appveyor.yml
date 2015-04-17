@@ -1,0 +1,12 @@
+version: 1.2.{build}
+before_build:
+- nuget restore src/Abc.Zebus.sln
+build:
+  verbosity: minimal
+test:
+  assemblies: Abc.Zebus.Tests.dll
+  categories:
+    except:
+    - ManualOnly
+cache:
+  - packages -> **\packages.config 
