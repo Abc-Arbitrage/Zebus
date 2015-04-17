@@ -1,4 +1,4 @@
-#About
+#About [![Build status](https://ci.appveyor.com/api/projects/status/4uskxl4dm06fk3b9/branch/master?svg=true)](https://ci.appveyor.com/project/TechABC/zebus/branch/master)
 
 Zebus is a lightweight peer to peer service bus, built with [CQRS](http://martinfowler.com/bliki/CQRS.html) principles in mind. It allows applications to communicate with each other in a fast and easy manner. Most of the complexity is hidden in the library and you can focus on writing code that matters to you, not debugging messaging code.
 
