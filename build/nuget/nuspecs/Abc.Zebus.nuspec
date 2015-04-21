@@ -20,7 +20,7 @@
       <dependency id="log4net" version="2.0.3" />
       <dependency id="Newtonsoft.Json" version="6.0.8" />
       <dependency id="protobuf-net" version="2.0.0.668" />
-      <dependency id="structuremap" version="3.1.4.143" />
+      <dependency id="structuremap" version="3.1.5.154" />
     </dependencies>
   </metadata>
   <files>
