@@ -58,6 +58,11 @@ namespace Abc.Zebus.Tests.Lotus
                 throw new NotSupportedException();
             }
 
+            public void ConfigureMessageFilter(Func<Type, bool> messageFilter)
+            {
+                throw new NotSupportedException();
+            }
+
             public void LoadMessageHandlerInvokers()
             {
                 throw new NotSupportedException();
