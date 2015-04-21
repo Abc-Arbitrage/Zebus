@@ -152,6 +152,20 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
+        public void should_filter_messages()
+        {
+            _messageDispatcher.ConfigureMessageFilter(x => x == typeof(ScanCommand1));
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var types = _messageDispatcher.GetHandledMessageTypes()
+                                          .Select(x => x.GetMessageType())
+                                          .ToList();
+
+            types.ShouldContain(typeof(ScanCommand1));
+            types.ShouldNotContain(typeof(ScanCommand2));
+        }
+
+        [Test]
         public void should_invoke_handle_method()
         {
             _messageDispatcher.LoadMessageHandlerInvokers();

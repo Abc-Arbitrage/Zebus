@@ -24,6 +24,7 @@ namespace Abc.Zebus.Dispatch
         private ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>> _invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _handlerFilter;
+        private Func<Type, bool> _messageFilter;
         private volatile bool _isRunning;
         
         public MessageDispatcher(IPipeManager pipeManager, IMessageHandlerInvokerLoader[] invokerLoaders, IDispatcherTaskSchedulerFactory taskSchedulerFactory)
@@ -43,6 +44,11 @@ namespace Abc.Zebus.Dispatch
             _handlerFilter = handlerFilter;
         }
 
+        public void ConfigureMessageFilter(Func<Type, bool> messageFilter)
+        {
+            _messageFilter = messageFilter;
+        }
+
         public void LoadMessageHandlerInvokers()
         {
             var invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
@@ -54,6 +60,9 @@ namespace Abc.Zebus.Dispatch
                 foreach (var invoker in loadedInvokers)
                 {
                     if (_handlerFilter != null && !_handlerFilter(invoker.MessageHandlerType))
+                        continue;
+
+                    if (_messageFilter != null && !_messageFilter(invoker.MessageType))
                         continue;
 
                     var messageTypeInvokers = invokers.GetOrAdd(new MessageTypeId(invoker.MessageType), x => new List<IMessageHandlerInvoker>());
