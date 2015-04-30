@@ -12,20 +12,32 @@ namespace Abc.Zebus.Tests.Hosting
     [TestFixture]
     public class PeriodicActionHostInitializerTests
     {
+        private Mock<PeriodicActionHostInitializer> _periodicInitializer;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            _periodicInitializer.Object.BeforeStop();
+        }
+
         [Test]
         public void should_return_period()
         {
-            var periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
-            periodicInitializer.Object.Period.ShouldEqual(20.Milliseconds());
+            _periodicInitializer.Object.Period.ShouldEqual(20.Milliseconds());
         }
 
         [Test]
         public void should_call_the_periodic_action()
         {
             var callCount = 0;
-            var periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
-            periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => ++callCount);
-            periodicInitializer.Object.AfterStart();
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => ++callCount);
+            _periodicInitializer.Object.AfterStart();
 
             Wait.Until(() => callCount >= 3, 1.Second());
         }
@@ -35,11 +47,10 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_pause_execution_after_successive_failures(int successiveFailureCount)
         {
             var callCount = 0;
-            var periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
-            periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; throw new Exception(); });
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; throw new Exception(); });
 
-            periodicInitializer.Object.ErrorCountBeforePause = successiveFailureCount;
-            periodicInitializer.Object.AfterStart();
+            _periodicInitializer.Object.ErrorCountBeforePause = successiveFailureCount;
+            _periodicInitializer.Object.AfterStart();
             Wait.Until(() => callCount >= successiveFailureCount, 1.Second());
 
             Thread.Sleep(200.Milliseconds());
@@ -51,12 +62,11 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_continue_execution_after_error_pause_duration()
         {
             var callCount = 0;
-            var periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
-            periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; throw new Exception(); });
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; throw new Exception(); });
 
-            periodicInitializer.Object.ErrorCountBeforePause = 2;
-            periodicInitializer.Object.ErrorPauseDuration = 200.Milliseconds();
-            periodicInitializer.Object.AfterStart();
+            _periodicInitializer.Object.ErrorCountBeforePause = 2;
+            _periodicInitializer.Object.ErrorPauseDuration = 200.Milliseconds();
+            _periodicInitializer.Object.AfterStart();
             Wait.Until(() => callCount >= 2, 1.Second());
 
             Thread.Sleep(100.Milliseconds());
@@ -69,9 +79,8 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_continue_execution_if_the_10_failures_are_not_consecutive()
         {
             var callCount = 0;
-            var periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
-            periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; if (callCount % 2 == 0)throw new Exception(); });
-            periodicInitializer.Object.AfterStart();
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; if (callCount % 2 == 0)throw new Exception(); });
+            _periodicInitializer.Object.AfterStart();
 
             Wait.Until(() => callCount >= 21, 2.Seconds());
         }
@@ -80,13 +89,12 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_stop_the_loop_on_BeforeStop()
         {
             var callCount = 0;
-            var periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
-            periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => ++callCount);
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => ++callCount);
 
-            periodicInitializer.Object.AfterStart();
+            _periodicInitializer.Object.AfterStart();
             Wait.Until(() => callCount >= 1, 2.Seconds());
 
-            periodicInitializer.Object.BeforeStop();
+            _periodicInitializer.Object.BeforeStop();
             var callCountAfterStop = callCount;
 
             Thread.Sleep(100.Milliseconds());
