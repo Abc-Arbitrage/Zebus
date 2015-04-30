@@ -25,9 +25,13 @@ namespace Abc.Zebus.Testing.Directory
             Registered();
         }
 
-        public void Update(IBus bus, IEnumerable<Subscription> subscriptions)
+        public void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
         {
-            Peers[Self.Id] = Self.ToPeerDescriptor(true, subscriptions);
+            var newSubscriptions = SubscriptionsForType.CreateDictionary(Peers[Self.Id].Subscriptions);
+            foreach (var subscriptionsForType in subscriptionsForTypes)
+                newSubscriptions[subscriptionsForType.MessageTypeId] = subscriptionsForType;
+            
+            Peers[Self.Id] = Self.ToPeerDescriptor(true, newSubscriptions.Values.SelectMany(subForType => subForType.ToSubscriptions()));
             PeerUpdated(Self.Id, PeerUpdateAction.Updated);
         }
 

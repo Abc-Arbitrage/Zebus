@@ -108,33 +108,32 @@ namespace Abc.Zebus.Tests.Directory
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
             _directory.Register(_bus, _self, new Subscription[0]);
 
-            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
-            _directory.Update(_bus, subscriptions);
+            var expectedSubscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(new BindingKey("plip"), new BindingKey("plop")) };
+            _directory.UpdateSubscriptions(_bus, expectedSubscriptions);
 
-            var command = _bus.Commands.OfType<UpdatePeerSubscriptionsCommand>().Single();
+            var command = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ExpectedSingle();
             command.PeerId.ShouldEqual(_self.Id);
-            command.Subscriptions.ShouldBeEquivalentTo(subscriptions);
+            command.SubscriptionsForTypes.ShouldEqual(expectedSubscriptions);
         }
-
-
+        
         [Test]
         public void should_timestamp_updatesubscriptions_with_a_minimum_ten_ticks_granularity()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
             _directory.Register(_bus, _self, new Subscription[0]);
 
-            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
+            var subscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(BindingKey.Empty) };
             for (var i = 0; i < 100; ++i)
-                _directory.Update(_bus, subscriptions);
+                _directory.UpdateSubscriptions(_bus, subscriptions);
 
-
-            var commands = _bus.Commands.OfType<UpdatePeerSubscriptionsCommand>();
+            var commands = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ToList();
+            commands.ShouldNotBeEmpty();
             var lastTimestamp = DateTime.MinValue;
             foreach (var updatePeerSubscriptionsCommand in commands)
             {
-                var timeSinceLastCommand = (updatePeerSubscriptionsCommand.TimestampUtc - lastTimestamp).Value;
+                var timeSinceLastCommand = updatePeerSubscriptionsCommand.TimestampUtc - lastTimestamp;
                 timeSinceLastCommand.ShouldBeGreaterOrEqualThan(10.Ticks());
-                lastTimestamp = updatePeerSubscriptionsCommand.TimestampUtc.Value;
+                lastTimestamp = updatePeerSubscriptionsCommand.TimestampUtc;
             }
         }
 
@@ -147,14 +146,14 @@ namespace Abc.Zebus.Tests.Directory
             var lastTimestamp = DateTime.MinValue;
             for (int i = 0; i < 100; i++)
             {
-                var subscriptions = new[] { new Subscription(MessageUtil.TypeId<FakeCommand>(), new BindingKey(i.ToString())) };
-                _directory.Update(_bus, subscriptions);
+                var subscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(new BindingKey(i.ToString())) };
+                _directory.UpdateSubscriptions(_bus, subscriptions);
 
-                var command = _bus.Commands.OfType<UpdatePeerSubscriptionsCommand>().Single();
-                command.TimestampUtc.Value.ShouldBeGreaterThan(lastTimestamp);
+                var command = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ExpectedSingle();
+                command.TimestampUtc.ShouldBeGreaterThan(lastTimestamp);
 
                 _bus.ClearMessages();
-                lastTimestamp = command.TimestampUtc.Value;
+                lastTimestamp = command.TimestampUtc;
             }
         }
 

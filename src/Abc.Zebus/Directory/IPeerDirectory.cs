@@ -8,7 +8,7 @@ namespace Abc.Zebus.Directory
         event Action<PeerId, PeerUpdateAction> PeerUpdated;
 
         void Register(IBus bus, Peer self, IEnumerable<Subscription> subscriptions);
-        void Update(IBus bus, IEnumerable<Subscription> subscriptions);
+        void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes);
         void Unregister(IBus bus);
 
         IList<Peer> GetPeersHandlingMessage(IMessage message);
