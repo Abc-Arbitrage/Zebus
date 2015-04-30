@@ -40,7 +40,7 @@ namespace Abc.Zebus.Tests.Util.Collections
         }
 
         [Test]
-        public void should_flush_collection()
+        public void should_flush_collection_with_multiple_writers()
         {
             var collection = new FlushableBlockingCollection<int>();
 
@@ -53,8 +53,8 @@ namespace Abc.Zebus.Tests.Util.Collections
                     consumedItems.Add(item);
 
                     // simulate consumption lag
-                    if (index >= 500 && item <= 550)
-                        Thread.Sleep(50);
+                    if (index % 10000 == 0)
+                        Thread.Sleep(20);
 
                     ++index;
                 }
@@ -62,53 +62,127 @@ namespace Abc.Zebus.Tests.Util.Collections
                 Console.WriteLine("Consumer done");
             });
 
+            const int writerItemCount = 300000;
+
             var t1 = Task.Run(() =>
             {
-                foreach (var item in Enumerable.Range(0, 500000).Select(x => 3 * x))
+                foreach (var item in Enumerable.Range(0, writerItemCount).Select(x => 3 * x))
                 {
                     collection.Add(item);
-                    Thread.Yield();
+                    if ((item - 0) % 1000 == 0)
+                        Thread.Sleep(10);
+                    else
+                        Thread.Yield();
                 }
                 Console.WriteLine("T1 done");
             });
             var t2 = Task.Run(() =>
             {
-                foreach (var item in Enumerable.Range(0, 500000).Select(x => 3 * x + 1))
+                foreach (var item in Enumerable.Range(0, writerItemCount).Select(x => 3 * x + 1))
                 {
                     collection.Add(item);
-                    Thread.Yield();
+                    if ((item  - 1) % 1000 == 0)
+                        Thread.Sleep(10);
+                    else
+                        Thread.Yield();
                 }
                 Console.WriteLine("T2 done");
             });
             var t3 = Task.Run(() =>
             {
-                foreach (var item in Enumerable.Range(0, 500000).Select(x => 3 * x + 2))
+                foreach (var item in Enumerable.Range(0, writerItemCount).Select(x => 3 * x + 2))
                 {
                     collection.Add(item);
-                    Thread.Yield();
+                    if ((item - 2) % 1000 == 0)
+                        Thread.Sleep(10);
+                    else
+                        Thread.Yield();
                 }
                 Console.WriteLine("T3 done");
             });
 
-            Thread.Sleep(20);
+            Thread.Sleep(50);
 
-            Console.WriteLine("Trying to flush");
+            Console.WriteLine("Flush #1");
             var flushedItems1 = collection.Flush(true);
             Console.WriteLine("{0} flushed items", flushedItems1.Count);
 
-            Thread.Sleep(20);
+            Thread.Sleep(50);
 
-            Console.WriteLine("Trying to flush");
+            Console.WriteLine("Flush #2");
             var flushedItems2 = collection.Flush(true);
             Console.WriteLine("{0} flushed items", flushedItems2.Count);
 
             Task.WaitAll(t1, t2, t3);
 
             collection.CompleteAdding();
-            Task.WaitAll(consume);
+            consume.Wait();
+
+            var exectedItems = Enumerable.Range(0, writerItemCount * 3).ToHashSet();
+            var items = consumedItems.Concat(flushedItems1).Concat(flushedItems2).ToList();
+            items.Count.ShouldEqual(exectedItems.Count);
+            foreach (var item in items)
+            {
+                exectedItems.Contains(item).ShouldBeTrue();
+            }
+        }
+
+        [Test]
+        public void should_flush_collection_with_single_writer()
+        {
+            var collection = new FlushableBlockingCollection<int>();
+
+            var consumedItems = new List<int>();
+            var consume = Task.Run(() =>
+            {
+                foreach (var item in collection.GetConsumingEnumerable())
+                {
+                    consumedItems.Add(item);
+
+                    // simulate very slow consumer
+                    Thread.Sleep(10);
+                }
+
+                Console.WriteLine("Consumer done");
+            });
+
+            const int batchSize = 500000;
+
+            foreach (var item in Enumerable.Range(0 * batchSize, batchSize))
+            {
+                collection.Add(item);
+            }
+
+            Thread.Sleep(100);
+            Console.WriteLine("Flush #1");
+            var flushedItems1 = collection.Flush(true);
+            Console.WriteLine("{0} flushed items", flushedItems1.Count);
+
+            foreach (var item in Enumerable.Range(1 * batchSize, batchSize))
+            {
+                collection.Add(item);
+            }
+
+            Thread.Sleep(100);
+            Console.WriteLine("Flush #2");
+            var flushedItems2 = collection.Flush(true);
+            Console.WriteLine("{0} flushed items", flushedItems2.Count);
+
+            foreach (var item in Enumerable.Range(2 * batchSize, batchSize))
+            {
+                collection.Add(item);
+            }
+
+            Thread.Sleep(100);
+            Console.WriteLine("Flush #3");
+            var flushedItems3 = collection.Flush(true);
+            Console.WriteLine("{0} flushed items", flushedItems3.Count);
+
+            collection.CompleteAdding();
+            consume.Wait();
 
             var exectedItems = Enumerable.Range(0, 1500000).ToHashSet();
-            var items = consumedItems.Concat(flushedItems1).Concat(flushedItems2).ToList();
+            var items = consumedItems.Concat(flushedItems1).Concat(flushedItems2).Concat(flushedItems3).ToList();
             items.Count.ShouldEqual(exectedItems.Count);
             foreach (var item in items)
             {
