@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
-using Abc.Zebus.Testing.Directory;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
@@ -108,11 +107,8 @@ namespace Abc.Zebus.Tests.Directory
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
             _directory.Register(_bus, _self, new Subscription[0]);
-            var expectedSubscriptions = new[]
-            {
-                TestDataBuilder.CreateSubscription<FakeCommand>(new BindingKey("plip")),
-                TestDataBuilder.CreateSubscription<FakeCommand>(new BindingKey("plop"))
-            }.GroupIntoSubscriptionsForTypes().ToList();
+
+            var expectedSubscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(new BindingKey("plip"), new BindingKey("plop")) };
             _directory.UpdateSubscriptions(_bus, expectedSubscriptions);
 
             var command = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ExpectedSingle();
@@ -126,10 +122,9 @@ namespace Abc.Zebus.Tests.Directory
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
             _directory.Register(_bus, _self, new Subscription[0]);
 
-            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
+            var subscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(BindingKey.Empty) };
             for (var i = 0; i < 100; ++i)
-                _directory.UpdateSubscriptions(_bus, subscriptions.GroupIntoSubscriptionsForTypes());
-
+                _directory.UpdateSubscriptions(_bus, subscriptions);
 
             var commands = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ToList();
             commands.ShouldNotBeEmpty();
@@ -151,8 +146,8 @@ namespace Abc.Zebus.Tests.Directory
             var lastTimestamp = DateTime.MinValue;
             for (int i = 0; i < 100; i++)
             {
-                var subscriptions = new[] { new Subscription(MessageUtil.TypeId<FakeCommand>(), new BindingKey(i.ToString())) };
-                _directory.UpdateSubscriptions(_bus, subscriptions.GroupIntoSubscriptionsForTypes());
+                var subscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(new BindingKey(i.ToString())) };
+                _directory.UpdateSubscriptions(_bus, subscriptions);
 
                 var command = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ExpectedSingle();
                 command.TimestampUtc.ShouldBeGreaterThan(lastTimestamp);

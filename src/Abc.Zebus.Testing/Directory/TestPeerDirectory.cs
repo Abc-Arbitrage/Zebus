@@ -27,7 +27,7 @@ namespace Abc.Zebus.Testing.Directory
 
         public void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
         {
-            var newSubscriptions = Peers[Self.Id].Subscriptions.GroupIntoSubscriptionsForTypes().ToDictionary(x => x.MessageTypeId);
+            var newSubscriptions = SubscriptionsForType.CreateDictionary(Peers[Self.Id].Subscriptions);
             foreach (var subscriptionsForType in subscriptionsForTypes)
                 newSubscriptions[subscriptionsForType.MessageTypeId] = subscriptionsForType;
             

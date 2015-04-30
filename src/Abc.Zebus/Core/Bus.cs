@@ -311,13 +311,12 @@ namespace Abc.Zebus.Core
         
         private void OnSubscriptionsUpdatedForTypes(HashSet<MessageTypeId> updatedTypes)
         {
-            var subscriptionsByType = GetSubscriptions().Where(sub => updatedTypes.Contains(sub.MessageTypeId))
-                                                        .GroupBy(sub => sub.MessageTypeId)
-                                                        .ToDictionary(grp => grp.Key, grp => new SubscriptionsForType(grp.Key, grp.Select(sub => sub.BindingKey).ToArray()));
+            var subscriptions = GetSubscriptions().Where(sub => updatedTypes.Contains(sub.MessageTypeId));
+            var subscriptionsByTypes = SubscriptionsForType.CreateDictionary(subscriptions);
             
-            var subscriptionUpdates = new List<SubscriptionsForType>();
+            var subscriptionUpdates = new List<SubscriptionsForType>(updatedTypes.Count);
             foreach (var updatedMessageId in updatedTypes)
-                subscriptionUpdates.Add(subscriptionsByType.GetValueOrDefault(updatedMessageId, new SubscriptionsForType(updatedMessageId)));
+                subscriptionUpdates.Add(subscriptionsByTypes.GetValueOrDefault(updatedMessageId, new SubscriptionsForType(updatedMessageId)));
             
             _directory.UpdateSubscriptions(this, subscriptionUpdates);
         }

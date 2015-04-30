@@ -71,7 +71,6 @@
     <Compile Include="Comparison\ComparisonExtensions.cs" />
     <Compile Include="Comparison\MessageComparer.cs" />
     <Compile Include="CurrentThreadTaskScheduler.cs" />
-    <Compile Include="Directory\ExtendSubscriptionsForType.cs" />
     <Compile Include="Directory\TestPeerDirectory.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker`1.cs" />
