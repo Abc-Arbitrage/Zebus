@@ -1,5 +1,5 @@
-﻿using Abc.Zebus.Directory.Cassandra.Cql;
-using Cassandra.Data.EntityContext;
+﻿using System.Linq;
+using Abc.Zebus.Directory.Cassandra.Cql;
 using Cassandra.Data.Linq;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
@@ -9,12 +9,16 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         public DirectoryDataContext(CassandraCqlSessionManager sessionManager, ICassandraConfiguration cassandraConfiguration)
             : base(sessionManager, cassandraConfiguration)
         {
-            StoragePeers = AddTable<StoragePeer>();
-            DynamicSubscriptions = AddTable<StorageSubscription>();
         }
 
-        public ContextTable<StorageSubscription> DynamicSubscriptions { get; set; }
+        public Table<StorageSubscription> DynamicSubscriptions
+        {
+            get { return new Table<StorageSubscription>(Session); }
+        }
 
-        public ContextTable<StoragePeer> StoragePeers { get; set; }
+        public Table<StoragePeer> StoragePeers
+        {
+            get { return new Table<StoragePeer>(Session); }
+        }
     }
 }

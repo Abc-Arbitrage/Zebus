@@ -1,8 +1,6 @@
 ﻿using Abc.Zebus.Directory.Cassandra.Cql;
 using Abc.Zebus.Util;
 using Cassandra;
-using Cassandra.Data.EntityContext;
-using Cassandra.Data.Linq;
 using Moq;
 using NUnit.Framework;
 using System;
@@ -72,22 +70,9 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         [TearDown]
         public void TruncateAllColumnFamilies()
         {
-            var tableNames = GetTableNames();
+            var tableNames = DataContext.GetTableNames();
             foreach (var name in tableNames)
                 Session.Execute(new SimpleStatement(string.Format("truncate {0};", name)));
-        }
-
-        private IEnumerable<string> GetTableNames()
-        {
-            var fieldInfo = typeof(Context).GetField("_tables", BindingFlags.Instance | BindingFlags.NonPublic);
-            if (fieldInfo == null)
-                yield break;
-
-            dynamic tableDictionary = fieldInfo.GetValue(DataContext);
-            foreach (var tableName in tableDictionary.Keys)
-            {
-                yield return tableName;
-            }
         }
     }
 }

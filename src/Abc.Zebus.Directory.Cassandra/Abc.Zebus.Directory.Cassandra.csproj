@@ -33,24 +33,9 @@
     <Reference Include="Abc.Zebus">
       <HintPath>..\packages\Zebus.1.2.1\lib\net45\Abc.Zebus.dll</HintPath>
     </Reference>
-    <Reference Include="Cassandra, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Cassandra, Version=2.5.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.dll</HintPath>
-    </Reference>
-    <Reference Include="Cassandra.Data, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="Cassandra.Data.EntityContext, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraEntityContext.2.1.0\lib\net40\Cassandra.Data.EntityContext.dll</HintPath>
-    </Reference>
-    <Reference Include="Cassandra.Data.Linq, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.Data.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="Crc32C.NET">
-      <HintPath>..\packages\Crc32C.NET.1.0.5.0\lib\net20\Crc32C.NET.dll</HintPath>
+      <HintPath>..\packages\CassandraCSharpDriver.2.5.2\lib\net40\Cassandra.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -67,9 +52,6 @@
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="Snappy.NET">
-      <HintPath>..\packages\Snappy.NET.1.1.1.8\lib\net45\Snappy.NET.dll</HintPath>
     </Reference>
     <Reference Include="StructureMap, Version=3.1.4.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -99,7 +81,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Storage\CqlPeerRepository.cs" />
     <Compile Include="Storage\DirectoryDataContext.cs" />
-    <Compile Include="Storage\ExtendContextTable.cs" />
     <Compile Include="Storage\StorageConvertionExtensions.cs" />
     <Compile Include="Storage\StoragePeer.cs" />
     <Compile Include="Storage\StorageSubscription.cs" />
