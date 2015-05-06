@@ -77,11 +77,20 @@ namespace Abc.Zebus.Directory
             Registered();
         }
 
-        public void Update(IBus bus, IEnumerable<Subscription> subscriptions)
+        public void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
         {
-            var peerDescriptor = _peerRepository.UpdatePeerSubscriptions(_self.Id, subscriptions.ToArray(), SystemDateTime.UtcNow);
-            if (peerDescriptor != null)
-                bus.Publish(new PeerSubscriptionsUpdated(peerDescriptor));
+            var subsForTypes = subscriptionsForTypes.ToList();
+            var subscriptionsToAdd = subsForTypes.Where(sub => sub.BindingKeys != null && sub.BindingKeys.Any()).ToArray();
+            var subscriptionsToRemove = subsForTypes.Where(sub => sub.BindingKeys == null || !sub.BindingKeys.Any()).ToList();
+
+            var utcNow = SystemDateTime.UtcNow;
+            if (subscriptionsToAdd.Any())
+                _peerRepository.AddDynamicSubscriptionsForTypes(_self.Id, utcNow, subscriptionsToAdd);
+
+            if (subscriptionsToRemove.Any())
+                _peerRepository.RemoveDynamicSubscriptionsForTypes(_self.Id, utcNow, subscriptionsToRemove.Select(sub => sub.MessageTypeId).ToArray());
+
+            bus.Publish(new PeerSubscriptionsForTypesUpdated(_self.Id, utcNow, subsForTypes.ToArray()));
         }
 
         public void Unregister(IBus bus)

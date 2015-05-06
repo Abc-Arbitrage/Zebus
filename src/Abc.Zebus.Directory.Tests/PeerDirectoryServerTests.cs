@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Routing;
@@ -151,24 +152,83 @@ namespace Abc.Zebus.Directory.Tests
         }
 
         [Test]
-        public void should_update_subscriptions()
+        public void should_publish_event_when_modifying_subscriptions()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://lala:123");
-            _peerDirectory.Register(_bus, peerDescriptor.Peer, peerDescriptor.Subscriptions);
-
-            _repositoryMock.Setup(x => x.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
-
-            var subscriptions = new[] { new Subscription(new MessageTypeId(typeof(FakeCommand))) };
             using (SystemDateTime.PauseTime())
-            using (SystemDateTime.Set(SystemDateTime.Now))
             {
-                _peerDirectory.Update(_bus, subscriptions);
+                var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty) };
+                _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+                _bus.ClearMessages();
 
-                var expectedPeerDescriptor = peerDescriptor.Peer.ToPeerDescriptor(peerDescriptor.IsPersistent, subscriptions);
-                _repositoryMock.Verify(x => x.AddOrUpdatePeer(It.Is<PeerDescriptor>(descriptor => descriptor.DeepCompare(expectedPeerDescriptor))));
+                _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+                
+                _bus.ExpectExactly(new PeerSubscriptionsForTypesUpdated(_self.Id, SystemDateTime.UtcNow, subscriptionsForTypes));
+            }
+        }
 
-                var updatedEvent = _bus.Events.OfType<PeerSubscriptionsUpdated>().Single();
-                updatedEvent.PeerDescriptor.ShouldEqualDeeply(expectedPeerDescriptor);
+        [Test]
+        public void should_specify_datetime_kind_when_adding_subscriptions_for_a_type()
+        {
+            var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty) };
+            _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+
+            _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+            
+            _repositoryMock.Verify(repo => repo.AddDynamicSubscriptionsForTypes(_self.Id, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), subscriptionsForTypes));
+        }
+
+        [Test]
+        public void should_specify_datetime_kind_when_removing_subscriptions_for_a_type()
+        {
+            var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), new BindingKey[0]) };
+            _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+
+            _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+
+            _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(_self.Id, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), new [] { MessageUtil.GetTypeId(typeof(int)) }));
+        }
+
+        [Test]
+        public void should_handle_null_bindingkeys_array_when_removing_subscriptions()
+        {
+            using (SystemDateTime.PauseTime())
+            {
+                var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), null) };
+                _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+
+                _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+
+                _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(_self.Id, SystemDateTime.UtcNow, new[] { MessageUtil.GetTypeId(typeof(int)) }));
+            }
+        }
+
+        [Test]
+        public void should_remove_peer_subscriptions_for_a_type_if_there_are_no_binding_keys()
+        {
+            using (SystemDateTime.PauseTime())
+            {
+                var subscriptionsForTypes = new[]
+                {
+                    new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int))),
+                    new SubscriptionsForType(MessageUtil.GetTypeId(typeof(double)), BindingKey.Empty)
+                };
+                _peerDirectory.Register(_bus, _self, Enumerable.Empty<Subscription>());
+                _bus.ClearMessages();
+                SubscriptionsForType[] addedSubscriptions = null;
+                MessageTypeId[] removedMessageTypeIds = null;
+                _repositoryMock.Setup(repo => repo.AddDynamicSubscriptionsForTypes(_self.Id, SystemDateTime.UtcNow, It.IsAny<SubscriptionsForType[]>()))
+                               .Callback((PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subs) => addedSubscriptions = subs);
+                _repositoryMock.Setup(repo => repo.RemoveDynamicSubscriptionsForTypes(_self.Id, SystemDateTime.UtcNow, It.IsAny<MessageTypeId[]>()))
+                               .Callback((PeerId peerId, DateTime timestampUtc, MessageTypeId[] ids) => removedMessageTypeIds = ids);
+
+
+                _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+
+                var addedSubscription = addedSubscriptions.ExpectedSingle();
+                addedSubscription.ShouldHaveSamePropertiesAs(new SubscriptionsForType(MessageUtil.GetTypeId(typeof(double)), BindingKey.Empty));
+                var removedMessageTypeId = removedMessageTypeIds.ExpectedSingle();
+                removedMessageTypeId.ShouldHaveSamePropertiesAs(MessageUtil.GetTypeId(typeof(int)));
+                _bus.ExpectExactly(new PeerSubscriptionsForTypesUpdated(_self.Id, SystemDateTime.UtcNow, subscriptionsForTypes));
             }
         }
 
