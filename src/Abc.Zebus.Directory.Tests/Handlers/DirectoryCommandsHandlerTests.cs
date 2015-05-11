@@ -318,6 +318,18 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         }
 
         [Test]
+        public void should_handle_null_subscriptionsByType_array()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var now = DateTime.UtcNow;
+
+            Assert.That(() => _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, now, null)),
+                        Throws.Nothing);
+
+            _bus.ExpectNothing();
+        }
+
+        [Test]
         public void should_remove_peer_subscriptions_for_a_type_if_there_are_no_binding_keys()
         {
             var now = DateTime.UtcNow;

@@ -102,6 +102,9 @@ namespace Abc.Zebus.Directory.Handlers
 
         public void Handle(UpdatePeerSubscriptionsForTypesCommand message)
         {
+            if (message.SubscriptionsForTypes == null || message.SubscriptionsForTypes.Length == 0)
+                return;
+
             var subscriptionsToAdd = message.SubscriptionsForTypes.Where(sub => sub.BindingKeys != null && sub.BindingKeys.Any()).ToArray();
             var subscriptionsToRemove = message.SubscriptionsForTypes.Where(sub => sub.BindingKeys == null || !sub.BindingKeys.Any()).ToList();
 
