@@ -155,16 +155,17 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
+        [Repeat(500)]
         public void should_mark_peer_as_responding()
         {
             var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
-            descriptor.TimestampUtc = DateTime.UtcNow;
+            descriptor.TimestampUtc = DateTime.UtcNow.AddTicks(-10);
             _repository.AddOrUpdatePeer(descriptor);
 
             _repository.SetPeerResponding(_peer1.Id, false);
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeFalse();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeFalse();
-
+            
             _repository.SetPeerResponding(_peer1.Id, true);
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeTrue();
