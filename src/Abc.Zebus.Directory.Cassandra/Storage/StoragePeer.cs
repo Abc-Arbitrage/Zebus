@@ -1,5 +1,5 @@
 ﻿using System;
-using Cassandra.Data.Linq;
+using Cassandra.Mapping.Attributes;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
 {

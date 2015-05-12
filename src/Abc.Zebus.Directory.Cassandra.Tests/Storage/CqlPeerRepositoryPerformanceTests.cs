@@ -63,7 +63,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             repo.AddDynamicSubscriptionsForTypes(new PeerId("Abc.Peer.0"), DateTime.UtcNow, subscriptionForTypes);
             Console.WriteLine("Elapsed: " + stopwatch.Elapsed);
 
-            Measure.Execution(20, () => repo.GetPeers(loadDynamicSubscriptions: false).ToList());
+            Measure.Execution(100, () => repo.GetPeers(loadDynamicSubscriptions: false).ToList());
             var peers = repo.GetPeers(loadDynamicSubscriptions: false).ToList();
             peers.ExpectedSingle().Subscriptions.Length.ShouldEqual(0);
         }

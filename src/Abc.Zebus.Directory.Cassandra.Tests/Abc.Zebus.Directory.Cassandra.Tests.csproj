@@ -38,24 +38,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Zebus.Testing.1.3.0\lib\net45\Abc.Zebus.Testing.dll</HintPath>
     </Reference>
-    <Reference Include="Cassandra, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Cassandra, Version=2.5.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.dll</HintPath>
-    </Reference>
-    <Reference Include="Cassandra.Data, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="Cassandra.Data.EntityContext, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraEntityContext.2.1.0\lib\net40\Cassandra.Data.EntityContext.dll</HintPath>
-    </Reference>
-    <Reference Include="Cassandra.Data.Linq, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\CassandraCSharpDriver.2.1.2\lib\net40\Cassandra.Data.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="Crc32C.NET">
-      <HintPath>..\packages\Crc32C.NET.1.0.5.0\lib\net20\Crc32C.NET.dll</HintPath>
+      <HintPath>..\packages\CassandraCSharpDriver.2.5.2\lib\net40\Cassandra.dll</HintPath>
     </Reference>
     <Reference Include="KellermanSoftware.Compare-NET-Objects, Version=3.2.0.0, Culture=neutral, PublicKeyToken=d970ace04cc85217, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -88,9 +73,6 @@
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
       <Private>True</Private>
-    </Reference>
-    <Reference Include="Snappy.NET">
-      <HintPath>..\packages\Snappy.NET.1.1.1.8\lib\net45\Snappy.NET.dll</HintPath>
     </Reference>
     <Reference Include="StructureMap, Version=3.1.5.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -132,6 +114,7 @@
     <Compile Include="Storage\CqlPeerRepositoryTests.DynamicSubscriptions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
