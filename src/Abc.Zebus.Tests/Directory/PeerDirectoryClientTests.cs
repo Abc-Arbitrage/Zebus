@@ -115,6 +115,18 @@ namespace Abc.Zebus.Tests.Directory
             command.PeerId.ShouldEqual(_self.Id);
             command.SubscriptionsForTypes.ShouldEqual(expectedSubscriptions);
         }
+
+        [Test]
+        public void should_not_send_updatesubscriptions_when_not_needed()
+        {
+            _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
+            _directory.Register(_bus, _self, new Subscription[0]);
+
+            _directory.UpdateSubscriptions(_bus, new SubscriptionsForType[0]);
+
+            _bus.Commands.OfType<RegisterPeerCommand>().ExpectedSingle();
+            _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ShouldBeEmpty();
+        }
         
         [Test]
         public void should_timestamp_updatesubscriptions_with_a_minimum_ten_ticks_granularity()
