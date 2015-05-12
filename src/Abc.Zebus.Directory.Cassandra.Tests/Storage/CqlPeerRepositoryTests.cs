@@ -155,7 +155,6 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
-        [Repeat(500)]
         public void should_mark_peer_as_responding()
         {
             var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
