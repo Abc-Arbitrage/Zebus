@@ -1,5 +1,7 @@
 ﻿using Abc.Zebus.Util.Extensions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Abc.Zebus
 {
@@ -27,6 +29,12 @@ namespace Abc.Zebus
             var value = (T)Enum.Parse(typeof(T), ErrorCode.ToString());
 
             return string.Format(((Enum)(object)value).GetAttributeDescription(), formatValues);
+        }
+
+        internal static int GetErrorCode(IEnumerable<Exception> exceptions)
+        {
+            var domainException = exceptions.FirstOrDefault() as DomainException;
+            return domainException != null ? domainException.ErrorCode : 1;
         }
     }
 }

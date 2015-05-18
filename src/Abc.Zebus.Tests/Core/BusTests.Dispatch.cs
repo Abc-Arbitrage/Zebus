@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
@@ -46,6 +47,22 @@ namespace Abc.Zebus.Tests.Core
             handled.ShouldBeTrue();
             completed.ShouldBeTrue();
             _transport.Messages.ShouldBeEmpty();
+        }
+
+        [Test]
+        public void should_forward_error_when_handling_command_locally()
+        {
+            var command = new FakeCommand(1);
+            SetupDispatch(command, error: new Exception("Test error"));
+            SetupPeersHandlingMessage<FakeCommand>(_self);
+
+            _bus.Start();
+
+            var task = _bus.Send(command);
+            var completed = task.Wait(500);
+
+            completed.ShouldBeTrue();
+            task.Result.IsSuccess.ShouldBeFalse();
         }
 
         [Test]

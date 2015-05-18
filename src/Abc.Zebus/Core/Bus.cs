@@ -467,7 +467,8 @@ namespace Abc.Zebus.Core
                 if (taskCompletionSource == null)
                     return;
 
-                var commandResult = new CommandResult(dispatch.Context.ReplyCode, dispatch.Context.ReplyResponse);
+                var errorCode = dispatchResult.Errors.Any() ? CommandResult.GetErrorCode(dispatchResult.Errors) : dispatch.Context.ReplyCode;
+                var commandResult = new CommandResult(errorCode, dispatch.Context.ReplyResponse);
                 taskCompletionSource.SetResult(commandResult);
             };
         }

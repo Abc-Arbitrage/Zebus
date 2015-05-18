@@ -65,8 +65,7 @@ namespace Abc.Zebus.Core
 
         public static MessageExecutionCompleted Failure(MessageId sourceCommandId, IEnumerable<Exception> exceptions)
         {
-            var domainException = exceptions.FirstOrDefault() as DomainException;
-            var errorCode = domainException != null ? domainException.ErrorCode : 1;
+            var errorCode = CommandResult.GetErrorCode(exceptions);
 
             return new MessageExecutionCompleted(sourceCommandId, errorCode);
         }
