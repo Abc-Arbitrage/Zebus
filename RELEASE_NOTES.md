@@ -5,21 +5,21 @@
  
 ## 1.2.8
 ### Features 
- - MessageId can now be paused at a given date
- - Added new "Handling" methods to the TestBus
+ - `MessageId` can now be paused at a given date
+ - Added new "Handling" methods to the `TestBus`
  
 ## 1.2.7
 ### Bug fixes
- - Fix the Period setter on PeriodicActionHostInitializer
+ - Fix the Period setter on `PeriodicActionHostInitializer`
  
 ## 1.2.6
 ### Features 
- - Added PeriodicActionHostInitializer / HostInitializerHelper to provide an easy way to run code Before/After the Bus is Starting/Stopping and at given intervals.
- - DomainExceptions can now be thrown using an Enum, and the error message can be retrieved by the sender using Description attributes on the Enum.
+ - Added `PeriodicActionHostInitializer` / `HostInitializerHelper` to provide an easy way to run code Before/After the Bus is Starting/Stopping and at given intervals.
+ - `DomainException`s can now be thrown using an Enum, and the error message can be retrieved by the sender using Description attributes on the Enum.
  
 ## 1.2.5
 ### Bug fixes
- - Transient Infrastructure Commands now ignore the "IsResponding" state of the target Peer, as they should (Some Commands like PingCommand should be sent no matter what)
+ - Transient Infrastructure Commands now ignore the "IsResponding" state of the target Peer, as they should (Some Commands like `PingCommand` should be sent no matter what)
 
 ## 1.2.4
 ### Features 
