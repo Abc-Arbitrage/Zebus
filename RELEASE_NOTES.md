@@ -1,8 +1,3 @@
-## Upcoming features
-### Future
- - Persistence service
- - Reconsider ZMQ as a transport library
-
 ## 1.3.1
 ### Bug fixes
  - Error codes of locally handled commands are returned properly
