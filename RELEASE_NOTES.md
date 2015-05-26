@@ -2,6 +2,38 @@
 ### Future
  - Persistence service
  - Reconsider ZMQ as a transport library
+
+## 1.3.1
+### Bug fixes
+ - Error codes of locally handled commands are returned properly
+ - Empty subscription updates are not sent to the Directory
+ 
+## 1.3.0
+### Features
+ - Subscription updates are made by message type instead of as a big atomic change to improve subscriptions performance
+
+## 1.2.13
+Republished the NuGet because the version number was not incremented in 1.2.12
+ 
+## 1.2.12
+### Bug fixes
+ - Pulled the new `MessageDispatcher` filter feature up to `IMessageDispatcher`
+ 
+## 1.2.11
+### Bug fixes
+ - Fixed NuGet dependencies
+ 
+## 1.2.10
+### Features
+ - The inbound port is no longer sticky, since the feature was not relevant anymore (we are no longer relying on ZMQ's buffers)
+ - The `MessageDispatcher` can be provided with a message type filter
+ 
+## 1.2.9
+### Features
+ - Scanning .exe files as well as .dlls at startup
+
+### Bug fixes
+ - The `TestBus` now publishes a `PeerStopped` event when unregistering 
  
 ## 1.2.8
 ### Features 
@@ -25,6 +57,7 @@
 ### Features 
  - Deserialization errors now produce a `MessageProcessingFailed` instead of a `CustomProcessingFailed` since it makes more sense to handle it like a conventional handler error
  - NuGet dependencies updated
+
 ### Bug fixes
  - The handler being run while the Bus shutdown is initiated could not send messages because the Bus was signaled as "Stopped" too early
  
@@ -36,20 +69,22 @@
 ### Features 
  - Zebus.Testing: The default object comparer now ignores static fields/properties
  - Added `Abc.Zebus.Persistence` to the InternalsVisibleTo list to prepare the release of the Persistence
+
 ### Bug fixes
  - Sending a message with a `null` Routing Key now throws an explicit exception (instead of `NullReferenceException`) 
 
 ## 1.2.1
 ### Features 
  - `Abc.Zebus.Lotus.CustomProcessingFailed` is now mutable, allowing users to pool it
- 
+
 ## 1.2.0
-### Features 
+### Features
  - The Pipes move from `Scan\Pipes` to `Dispatch\Pipes` (theoretically a breaking change, but the API is quite internal)
  - Removed `RoutingType` since it wasn't used
  - The Bus will now throw if you try to use it before it is started
  - Moq, ProtoBuf-Net, AutoFixture, Json.Net, NUnit and CompareNetObjects are now referenced as NuGets
  - The new `MarkPeerAsRespondingCommand`/ `MarkPeerAsNotRespondingCommand` commands allow to mark a Peer as (not) responding (NOT a standard operation, use with care)
+
 ### Bug fixes
  - The Persistence is now acked when a message cannot be deserialized, to prevent the Persistence from sending it over and over
  - A race condition could prevent the Bus from starting properly
@@ -62,32 +97,35 @@
 ### Features 
  - A message that cannot be deserialized is now dumped on disk
  - IProvideQueueLength now exposes a `Purge()` method, that is called when the queue length provider exceeds queue thresholds
+
 ### Bug fixes
  - Fixed thread-safety issue in MessageDispatch.SetHandled
- 
+
 ## 1.1.6
 ### Features
  - log4net is now referenced as a NuGet package
- 
+
 ## 1.1.5
 ### Features
  - The repository is split, from now on Zebus.Directory has its own repository
  - The MessageContext can be injected in the constructor of a handler
  - The new SubscriptionModeAttribute allows to control automatic subscriptions more explicitly
+
 ### Bug fixes
  - The "HANDLE" log is now accurate for async
- 
+
 ## 1.1.4 
 ### Features
  - Split the "HANDLE" log into "RECV" and "HANDLE", making the distinction between the time a message is received and the time it is handled by user code
+
 ### Bug fixes
  - Directories don't decommission other Directories/self
  - Starting multiple Buses on the same machine simultaneously could result in identical message ids
- 
+
 ## 1.1.3
 ### Features
  - MessageExecutionCompleted now logs the MessageId of the corresponding command
- 
+
 ## 1.1.2
 ### Features
  - Now using Cassandra driver 2.0.3 in Directory.Cassandra
@@ -100,6 +138,7 @@
 ### Features 
  - The Cassandra backed Directory server is fully operational
  - The tree-backed local Directory cache is now fully operational (routing performance improvement, faster routing rules updates, smaller memory footprint, etc.)
+
 ### Bug fixes
  - Dynamic subscriptions for outgoing messages can be disabled on the Cassandra Directory implementation to handle massive dynamic subscriptions (not recommended)
  - The SocketConnected/SocketDisconnected feature was removed (it was largely undocumented / unused, so it made to a minor)
@@ -109,7 +148,7 @@
  - Messages received from the Directory during the Registration procedure could be lost
  - The Directory server now deletes existing dynamic subscriptions when a Peer registers
  - The Directory server now handles PeerSubscriptionsForTypesUpdated with "null" BindingKeys
- 
+
 ## 1.0.10
 ### Features
  - The local Directory cache now handles the new dynamic subscriptions. We will release a 1.1 after thorough testing / benchmarking.
@@ -123,11 +162,11 @@
 ## 1.0.8
 ### Features
  - CustomDelegatedProcessingFailed was removed (it should never have been in the public API).
- 
+
 ## 1.0.7
 ### Bug fixes
  - The Cassandra Directory server implementation was ignoring some updates because the DateTime.Kind was not set and some timestamps where erroneously converted to Utc.
- 
+
 ## 1.0.6
 ### Bug fixes
  - Added some logging in the Directory events to ease debugging
@@ -145,6 +184,7 @@
 ### Features
  - IMultiEventHandler is replaced by Bus.Subscribe(Subscription[], Action<IMessage>) (Should have been in a major release since it is a Core breaking change, but given that it was not even documented we just changed it in a patch release).
  - The project is now built/tested on [AppVeyor](https://ci.appveyor.com/project/alprema/zebus)
+
 ### Bug fixes
  - When creating two identical dynamic subscriptions, disposing one does not dispose the other anymore.
 
