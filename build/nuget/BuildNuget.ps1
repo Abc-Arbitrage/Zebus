@@ -10,6 +10,7 @@ if((Test-Path $outputLocation) -eq $true)
 $dir = New-Item -ItemType directory $outputLocation;
 
 # Compile solution in release
+& '.\tools\nuget\NuGet.exe' restore .\src\Abc.Zebus.Directory.sln
 & $msbuild .\src\Abc.Zebus.Directory.sln /t:rebuild /p:Configuration=Release
 
 # Get metadata (without locking file)
