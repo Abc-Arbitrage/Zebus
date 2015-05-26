@@ -25,7 +25,7 @@ Republished the NuGet because the version number was not incremented in 1.2.12
  
 ## 1.2.9
 ### Features
- - Scanning .exe files as well as .dlls at startup
+ - Scanning ".exe" files for handlers as well as ".dlls" at startup
 
 ### Bug fixes
  - The `TestBus` now publishes a `PeerStopped` event when unregistering 
