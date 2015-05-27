@@ -1,11 +1,3 @@
-## Upcoming features
-### Next minor
- - On-disk Directory
-
-### Future
- - Persistence service
- - Reconsider ZMQ as a transport library
-
 ## 1.2.1
 ### Bug fixes
  - Fix injection configuration issue in the Directory.Standalone project
