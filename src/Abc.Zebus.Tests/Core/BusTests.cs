@@ -23,6 +23,7 @@ namespace Abc.Zebus.Tests.Core
     public partial class BusTests
     {
         private const string _deserializationFailureDumpsDirectoryName = "deserialization_failure_dumps";
+        private const string _environment = "test";
 
         private readonly Peer _self = new Peer(new PeerId("Abc.Testing.Self"), "tcp://abctest:123");
         private readonly Peer _peerUp = new Peer(new PeerId("Abc.Testing.Up"), "AnotherPeer");
@@ -45,7 +46,7 @@ namespace Abc.Zebus.Tests.Core
             _messageSerializer = new TestMessageSerializer();
 
             _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultStoppingStrategy());
-            _bus.Configure(_self.Id, "test");
+            _bus.Configure(_self.Id, _environment);
 
             _invokers = new List<IMessageHandlerInvoker>();
             _messageDispatcherMock.Setup(x => x.GetMessageHanlerInvokers()).Returns(_invokers);
@@ -70,9 +71,9 @@ namespace Abc.Zebus.Tests.Core
             var transportMock = new Mock<ITransport>();
             var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, null, new DefaultStoppingStrategy());
 
-            bus.Configure(_self.Id, "test");
+            bus.Configure(_self.Id, _environment);
 
-            transportMock.Verify(trans => trans.Configure(It.Is<PeerId>(peerId => _self.Id.Equals(peerId)), "test"));
+            transportMock.Verify(trans => trans.Configure(It.Is<PeerId>(peerId => _self.Id.Equals(peerId)), _environment));
         }
 
         [Test]
@@ -216,6 +217,18 @@ namespace Abc.Zebus.Tests.Core
             var updatedPeer = _transport.UpdatedPeers.ExpectedSingle();
             updatedPeer.PeerId.ShouldEqual(_peerUp.Id);
             updatedPeer.UpdateAction.ShouldEqual(updateAction);
+        }
+
+        [Test]
+        public void should_set_the_peerId_property()
+        {
+            _bus.PeerId.ShouldEqual(_self.Id);
+        }
+
+        [Test]
+        public void should_set_the_environment_property()
+        {
+            _bus.Environment.ShouldEqual(_environment);
         }
 
         private void AddInvoker<TMessage>(bool shouldBeSubscribedOnStartup) where TMessage : class, IMessage

@@ -6,6 +6,7 @@ namespace Abc.Zebus
     public interface IBus : IDisposable
     {
         PeerId PeerId { get; }
+        string Environment { get; }
         bool IsRunning { get; }
 
         void Configure(PeerId peerId, string environment);

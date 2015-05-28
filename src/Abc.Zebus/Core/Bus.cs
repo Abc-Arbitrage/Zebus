@@ -30,6 +30,7 @@ namespace Abc.Zebus.Core
         private readonly IStoppingStrategy _stoppingStrategy;
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
         private PeerId _peerId;
+        private string _environment;
         private bool _isRunning;
  
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IStoppingStrategy stoppingStrategy)
@@ -53,6 +54,11 @@ namespace Abc.Zebus.Core
             get { return _peerId; }
         }
 
+        public string Environment
+        {
+            get { return _environment; }
+        }
+
         public bool IsRunning
         {
             get { return _isRunning; }
@@ -66,6 +72,7 @@ namespace Abc.Zebus.Core
         public void Configure(PeerId peerId, string environment)
         {
             _peerId = peerId;
+            _environment = environment;
             _transport.Configure(peerId, environment);
         }
 
@@ -415,10 +422,10 @@ namespace Abc.Zebus.Core
             }
             catch (Exception ex)
             {
-                jsonMessage = string.Format("Unable to serialize message :{0}{1}", Environment.NewLine, ex);
+                jsonMessage = string.Format("Unable to serialize message :{0}{1}", System.Environment.NewLine, ex);
             }
             var errorMessages = dispatchResult.Errors.Select(error => error.ToString());
-            var errorMessage = string.Join(Environment.NewLine + Environment.NewLine, errorMessages);
+            var errorMessage = string.Join(System.Environment.NewLine + System.Environment.NewLine, errorMessages);
             var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName).ToArray());
             var peers = _directory.GetPeersHandlingMessage(messageProcessingFailed);
             SendTransportMessage(ToTransportMessage(messageProcessingFailed, MessageId.NextId()), peers);

@@ -24,6 +24,11 @@ namespace Abc.Zebus.Core
             get { return _bus.PeerId; }
         }
 
+        public string Environment
+        {
+            get { return _bus.Environment; }
+        }
+
         public bool IsRunning
         {
             get { return _bus.IsRunning; }

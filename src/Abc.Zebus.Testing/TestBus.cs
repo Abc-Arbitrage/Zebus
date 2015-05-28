@@ -73,6 +73,7 @@ namespace Abc.Zebus.Testing
         public bool IsStarted { get; private set; }
         public bool IsStopped { get; private set; }
         public PeerId PeerId { get; private set; }
+        public string Environment { get; private set; }
         public bool IsRunning { get; private set; }
 
         public IEnumerable<IMessage> Messages
@@ -196,6 +197,7 @@ namespace Abc.Zebus.Testing
         public void Configure(PeerId peerId, string environment = "test")
         {
             PeerId = peerId;
+            Environment = environment;
         }
 
         public void Start()
