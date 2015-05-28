@@ -3,7 +3,7 @@ using Cassandra.Mapping.Attributes;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
 {
-    [Table("Peers")]
+    [Table("Peers", CaseSensitive = true)]
     public class StoragePeer
     {
         [PartitionKey]
@@ -15,7 +15,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         [Column("EndPoint")]
         public string EndPoint { get; set; }
-            
+
         [Column("IsUp")]
         public bool IsUp { get; set; }
 
@@ -33,7 +33,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         [Column("StaticSubscriptions")]
         public byte[] StaticSubscriptionsBytes { get; set; }
-            
+
         public StoragePeer()
         {
         }

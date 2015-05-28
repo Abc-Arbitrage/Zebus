@@ -1,12 +1,11 @@
-﻿using Abc.Zebus.Directory.Cassandra.Cql;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Abc.Zebus.Directory.Cassandra.Cql;
 using Abc.Zebus.Util;
 using Cassandra;
 using Moq;
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
 {

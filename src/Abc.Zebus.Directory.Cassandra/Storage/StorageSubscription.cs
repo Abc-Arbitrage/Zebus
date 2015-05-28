@@ -2,7 +2,7 @@ using Cassandra.Mapping.Attributes;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
 {
-    [Table("DynamicSubscriptions")]
+    [Table("DynamicSubscriptions", CaseSensitive = true)]
     public class StorageSubscription
     {
         [PartitionKey]
