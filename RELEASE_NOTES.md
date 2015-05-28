@@ -4,6 +4,9 @@
  - Empty subscription updates are not sent to the Directory
  
 ## 1.3.0
+### Requirements
+ - A client using this version needs its Directory server to be at least in 1.1 for dynamic subscriptions to work properly
+
 ### Features
  - Subscription updates are made by message type instead of as a big atomic change to improve subscriptions performance
 
