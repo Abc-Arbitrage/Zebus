@@ -71,7 +71,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         {
             var tableNames = DataContext.GetTableNames();
             foreach (var name in tableNames)
-                Session.Execute(new SimpleStatement(string.Format("truncate {0};", name)));
+                Session.Execute(new SimpleStatement(string.Format("truncate \"{0}\";", name)));
         }
     }
 }
