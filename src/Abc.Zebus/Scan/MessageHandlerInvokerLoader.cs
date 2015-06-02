@@ -29,7 +29,7 @@ namespace Abc.Zebus.Scan
                 if (!handlerType.IsClass || handlerType.IsAbstract || !handlerType.IsVisible || !_handlerType.IsAssignableFrom(handlerType))
                     continue;
 
-                var subscriptionMode = GetExplicitSubscriptionMode(handlerType);
+                var subscriptionMode = MessageHandlerInvoker.GetExplicitSubscriptionMode(handlerType);
                 var interfaces = handlerType.GetInterfaces();
 
                 var excludedMessageTypes = interfaces.Where(IsExtendedMessageHandlerInterface)
@@ -48,19 +48,6 @@ namespace Abc.Zebus.Scan
                     yield return invoker;
                 }
             }
-        }
-
-        private SubscriptionMode? GetExplicitSubscriptionMode(Type handlerType)
-        {
-            var subscriptionModeAttribute = (SubscriptionModeAttribute)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
-            if (subscriptionModeAttribute != null)
-                return subscriptionModeAttribute.SubscriptionMode;
-
-            var isNoScanHandler = Attribute.IsDefined(handlerType, typeof(NoScanAttribute));
-            if (isNoScanHandler)
-                return SubscriptionMode.Manual;
-
-            return null;
         }
 
         protected abstract IMessageHandlerInvoker BuildMessageHandlerInvoker(Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup);

@@ -49,12 +49,30 @@ namespace Abc.Zebus.Dispatch
             return new Task(() => InvokeMessageHandler(invocation), TaskCreationOptions.HideScheduler);
         }
 
-        protected internal static bool MessageShouldBeSubscribedOnStartup(Type messageType, SubscriptionMode? subscriptionMode = null)
+        public static bool MessageShouldBeSubscribedOnStartup(Type messageType, Type handlerType)
+        {
+            return MessageShouldBeSubscribedOnStartup(messageType, GetExplicitSubscriptionMode(handlerType));
+        }
+
+        internal static bool MessageShouldBeSubscribedOnStartup(Type messageType, SubscriptionMode? subscriptionMode = null)
         {
             if (subscriptionMode != null)
                 return subscriptionMode == SubscriptionMode.Auto;
 
             return !Attribute.IsDefined(messageType, typeof(Routable));
+        }
+
+        internal static SubscriptionMode? GetExplicitSubscriptionMode(Type handlerType)
+        {
+            var subscriptionModeAttribute = (SubscriptionModeAttribute)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
+            if (subscriptionModeAttribute != null)
+                return subscriptionModeAttribute.SubscriptionMode;
+
+            var isNoScanHandler = Attribute.IsDefined(handlerType, typeof(NoScanAttribute));
+            if (isNoScanHandler)
+                return SubscriptionMode.Manual;
+
+            return null;
         }
 
         protected object CreateHandler(IContainer container, MessageContext messageContext)
