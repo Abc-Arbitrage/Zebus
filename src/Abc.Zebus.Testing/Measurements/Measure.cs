@@ -8,9 +8,9 @@ namespace Abc.Zebus.Testing.Measurements
 {
     public static class Measure
     {
-        private const double _µsInOneSecond = 1000000;
+        private const double _ÂµsInOneSecond = 1000000;
         private static readonly object _lock = new object();
-        private static readonly double _µsFrequency = _µsInOneSecond / Stopwatch.Frequency;
+        private static readonly double _ÂµsFrequency = _ÂµsInOneSecond / Stopwatch.Frequency;
 
         public static void Execution(long iterations, Action action)
         {
@@ -103,12 +103,12 @@ namespace Abc.Zebus.Testing.Measurements
                                   configuration.Iteration / results.Elapsed.TotalSeconds);
 
                 Console.WriteLine("Latencies :");
-                Console.WriteLine("Min :          {0,10:### ### ##0}µs", min * _µsFrequency);
-                Console.WriteLine("Avg :          {0,10:### ### ##0}µs", (double)results.Elapsed.Ticks / configuration.Iteration / (TimeSpan.TicksPerMillisecond / 1000));
-                Console.WriteLine("Median :       {0,10:### ### ##0}µs", median * _µsFrequency);
-                Console.WriteLine("95 percentile : {0,10:### ### ##0}µs", fivePercentile * _µsFrequency);
-                Console.WriteLine("99 percentile : {0,10:### ### ##0}µs", onePercentile * _µsFrequency);
-                Console.WriteLine("Max :          {0,10:### ### ##0}µs (Iteration #{1})", max * _µsFrequency, results.MaxIterationIndex);
+                Console.WriteLine("Min :          {0,10:### ### ##0}Âµs", min * _ÂµsFrequency);
+                Console.WriteLine("Avg :          {0,10:### ### ##0}Âµs", (double)results.Elapsed.Ticks / configuration.Iteration / (TimeSpan.TicksPerMillisecond / 1000));
+                Console.WriteLine("Median :       {0,10:### ### ##0}Âµs", median * _ÂµsFrequency);
+                Console.WriteLine("95 percentile : {0,10:### ### ##0}Âµs", fivePercentile * _ÂµsFrequency);
+                Console.WriteLine("99 percentile : {0,10:### ### ##0}Âµs", onePercentile * _ÂµsFrequency);
+                Console.WriteLine("Max :          {0,10:### ### ##0}Âµs (Iteration #{1})", max * _ÂµsFrequency, results.MaxIterationIndex);
                 Console.WriteLine("G0 : {0}", results.G0Count);
                 Console.WriteLine("G1 : {0}", results.G1Count);
                 Console.WriteLine("G2 : {0}", results.G2Count);
