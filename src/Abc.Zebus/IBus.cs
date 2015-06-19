@@ -20,6 +20,7 @@ namespace Abc.Zebus
         IDisposable Subscribe(Subscription[] subscriptions, SubscriptionOptions options = SubscriptionOptions.Default);
         IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage;
         IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler);
+        IDisposable Subscribe(Subscription subscription, Action<IMessage> handler);
 
         void Reply(int errorCode);
         void Reply(IMessage response);
