@@ -275,6 +275,21 @@ namespace Abc.Zebus.Core
             });
         }
 
+        public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
+        {
+            var eventHandlerInvoker = new EventHandlerInvoker(handler, subscription.MessageTypeId.GetMessageType());
+
+            _messageDispatcher.AddInvoker(eventHandlerInvoker);
+
+            AddSubscriptions(subscription);
+
+            return new DisposableAction(() =>
+            {
+                RemoveSubscriptions(subscription);
+                _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
+            });
+        }
+
         private void EnsureMessageHandlerInvokerExists(Subscription[] subscriptions)
         {
             foreach (var subscription in subscriptions)
@@ -284,7 +299,7 @@ namespace Abc.Zebus.Core
             }
         }
 
-        private void AddSubscriptions(IEnumerable<Subscription> subscriptions)
+        private void AddSubscriptions(params Subscription[] subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
             lock (_subscriptions)
@@ -298,7 +313,7 @@ namespace Abc.Zebus.Core
             OnSubscriptionsUpdatedForTypes(updatedTypes);
         }
 
-        private void RemoveSubscriptions(IEnumerable<Subscription> subscriptions)
+        private void RemoveSubscriptions(params Subscription[] subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
             lock (_subscriptions)

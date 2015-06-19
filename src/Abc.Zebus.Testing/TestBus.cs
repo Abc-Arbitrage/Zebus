@@ -184,6 +184,30 @@ namespace Abc.Zebus.Testing
             });
         }
 
+        public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
+        {
+            lock (_subscriptions)
+            {
+                _subscriptions.Add(subscription);
+            }
+
+            var handlerKey = new HandlerKey(subscription.MessageTypeId.GetMessageType(), default(PeerId));
+            _handlers[handlerKey] = x =>
+            {
+                handler(x);
+                return null;
+            };
+
+            return new DisposableAction(() =>
+            {
+                _handlers.Remove(handlerKey);
+                lock (_subscriptions)
+                {
+                    _subscriptions.Remove(subscription);
+                }
+            });
+        }
+
         public void Reply(int errorCode)
         {
             LastReplyCode = errorCode;
