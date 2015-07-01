@@ -176,7 +176,7 @@ namespace Abc.Zebus
 
         private static void AddFieldValue(Dictionary<string, string> fieldValues, BinaryExpression expression)
         {
-            var memberExpression = (MemberExpression)expression.Left;
+            var memberExpression = (MemberExpression)(expression.Left as MemberExpression ?? ((UnaryExpression)expression.Left).Operand);
             var memberName = memberExpression.Member.Name;
             var memberValue = Expression.Lambda(expression.Right).Compile().DynamicInvoke();
             if (memberValue != null)
