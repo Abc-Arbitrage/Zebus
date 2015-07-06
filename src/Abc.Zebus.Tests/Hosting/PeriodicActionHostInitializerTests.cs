@@ -17,7 +17,7 @@ namespace Abc.Zebus.Tests.Hosting
         [SetUp]
         public void SetUp()
         {
-            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds()) { CallBase = true };
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds(), null) { CallBase = true };
         }
 
         [TearDown]
@@ -100,6 +100,54 @@ namespace Abc.Zebus.Tests.Hosting
             Thread.Sleep(100.Milliseconds());
 
             callCount.ShouldEqual(callCountAfterStop);
+        }
+
+        [Test]
+        public void should_start_at_specified_time()
+        {
+            var now = DateTime.UtcNow;
+            var offset = 1.Seconds();
+            var dueTime = now + offset;
+            Func<DateTime> startOffsetFactory = () => dueTime;
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds(), startOffsetFactory) { CallBase = true };
+
+            DateTime? firstCallTime = null;
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
+            {
+                if (firstCallTime == null)
+                    firstCallTime = DateTime.UtcNow;
+            });
+
+            _periodicInitializer.Object.AfterStart();
+            
+            Thread.Sleep((int)((offset.TotalMilliseconds) * 2));
+
+            firstCallTime.ShouldNotBeNull();
+            firstCallTime.Value.ShouldApproximateDateTime(dueTime, 50);
+        }
+
+        [Test]
+        public void should_start_after_first_period()
+        {
+            var period = 500.Milliseconds();
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), period, null) { CallBase = true };
+
+            DateTime? firstCallTime = null;
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
+            {
+                if (firstCallTime == null)
+                    firstCallTime = DateTime.UtcNow;
+            });
+
+            _periodicInitializer.Object.AfterStart();
+            var startTime = DateTime.UtcNow;
+
+            Thread.Sleep((int)((period.TotalMilliseconds) * 2));
+
+            firstCallTime.ShouldNotBeNull();
+            Console.WriteLine("First call " + firstCallTime.Value.ToString("h:mm:ss.fffff"));
+            Console.WriteLine("Expected " + (startTime + period).ToString("h:mm:ss.fffff"));
+            firstCallTime.Value.ShouldApproximateDateTime(startTime + period, 50); 
         }
     }
 }

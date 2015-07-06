@@ -16,12 +16,14 @@ namespace Abc.Zebus.Hosting
         private Thread _thread;
         private int _exceptionCount;
         private volatile bool _isRunning;
+        private readonly Func<DateTime> _startOffset;
 
-        protected PeriodicActionHostInitializer(IBus bus, TimeSpan period)
+        protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime> startOffset = null)
         {
             _logger = LogManager.GetLogger(GetType());
             _bus = bus;
             _period = period;
+            _startOffset = startOffset ?? (() => DateTime.UtcNow);
 
             ErrorPublicationEnabled = true;
             ErrorCountBeforePause = 10;
@@ -66,8 +68,18 @@ namespace Abc.Zebus.Hosting
         {
             var sleep = (int)Math.Min(300, _period.TotalMilliseconds / 2);
 
-            _logger.InfoFormat("MainLoop started, Period: {0}ms, Sleep: {1}ms", _period.TotalMilliseconds, sleep);
+            var startTime = _startOffset();
+            var startWaitingPeriod = (startTime - DateTime.UtcNow) - _period;
+            if (startWaitingPeriod > 5.Minutes())
+                throw new InvalidOperationException("Start offset is too large, please review your offset function");
 
+            if (startWaitingPeriod.TotalMilliseconds > 0)
+            {
+                _logger.InfoFormat("MainLoop sleeping for {0}s before starting", startWaitingPeriod.TotalSeconds);
+                Thread.Sleep(startWaitingPeriod);
+            }
+
+            _logger.InfoFormat("MainLoop started, Period: {0}ms, Sleep: {1}ms", _period.TotalMilliseconds, sleep);
             var next = DateTime.UtcNow + _period;
             while (_isRunning)
             {

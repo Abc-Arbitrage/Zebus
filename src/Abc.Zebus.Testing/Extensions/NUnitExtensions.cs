@@ -62,6 +62,12 @@ namespace Abc.Zebus.Testing.Extensions
             return expected;
         }
 
+        public static DateTime ShouldApproximateDateTime(this DateTime actual, DateTime expected, int milliseconds)
+        {
+            Assert.That(actual, Is.EqualTo(expected).Within(milliseconds).Milliseconds);
+            return expected;
+        }
+
         public static DateTime? ShouldApproximateDateTime(this DateTime? actual, DateTime expected)
         {
             actual.ShouldNotBeNull();
