@@ -139,6 +139,22 @@ namespace Abc.Zebus.Tests
         }
 
         [Test]
+        public void should_create_subscription_from_predicate_with_enum()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithEnum>(x => x.Test1 == TestEnum1.Bar);
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithEnum)));
+            subscription.BindingKey.ShouldEqual(new BindingKey(((int)TestEnum1.Bar).ToString(), "*"));
+        }
+
+        [Test]
+        public void should_create_subscription_from_complex_predicate_with_enum()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithEnum>(x => x.Test1 == TestEnum1.Bar && x.Test2 == TestEnum2.Buz);
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithEnum)));
+            subscription.BindingKey.ShouldEqual(new BindingKey(((int)TestEnum1.Bar).ToString(), ((int)TestEnum2.Buz).ToString()));
+        }
+
+        [Test]
         public void should_create_subscription_from_simple_predicate()
         {
             var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.Id == GetFieldValue());
