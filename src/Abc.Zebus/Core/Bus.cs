@@ -277,17 +277,7 @@ namespace Abc.Zebus.Core
 
         public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
         {
-            var eventHandlerInvoker = new EventHandlerInvoker(handler, subscription.MessageTypeId.GetMessageType());
-
-            _messageDispatcher.AddInvoker(eventHandlerInvoker);
-
-            AddSubscriptions(subscription);
-
-            return new DisposableAction(() =>
-            {
-                RemoveSubscriptions(subscription);
-                _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
-            });
+            return Subscribe(new[] { subscription }, handler);
         }
 
         private void EnsureMessageHandlerInvokerExists(Subscription[] subscriptions)
