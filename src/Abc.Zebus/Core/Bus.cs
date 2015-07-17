@@ -275,6 +275,11 @@ namespace Abc.Zebus.Core
             });
         }
 
+        public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
+        {
+            return Subscribe(new[] { subscription }, handler);
+        }
+
         private void EnsureMessageHandlerInvokerExists(Subscription[] subscriptions)
         {
             foreach (var subscription in subscriptions)
@@ -284,7 +289,7 @@ namespace Abc.Zebus.Core
             }
         }
 
-        private void AddSubscriptions(IEnumerable<Subscription> subscriptions)
+        private void AddSubscriptions(params Subscription[] subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
             lock (_subscriptions)
@@ -298,7 +303,7 @@ namespace Abc.Zebus.Core
             OnSubscriptionsUpdatedForTypes(updatedTypes);
         }
 
-        private void RemoveSubscriptions(IEnumerable<Subscription> subscriptions)
+        private void RemoveSubscriptions(params Subscription[] subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
             lock (_subscriptions)

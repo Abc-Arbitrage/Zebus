@@ -268,6 +268,26 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
+        public void should_subscribe_to_single_subscription_with_untype_handler()
+        {
+            _bus.Start();
+
+            var invokers = new List<IMessageHandlerInvoker>();
+            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<EventHandlerInvoker>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
+
+            var handlerMock = new Mock<IMessageHandler<IMessage>>();
+            _bus.Subscribe(Subscription.Any<FakeEvent>(), handlerMock.Object.Handle);
+
+            invokers.Count.ShouldEqual(1);
+            invokers[0].CanInvokeSynchronously.ShouldBeTrue();
+            invokers[0].DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
+            invokers[0].MessageHandlerType.ShouldNotBeNull();
+            invokers[0].MessageType.ShouldEqual(typeof(FakeEvent));
+            invokers[0].MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
+            invokers[0].ShouldCreateStartedTasks.ShouldBeFalse();
+        }
+
+        [Test]
         public void should_unsubscribe_from_handler()
         {
             _bus.Start();

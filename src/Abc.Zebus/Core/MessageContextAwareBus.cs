@@ -83,6 +83,11 @@ namespace Abc.Zebus.Core
             return _bus.Subscribe(subscriptions, handler);
         }
 
+        public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
+        {
+            return _bus.Subscribe(subscription, handler);
+        }
+
         public void Reply(int errorCode)
         {
             MessageContext.ReplyCode = errorCode;
