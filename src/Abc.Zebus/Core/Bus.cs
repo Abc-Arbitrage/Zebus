@@ -83,25 +83,36 @@ namespace Abc.Zebus.Core
 
             Starting();
 
-            _completionResultTaskScheduler = new CustomThreadPoolTaskScheduler(4);
-            _logger.DebugFormat("Loading invokers...");
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            var registered = false;
+            try
+            {
+                _completionResultTaskScheduler = new CustomThreadPoolTaskScheduler(4);
+                _logger.DebugFormat("Loading invokers...");
+                _messageDispatcher.LoadMessageHandlerInvokers();
 
-            PerformAutoSubscribe();
+                PerformAutoSubscribe();
 
-            _logger.DebugFormat("Starting message dispatcher...");
-            _messageDispatcher.Start();
+                _logger.DebugFormat("Starting message dispatcher...");
+                _messageDispatcher.Start();
+                
+                _logger.DebugFormat("Starting transport...");
+                _transport.Start();
 
-            _logger.DebugFormat("Starting transport...");
-            _transport.Start();
+                _isRunning = true;
 
-            _isRunning = true;
+                _logger.DebugFormat("Registering on directory...");
+                var self = new Peer(PeerId, EndPoint);
+                _directory.Register(this, self, GetSubscriptions());
+                registered = true;
 
-            _logger.DebugFormat("Registering on directory...");
-            var self = new Peer(PeerId, EndPoint);
-            _directory.Register(this, self, GetSubscriptions());
-
-            _transport.OnRegistered();
+                _transport.OnRegistered();
+            }
+            catch
+            {
+                InternalStop(registered);
+                _isRunning = false;
+                throw;
+            }
 
             Started();
         }
@@ -130,10 +141,18 @@ namespace Abc.Zebus.Core
         {
             if (!_isRunning)
                 throw new InvalidOperationException("Unable to stop, the bus is not running");
-            
+
             Stopping();
 
-            _directory.Unregister(this);
+            InternalStop(true);
+
+            Stopped();
+        }
+
+        private void InternalStop(bool unregister)
+        {
+            if (unregister)
+                _directory.Unregister(this);
 
             _stoppingStrategy.Stop(_transport, _messageDispatcher);
 
@@ -142,8 +161,6 @@ namespace Abc.Zebus.Core
             _subscriptions.Clear();
             _messageIdToTaskCompletionSources.Clear();
             _completionResultTaskScheduler.Dispose();
-
-            Stopped();
         }
 
         public void Publish(IEvent message)

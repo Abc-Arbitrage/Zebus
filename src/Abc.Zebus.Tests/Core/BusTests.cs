@@ -108,6 +108,21 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
+        public void should_not_be_running_if_registration_failed()
+        {
+            try
+            {
+                _directoryMock.Setup(x => x.Register(_bus, It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
+                              .Throws<TimeoutException>();
+                _bus.Start();
+            }
+            catch (TimeoutException)
+            {
+                _bus.IsRunning.ShouldBeFalse();    
+            }
+        }
+
+        [Test]
         public void should_stop_transport_and_unregister_from_directory()
         {
             var sequence = new SetupSequence();
