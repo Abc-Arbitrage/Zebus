@@ -40,10 +40,7 @@ namespace Abc.Zebus
         {
         }
 
-        public bool IsMatchingAllMessages
-        {
-            get { return BindingKey.IsEmpty; }
-        }
+        public bool IsMatchingAllMessages { get { return BindingKey.IsEmpty; } }
 
         public bool Matches(MessageBinding messageBinding)
         {
@@ -114,7 +111,7 @@ namespace Abc.Zebus
             if (BindingKey.IsEmpty)
                 return MessageTypeId.ToString();
 
-            return string.Format("{0} ({1})", MessageTypeId, BindingKey.ToString());
+            return string.Format("{0} ({1})", MessageTypeId, BindingKey);
         }
 
         public static Subscription ByExample<TMessage>(Expression<Func<Builder, TMessage>> factory) where TMessage : IMessage
@@ -123,6 +120,7 @@ namespace Abc.Zebus
                 throw new ArgumentException();
 
             var parameterValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            
             using (CultureScope.Invariant())
             {
                 var newExpression = (NewExpression)factory.Body;
@@ -132,21 +130,23 @@ namespace Abc.Zebus
                     var argumentExpression = newExpression.Arguments[argumentIndex];
                     var parameterName = parameters[argumentIndex].Name;
                     var parameterValue = GetExpressionValue(argumentExpression);
+
                     if (parameterValue != null)
                         parameterValues[parameterName] = parameterValue.ToString();
                 }
             }
+
             return new Subscription(MessageUtil.TypeId<TMessage>(), BindingKey.Create(typeof(TMessage), parameterValues));
         }
 
         private static object GetExpressionValue(Expression expression)
         {
-            if (expression.NodeType == ExpressionType.Call)
-            {
-                var methodCallExpression = (MethodCallExpression)expression;
-                if (methodCallExpression.Method.IsGenericMethod && methodCallExpression.Method.GetGenericMethodDefinition() == _wildCardTokenMethod)
-                    return null;
-            }
+            if (expression.NodeType != ExpressionType.Call)
+                return Expression.Lambda(expression).Compile().DynamicInvoke();
+
+            var methodCallExpression = (MethodCallExpression)expression;
+            if (methodCallExpression.Method.IsGenericMethod && methodCallExpression.Method.GetGenericMethodDefinition() == _wildCardTokenMethod)
+                return null;
 
             return Expression.Lambda(expression).Compile().DynamicInvoke();
         }
@@ -159,30 +159,73 @@ namespace Abc.Zebus
         public static Subscription Matching<TMessage>(Expression<Func<TMessage, bool>> predicate) where TMessage : IMessage
         {
             var fieldValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            
             using (CultureScope.Invariant())
             {
                 var current = predicate.Body;
                 while (current.NodeType == ExpressionType.And || current.NodeType == ExpressionType.AndAlso)
                 {
                     var binaryExpression = (BinaryExpression)current;
-                    AddFieldValue(fieldValues, (BinaryExpression)binaryExpression.Right);
-
+                    AddFieldValue<TMessage>(fieldValues, (BinaryExpression)binaryExpression.Right);
                     current = binaryExpression.Left;
                 }
-                AddFieldValue(fieldValues, (BinaryExpression)current);
+
+                AddFieldValue<TMessage>(fieldValues, (BinaryExpression)current);
             }
+
             return new Subscription(MessageUtil.TypeId<TMessage>(), BindingKey.Create(typeof(TMessage), fieldValues));
         }
 
-        private static void AddFieldValue(Dictionary<string, string> fieldValues, BinaryExpression expression)
+        private static void AddFieldValue<TMessage>(Dictionary<string, string> fieldValues, BinaryExpression expression)
         {
-            var memberExpression = (MemberExpression)(expression.Left as MemberExpression ?? ((UnaryExpression)expression.Left).Operand);
+            MemberExpression memberExpression;
+            Expression memberValueExpression;
+
+            if (TryGetMessageMemberExpression<TMessage>(expression.Right, out memberExpression))
+            {
+                memberValueExpression = expression.Left;
+            }
+            else if (TryGetMessageMemberExpression<TMessage>(expression.Left, out memberExpression))
+            {
+                memberValueExpression = expression.Right;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid message predicate: " + expression);
+            }
+
             var memberName = memberExpression.Member.Name;
-            var memberValue = Expression.Lambda(expression.Right).Compile().DynamicInvoke();
+            var memberValue = Expression.Lambda(memberValueExpression).Compile().DynamicInvoke();
+
+            var valueAsText = memberExpression.Type.IsEnum ? Enum.GetName(memberExpression.Type, memberValue) : memberValue.ToString();
+
             if (memberValue != null)
-                fieldValues.Add(memberName, memberValue.ToString());
+                fieldValues.Add(memberName, valueAsText);
         }
-        
+
+        private static bool TryGetMessageMemberExpression<TMessage>(Expression expression, out MemberExpression memberExpression)
+        {
+            memberExpression = expression as MemberExpression;
+            if (memberExpression != null)
+                return IsMessageMemberExpression<TMessage>(memberExpression);
+
+            var unaryExpression = expression as UnaryExpression;
+            if (unaryExpression == null)
+                return false;
+
+            memberExpression = unaryExpression.Operand as MemberExpression;
+            if (memberExpression == null)
+                return false;
+
+            return IsMessageMemberExpression<TMessage>(memberExpression);
+        }
+
+        private static bool IsMessageMemberExpression<TMessage>(MemberExpression memberExpression)
+        {
+            var containingExpression = memberExpression.Expression as ParameterExpression;
+            return containingExpression != null && containingExpression.Type == typeof(TMessage);
+        }
+
         [EditorBrowsable(EditorBrowsableState.Never), UsedImplicitly]
         public class Builder
         {

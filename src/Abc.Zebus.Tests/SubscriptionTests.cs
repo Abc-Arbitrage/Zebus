@@ -143,7 +143,15 @@ namespace Abc.Zebus.Tests
         {
             var subscription = Subscription.Matching<FakeRoutableCommandWithEnum>(x => x.Test1 == TestEnum1.Bar);
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithEnum)));
-            subscription.BindingKey.ShouldEqual(new BindingKey(((int)TestEnum1.Bar).ToString(), "*"));
+            subscription.BindingKey.ShouldEqual(new BindingKey(TestEnum1.Bar.ToString(), "*"));
+        }
+        
+        [Test]
+        public void should_create_subscription_from_inversed_predicate_with_enum()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithEnum>(x => TestEnum1.Bar == x.Test1);
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithEnum)));
+            subscription.BindingKey.ShouldEqual(new BindingKey(TestEnum1.Bar.ToString(), "*"));
         }
 
         [Test]
@@ -151,7 +159,7 @@ namespace Abc.Zebus.Tests
         {
             var subscription = Subscription.Matching<FakeRoutableCommandWithEnum>(x => x.Test1 == TestEnum1.Bar && x.Test2 == TestEnum2.Buz);
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithEnum)));
-            subscription.BindingKey.ShouldEqual(new BindingKey(((int)TestEnum1.Bar).ToString(), ((int)TestEnum2.Buz).ToString()));
+            subscription.BindingKey.ShouldEqual(new BindingKey(TestEnum1.Bar.ToString(), TestEnum2.Buz.ToString()));
         }
 
         [Test]
