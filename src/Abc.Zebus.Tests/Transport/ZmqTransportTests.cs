@@ -47,6 +47,16 @@ namespace Abc.Zebus.Tests.Transport
         }
 
         [Test]
+        public void should_not_crash_when_stopping_if_it_was_not_started()
+        {
+            var configurationMock = new Mock<IZmqTransportConfiguration>();
+            configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(100.Milliseconds());
+            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions());
+
+            Assert.That(transport.Stop, Throws.Nothing);
+        }
+
+        [Test]
         public void should_not_filter_received_messages_when_environment_is_not_specified()
         {
             var transport1 = CreateAndStartZmqTransport(environment: null);

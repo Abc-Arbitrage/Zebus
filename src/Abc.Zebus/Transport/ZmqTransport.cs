@@ -30,6 +30,7 @@ namespace Abc.Zebus.Transport
         private ZmqEndPoint _realInboundEndPoint;
         private string _environment;
         private CountdownEvent _outboundSocketsToStop;
+        private bool _isRunning;
 
         static ZmqTransport()
         {
@@ -134,10 +135,14 @@ namespace Abc.Zebus.Transport
             _disconnectThread = BackgroundThread.Start(DisconnectProc);
 
             startSequenceState.Wait();
+            _isRunning = true;
         }
 
         public void Stop()
         {
+            if (!_isRunning)
+                return;
+
             _pendingDisconnects.CompleteAdding();
             if (!_disconnectThread.Join(30.Seconds()))
                 _logger.Error("Unable to terminate disconnect thread");

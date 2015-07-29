@@ -23,6 +23,7 @@ namespace Abc.Zebus.Persistence
         private readonly ITransport _innerTransport;
         private readonly IPeerDirectory _peerDirectory;
         private readonly bool _isPersistent;
+        private bool _isRunning;
 
         private Phase _phase;
         private Thread _receptionThread;
@@ -127,10 +128,15 @@ namespace Abc.Zebus.Persistence
             _phase.OnStart();
 
             _innerTransport.Start();
+
+            _isRunning = true;
         }
 
         public void Stop()
         {
+            if (!_isRunning)
+                return;
+
             if (_messagesWaitingForPersistence.Any())
             {
                 _logger.WarnFormat("Stopping PersistenceTransport with messages waiting for persistence to come back online!");

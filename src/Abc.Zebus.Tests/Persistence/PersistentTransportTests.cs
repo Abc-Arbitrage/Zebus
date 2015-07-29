@@ -37,6 +37,12 @@ namespace Abc.Zebus.Tests.Persistence
         }
 
         [Test]
+        public void should_not_crash_when_stopping_if_it_was_not_started()
+        {
+            Assert.That(() => Transport.Stop(), Throws.Nothing);
+        }
+
+        [Test]
         public void should_only_forward_replayed_messages_during_replay_phase()
         {
             Transport.Start();
