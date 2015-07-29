@@ -215,9 +215,9 @@ namespace Abc.Zebus.Testing.Extensions
             return arg2;
         }
 
-        public static IComparable ShouldBeLessOrEqualThan(this IComparable arg1, IComparable arg2)
+        public static IComparable ShouldBeLessOrEqualThan(this IComparable arg1, IComparable arg2, string message = null)
         {
-            Assert.LessOrEqual(arg1, arg2);
+            Assert.LessOrEqual(arg1, arg2, message);
             return arg2;
         }
 

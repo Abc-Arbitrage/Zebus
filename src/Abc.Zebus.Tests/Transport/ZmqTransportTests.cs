@@ -270,22 +270,32 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.SocketOptions.SendTimeout = 50.Milliseconds();
             senderTransport.SocketOptions.SendRetriesBeforeSwitchingToClosedState = 0;
 
-            var receviedMessages = new List<TransportMessage>();
-            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receviedMessages.Add);
+            var receivedMessages = new List<TransportMessage>();
+            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
             var upReceiver = new Peer(new PeerId("Abc.Testing.Receiver.Up"), upReceiverTransport.InboundEndPoint);
 
             var downReceiverTransport = CreateAndStartZmqTransport();
             var downReceiver = new Peer(new PeerId("Abc.Testing.Receiver.Down"), downReceiverTransport.InboundEndPoint);
 
+            Console.WriteLine("Stopping receiver");
+
             downReceiverTransport.Stop();
+
+            Console.WriteLine("Receiver stopped");
 
             for (var i = 1; i <= 10; ++i)
             {
+                var senderStopwatch = Stopwatch.StartNew();
                 var message = new FakeCommand(i).ToTransportMessage();
                 senderTransport.Send(message, new[] { upReceiver, downReceiver });
+                Console.WriteLine("Send a message to two peers in " + senderStopwatch.Elapsed);
             }
 
-            Wait.Until(() => receviedMessages.Count == 10, 200.Milliseconds(), "Throughput is too low");
+            var receiverStopwatch = Stopwatch.StartNew();
+            Wait.Until(() => receivedMessages.Count == 10, 2.Seconds(), "Timed out while waiting for messages");
+            receiverStopwatch.Stop();
+            Console.WriteLine("Elapsed time to get messages: " + receiverStopwatch.Elapsed);
+            receiverStopwatch.ElapsedMilliseconds.ShouldBeLessOrEqualThan(200, "Throughput is too low");
         }
 
         [Test]
