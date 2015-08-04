@@ -139,6 +139,22 @@ namespace Abc.Zebus.Tests
         }
 
         [Test]
+        public void should_create_subscription_from_predicate_with_unary_expressions()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithBoolean>(x => !x.IsAMatch);
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithBoolean)));
+            subscription.BindingKey.ShouldEqual(new BindingKey("False"));
+
+            subscription = Subscription.Matching<FakeRoutableCommandWithBoolean>(x => x.IsAMatch);
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithBoolean)));
+            subscription.BindingKey.ShouldEqual(new BindingKey("True"));
+            
+            subscription = Subscription.Matching<FakeRoutableCommandWithBoolean>(x => !(!x.IsAMatch));
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithBoolean)));
+            subscription.BindingKey.ShouldEqual(new BindingKey("True"));
+        }
+
+        [Test]
         public void should_create_subscription_from_predicate_with_enum()
         {
             var subscription = Subscription.Matching<FakeRoutableCommandWithEnum>(x => x.Test1 == TestEnum1.Bar);
@@ -168,6 +184,20 @@ namespace Abc.Zebus.Tests
             var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.Id == GetFieldValue());
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
             subscription.BindingKey.ShouldEqual(new BindingKey(GetFieldValue().ToString(), "*", "*"));
+        }
+        
+        [Test]
+        public void should_create_subscription_from_simple_predicate_in_generic_context()
+        {
+            var subscription = CreateSubscription<FakeRoutableCommand>();
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
+            subscription.BindingKey.ShouldEqual(new BindingKey(GetFieldValue().ToString(), "*", "*"));
+        }
+
+        private Subscription CreateSubscription<TMessage>()
+            where TMessage : FakeRoutableCommand
+        {
+            return Subscription.Matching<TMessage>(x => x.Id == GetFieldValue());
         }
 
         [Test]

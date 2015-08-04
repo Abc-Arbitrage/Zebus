@@ -128,7 +128,8 @@
     <Compile Include="Lotus\ReplayMessageHandlerTests.cs" />
     <Compile Include="MessageContextTests.cs" />
     <Compile Include="Messages\FakeCommandWithTimestamp.cs" />
-	<Compile Include="Messages\FakeInfrastructureTransientCommand.cs" />
+    <Compile Include="Messages\FakeInfrastructureTransientCommand.cs" />
+    <Compile Include="Messages\FakeRoutableCommandWithBoolean.cs" />
     <Compile Include="Messages\FakeRoutableCommandWithEnum.cs">
       <SubType>Code</SubType>
     </Compile>
