@@ -1,5 +1,7 @@
 #About [![AppVeyor branch](https://img.shields.io/appveyor/ci/TechAbc/Zebus/master.svg)](https://ci.appveyor.com/project/TechABC/zebus) [![NuGet](https://img.shields.io/nuget/dt/Zebus.svg)](http://www.nuget.org/packages/Zebus/)
 
+[![Join the chat at https://gitter.im/Abc-Arbitrage/Zebus](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Abc-Arbitrage/Zebus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Zebus is a lightweight peer to peer service bus, built with [CQRS](http://martinfowler.com/bliki/CQRS.html) principles in mind. It allows applications to communicate with each other in a fast and easy manner. Most of the complexity is hidden in the library and you can focus on writing code that matters to you, not debugging messaging code.
 
 # Introduction
