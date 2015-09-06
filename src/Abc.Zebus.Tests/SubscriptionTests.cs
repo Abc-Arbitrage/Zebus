@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
@@ -211,6 +213,24 @@ namespace Abc.Zebus.Tests
             subscription1.GetHashCode().ShouldEqual(subscription2.GetHashCode());
             subscription1.Equals(subscription2).ShouldBeTrue();
             subscription1.Equals((object)subscription2).ShouldBeTrue();
+        }
+        
+        [Test]
+        public void UpdatePeerSubscriptionsCommand_should_have_meaningfull_to_string()
+        {
+            var id = Guid.NewGuid();
+            var subscriptions = new[]
+            {
+                Subscription.Matching<FakeRoutableCommandWithEnum>(x => x.Test1 == TestEnum1.Bar && x.Test2 == TestEnum2.Buz),
+                Subscription.Matching<FakeRoutableCommand>(x => x.Id == 12 && x.OtherId == id)
+            };
+            var peerId = new PeerId("Fake.Peer.Id");
+            var command = new UpdatePeerSubscriptionsCommand(peerId, subscriptions, DateTime.Today);
+
+            command.ToString()
+                .ShouldEqual(
+                    string.Format("PeerId: {0}, TimestampUtc: {1:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{2}]", peerId,
+                        DateTime.Today, string.Join(", ", subscriptions.AsEnumerable())));
         }
 
         [Test]
