@@ -140,7 +140,7 @@ namespace Abc.Zebus.Directory
         {
             var subscriptionList = _globalSubscriptionsIndex.GetValueOrDefault(messageBinding.MessageTypeId);
             if (subscriptionList == null)
-                return ArrayUtil.Empty<Peer>();
+                return Array.Empty<Peer>();
 
             return subscriptionList.GetPeers(messageBinding.RoutingKey);
         }
@@ -177,7 +177,7 @@ namespace Abc.Zebus.Directory
 
         private void AddOrUpdatePeerEntry(PeerDescriptor peerDescriptor)
         {
-            var subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
+            var subscriptions = peerDescriptor.Subscriptions ?? Array.Empty<Subscription>();
 
             var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, key => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex), (key, entry) =>
             {

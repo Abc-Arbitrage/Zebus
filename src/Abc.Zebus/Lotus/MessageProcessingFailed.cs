@@ -25,7 +25,7 @@ namespace Abc.Zebus.Lotus
             FailingMessageJson = failingMessageJson;
             ExceptionMessage = exceptionMessage;
             ExceptionUtcTime = exceptionUtcTime;
-            FailingHandlerNames = failingHandlerNames ?? ArrayUtil.Empty<string>();
+            FailingHandlerNames = failingHandlerNames ?? Array.Empty<string>();
         }
     }
 }
