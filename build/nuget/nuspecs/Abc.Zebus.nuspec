@@ -24,10 +24,10 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.dll" target="lib\net45\" />
-    <file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.pdb" target="lib\net45\" />
+    <file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.dll" target="lib\net46\" />
+    <file src="src\Abc.Zebus\bin\$configuration$\Abc.Zebus.pdb" target="lib\net46\" />
 
-    <file src="lib\zmq\clrzmq.dll" target="lib\net45\" />
+    <file src="lib\zmq\clrzmq.dll" target="lib\net46\" />
     
     <file src="src\Abc.Zebus\**\*.cs" target="src" />
   </files>
