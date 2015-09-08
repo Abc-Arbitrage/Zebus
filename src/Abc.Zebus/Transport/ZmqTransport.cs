@@ -214,8 +214,7 @@ namespace Abc.Zebus.Transport
             catch (Exception ex)
             {
                 state.SetFailed(ex);
-                if (inboundSocket != null)
-                    inboundSocket.Dispose();
+                inboundSocket?.Dispose();
 
                 return null;
             }

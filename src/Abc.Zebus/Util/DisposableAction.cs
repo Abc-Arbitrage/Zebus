@@ -30,8 +30,7 @@ namespace Abc.Zebus.Util
         public void Dispose()
         {
             var action = Interlocked.Exchange(ref _action, null);
-            if (action != null)
-                action();
+            action?.Invoke();
         }
     }
 }

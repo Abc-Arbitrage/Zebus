@@ -105,8 +105,7 @@ namespace Abc.Zebus.Directory
                 return false;
             }
 
-            if (response.PeerDescriptors != null)
-                response.PeerDescriptors.ForEach(AddOrUpdatePeerEntry);
+            response.PeerDescriptors?.ForEach(AddOrUpdatePeerEntry);
 
             return true;
         }

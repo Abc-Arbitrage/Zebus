@@ -117,11 +117,9 @@ namespace Abc.Zebus.Directory
                     return;
                 }
 
-                if (_sharpNode != null)
-                    _sharpNode.Accept(peerCollector, routingKey);
+                _sharpNode?.Accept(peerCollector, routingKey);
 
-                if (_starNode != null)
-                    _starNode.Accept(peerCollector, routingKey);
+                _starNode?.Accept(peerCollector, routingKey);
 
                 var nextPart = routingKey.GetPart(_nextPartIndex);
                 if (nextPart == null)

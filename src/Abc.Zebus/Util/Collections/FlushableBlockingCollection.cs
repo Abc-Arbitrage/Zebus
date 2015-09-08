@@ -71,8 +71,7 @@ namespace Abc.Zebus.Util.Collections
         {
             CompleteAdding();
 
-            if (_nextQueueAcquiredSignal != null)
-                _nextQueueAcquiredSignal.Dispose();
+            _nextQueueAcquiredSignal?.Dispose();
         }
 
         /// <summary>

@@ -11,8 +11,7 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
 
         public void Handle(ForwardCommand message)
         {
-            if (Action != null)
-                Action(Context);
+            Action?.Invoke(Context);
         }
     }
 }

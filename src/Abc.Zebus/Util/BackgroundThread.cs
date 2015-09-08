@@ -50,8 +50,7 @@ namespace Abc.Zebus.Util
                         SafeAbort(abortAction);
 
                     var exceptionState = ex.ExceptionState as EventWaitHandle;
-                    if (exceptionState != null)
-                        exceptionState.Set();
+                    exceptionState?.Set();
                 }
                 catch (Exception ex)
                 {
@@ -74,8 +73,7 @@ namespace Abc.Zebus.Util
                                    SafeAbort(abortAction);
 
                                var exceptionState = ex.ExceptionState as EventWaitHandle;
-                               if (exceptionState != null)
-                                   exceptionState.Set();
+                               exceptionState?.Set();
                            }
                            catch (Exception ex)
                            {

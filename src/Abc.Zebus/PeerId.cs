@@ -29,7 +29,7 @@ namespace Abc.Zebus
 
         public override int GetHashCode()
         {
-            return (_value != null ? _value.GetHashCode() : 0);
+            return _value?.GetHashCode() ?? 0;
         }
 
         public static bool operator ==(PeerId left, PeerId right)

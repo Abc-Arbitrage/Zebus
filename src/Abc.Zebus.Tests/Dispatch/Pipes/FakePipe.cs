@@ -18,14 +18,12 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
 
         public void BeforeInvoke(BeforeInvokeArgs args)
         {
-            if (BeforeCallback != null)
-                BeforeCallback(args);
+            BeforeCallback?.Invoke(args);
         }
 
         public void AfterInvoke(AfterInvokeArgs args)
         {
-            if (AfterCallback != null)
-                AfterCallback(args);
+            AfterCallback?.Invoke(args);
         }
     }
 }
