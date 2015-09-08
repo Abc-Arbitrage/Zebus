@@ -39,20 +39,11 @@ namespace Abc.Zebus.Routing
             _isJoined = isJoined;
         }
 
-        public int PartCount
-        {
-            get { return _parts != null ? _parts.Length : 0; }
-        }
+        public int PartCount => _parts != null ? _parts.Length : 0;
 
-        public bool IsEmpty
-        {
-            get { return _parts == null || _parts.Length == 1 && _parts[0] == "#"; }
-        }
+        public bool IsEmpty => _parts == null || _parts.Length == 1 && _parts[0] == "#";
 
-        internal bool IsJoined
-        {
-            get { return _isJoined; }
-        }
+        internal bool IsJoined => _isJoined;
 
         [Pure]
         public string GetPart(int index)
@@ -223,7 +214,7 @@ namespace Abc.Zebus.Routing
                 }
                 catch (NullReferenceException)
                 {
-                    throw new InvalidOperationException(String.Format("Message of type {0} is not valid. Member {1} part of the routing key at position {2} can not be null", message.GetType().Name, Name, Position));
+                    throw new InvalidOperationException($"Message of type {message.GetType().Name} is not valid. Member {Name} part of the routing key at position {Position} can not be null");
                 }
             }
 

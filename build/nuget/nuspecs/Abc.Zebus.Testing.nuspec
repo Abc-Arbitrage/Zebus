@@ -24,8 +24,8 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="src\Abc.Zebus.Testing\bin\$configuration$\Abc.Zebus.Testing.pdb" target="lib\net45\" />
-    <file src="src\Abc.Zebus.Testing\bin\$configuration$\Abc.Zebus.Testing.dll" target="lib\net45\" />
+    <file src="src\Abc.Zebus.Testing\bin\$configuration$\Abc.Zebus.Testing.pdb" target="lib\net46\" />
+    <file src="src\Abc.Zebus.Testing\bin\$configuration$\Abc.Zebus.Testing.dll" target="lib\net46\" />
 
     <file src="src\Abc.Zebus.Testing\**\*.cs" target="src" />
   </files>

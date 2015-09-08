@@ -24,25 +24,13 @@ namespace Abc.Zebus.Dispatch.Pipes
             _pipes = pipes.AsList();
         }
 
-        internal IList<IPipe> Pipes
-        {
-            get { return _pipes; }
-        }
+        internal IList<IPipe> Pipes => _pipes;
 
-        public IMessageHandlerInvoker Invoker
-        {
-            get { return _invoker; }
-        }
+        public IMessageHandlerInvoker Invoker => _invoker;
 
-        public IMessage Message
-        {
-            get { return _message; }
-        }
+        public IMessage Message => _message;
 
-        public MessageContext Context
-        {
-            get { return _messageContext; }
-        }
+        public MessageContext Context => _messageContext;
 
         public void AddHandlerMutation(Action<object> action)
         {

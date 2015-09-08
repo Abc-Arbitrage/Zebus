@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Annotations;
 using ProtoBuf;
@@ -34,7 +35,7 @@ namespace Abc.Zebus.Directory
         internal PeerDescriptor(PeerDescriptor other)
         {
             Peer = new Peer(other.Peer);
-            Subscriptions = ArrayUtil.Copy(other.Subscriptions) ?? ArrayUtil.Empty<Subscription>();
+            Subscriptions = other.Subscriptions != null ? other.Subscriptions.ToArray() : Array.Empty<Subscription>();
             IsPersistent = other.IsPersistent;
             TimestampUtc = other.TimestampUtc;
             HasDebuggerAttached = other.HasDebuggerAttached;
@@ -45,10 +46,7 @@ namespace Abc.Zebus.Directory
         {
         }
 
-        public PeerId PeerId
-        {
-            get { return Peer.Id; }
-        }
+        public PeerId PeerId => Peer.Id;
 
         public override string ToString()
         {

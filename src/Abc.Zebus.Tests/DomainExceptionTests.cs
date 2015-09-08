@@ -9,21 +9,12 @@ namespace Abc.Zebus.Tests
         public static class FakeErrorCode
         {
             [System.ComponentModel.Description("This is a fake error message")]
-            public static int SomeErrorValue
-            {
-                get { return 1000 + 42; }
-            }
+            public static int SomeErrorValue => 1000 + 42;
 
             [System.ComponentModel.Description("This is a fake error message with a formatted parameter {0}")]
-            public static int AnotherErrorValue
-            {
-                get { return 1000 + 42; }
-            }
+            public static int AnotherErrorValue => 1000 + 42;
 
-            public static int AnotherAnotherErrorValue
-            {
-                get { return 1000 + 42; }
-            }
+            public static int AnotherAnotherErrorValue => 1000 + 42;
 
             public const int ContantErrorValue = 1000 + 42;
         }

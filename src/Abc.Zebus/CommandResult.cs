@@ -16,10 +16,7 @@ namespace Abc.Zebus
         public int ErrorCode { get; private set; }
         public object Response { get; private set; }
 
-        public bool IsSuccess
-        {
-            get { return ErrorCode == 0; }
-        }
+        public bool IsSuccess => ErrorCode == 0;
 
         public string GetErrorMessageFromEnum<T>(params object[] formatValues) where T : struct, IConvertible, IFormattable, IComparable
         {

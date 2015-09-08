@@ -263,8 +263,7 @@ namespace Abc.Zebus.Tests.Core
                                   {
                                       using (MessageContext.SetCurrent(dispatch.Context))
                                       {
-                                          if (invokerCallback != null)
-                                              invokerCallback(dispatch.Message);
+                                          invokerCallback?.Invoke(dispatch.Message);
 
                                           dispatch.SetHandlerCount(1);
 

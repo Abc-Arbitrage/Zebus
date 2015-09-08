@@ -14,25 +14,13 @@ namespace Abc.Zebus.Core
             MessageContext = messageContext;
         }
 
-        public IBus InnerBus
-        {
-            get { return _bus; }
-        }
+        public IBus InnerBus => _bus;
 
-        public PeerId PeerId
-        {
-            get { return _bus.PeerId; }
-        }
+        public PeerId PeerId => _bus.PeerId;
 
-        public string Environment
-        {
-            get { return _bus.Environment; }
-        }
+        public string Environment => _bus.Environment;
 
-        public bool IsRunning
-        {
-            get { return _bus.IsRunning; }
-        }
+        public bool IsRunning => _bus.IsRunning;
 
         public void Configure(PeerId peerId, string environment)
         {

@@ -37,7 +37,7 @@ namespace Abc.Zebus.Testing.Transport
         public PeerId PeerId { get; private set; }
         public string InboundEndPoint { get; private set; }
         public int PendingSendCount { get; set; }
-        public IEnumerable<UpdatedPeer> UpdatedPeers { get { return _updatedPeers; } }
+        public IEnumerable<UpdatedPeer> UpdatedPeers => _updatedPeers;
         public bool IsStopped { get; private set; }
         public bool IsStarted { get; private set; }
         public bool IsConfigured { get; private set; }
@@ -98,15 +98,9 @@ namespace Abc.Zebus.Testing.Transport
             MessageReceived(transportMessage);
         }
 
-        public IList<TransportMessageSent> Messages
-        {
-            get { return _messages; }
-        }
+        public IList<TransportMessageSent> Messages => _messages;
 
-        public IList<TransportMessage> AckedMessages
-        {
-            get { return _ackedMessages; }
-        }
+        public IList<TransportMessage> AckedMessages => _ackedMessages;
 
         public void ExpectExactly(params TransportMessageSent[] expectedMessages)
         {

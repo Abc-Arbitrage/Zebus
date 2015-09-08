@@ -49,25 +49,13 @@ namespace Abc.Zebus.Core
         public event Action Stopping = delegate { };
         public event Action Stopped = delegate { };
 
-        public PeerId PeerId
-        {
-            get { return _peerId; }
-        }
+        public PeerId PeerId => _peerId;
 
-        public string Environment
-        {
-            get { return _environment; }
-        }
+        public string Environment => _environment;
 
-        public bool IsRunning
-        {
-            get { return _isRunning; }
-        }
+        public bool IsRunning => _isRunning;
 
-        public string EndPoint
-        {
-            get { return _transport.InboundEndPoint; }
-        }
+        public string EndPoint => _transport.InboundEndPoint;
 
         public void Configure(PeerId peerId, string environment)
         {
@@ -195,7 +183,7 @@ namespace Abc.Zebus.Core
 
             if (peers.Count > 1)
             {
-                var exceptionMessage = string.Format("{0} peers are handling {1}. Peers: {2}.", peers.Count, BusMessageLogger.ToString(message), string.Join(", ", peers.Select(p => p.ToString())));
+                var exceptionMessage = $"{peers.Count} peers are handling {BusMessageLogger.ToString(message)}. Peers: {string.Join(", ", peers.Select(p => p.ToString()))}.";
                 throw new InvalidOperationException(exceptionMessage);
             }
 
@@ -205,7 +193,7 @@ namespace Abc.Zebus.Core
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
             if (peer == null)
-                throw new ArgumentNullException("peer");
+                throw new ArgumentNullException(nameof(peer));
 
             if (!_isRunning)
                 throw new InvalidOperationException("Unable to send message, the bus is not running");
@@ -220,7 +208,7 @@ namespace Abc.Zebus.Core
             {
                 if (!peer.IsResponding && !message.TypeId().IsPersistent() && !message.TypeId().IsInfrastructure())
                 {
-                    var exceptionMessage = string.Format("Unable to send this transient message {0} while peer {1} is not responding.", BusMessageLogger.ToString(message), peer.Id);
+                    var exceptionMessage = $"Unable to send this transient message {BusMessageLogger.ToString(message)} while peer {peer.Id} is not responding.";
                     throw new InvalidOperationException(exceptionMessage);
                 }
                 var messageId = MessageId.NextId();
@@ -302,7 +290,7 @@ namespace Abc.Zebus.Core
             foreach (var subscription in subscriptions)
             {
                 if (!_messageDispatcher.GetMessageHanlerInvokers().Any(x => x.MessageTypeId == subscription.MessageTypeId))
-                    throw new ArgumentException(string.Format("No handler available for message type Id: {0}", subscription.MessageTypeId));
+                    throw new ArgumentException($"No handler available for message type Id: {subscription.MessageTypeId}");
             }
         }
 
@@ -444,7 +432,7 @@ namespace Abc.Zebus.Core
             }
             catch (Exception ex)
             {
-                jsonMessage = string.Format("Unable to serialize message :{0}{1}", System.Environment.NewLine, ex);
+                jsonMessage = $"Unable to serialize message :{System.Environment.NewLine}{ex}";
             }
             var errorMessages = dispatchResult.Errors.Select(error => error.ToString());
             var errorMessage = string.Join(System.Environment.NewLine + System.Environment.NewLine, errorMessages);
@@ -561,7 +549,7 @@ namespace Abc.Zebus.Core
         private void HandleDeserializationError(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, Exception exception, TransportMessage transportMessage)
         {
             var dumpLocation = DumpMessageOnDisk(messageTypeId, messageBytes);
-            var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}\r\n{3}", messageTypeId.FullName, originator.SenderId, dumpLocation, exception);
+            var errorMessage = $"Unable to deserialize message {messageTypeId.FullName}. Originator: {originator.SenderId}. Message dumped at: {dumpLocation}\r\n{exception}";
             _logger.Error(errorMessage);
 
             if (!_isRunning)
@@ -579,7 +567,7 @@ namespace Abc.Zebus.Core
                 if (!System.IO.Directory.Exists(dumpDirectory))
                     System.IO.Directory.CreateDirectory(dumpDirectory);
 
-                var dumpFileName = string.Format("{0:yyyyMMdd-HH-mm-ss.fffffff}_{1}", _deserializationFailureTimestampProvider.NextUtcTimestamp(), messageTypeId.FullName);
+                var dumpFileName = $"{_deserializationFailureTimestampProvider.NextUtcTimestamp():yyyyMMdd-HH-mm-ss.fffffff}_{messageTypeId.FullName}";
                 var dumpFilePath = Path.Combine(dumpDirectory, dumpFileName);
                 File.WriteAllBytes(dumpFilePath, messageBytes);
                 return dumpFilePath;

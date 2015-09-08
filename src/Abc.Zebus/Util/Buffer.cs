@@ -65,7 +65,7 @@ namespace Abc.Zebus.Util
         public void CopyFrom([NotNull] byte[] bytes)
         {
             if (bytes == null) 
-                throw new ArgumentNullException("bytes");
+                throw new ArgumentNullException(nameof(bytes));
             
             _length = bytes.Length;
             System.Buffer.BlockCopy(bytes, 0, _data, 0, _length);

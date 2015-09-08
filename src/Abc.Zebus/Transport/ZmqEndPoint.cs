@@ -19,10 +19,7 @@ namespace Abc.Zebus.Transport
 
         public string Value { get; private set; }
 
-        public bool HasRandomPort
-        {
-            get { return Value.EndsWith(":*"); }
-        }
+        public bool HasRandomPort => Value.EndsWith(":*");
 
         public int GetPort()
         {

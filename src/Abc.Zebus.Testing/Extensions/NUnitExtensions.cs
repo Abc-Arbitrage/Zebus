@@ -273,7 +273,7 @@ namespace Abc.Zebus.Testing.Extensions
                 return;
             }
 
-            throw new AssertionException(String.Format("\"{0}\" should not contain \"{1}\".", actual, expected));
+            throw new AssertionException($"\"{actual}\" should not contain \"{expected}\".");
         }
 
         public static string ShouldBeEqualIgnoringCase(this string actual, string expected)

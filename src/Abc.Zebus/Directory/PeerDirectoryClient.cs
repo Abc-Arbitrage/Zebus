@@ -86,7 +86,7 @@ namespace Abc.Zebus.Directory
         {
             var directoryPeers = GetDirectoryPeers().ToList();
             if (!directoryPeers.Any(peer => TryRegisterOnDirectory(bus, selfDescriptor, peer)))
-                throw new TimeoutException(string.Format("Unable to register peer on directory (tried: {0})", string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"))));
+                throw new TimeoutException($"Unable to register peer on directory (tried: {string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"))})");
         }
 
         private bool TryRegisterOnDirectory(IBus bus, PeerDescriptor self, Peer directoryPeer)
@@ -105,8 +105,7 @@ namespace Abc.Zebus.Directory
                 return false;
             }
 
-            if (response.PeerDescriptors != null)
-                response.PeerDescriptors.ForEach(AddOrUpdatePeerEntry);
+            response.PeerDescriptors?.ForEach(AddOrUpdatePeerEntry);
 
             return true;
         }
@@ -140,7 +139,7 @@ namespace Abc.Zebus.Directory
         {
             var subscriptionList = _globalSubscriptionsIndex.GetValueOrDefault(messageBinding.MessageTypeId);
             if (subscriptionList == null)
-                return ArrayUtil.Empty<Peer>();
+                return Array.Empty<Peer>();
 
             return subscriptionList.GetPeers(messageBinding.RoutingKey);
         }
@@ -177,7 +176,7 @@ namespace Abc.Zebus.Directory
 
         private void AddOrUpdatePeerEntry(PeerDescriptor peerDescriptor)
         {
-            var subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
+            var subscriptions = peerDescriptor.Subscriptions ?? Array.Empty<Subscription>();
 
             var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, key => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex), (key, entry) =>
             {

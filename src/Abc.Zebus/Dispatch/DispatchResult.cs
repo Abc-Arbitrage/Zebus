@@ -13,14 +13,8 @@ namespace Abc.Zebus.Dispatch
             _errors = errorsByHandlerType ?? _noErrors;
         }
         
-        public ICollection<Exception> Errors
-        {
-            get { return _errors.Values; }
-        }
+        public ICollection<Exception> Errors => _errors.Values;
 
-        public ICollection<Type> ErrorHandlerTypes
-        {
-            get { return _errors.Keys; }
-        }
+        public ICollection<Type> ErrorHandlerTypes => _errors.Keys;
     }
 }

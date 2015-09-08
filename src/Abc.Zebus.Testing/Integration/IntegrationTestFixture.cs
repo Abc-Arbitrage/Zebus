@@ -159,7 +159,7 @@ ______________________________________________________________________________
                 var managementScope = new ManagementScope(@"\\" + machineName + @"\ROOT\CIMV2", new ConnectionOptions());
                 managementScope.Connect();
 
-                var query = string.Format(@"SELECT Handle FROM Win32_Process WHERE Name = 'Abc.Zebus.Host.exe' AND ExecutablePath LIKE '%{0}%'", serviceFolder);
+                var query = $@"SELECT Handle FROM Win32_Process WHERE Name = 'Abc.Zebus.Host.exe' AND ExecutablePath LIKE '%{serviceFolder}%'";
                 var searcher = new ManagementObjectSearcher(managementScope, new ObjectQuery(query));
 
                 var processes = searcher.Get().Cast<ManagementObject>().ToList();

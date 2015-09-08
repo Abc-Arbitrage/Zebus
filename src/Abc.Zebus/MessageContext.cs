@@ -21,20 +21,11 @@ namespace Abc.Zebus
         public virtual OriginatorInfo Originator { get; private set; }
         public string DispatchQueueName { get; private set; }
 
-        public PeerId SenderId
-        {
-            get { return Originator.SenderId; }
-        }
+        public PeerId SenderId => Originator.SenderId;
 
-        public string SenderEndPoint
-        {
-            get { return Originator.SenderEndPoint; }
-        }
+        public string SenderEndPoint => Originator.SenderEndPoint;
 
-        public string InitiatorUserName
-        {
-            get { return Originator.InitiatorUserName; }
-        }
+        public string InitiatorUserName => Originator.InitiatorUserName;
 
         public Peer GetSender()
         {
@@ -46,10 +37,7 @@ namespace Abc.Zebus
             return new MessageContextWithDispatchQueueName(this, dispatchQueueName);
         }
 
-        public static MessageContext Current
-        {
-            get { return _current; }
-        }
+        public static MessageContext Current => _current;
 
         public static IDisposable SetCurrent(MessageContext context)
         {
@@ -135,15 +123,9 @@ namespace Abc.Zebus
                 DispatchQueueName = dispatchQueueName;
             }
 
-            public override MessageId MessageId
-            {
-                get { return _context.MessageId; }
-            }
+            public override MessageId MessageId => _context.MessageId;
 
-            public override OriginatorInfo Originator
-            {
-                get { return _context.Originator; }
-            }
+            public override OriginatorInfo Originator => _context.Originator;
 
             public override int ReplyCode
             {

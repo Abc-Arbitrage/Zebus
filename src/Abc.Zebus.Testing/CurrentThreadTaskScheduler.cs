@@ -34,6 +34,6 @@ namespace Abc.Zebus.Testing
         }
 
         /// <summary>Gets the maximum degree of parallelism for this scheduler.</summary>
-        public override int MaximumConcurrencyLevel { get { return 1; } }
+        public override int MaximumConcurrencyLevel => 1;
     }
 }

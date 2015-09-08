@@ -12,10 +12,7 @@ namespace Abc.Zebus.Hosting
         /// <summary>
         /// Defines the order in which HostInitializers will be executed. Set a higher number to execute first.
         /// </summary>
-        public virtual int Priority
-        {
-            get { return 0; }
-        }
+        public virtual int Priority => 0;
 
         public virtual void ConfigureContainer(IContainer container)
         {

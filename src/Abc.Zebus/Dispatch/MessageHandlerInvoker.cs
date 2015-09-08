@@ -32,15 +32,9 @@ namespace Abc.Zebus.Dispatch
         public bool ShouldBeSubscribedOnStartup { get; private set; }
         public string DispatchQueueName { get; private set; }
 
-        public virtual bool ShouldCreateStartedTasks
-        {
-            get { return false; }
-        }
+        public virtual bool ShouldCreateStartedTasks => false;
 
-        public virtual bool CanInvokeSynchronously
-        {
-            get { return true; }
-        }
+        public virtual bool CanInvokeSynchronously => true;
 
         public abstract void InvokeMessageHandler(IMessageHandlerInvocation invocation);
 

@@ -19,15 +19,9 @@ namespace Abc.Zebus.Tests.Persistence
 {
     public class PersistentTransportTests : PersistentTransportFixture
     {
-        protected override bool IsPersistent
-        {
-            get { return true; }
-        }
+        protected override bool IsPersistent => true;
 
-        private Guid ReplayId
-        {
-            get { return StartMessageReplayCommand.ReplayId; }
-        }
+        private Guid ReplayId => StartMessageReplayCommand.ReplayId;
 
         [Test]
         public void starting_should_start_inner_bus_and_send_replay_command()

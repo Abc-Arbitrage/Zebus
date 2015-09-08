@@ -17,20 +17,11 @@ namespace Abc.Zebus.Dispatch
 
         private readonly ILog _logger = LogManager.GetLogger(typeof(DispatcherTaskScheduler));
 
-        public int TaskCount
-        {
-            get { return _tasks.Count; }
-        }
+        public int TaskCount => _tasks.Count;
 
-        public override int MaximumConcurrencyLevel
-        {
-            get { return 1; }
-        }
+        public override int MaximumConcurrencyLevel => 1;
 
-        public bool IsRunning
-        {
-            get { return _isRunning; }
-        }
+        public bool IsRunning => _isRunning;
 
         internal DispatcherTaskScheduler()
         {

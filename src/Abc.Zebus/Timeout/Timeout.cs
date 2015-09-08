@@ -80,7 +80,7 @@ namespace ABC.ServiceBus.Contracts
             if (command.TryDeserialize(out state))
                 return state;
 
-            throw new SerializationException(string.Format("{0} can't be deserialized into {1}", command.DataType, typeof(T).FullName));
+            throw new SerializationException($"{command.DataType} can't be deserialized into {typeof(T).FullName}");
         }
     }
 }

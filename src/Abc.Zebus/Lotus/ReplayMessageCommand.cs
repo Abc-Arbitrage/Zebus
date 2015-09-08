@@ -18,7 +18,7 @@ namespace Abc.Zebus.Lotus
         public ReplayMessageCommand(TransportMessage messageToReplay, string[] handlerTypes)
         {
             MessageToReplay = messageToReplay;
-            HandlerTypes = handlerTypes ?? ArrayUtil.Empty<string>();
+            HandlerTypes = handlerTypes ?? Array.Empty<string>();
         }
 
         public bool ShouldApplyToHandler(Type handlerType)

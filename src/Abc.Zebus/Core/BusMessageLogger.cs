@@ -126,7 +126,7 @@ namespace Abc.Zebus.Core
 
             public string GetMessageText(IMessage message)
             {
-                return _hasToStringOverride ? string.Format("{0} {{{1}}}", _messageTypeName, message) : string.Format("{0}", _messageTypeName);
+                return _hasToStringOverride ? $"{_messageTypeName} {{{message}}}" : $"{_messageTypeName}";
             }
         }
     }
