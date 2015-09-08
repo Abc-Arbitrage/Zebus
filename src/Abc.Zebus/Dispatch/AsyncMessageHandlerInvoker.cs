@@ -18,15 +18,9 @@ namespace Abc.Zebus.Dispatch
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 
-        public override bool CanInvokeSynchronously
-        {
-            get { return false; }
-        }
+        public override bool CanInvokeSynchronously => false;
 
-        public override bool ShouldCreateStartedTasks
-        {
-            get { return true; }
-        }
+        public override bool ShouldCreateStartedTasks => true;
 
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
         {

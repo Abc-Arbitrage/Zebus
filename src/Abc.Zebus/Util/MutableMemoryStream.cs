@@ -55,20 +55,11 @@ namespace Abc.Zebus.Util
             }
         }
 
-        public override bool CanRead
-        {
-            get { return _isOpen; }
-        }
+        public override bool CanRead => _isOpen;
 
-        public override bool CanSeek
-        {
-            get { return _isOpen; }
-        }
+        public override bool CanSeek => _isOpen;
 
-        public override bool CanWrite
-        {
-            get { return true; }
-        }
+        public override bool CanWrite => true;
 
         public override long Length
         {

@@ -74,25 +74,13 @@ namespace Abc.Zebus.Transport
             internal set { _isListening = value; }
         }
 
-        public string InboundEndPoint
-        {
-            get { return _realInboundEndPoint != null ? _realInboundEndPoint.Value : _configuredInboundEndPoint.Value; }
-        }
+        public string InboundEndPoint => _realInboundEndPoint != null ? _realInboundEndPoint.Value : _configuredInboundEndPoint.Value;
 
-        public int PendingSendCount
-        {
-            get { return _outboundSocketActions == null ? 0 : _outboundSocketActions.Count; }
-        }
+        public int PendingSendCount => _outboundSocketActions == null ? 0 : _outboundSocketActions.Count;
 
-        public IZmqSocketOptions SocketOptions
-        {
-            get { return _socketOptions; }
-        }
+        public IZmqSocketOptions SocketOptions => _socketOptions;
 
-        public int OutboundSocketCount
-        {
-            get { return _outboundSockets.Count; }
-        }
+        public int OutboundSocketCount => _outboundSockets.Count;
 
         public PeerId PeerId { get; private set; }
 
@@ -477,10 +465,7 @@ namespace Abc.Zebus.Transport
                 Peers = peers;
             }
 
-            public bool IsDisconnect
-            {
-                get { return Message == _disconnectMessage; }
-            }
+            public bool IsDisconnect => Message == _disconnectMessage;
 
             public IEnumerable<PeerId> PeerIds
             {

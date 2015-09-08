@@ -39,20 +39,11 @@ namespace Abc.Zebus.Routing
             _isJoined = isJoined;
         }
 
-        public int PartCount
-        {
-            get { return _parts != null ? _parts.Length : 0; }
-        }
+        public int PartCount => _parts != null ? _parts.Length : 0;
 
-        public bool IsEmpty
-        {
-            get { return _parts == null || _parts.Length == 1 && _parts[0] == "#"; }
-        }
+        public bool IsEmpty => _parts == null || _parts.Length == 1 && _parts[0] == "#";
 
-        internal bool IsJoined
-        {
-            get { return _isJoined; }
-        }
+        internal bool IsJoined => _isJoined;
 
         [Pure]
         public string GetPart(int index)

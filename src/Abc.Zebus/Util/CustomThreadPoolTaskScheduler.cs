@@ -23,10 +23,7 @@ namespace Abc.Zebus.Util
         private BlockingCollection<Task> _tasks;
         private List<Thread> _threads;
 
-        public int TaskCount
-        {
-            get { return _tasks.Count; }
-        }
+        public int TaskCount => _tasks.Count;
 
         /// <summary>
         ///     Indicates the maximum concurrency level this <see cref="T:System.Threading.Tasks.TaskScheduler" /> is able to support.
@@ -34,10 +31,7 @@ namespace Abc.Zebus.Util
         /// <returns>
         ///     Returns an integer that represents the maximum concurrency level.
         /// </returns>
-        public override int MaximumConcurrencyLevel
-        {
-            get { return _threads.Count; }
-        }
+        public override int MaximumConcurrencyLevel => _threads.Count;
 
         /// <summary>
         ///     Create a new <see cref="CustomThreadPoolTaskScheduler" /> with a provided number of background threads.

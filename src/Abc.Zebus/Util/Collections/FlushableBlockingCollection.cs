@@ -19,10 +19,7 @@ namespace Abc.Zebus.Util.Collections
             _addQueue = _queue;
         }
 
-        public int Count
-        {
-            get { return _queue.Count; }
-        }
+        public int Count => _queue.Count;
 
         public void CompleteAdding()
         {

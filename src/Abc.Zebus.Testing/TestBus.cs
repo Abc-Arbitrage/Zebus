@@ -51,10 +51,7 @@ namespace Abc.Zebus.Testing
             }
         }
 
-        public int MessageCount
-        {
-            get { return _commands.Count + _events.Count; }
-        }
+        public int MessageCount => _commands.Count + _events.Count;
 
         public HashSet<Subscription> Subscriptions
         {
@@ -76,10 +73,7 @@ namespace Abc.Zebus.Testing
         public string Environment { get; private set; }
         public bool IsRunning { get; private set; }
 
-        public IEnumerable<IMessage> Messages
-        {
-            get { return Events.Cast<IMessage>().Concat(Commands); }
-        }
+        public IEnumerable<IMessage> Messages => Events.Cast<IMessage>().Concat(Commands);
 
         public void Publish(IEvent message)
         {

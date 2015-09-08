@@ -9,9 +9,6 @@ namespace Abc.Zebus.Testing.Measurements
         public string Name { get; set; }
         public Action<long> Action { get; set; }
 
-        public int TotalIteration
-        {
-            get { return Iteration + WarmUpIteration; }
-        }
+        public int TotalIteration => Iteration + WarmUpIteration;
     }
 }

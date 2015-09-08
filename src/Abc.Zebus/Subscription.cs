@@ -40,7 +40,7 @@ namespace Abc.Zebus
         {
         }
 
-        public bool IsMatchingAllMessages { get { return BindingKey.IsEmpty; } }
+        public bool IsMatchingAllMessages => BindingKey.IsEmpty;
 
         public bool Matches(MessageBinding messageBinding)
         {

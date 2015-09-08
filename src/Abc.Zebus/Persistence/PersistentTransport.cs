@@ -101,20 +101,11 @@ namespace Abc.Zebus.Persistence
 
         public event Action<TransportMessage> MessageReceived = delegate { };
 
-        public PeerId PeerId
-        {
-            get { return _innerTransport.PeerId; }
-        }
+        public PeerId PeerId => _innerTransport.PeerId;
 
-        public string InboundEndPoint
-        {
-            get { return _innerTransport.InboundEndPoint; }
-        }
+        public string InboundEndPoint => _innerTransport.InboundEndPoint;
 
-        public int PendingSendCount
-        {
-            get { return _innerTransport.PendingSendCount; }
-        }
+        public int PendingSendCount => _innerTransport.PendingSendCount;
 
         public void Configure(PeerId peerId, string environment)
         {
@@ -272,9 +263,6 @@ namespace Abc.Zebus.Persistence
             _innerTransport.Send(transportMessage, persistentPeers);
         }
 
-        public int PendingPersistenceSendCount
-        {
-            get { return _messagesWaitingForPersistence.Count; }
-        }
+        public int PendingPersistenceSendCount => _messagesWaitingForPersistence.Count;
     }
 }

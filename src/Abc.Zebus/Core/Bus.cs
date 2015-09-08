@@ -49,25 +49,13 @@ namespace Abc.Zebus.Core
         public event Action Stopping = delegate { };
         public event Action Stopped = delegate { };
 
-        public PeerId PeerId
-        {
-            get { return _peerId; }
-        }
+        public PeerId PeerId => _peerId;
 
-        public string Environment
-        {
-            get { return _environment; }
-        }
+        public string Environment => _environment;
 
-        public bool IsRunning
-        {
-            get { return _isRunning; }
-        }
+        public bool IsRunning => _isRunning;
 
-        public string EndPoint
-        {
-            get { return _transport.InboundEndPoint; }
-        }
+        public string EndPoint => _transport.InboundEndPoint;
 
         public void Configure(PeerId peerId, string environment)
         {

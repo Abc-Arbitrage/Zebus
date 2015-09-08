@@ -11,10 +11,7 @@ namespace Abc.Zebus.Directory
         private readonly SubscriptionNode _rootNode = new SubscriptionNode(0, false);
         private List<Peer> _peersMatchingAllMessages = new List<Peer>();
 
-        public bool IsEmpty
-        {
-            get { return _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0; }
-        }
+        public bool IsEmpty => _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0;
 
         public void Add(Peer peer, BindingKey subscription)
         {
@@ -110,10 +107,7 @@ namespace Abc.Zebus.Directory
                 _createChildNode = _ => new SubscriptionNode(_nextPartIndex + 1, false);
             }
 
-            public bool IsEmpty
-            {
-                get { return _peerCountIncludingChildren == 0; }
-            }
+            public bool IsEmpty => _peerCountIncludingChildren == 0;
 
             public void Accept(PeerCollector peerCollector, BindingKey routingKey)
             {

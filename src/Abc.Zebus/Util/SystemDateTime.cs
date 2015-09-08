@@ -4,20 +4,11 @@ namespace Abc.Zebus.Util
 {
     internal static class SystemDateTime
     {
-        public static DateTime Now 
-        { 
-            get { return _nowFunc(); }
-        }
+        public static DateTime Now => _nowFunc();
 
-        public static DateTime UtcNow
-        {
-            get { return _utcNowFunc(); }
-        }
+        public static DateTime UtcNow => _utcNowFunc();
 
-        public static DateTime Today
-        {
-            get { return _nowFunc().Date; }
-        }
+        public static DateTime Today => _nowFunc().Date;
 
         private static Func<DateTime> _nowFunc = () => DateTime.Now;
         private static Func<DateTime> _utcNowFunc = () => DateTime.UtcNow;
