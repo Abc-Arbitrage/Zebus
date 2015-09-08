@@ -40,7 +40,7 @@ namespace Abc.Zebus.Transport
 
         static void ExtractLibZmq(string platform)
         {
-            var resourceName = string.Format("libzmq-{0}-0.0.0.0.dll", platform);
+            var resourceName = $"libzmq-{platform}-0.0.0.0.dll";
 
             var libraryPath = PathUtil.InBaseDirectory(resourceName);
             if (File.Exists(libraryPath))

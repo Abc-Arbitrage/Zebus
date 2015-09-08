@@ -19,7 +19,7 @@ namespace Abc.Zebus.EventSourcing
 
         public override string ToString()
         {
-            return string.Format("Version: {0}, DateTime: {1}", Version, DateTime);
+            return $"Version: {Version}, DateTime: {DateTime}";
         }
     }
 }

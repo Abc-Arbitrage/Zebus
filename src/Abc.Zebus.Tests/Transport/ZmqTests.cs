@@ -19,7 +19,7 @@ namespace Abc.Zebus.Tests.Transport
 
             using (var context = ZmqContext.Create())
             {
-                var sendEndpoint = string.Format("tcp://localhost:{0}", TcpUtil.GetRandomUnusedPort());
+                var sendEndpoint = $"tcp://localhost:{TcpUtil.GetRandomUnusedPort()}";
                 var receiveEndpoint = sendEndpoint.Replace("localhost", "*");
 
                 var receiver = context.CreateSocket(SocketType.PULL);

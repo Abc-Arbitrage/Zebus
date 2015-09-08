@@ -229,8 +229,7 @@ namespace Abc.Zebus.Tests
 
             command.ToString()
                 .ShouldEqual(
-                    string.Format("PeerId: {0}, TimestampUtc: {1:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{2}]", peerId,
-                        DateTime.Today, string.Join(", ", subscriptions.AsEnumerable())));
+                    $"PeerId: {peerId}, TimestampUtc: {DateTime.Today:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{string.Join(", ", subscriptions.AsEnumerable())}]");
         }
 
         [Test]

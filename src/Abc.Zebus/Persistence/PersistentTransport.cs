@@ -228,8 +228,7 @@ namespace Abc.Zebus.Persistence
                 }
                 catch (Exception exception)
                 {
-                    var errorMessage = string.Format("Unable to process message {0}. Originator: {1}", transportMessage.MessageTypeId.FullName,
-                                                     transportMessage.Originator.SenderId);
+                    var errorMessage = $"Unable to process message {transportMessage.MessageTypeId.FullName}. Originator: {transportMessage.Originator.SenderId}";
                     _logger.Error(errorMessage, exception);
                 }
             }

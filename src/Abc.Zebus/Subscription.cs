@@ -111,7 +111,7 @@ namespace Abc.Zebus
             if (BindingKey.IsEmpty)
                 return MessageTypeId.ToString();
 
-            return string.Format("{0} ({1})", MessageTypeId, BindingKey);
+            return $"{MessageTypeId} ({BindingKey})";
         }
 
         public static Subscription ByExample<TMessage>(Expression<Func<Builder, TMessage>> factory) where TMessage : IMessage

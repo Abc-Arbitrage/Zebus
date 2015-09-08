@@ -187,7 +187,7 @@ namespace Abc.Zebus.Tests
 
             public override string ToString()
             {
-                return string.Format("RoutingKey: {0}, Value: {1}", RoutingKey, Value);
+                return $"RoutingKey: {RoutingKey}, Value: {Value}";
             }
         }
 

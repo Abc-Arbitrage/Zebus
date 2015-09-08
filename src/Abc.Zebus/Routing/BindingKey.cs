@@ -214,7 +214,7 @@ namespace Abc.Zebus.Routing
                 }
                 catch (NullReferenceException)
                 {
-                    throw new InvalidOperationException(String.Format("Message of type {0} is not valid. Member {1} part of the routing key at position {2} can not be null", message.GetType().Name, Name, Position));
+                    throw new InvalidOperationException($"Message of type {message.GetType().Name} is not valid. Member {Name} part of the routing key at position {Position} can not be null");
                 }
             }
 

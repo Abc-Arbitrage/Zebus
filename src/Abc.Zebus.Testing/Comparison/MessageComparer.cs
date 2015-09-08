@@ -36,12 +36,12 @@ namespace Abc.Zebus.Testing.Comparison
 
             foreach (var missing in differences.Missings)
             {
-                errorMsg += string.Format("Missing: {0} {1} ", missing.GetType().Name, SerializeJsonSerializer(missing)) + Environment.NewLine;
+                errorMsg += $"Missing: {missing.GetType().Name} {SerializeJsonSerializer(missing)} " + Environment.NewLine;
                 if (!exactMatch)
                 {
                     var candidate = differences.PossibleCandidates.FirstOrDefault(evt => evt.GetType() == missing.GetType());
                     if (candidate != null)
-                        errorMsg += string.Format("Possible match: {0} {1}", candidate.GetType().Name, SerializeJsonSerializer(candidate)) + Environment.NewLine;
+                        errorMsg += $"Possible match: {candidate.GetType().Name} {SerializeJsonSerializer(candidate)}" + Environment.NewLine;
                 }
             }
                 
@@ -53,7 +53,7 @@ namespace Abc.Zebus.Testing.Comparison
                     var notExpectedEvent = notExpected as IDomainEvent;
                     if (notExpectedEvent != null)
                         notExpectedEvent.Sourcing = null;
-                    errorMsg += string.Format("Not Expected: {0} {1} ", notExpected.GetType().Name, SerializeJsonSerializer(notExpected)) + Environment.NewLine;
+                    errorMsg += $"Not Expected: {notExpected.GetType().Name} {SerializeJsonSerializer(notExpected)} " + Environment.NewLine;
                 }
             }
             return errorMsg;

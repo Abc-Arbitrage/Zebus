@@ -55,7 +55,7 @@ namespace Abc.Zebus.Dispatch
         {
             var handleMethod = handlerType.GetMethod("Handle", new[] { messageType });
             if (handleMethod == null)
-                throw new InvalidProgramException(string.Format("The given type {0} is not an IMessageHandler<{1}>", handlerType.Name, messageType.Name));
+                throw new InvalidProgramException($"The given type {handlerType.Name} is not an IMessageHandler<{messageType.Name}>");
 
             return handleMethod;
         }
@@ -64,7 +64,7 @@ namespace Abc.Zebus.Dispatch
         {
             if (handleMethod.ReturnType == typeof(void) && handleMethod.GetAttribute<AsyncStateMachineAttribute>(true) != null)
             {
-                var error = string.Format("The message handler {0} has an async void Handle method. If you think there are valid use cases for this, please discuss it with the dev team", handlerType);
+                var error = $"The message handler {handlerType} has an async void Handle method. If you think there are valid use cases for this, please discuss it with the dev team";
                 throw new InvalidProgramException(error);
             }
         }

@@ -29,7 +29,7 @@ namespace ABC.ServiceBus.Contracts
 
         public override string ToString()
         {
-            return string.Format("Key: {0}", Key);
+            return $"Key: {Key}";
         }
     }
 }

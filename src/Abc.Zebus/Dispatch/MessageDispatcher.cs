@@ -218,7 +218,7 @@ namespace Abc.Zebus.Dispatch
 
             if (invocation.Invoker.ShouldCreateStartedTasks)
             {
-                var exception = new InvalidProgramException(string.Format("{0}.Handle({1}) did not start the returned task", invocation.Invoker.MessageHandlerType.Name, invocation.Invoker.MessageType.Name));
+                var exception = new InvalidProgramException($"{invocation.Invoker.MessageHandlerType.Name}.Handle({invocation.Invoker.MessageType.Name}) did not start the returned task");
                 dispatch.SetHandled(invocation.Invoker, exception);
                 return;
             }
