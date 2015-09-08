@@ -193,7 +193,7 @@ namespace Abc.Zebus.Core
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
             if (peer == null)
-                throw new ArgumentNullException("peer");
+                throw new ArgumentNullException(nameof(peer));
 
             if (!_isRunning)
                 throw new InvalidOperationException("Unable to send message, the bus is not running");

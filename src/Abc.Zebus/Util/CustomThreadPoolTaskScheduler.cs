@@ -41,7 +41,7 @@ namespace Abc.Zebus.Util
         public CustomThreadPoolTaskScheduler(int numberOfThreads, string baseThreadName = null)
         {
             if (numberOfThreads < 1)
-                throw new ArgumentOutOfRangeException("numberOfThreads");
+                throw new ArgumentOutOfRangeException(nameof(numberOfThreads));
 
             CreateThreads(numberOfThreads, baseThreadName);
         }

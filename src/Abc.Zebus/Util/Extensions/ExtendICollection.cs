@@ -25,8 +25,8 @@ namespace Abc.Zebus.Util.Extensions
         /// <returns>same collection instance</returns>
         public static ICollection<T> AddRange<T>(this ICollection<T> collection, IEnumerable<T> items)
         {
-            if (collection == null) throw new ArgumentNullException("collection");
-            if (items == null) throw new ArgumentNullException("items");
+            if (collection == null) throw new ArgumentNullException(nameof(collection));
+            if (items == null) throw new ArgumentNullException(nameof(items));
 
             var list = collection as List<T>;
             if (list != null)
@@ -56,8 +56,8 @@ namespace Abc.Zebus.Util.Extensions
         /// <returns>same collection instance</returns>
         public static ICollection<T> RemoveRange<T>(this ICollection<T> collection, IEnumerable<T> items)
         {
-            if (collection == null) throw new ArgumentNullException("collection");
-            if (items == null) throw new ArgumentNullException("items");
+            if (collection == null) throw new ArgumentNullException(nameof(collection));
+            if (items == null) throw new ArgumentNullException(nameof(items));
 
             foreach (var item in items)
             {

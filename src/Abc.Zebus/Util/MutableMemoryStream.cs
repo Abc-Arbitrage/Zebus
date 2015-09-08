@@ -28,7 +28,7 @@ namespace Abc.Zebus.Util
             set
             {
                 if (value < Length)
-                    throw new ArgumentOutOfRangeException("value");
+                    throw new ArgumentOutOfRangeException(nameof(value));
 
                 if (!_isOpen)
                     throw new InvalidOperationException();
@@ -84,13 +84,13 @@ namespace Abc.Zebus.Util
             set
             {
                 if (value < 0)
-                    throw new ArgumentOutOfRangeException("value");
+                    throw new ArgumentOutOfRangeException(nameof(value));
 
                 if (!_isOpen)
                     throw new InvalidOperationException();
 
                 if (value > _memStreamMaxLength)
-                    throw new ArgumentOutOfRangeException("value");
+                    throw new ArgumentOutOfRangeException(nameof(value));
                 _position = _origin + (int)value;
             }
         }
@@ -103,7 +103,7 @@ namespace Abc.Zebus.Util
         public MutableMemoryStream(int capacity)
         {
             if (capacity < 0)
-                throw new ArgumentOutOfRangeException("capacity");
+                throw new ArgumentOutOfRangeException(nameof(capacity));
 
             _buffer = new byte[capacity];
             _capacity = capacity;
@@ -119,13 +119,13 @@ namespace Abc.Zebus.Util
         public override int Read([In, Out] byte[] buffer, int offset, int count)
         {
             if (buffer == null)
-                throw new ArgumentNullException("buffer");
+                throw new ArgumentNullException(nameof(buffer));
 
             if (offset < 0)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException(nameof(offset));
 
             if (count < 0)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
 
             if (buffer.Length - offset < count)
                 throw new ArgumentException();
@@ -170,7 +170,7 @@ namespace Abc.Zebus.Util
                 throw new InvalidOperationException();
 
             if (offset > _memStreamMaxLength)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException(nameof(offset));
 
             switch (loc)
             {
@@ -211,13 +211,13 @@ namespace Abc.Zebus.Util
         public override void SetLength(long value)
         {
             if (value < 0 || value > Int32.MaxValue)
-                throw new ArgumentOutOfRangeException("value");
+                throw new ArgumentOutOfRangeException(nameof(value));
 
             if (!CanWrite)
                 throw new InvalidOperationException();
 
             if (value > (Int32.MaxValue - _origin))
-                throw new ArgumentOutOfRangeException("value");
+                throw new ArgumentOutOfRangeException(nameof(value));
 
             var newLength = _origin + (int)value;
             var allocatedNewArray = EnsureCapacity(newLength);
@@ -231,13 +231,13 @@ namespace Abc.Zebus.Util
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (buffer == null)
-                throw new ArgumentNullException("buffer");
+                throw new ArgumentNullException(nameof(buffer));
 
             if (offset < 0)
-                throw new ArgumentOutOfRangeException("offset");
+                throw new ArgumentOutOfRangeException(nameof(offset));
 
             if (count < 0)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
 
             if (buffer.Length - offset < count)
                 throw new ArgumentException();
@@ -305,13 +305,13 @@ namespace Abc.Zebus.Util
         public void SetBuffer(byte[] buffer, int index, int count)
         {
             if (buffer == null)
-                throw new ArgumentNullException("buffer");
+                throw new ArgumentNullException(nameof(buffer));
 
             if (index < 0)
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
 
             if (count < 0)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
 
             if (buffer.Length - index < count)
                 throw new ArgumentException();
