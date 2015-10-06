@@ -5,6 +5,8 @@ using Abc.Zebus.Directory.Tests;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
+using Cassandra;
+using Cassandra.Data.Linq;
 using NUnit.Framework;
 using System;
 using System.Linq;
@@ -177,7 +179,13 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             descriptor.TimestampUtc = DateTime.UtcNow;
             _repository.AddOrUpdatePeer(descriptor);
 
-            _repository.SetPeerResponding(new PeerId("Abc.DecommissionnedPeer.0"), false);
+            DataContext.StoragePeers
+                        .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
+                        .Where(peer => peer.UselessKey == false && peer.PeerId == "Abc.DecommissionnedPeer.0")
+                        .Select(peer => new StoragePeer { StaticSubscriptionsBytes  = null, IsResponding = false, IsPersistent = false, HasDebuggerAttached = false, IsUp = false })
+                        .Update()
+                        .SetTimestamp(DateTime.UtcNow)
+                        .Execute();
 
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().PeerId.ShouldEqual(_peer1.Id);
