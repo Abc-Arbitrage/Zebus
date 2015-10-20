@@ -18,9 +18,9 @@
     </references>
     <dependencies>
       <dependency id="log4net" version="2.0.3" />
-      <dependency id="Newtonsoft.Json" version="6.0.8" />
+      <dependency id="Newtonsoft.Json" version="7.0.1" />
       <dependency id="protobuf-net" version="2.0.0.668" />
-      <dependency id="structuremap" version="3.1.5.154" />
+      <dependency id="structuremap" version="3.1.6.186" />
     </dependencies>
   </metadata>
   <files>
