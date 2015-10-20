@@ -14,7 +14,7 @@
 		<copyright>$copyright$</copyright>
 		<tags></tags>
     <dependencies>
-      <dependency id="Zebus" version="[1.3.0,2.0)" />
+      <dependency id="Zebus" version="[1.3.7,2.0)" />
       <dependency id="Zebus.Directory" version="$version$" />
       <dependency id="CassandraCSharpDriver" version="[2.7.2,2.8)" />
     </dependencies>
