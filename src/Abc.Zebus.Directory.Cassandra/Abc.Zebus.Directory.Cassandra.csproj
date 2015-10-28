@@ -44,7 +44,7 @@
     </Reference>
     <Reference Include="LZ4">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\lz4net.1.0.9.93\lib\net40-client\LZ4.dll</HintPath>
+      <HintPath>..\packages\lz4net.1.0.5.93\lib\net40-client\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <SpecificVersion>False</SpecificVersion>
