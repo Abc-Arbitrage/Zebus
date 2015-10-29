@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Scan
 {
@@ -19,14 +18,7 @@ namespace Abc.Zebus.Scan
 
         public virtual IEnumerable<Type> GetTypes()
         {
-            return GetTargetAssemblies().Where(AssemblyFilter).SelectMany(x => x.GetTypes()).Where(TypeFilter);
-        }
-
-        private static IEnumerable<Assembly> GetTargetAssemblies()
-        {
-            TypeUtil.EnsureAbcAssembliesAreLoaded();
-
-            return AppDomain.CurrentDomain.GetAssemblies();
+            return AppDomain.CurrentDomain.GetAssemblies().Where(AssemblyFilter).SelectMany(x => x.GetTypes()).Where(TypeFilter);
         }
 
         public static implicit operator TypeSource(Type type)

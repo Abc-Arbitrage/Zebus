@@ -1,4 +1,5 @@
-﻿using Abc.Zebus.Testing.Extensions;
+﻿using System.Reflection;
+using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
@@ -24,6 +25,9 @@ namespace Abc.Zebus.Tests.Util
         [Test]
         public void should_resolve_type_from_exe_assembly()
         {
+            // we have to ensure that the .exe is loaded in the current AppDomain
+            Assembly.LoadFile(PathUtil.InBaseDirectory("Abc.Zebus.Tests.TestExe.exe"));
+
             Assert.That(TypeUtil.Resolve("Abc.Zebus.Tests.TestExe.Program"), Is.Not.Null);
         }
 
