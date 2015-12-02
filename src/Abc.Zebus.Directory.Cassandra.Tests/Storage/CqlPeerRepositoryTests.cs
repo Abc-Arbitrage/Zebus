@@ -23,7 +23,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 
         protected override string Hosts { get { return "cassandra-test-host"; } }
 
-        protected override string LocalDataCenter { get { return "Paris-CEN"; } }
+        protected override string LocalDataCenter { get { return "Paris-ABC"; } }
         
         [SetUp]
         protected void Setup()

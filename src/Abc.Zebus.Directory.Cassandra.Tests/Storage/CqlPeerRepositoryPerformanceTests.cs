@@ -23,7 +23,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 
         protected override string LocalDataCenter
         {
-            get { return "Paris-CEN"; }
+            get { return "Paris-ABC"; }
         }
 
         [Test]
