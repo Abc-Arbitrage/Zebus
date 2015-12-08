@@ -19,7 +19,30 @@ namespace Abc.Zebus.Tests.Core
                 SetupDispatch(command, _ => _bus.Reply(commandReply));
 
                 var transportMessageReceived = command.ToTransportMessage(_peerUp);
-                var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, commandReply).ToTransportMessage(_self);
+                var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, commandReply, null).ToTransportMessage(_self);
+
+                _transport.RaiseMessageReceived(transportMessageReceived);
+
+                var sentMessage = _transport.Messages.Single();
+                expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
+                var destination = sentMessage.Targets.Single();
+                destination.ShouldHaveSamePropertiesAs(_peerUp);
+            }
+        }
+
+        [Test]
+        public void handlers_reply_with_an_int_and_a_message()
+        {
+            using (MessageId.PauseIdGeneration())
+            {
+                const int commandReply = 456;
+                const string replyMessage = "Test";
+
+                var command = new FakeCommand(123);
+                SetupDispatch(command, _ => _bus.Reply(commandReply, replyMessage));
+
+                var transportMessageReceived = command.ToTransportMessage(_peerUp);
+                var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, commandReply, replyMessage).ToTransportMessage(_self);
 
                 _transport.RaiseMessageReceived(transportMessageReceived);
 

@@ -68,6 +68,7 @@ namespace Abc.Zebus.Testing
         }
 
         public int LastReplyCode { get; set; }
+        public string LastReplyMessage { get; set; }
         public object LastReplyResponse { get; set; }
         public IHandlerExecutor HandlerExecutor { get; set; }
         public bool IsStarted { get; private set; }
@@ -211,6 +212,13 @@ namespace Abc.Zebus.Testing
         public void Reply(int errorCode)
         {
             LastReplyCode = errorCode;
+            LastReplyMessage = null;
+        }
+
+        public void Reply(int errorCode, string message)
+        {
+            LastReplyCode = errorCode;
+            LastReplyMessage = message;
         }
 
         public void Reply(IMessage response)
@@ -330,16 +338,16 @@ namespace Abc.Zebus.Testing
                 var taskCompletionSource = new TaskCompletionSource<CommandResult>();
                 try
                 {
-                    var result = handler != null ? handler(command) : null;
-                    taskCompletionSource.SetResult(new CommandResult(0, result));
+                    var result = handler?.Invoke(command);
+                    taskCompletionSource.SetResult(new CommandResult(0, null, result));
                 }
                 catch (DomainException ex)
                 {
-                    taskCompletionSource.SetResult(new CommandResult(ex.ErrorCode, null));
+                    taskCompletionSource.SetResult(new CommandResult(ex.ErrorCode, ex.Message, null));
                 }
                 catch (Exception)
                 {
-                    taskCompletionSource.SetResult(new CommandResult(1, null));
+                    taskCompletionSource.SetResult(new CommandResult(1, null, null));
                 }
              
                 return taskCompletionSource.Task;
@@ -355,8 +363,8 @@ namespace Abc.Zebus.Testing
             {
                 return Task.Factory.StartNew(() =>
                 {
-                    var result = handler != null ? handler(command) : null;
-                    return new CommandResult(0, result);
+                    var result = handler?.Invoke(command);
+                    return new CommandResult(0, null, result);
                 });
             }
         }

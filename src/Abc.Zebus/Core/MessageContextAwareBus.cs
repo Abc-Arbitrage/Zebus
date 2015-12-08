@@ -14,30 +14,12 @@ namespace Abc.Zebus.Core
             MessageContext = messageContext;
         }
 
-        public IBus InnerBus
-        {
-            get { return _bus; }
-        }
+        public IBus InnerBus => _bus;
+        public PeerId PeerId => _bus.PeerId;
+        public string Environment => _bus.Environment;
+        public bool IsRunning => _bus.IsRunning;
 
-        public PeerId PeerId
-        {
-            get { return _bus.PeerId; }
-        }
-
-        public string Environment
-        {
-            get { return _bus.Environment; }
-        }
-
-        public bool IsRunning
-        {
-            get { return _bus.IsRunning; }
-        }
-
-        public void Configure(PeerId peerId, string environment)
-        {
-            _bus.Configure(peerId, environment);
-        }
+        public void Configure(PeerId peerId, string environment) => _bus.Configure(peerId, environment);
 
         public void Publish(IEvent message)
         {
@@ -64,33 +46,26 @@ namespace Abc.Zebus.Core
         }
 
         public IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default)
-        {
-            return _bus.Subscribe(subscription);
-        }
+            => _bus.Subscribe(subscription);
 
         public IDisposable Subscribe(Subscription[] subscriptions, SubscriptionOptions options = SubscriptionOptions.Default)
-        {
-            return _bus.Subscribe(subscriptions);
-        }
+            => _bus.Subscribe(subscriptions);
 
         public IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage
-        {
-            return _bus.Subscribe(handler);
-        }
+            => _bus.Subscribe(handler);
 
         public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
-        {
-            return _bus.Subscribe(subscriptions, handler);
-        }
+            => _bus.Subscribe(subscriptions, handler);
 
         public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
-        {
-            return _bus.Subscribe(subscription, handler);
-        }
+            => _bus.Subscribe(subscription, handler);
 
-        public void Reply(int errorCode)
+        public void Reply(int errorCode) => Reply(errorCode, null);
+
+        public void Reply(int errorCode, string message)
         {
             MessageContext.ReplyCode = errorCode;
+            MessageContext.ReplyMessage = message;
         }
 
         public void Reply(IMessage response)
@@ -98,16 +73,8 @@ namespace Abc.Zebus.Core
             MessageContext.ReplyResponse = response;
         }
 
-        public void Start()
-        {
-            _bus.Start();
-        }
-
-        public void Stop()
-        {
-            _bus.Stop();
-        }
-
+        public void Start() => _bus.Start();
+        public void Stop() => _bus.Stop();
 
         public event Action Starting
         {
@@ -131,9 +98,6 @@ namespace Abc.Zebus.Core
             remove { _bus.Stopped -= value; }
         }
 
-        public void Dispose()
-        {
-            _bus.Dispose();
-        }
+        public void Dispose() => _bus.Dispose();
     }
 }

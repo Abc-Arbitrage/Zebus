@@ -103,6 +103,7 @@
     <Compile Include="Dispatch\IMessageDispatchFactory.cs" />
     <Compile Include="Dispatch\IMessageHandlerInvocation.cs" />
     <Compile Include="BusExtensions.cs" />
+    <Compile Include="ErrorStatus.cs" />
     <Compile Include="Hosting\HostInitializer.cs" />
     <Compile Include="Hosting\HostInitializerHelper.cs" />
     <Compile Include="Hosting\PeriodicActionHostInitializer.cs" />

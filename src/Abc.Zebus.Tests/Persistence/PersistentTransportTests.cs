@@ -180,7 +180,7 @@ namespace Abc.Zebus.Tests.Persistence
         [Test]
         public void should_handle_execution_completion_received()
         {
-            var messageExecutionCompletedTransportMessage = new MessageExecutionCompleted(MessageId.NextId(), 0).ToTransportMessage();
+            var messageExecutionCompletedTransportMessage = new MessageExecutionCompleted(MessageId.NextId(), 0, null).ToTransportMessage();
 
             InnerTransport.RaiseMessageReceived(messageExecutionCompletedTransportMessage);
 
