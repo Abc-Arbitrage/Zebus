@@ -9,8 +9,8 @@ namespace Abc.Zebus.Transport
         {
             ReadTimeout = 300.Milliseconds();
             SendHighWaterMark = 20000;
-            SendTimeout = 1000.Milliseconds();
-            SendRetriesBeforeSwitchingToClosedState = 5;
+            SendTimeout = 100.Milliseconds();
+            SendRetriesBeforeSwitchingToClosedState = 2;
             ClosedStateDuration = 15.Seconds();
             ReceiveHighWaterMark = 20000;
         }
