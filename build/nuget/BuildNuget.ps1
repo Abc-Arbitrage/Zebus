@@ -1,7 +1,7 @@
 ﻿$location = Get-Location;
 $zebusLocation = [System.IO.Path]::Combine($location, ".\src\Abc.Zebus");
 $outputLocation = [System.IO.Path]::Combine($location, "output\nuget");
-$msbuild = 'C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe';
+$msbuild = Join-Path (Get-ItemProperty -Path HKLM:SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0).MSBuildToolsPath 'msbuild.exe'
 # clean output
 if((Test-Path $outputLocation) -eq $true)
 {
@@ -11,7 +11,7 @@ $dir = New-Item -ItemType directory $outputLocation;
 
 # Compile solution in release
 & '.\tools\nuget\NuGet.exe' restore .\src\Abc.Zebus.sln
-& $msbuild .\src\Abc.Zebus.sln /t:rebuild /p:Configuration=Release
+& $msbuild .\src\Abc.Zebus.sln /t:rebuild /p:Configuration=Release /p:Platform="Any CPU"
 
 # Get metadata (without locking file)
 $fileStream = ([System.IO.FileInfo] (Get-Item ([System.IO.Path]::Combine($zebusLocation,"bin\Release\Abc.Zebus.dll")))).OpenRead();
