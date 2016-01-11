@@ -11,24 +11,34 @@ namespace Abc.Zebus
     {
         public int ErrorCode { get; private set; }
 
-        public DomainException(int errorCode, string message, params object[] values)
-            : base(string.Format(message, values))
+        public DomainException(Exception innerException, int errorCode, string message)
+            : base(message, innerException)
         {
             ErrorCode = errorCode;
         }
 
+        public DomainException(int errorCode, string message)
+            : this(null, errorCode, message)
+        {
+        }
+
+        public DomainException(int errorCode, string message, params object[] values)
+            : this(errorCode, string.Format(message, values))
+        {
+        }
+
         public DomainException(Enum enumVal, params object[] values)
-            : this (Convert.ToInt32(enumVal), enumVal.GetAttributeDescription(), values)
+            : this(Convert.ToInt32(enumVal), enumVal.GetAttributeDescription(), values)
         {
         }
 
         public DomainException(Expression<Func<int>> errorCodeExpression, params object[] values)
-            : this (errorCodeExpression.Compile()(), ReadDescriptionFromAttribute(errorCodeExpression), values)
-   
+            : this(errorCodeExpression.Compile()(), ReadDescriptionFromAttribute(errorCodeExpression), values)
+
         {
         }
 
-        static string ReadDescriptionFromAttribute(Expression<Func<int>> errorCodeExpression)
+        private static string ReadDescriptionFromAttribute(Expression<Func<int>> errorCodeExpression)
         {
             var memberExpr = errorCodeExpression.Body as MemberExpression;
             if (memberExpr == null)
