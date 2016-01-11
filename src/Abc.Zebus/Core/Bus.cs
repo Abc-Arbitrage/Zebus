@@ -49,25 +49,10 @@ namespace Abc.Zebus.Core
         public event Action Stopping = delegate { };
         public event Action Stopped = delegate { };
 
-        public PeerId PeerId
-        {
-            get { return _peerId; }
-        }
-
-        public string Environment
-        {
-            get { return _environment; }
-        }
-
-        public bool IsRunning
-        {
-            get { return _isRunning; }
-        }
-
-        public string EndPoint
-        {
-            get { return _transport.InboundEndPoint; }
-        }
+        public PeerId PeerId => _peerId;
+        public string Environment => _environment;
+        public bool IsRunning => _isRunning;
+        public string EndPoint => _transport.InboundEndPoint;
 
         public void Configure(PeerId peerId, string environment)
         {
@@ -350,13 +335,16 @@ namespace Abc.Zebus.Core
             _directory.UpdateSubscriptions(this, subscriptionUpdates);
         }
 
-        public void Reply(int errorCode)
+        public void Reply(int errorCode) => Reply(errorCode, null);
+
+        public void Reply(int errorCode, string message)
         {
             var messageContext = MessageContext.Current;
             if (messageContext == null)
                 throw new InvalidOperationException("Reply called without message context");
 
             messageContext.ReplyCode = errorCode;
+            messageContext.ReplyMessage = message;
         }
 
         public void Reply(IMessage response)
@@ -471,7 +459,7 @@ namespace Abc.Zebus.Core
                 return;
 
             var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId, message.Payload, transportMessage) : null;
-            var commandResult = new CommandResult(message.ErrorCode, response);
+            var commandResult = new CommandResult(message.ErrorCode, message.ResponseMessage, response);
 
             var task = new Task(() => taskCompletionSource.SetResult(commandResult));
             task.Start(_completionResultTaskScheduler);
@@ -496,8 +484,8 @@ namespace Abc.Zebus.Core
                 if (taskCompletionSource == null)
                     return;
 
-                var errorCode = dispatchResult.Errors.Any() ? CommandResult.GetErrorCode(dispatchResult.Errors) : dispatch.Context.ReplyCode;
-                var commandResult = new CommandResult(errorCode, dispatch.Context.ReplyResponse);
+                var errorStatus = dispatchResult.Errors.Any() ? CommandResult.GetErrorStatus(dispatchResult.Errors) : dispatch.Context.GetErrorStatus();
+                var commandResult = new CommandResult(errorStatus.Code, errorStatus.Message, dispatch.Context.ReplyResponse);
                 taskCompletionSource.SetResult(commandResult);
             };
         }

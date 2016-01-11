@@ -24,10 +24,20 @@ namespace Abc.Zebus.Core
         [ProtoMember(4, IsRequired = false)]
         public byte[] Payload { get; private set; }
 
+        [ProtoMember(5, IsRequired = false)]
+        public string ResponseMessage { get; private set; } = string.Empty;
+
+        [Obsolete("Use the constructor with the responseMessage parameter")]
         public MessageExecutionCompleted(MessageId sourceCommandId, int errorCode)
+            : this(sourceCommandId, errorCode, null)
+        {
+        }
+
+        public MessageExecutionCompleted(MessageId sourceCommandId, int errorCode, string responseMessage)
         {
             SourceCommandId = sourceCommandId;
             ErrorCode = errorCode;
+            ResponseMessage = responseMessage ?? string.Empty;
         }
 
         public MessageExecutionCompleted(MessageId sourceCommandId, MessageTypeId payloadTypeId, byte[] payload)
@@ -41,8 +51,8 @@ namespace Abc.Zebus.Core
         public override string ToString()
         {
             return ErrorCode == 0
-                ? string.Format("CommandId: {0}", SourceCommandId)
-                : string.Format("CommandId: {0}, ErrorCode: {1}", SourceCommandId, ErrorCode);
+                ? $"CommandId: {SourceCommandId}"
+                : $"CommandId: {SourceCommandId}, ErrorCode: {ErrorCode} ({ResponseMessage})";
         }
 
         public static MessageExecutionCompleted Create(MessageContext messageContext, DispatchResult dispatchResult, IMessageSerializer serializer)
@@ -53,7 +63,7 @@ namespace Abc.Zebus.Core
             if (messageContext.ReplyResponse != null)
                 return Success(messageContext.MessageId, messageContext.ReplyResponse, serializer);
 
-            return new MessageExecutionCompleted(messageContext.MessageId, messageContext.ReplyCode);
+            return new MessageExecutionCompleted(messageContext.MessageId, messageContext.ReplyCode, messageContext.ReplyMessage);
         }
 
         public static MessageExecutionCompleted Success(MessageId sourceCommandId, IMessage payload, IMessageSerializer serializer)
@@ -65,9 +75,9 @@ namespace Abc.Zebus.Core
 
         public static MessageExecutionCompleted Failure(MessageId sourceCommandId, IEnumerable<Exception> exceptions)
         {
-            var errorCode = CommandResult.GetErrorCode(exceptions);
+            var errorStatus = CommandResult.GetErrorStatus(exceptions);
 
-            return new MessageExecutionCompleted(sourceCommandId, errorCode);
+            return new MessageExecutionCompleted(sourceCommandId, errorStatus.Code, errorStatus.Message);
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Abc.Zebus.Tests.Core
                 var transportMessageReceived = command.ToTransportMessage(_peerUp);
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
-                var messageExecutionCompleted = new MessageExecutionCompleted(transportMessageReceived.Id, 0).ToTransportMessage(_self);
+                var messageExecutionCompleted = new MessageExecutionCompleted(transportMessageReceived.Id, 0, null).ToTransportMessage(_self);
                 _transport.ExpectExactly(new TransportMessageSent(messageExecutionCompleted, _peerUp));
             }
         }
@@ -54,24 +54,26 @@ namespace Abc.Zebus.Tests.Core
 
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
-                var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, 1).ToTransportMessage(_self);
+                var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, 1, null).ToTransportMessage(_self);
                 _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
             }
         }
 
         [Test]
-        public void shoud_send_a_completion_message_with_domain_exception_error_code()
+        public void shoud_send_a_completion_message_with_domain_exception_error_code_and_message()
         {
             using (MessageId.PauseIdGeneration())
             {
                 const int domainExceptionValue = 5000;
+                const string domainExceptionMessage = "Domain Exception";
+
                 var command = new FakeCommand(123);
-                SetupDispatch(command, error: new DomainException(domainExceptionValue, "Domain Exception"));
+                SetupDispatch(command, error: new DomainException(domainExceptionValue, domainExceptionMessage));
                 var transportMessageReceived = command.ToTransportMessage(_peerUp);
 
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
-                var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, domainExceptionValue).ToTransportMessage(_self);
+                var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, domainExceptionValue, domainExceptionMessage).ToTransportMessage(_self);
                 _transport.ExpectExactly(new TransportMessageSent(expectedTransportMessage, _peerUp));
             }
         }
@@ -86,13 +88,14 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
 
                 var task = _bus.Send(command);
-                var commandCompleted = new MessageExecutionCompleted(MessageId.NextId(), 1);
+                var commandCompleted = new MessageExecutionCompleted(MessageId.NextId(), 1, "Error message");
                 _transport.RaiseMessageReceived(commandCompleted.ToTransportMessage());
 
                 var receivedAck = task.Wait(10);
 
                 receivedAck.ShouldBeTrue();
                 task.Result.ErrorCode.ShouldEqual(1);
+                task.Result.ResponseMessage.ShouldEqual("Error message");
             }
         }
 
@@ -106,7 +109,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
 
                 var task = _bus.Send(command);
-                var commandCompleted = new MessageExecutionCompleted(MessageId.NextId(), 0);
+                var commandCompleted = new MessageExecutionCompleted(MessageId.NextId(), 0, null);
                 int backgroundThreadId = 0;
 
                 BackgroundThread.Start(() =>

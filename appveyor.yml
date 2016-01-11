@@ -1,6 +1,7 @@
 version: 1.2.{build}
+os: Visual Studio 2015
 before_build:
-- nuget restore src/Abc.Zebus.sln
+- cmd: nuget restore src/Abc.Zebus.sln
 build:
   verbosity: minimal
 test:

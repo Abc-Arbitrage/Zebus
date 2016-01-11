@@ -16,25 +16,15 @@ namespace Abc.Zebus
         private static string _outboundInitiatorOverride;
 
         public virtual int ReplyCode { get; internal set; }
+        public virtual string ReplyMessage { get; internal set; }
         public virtual IMessage ReplyResponse { get; internal set; }
         public virtual MessageId MessageId { get; private set; }
         public virtual OriginatorInfo Originator { get; private set; }
         public string DispatchQueueName { get; private set; }
 
-        public PeerId SenderId
-        {
-            get { return Originator.SenderId; }
-        }
-
-        public string SenderEndPoint
-        {
-            get { return Originator.SenderEndPoint; }
-        }
-
-        public string InitiatorUserName
-        {
-            get { return Originator.InitiatorUserName; }
-        }
+        public PeerId SenderId => Originator.SenderId;
+        public string SenderEndPoint => Originator.SenderEndPoint;
+        public string InitiatorUserName => Originator.InitiatorUserName;
 
         public Peer GetSender()
         {
@@ -46,10 +36,7 @@ namespace Abc.Zebus
             return new MessageContextWithDispatchQueueName(this, dispatchQueueName);
         }
 
-        public static MessageContext Current
-        {
-            get { return _current; }
-        }
+        public static MessageContext Current => _current;
 
         public static IDisposable SetCurrent(MessageContext context)
         {
@@ -70,7 +57,7 @@ namespace Abc.Zebus
                 current.Originator.InitiatorUserName = username;
             }
 
-            _outboundInitiatorOverride = String.IsNullOrEmpty(username) ? null : username;
+            _outboundInitiatorOverride = string.IsNullOrEmpty(username) ? null : username;
 
             return new DisposableAction(() =>
             {
@@ -101,7 +88,7 @@ namespace Abc.Zebus
             {
                 MessageId = MessageId.NextId(),
                 Originator = originator,
-                DispatchQueueName = currentContext != null ? currentContext.DispatchQueueName : null,
+                DispatchQueueName = currentContext?.DispatchQueueName,
             };
         }
 
@@ -125,6 +112,14 @@ namespace Abc.Zebus
             return current != null ? current.Originator.InitiatorUserName : (_outboundInitiatorOverride ?? CurrentUserName);
         }
 
+        internal ErrorStatus GetErrorStatus()
+        {
+            if (ReplyCode == 0 && string.IsNullOrEmpty(ReplyMessage))
+                return ErrorStatus.NoError;
+
+            return new ErrorStatus(ReplyCode, ReplyMessage);
+        }
+
         private class MessageContextWithDispatchQueueName : MessageContext
         {
             private readonly MessageContext _context;
@@ -135,20 +130,19 @@ namespace Abc.Zebus
                 DispatchQueueName = dispatchQueueName;
             }
 
-            public override MessageId MessageId
-            {
-                get { return _context.MessageId; }
-            }
-
-            public override OriginatorInfo Originator
-            {
-                get { return _context.Originator; }
-            }
+            public override MessageId MessageId => _context.MessageId;
+            public override OriginatorInfo Originator => _context.Originator;
 
             public override int ReplyCode
             {
                 get { return _context.ReplyCode; }
                 internal set { _context.ReplyCode = value; }
+            }
+
+            public override string ReplyMessage
+            {
+                get { return _context.ReplyMessage; }
+                internal set { _context.ReplyMessage = value; }
             }
 
             public override IMessage ReplyResponse

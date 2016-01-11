@@ -12,11 +12,14 @@
 	<property name="artefacts.dir" value="${output.dir}\artefacts" />
 	<property name="src.dir" value="${directory::get-current-directory()}\src" />
 	<property name="nunit.result.dir" value="${artefacts.dir}\nunit" />
-	<property name="msbuild.exe" value="C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"/>
 	<property name="nunit.dir" value='tools\nunit' />
 	<property name="nunit.exe" value='${nunit.dir}\nunit-console.exe' />
 	<property name="nuget.exe" value='tools\nuget\NuGet.exe' /> 
 	
+	<property name="msbuild.exe" value="?" />
+	<readregistry property="msbuild.exe" hive="LocalMachine" key="SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0\MSBuildToolsPath" failonerror="false" if="${msbuild.exe == '?'}" />
+	<property name="msbuild.exe" value="C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319" if="${msbuild.exe == '?'}" />
+	<property name="msbuild.exe" value="${path::combine(msbuild.exe, 'msbuild.exe')}" />
 	
 	<target name="build-tc" depends="init init-project nuget-restore compile-tests compile"/>
 	<target name="build-local" depends="init init-project nuget-restore compile compile-tests test localonly-test"/>
