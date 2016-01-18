@@ -13,7 +13,9 @@ namespace Abc.Zebus.Dispatch
         private readonly Instance _instance;
         private bool? _isSingleton;
         private IBus _bus;
-        private MessageContextAwareBus _dispatchBus;
+
+        [ThreadStatic]
+        private static MessageContextAwareBus _dispatchBus;
 
         protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null)
         {
@@ -26,21 +28,14 @@ namespace Abc.Zebus.Dispatch
             _instance = CreateConstructorInstance(handlerType);
         }
 
-        public Type MessageHandlerType { get; private set; }
-        public Type MessageType { get; private set; }
-        public MessageTypeId MessageTypeId { get; private set; }
-        public bool ShouldBeSubscribedOnStartup { get; private set; }
-        public string DispatchQueueName { get; private set; }
+        public Type MessageHandlerType { get; }
+        public Type MessageType { get; }
+        public MessageTypeId MessageTypeId { get; }
+        public bool ShouldBeSubscribedOnStartup { get; }
+        public string DispatchQueueName { get; }
 
-        public virtual bool ShouldCreateStartedTasks
-        {
-            get { return false; }
-        }
-
-        public virtual bool CanInvokeSynchronously
-        {
-            get { return true; }
-        }
+        public virtual bool ShouldCreateStartedTasks => false;
+        public virtual bool CanInvokeSynchronously => true;
 
         public abstract void InvokeMessageHandler(IMessageHandlerInvocation invocation);
 
@@ -99,13 +94,13 @@ namespace Abc.Zebus.Dispatch
         {
             if (_isSingleton == null)
             {
-                var model = container.Model != null ? container.Model.For(MessageHandlerType) : null;
+                var model = container.Model?.For(MessageHandlerType);
                 _isSingleton = model != null && model.Lifecycle == Lifecycles.Singleton;
             }
             return _isSingleton.Value;
         }
 
-        private Instance CreateConstructorInstance(Type messageHandlerType)
+        private static Instance CreateConstructorInstance(Type messageHandlerType)
         {
             var inst = new ConstructorInstance(messageHandlerType);
             inst.Dependencies.Add<IBus>(new LambdaInstance<IBus>("Dispatch IBus", () => _dispatchBus));

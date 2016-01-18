@@ -28,6 +28,11 @@ namespace Abc.Zebus.Dispatch
             get { return true; }
         }
 
+        internal object CreateHandler(MessageContext messageContext)
+        {
+            return CreateHandler(_container, messageContext);
+        }
+
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
         {
             throw new NotSupportedException();
