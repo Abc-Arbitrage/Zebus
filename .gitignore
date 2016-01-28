@@ -31,4 +31,4 @@ _ReSharper*/
 output/**
 
 src/_NCrunch_Abc.Zebus/**
-src/packages/**
+lib/packages/**
