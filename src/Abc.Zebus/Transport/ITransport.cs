@@ -19,7 +19,9 @@ namespace Abc.Zebus.Transport
         string InboundEndPoint { get; }
         int PendingSendCount { get; }
 
-        void Send(TransportMessage message, IEnumerable<Peer> peerIds);
+        void Send(TransportMessage message, IEnumerable<Peer> peers);
+        void Send(TransportMessage message, IEnumerable<PeerWithPersistenceInfo> targets);
+
         void AckMessage(TransportMessage transportMessage);
 
         TransportMessage CreateInfrastructureTransportMessage(MessageTypeId messageTypeId);

@@ -3,6 +3,7 @@ using Abc.Zebus.Lotus;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -28,7 +29,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 var expectedTransportMessage = new MessageProcessingFailed(transportMessageReceived, commandJson, exception.ToString(), SystemDateTime.UtcNow, new [] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
-                _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
+                _transport.Expect(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
             }
         }
 
@@ -49,7 +50,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 var expectedTransportMessage = new MessageProcessingFailed(transportMessageReceived, messageJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
-                _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
+                _transport.Expect(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
             }
         }
 
@@ -71,7 +72,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Send(command);
 
                 var expectedTransportMessage = new MessageProcessingFailed(command.ToTransportMessage(_self), commandJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
-                _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
+                _transport.Expect(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
             }
         }
 

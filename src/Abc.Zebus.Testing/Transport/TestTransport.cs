@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Comparison;
@@ -72,11 +73,16 @@ namespace Abc.Zebus.Testing.Transport
             IsStopped = true;
         }
 
-        public void Send(TransportMessage message, IEnumerable<Peer> peerIds)
+        public void Send(TransportMessage message, IEnumerable<Peer> peers)
         {
-            var targets = peerIds.ToArray();
-            if (targets.Length != 0)
-                _messages.Add(new TransportMessageSent(message, targets));
+            Send(message, peers.Select(x => new PeerWithPersistenceInfo(x, false)));
+        }
+
+        public void Send(TransportMessage message, IEnumerable<PeerWithPersistenceInfo> targets)
+        {
+            var targetArray = targets.ToArray();
+            if (targetArray.Length != 0)
+                _messages.Add(new TransportMessageSent(message, targetArray));
 
             var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.MessageBytes);
             if (deserializedMessage != null)

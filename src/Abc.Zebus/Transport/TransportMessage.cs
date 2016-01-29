@@ -21,6 +21,9 @@ namespace Abc.Zebus.Transport
         [ProtoMember(5, IsRequired = false)]
         public string Environment { get; set; }
 
+        [ProtoMember(6, IsRequired = false)]
+        public bool? WasPersisted { get; set; }
+
         public TransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer sender)
             : this(messageTypeId, messageBytes, sender.Id, sender.EndPoint, MessageId.NextId())
         {

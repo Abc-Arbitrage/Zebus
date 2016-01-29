@@ -4,6 +4,7 @@ using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Transport;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Core
@@ -21,7 +22,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
                 _bus.Publish(@event);
 
-                _transport.ExpectExactly(new TransportMessageSent(@event.ToTransportMessage(_self), new[] { _peerUp, _peerDown }));
+                _transport.ExpectExactly(new TransportMessageSent(@event.ToTransportMessage(_self), new[] { new PeerWithPersistenceInfo(_peerUp, false), new PeerWithPersistenceInfo(_peerDown, false) }));
             }
         }
 
@@ -46,7 +47,7 @@ namespace Abc.Zebus.Tests.Core
 
                 var sentMessage = _transport.Messages.Single();
                 expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
-                var destination = sentMessage.Targets.Single();
+                var destination = sentMessage.Targets.Single().Peer;
                 destination.ShouldHaveSamePropertiesAs(_peerUp);
             }
         }

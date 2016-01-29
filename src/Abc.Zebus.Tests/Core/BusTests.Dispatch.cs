@@ -82,7 +82,7 @@ namespace Abc.Zebus.Tests.Core
 
                 handled.ShouldBeFalse();
                 completed.ShouldBeFalse();
-                _transport.ExpectExactly(new TransportMessageSent(command.ToTransportMessage(_self), _self));
+                _transport.ExpectExactly(new TransportMessageSent(command.ToTransportMessage(_self), new PeerWithPersistenceInfo(_self, false)));
             }
         }
 
@@ -100,7 +100,7 @@ namespace Abc.Zebus.Tests.Core
             handled.ShouldBeTrue();
 
             var sentMessage = _transport.Messages.Single();
-            sentMessage.Targets.Single().ShouldEqual(_peerUp);
+            sentMessage.Targets.Single().Peer.ShouldEqual(_peerUp);
         }
 
         [Test]
@@ -120,7 +120,7 @@ namespace Abc.Zebus.Tests.Core
 
                 handled.ShouldBeFalse();
 
-                _transport.ExpectExactly(new TransportMessageSent(message.ToTransportMessage(_self), _self));
+                _transport.ExpectExactly(new TransportMessageSent(message.ToTransportMessage(_self), new PeerWithPersistenceInfo(_self, false)));
             }
         }
 

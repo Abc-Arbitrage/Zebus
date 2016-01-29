@@ -25,7 +25,7 @@ namespace Abc.Zebus.Tests.Core
 
                 var sentMessage = _transport.Messages.Single();
                 expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
-                var destination = sentMessage.Targets.Single();
+                var destination = sentMessage.Targets.Single().Peer;
                 destination.ShouldHaveSamePropertiesAs(_peerUp);
             }
         }
@@ -48,7 +48,7 @@ namespace Abc.Zebus.Tests.Core
 
                 var sentMessage = _transport.Messages.Single();
                 expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
-                var destination = sentMessage.Targets.Single();
+                var destination = sentMessage.Targets.Single().Peer;
                 destination.ShouldHaveSamePropertiesAs(_peerUp);
             }
         }
@@ -70,7 +70,7 @@ namespace Abc.Zebus.Tests.Core
 
                 var sentMessage = _transport.Messages.Single();
                 expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
-                var destination = sentMessage.Targets.Single();
+                var destination = sentMessage.Targets.Single().Peer;
                 destination.ShouldHaveSamePropertiesAs(_peerUp);
             }
         }

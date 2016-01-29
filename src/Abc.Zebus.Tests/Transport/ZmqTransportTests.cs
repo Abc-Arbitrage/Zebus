@@ -133,6 +133,25 @@ namespace Abc.Zebus.Tests.Transport
             Wait.Until(() => transport1ReceivedMessages.Count == 1, 500.Milliseconds());
         }
 
+        [Test, Timeout(5000)]
+        public void should_write_WasPersisted_when_requested()
+        {
+            var sender = CreateAndStartZmqTransport();
+
+            var receivedMessages = new ConcurrentBag<TransportMessage>();
+            var receiver = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receivingPeer = new Peer(new PeerId("Abc.Testing.2"), receiver.InboundEndPoint);
+            var message = new FakeCommand(1).ToTransportMessage();
+            var otherMessage = new FakeCommand(2).ToTransportMessage();
+
+            sender.Send(message, new[] { new PeerWithPersistenceInfo(receivingPeer, true) });
+            sender.Send(otherMessage, new[] { new PeerWithPersistenceInfo(receivingPeer, false) });
+            
+            Wait.Until(() => receivedMessages.Count >= 2, 500.Milliseconds());
+            receivedMessages.Single(x => x.Id == message.Id).WasPersisted.ShouldEqual(true);
+            receivedMessages.Single(x => x.Id == otherMessage.Id).WasPersisted.ShouldEqual(false);
+        }
+
         [Test]
         public void should_support_peer_endpoint_modifications()
         {

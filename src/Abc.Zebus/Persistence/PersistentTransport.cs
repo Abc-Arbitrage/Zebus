@@ -151,25 +151,29 @@ namespace Abc.Zebus.Persistence
             SetInitialPhase();
         }
 
-        public void Send(TransportMessage message, IEnumerable<Peer> peerIds)
+        public void Send(TransportMessage message, IEnumerable<Peer> peers)
         {
-            var peerList = (peerIds as IList<Peer>) ?? peerIds.ToList();
-            var upPeers = (peerList.Count == 1 && peerList[0].IsUp) ? peerList : peerList.Where(peer => peer.IsUp);
-
-            _innerTransport.Send(message, upPeers);
-
-            if (!message.MessageTypeId.IsPersistent())
+            var isMessagePersistent = message.MessageTypeId.IsPersistent();
+            var peerList = (peers as IList<Peer>) ?? peers.ToList();
+            var upPeers = (peerList.Count == 1 && peerList[0].IsUp) ? peerList : peerList.Where(peer => peer.IsUp).ToList();
+            
+            _innerTransport.Send(message, upPeers.Select(peer => new PeerWithPersistenceInfo(peer, _peerDirectory.IsPersistent(peer.Id) && isMessagePersistent)));
+            
+            if (!isMessagePersistent)
                 return;
 
-            var persistentPeerIds = peerList.Where(x => _peerDirectory.IsPersistent(x.Id))
-                                            .Select(x => x.Id)
-                                            .ToArray();
+            var persistentPeerIds = peerList.Where(p => _peerDirectory.IsPersistent(p.Id)).Select(x => x.Id).ToArray();
 
             if (!persistentPeerIds.Any())
                 return;
-
+            
             var persistMessageCommand = new PersistMessageCommand(message, persistentPeerIds);
             EnqueueOrSendToPersistenceService(persistMessageCommand);
+        }
+
+        public void Send(TransportMessage message, IEnumerable<PeerWithPersistenceInfo> targets)
+        {
+            throw new NotImplementedException("This method cannot be called on PersistentTransport because whether a message is persisted or not is PersistentTransport's decision");
         }
 
         private void SetPhase(Phase phase)
@@ -253,7 +257,9 @@ namespace Abc.Zebus.Persistence
 
         public void AckMessage(TransportMessage transportMessage)
         {
-            if (transportMessage.ForcePersistenceAck || (_isPersistent && transportMessage.MessageTypeId.IsPersistent()))
+            if (transportMessage.ForcePersistenceAck ||
+                transportMessage.WasPersisted == true
+                || !transportMessage.WasPersisted.HasValue && _isPersistent && transportMessage.MessageTypeId.IsPersistent())
             {
                 _logger.DebugFormat("PERSIST ACK: {0} {1}", transportMessage.MessageTypeId, transportMessage.Id);
 

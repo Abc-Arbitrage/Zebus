@@ -6,9 +6,9 @@ namespace Abc.Zebus.Testing.Transport
     public class TransportMessageSent
     {
         public readonly TransportMessage TransportMessage;
-        public readonly IEnumerable<Peer> Targets;
+        public readonly IEnumerable<PeerWithPersistenceInfo> Targets;
 
-        public TransportMessageSent(TransportMessage transportMessage, params Peer[] targets)
+        public TransportMessageSent(TransportMessage transportMessage, params PeerWithPersistenceInfo[] targets)
         {
             TransportMessage = transportMessage;
             Targets = targets;

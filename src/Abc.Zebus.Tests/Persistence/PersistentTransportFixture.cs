@@ -27,7 +27,7 @@ namespace Abc.Zebus.Tests.Persistence
         protected TestTransport InnerTransport { get; private set; }
         protected ConcurrentQueue<TransportMessage> MessagesForwardedToBus { get; private set; }
         protected StartMessageReplayCommand StartMessageReplayCommand { get; private set; }
-        protected IEnumerable<Peer> StartMessageReplayCommandTargets { get; private set; }
+        protected IEnumerable<PeerWithPersistenceInfo> StartMessageReplayCommandTargets { get; private set; }
         protected Mock<IPeerDirectory> PeerDirectory { get; private set; }
 
 

@@ -41,7 +41,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessage);
 
                 var processingFailedTransportMessage = new TransportMessage(MessageUtil.TypeId<MessageProcessingFailed>(), messageProcessingFailedBytes, _self);
-                _transport.ExpectExactly(new TransportMessageSent(processingFailedTransportMessage, _peerUp));
+                _transport.ExpectExactly(new TransportMessageSent(processingFailedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
             }
         }
 
