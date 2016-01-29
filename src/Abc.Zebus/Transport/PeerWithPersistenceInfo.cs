@@ -2,8 +2,8 @@
 {
     public struct PeerWithPersistenceInfo
     {
-        public Peer Peer;
-        public bool WasPersisted;
+        public readonly Peer Peer;
+        public readonly bool WasPersisted;
 
         public PeerWithPersistenceInfo(Peer peer, bool wasPersisted)
         {
