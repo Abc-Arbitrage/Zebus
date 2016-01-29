@@ -13,7 +13,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_deserialize_1_4_1_transport_messages()
         {
-            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3 }, new PeerId("peer"), "endpoint",
+            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3 }, new OriginatorInfo(new PeerId("peer"), "endpoint", "MACHINEXXX", "username"),
                                                        new MessageId(Guid.Parse("ce0ac850-a9c5-e511-932e-d8e94a2d2418")));
 
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Abc.Zebus.Tests.Transport.transport_message_1_4_1.bin"))
@@ -27,8 +27,8 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_read_WasPersisted_as_null_for_older_versions()
         {
-            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3 }, new PeerId("peer"), "endpoint",
-                                           new MessageId(Guid.Parse("ce0ac850-a9c5-e511-932e-d8e94a2d2418"))) { WasPersisted = false };
+            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3 }, new OriginatorInfo(new PeerId("peer"), "endpoint", "MACHINEXXX", "username"),
+                                                       new MessageId(Guid.Parse("ce0ac850-a9c5-e511-932e-d8e94a2d2418"))) { WasPersisted = false };
 
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Abc.Zebus.Tests.Transport.transport_message_1_4_1.bin"))
             {
