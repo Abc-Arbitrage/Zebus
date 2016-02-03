@@ -47,8 +47,6 @@ namespace Abc.Zebus.Transport
         {
         }
 
-        public bool ForcePersistenceAck { get; set; }
-
         private static OriginatorInfo CreateOriginator(PeerId peerId, string peerEndPoint)
         {
             return new OriginatorInfo(peerId, peerEndPoint, MessageContext.CurrentMachineName, MessageContext.GetInitiatorUserName());

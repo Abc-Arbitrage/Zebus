@@ -58,6 +58,21 @@ namespace Abc.Zebus.Tests.Persistence
         }
 
         [Test]
+        public void should_force_WasPersisted_for_replayed_messages()
+        {
+            Transport.Start();
+
+            var sourceTransportMessage = new FakeCommand(123).ToTransportMessage();
+            sourceTransportMessage.WasPersisted = null;
+
+            var replayTransportMessage = sourceTransportMessage.ToReplayedTransportMessage(ReplayId);
+            InnerTransport.RaiseMessageReceived(replayTransportMessage);
+
+            var forwardedTransportMessage = MessagesForwardedToBus.ExpectedSingle();
+            forwardedTransportMessage.WasPersisted.ShouldEqual(true);
+        }
+
+        [Test]
         public void should_forward_a_normal_message_after_a_back_to_live_event()
         {
             Transport.Start();

@@ -257,9 +257,7 @@ namespace Abc.Zebus.Persistence
 
         public void AckMessage(TransportMessage transportMessage)
         {
-            if (transportMessage.ForcePersistenceAck ||
-                transportMessage.WasPersisted == true
-                || !transportMessage.WasPersisted.HasValue && _isPersistent && transportMessage.MessageTypeId.IsPersistent())
+            if (transportMessage.WasPersisted == true || transportMessage.WasPersisted == null && _isPersistent && transportMessage.MessageTypeId.IsPersistent())
             {
                 _logger.DebugFormat("PERSIST ACK: {0} {1}", transportMessage.MessageTypeId, transportMessage.Id);
 

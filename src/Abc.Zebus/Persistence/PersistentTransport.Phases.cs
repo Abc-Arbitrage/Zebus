@@ -120,7 +120,11 @@ namespace Abc.Zebus.Persistence
             {
                 Transport._logger.DebugFormat("REPLAY: {0} {1}", messageReplayed.Message.MessageTypeId, messageReplayed.Message.Id);
 
-                messageReplayed.Message.ForcePersistenceAck = true;
+                // the message was persisted because it comes from the persistence
+                // but previous Zebus versions do not specify the WasPersisted field
+                // => force WasPersisted to support previous Zebus version and make sure the message will be acked
+                messageReplayed.Message.WasPersisted = true;
+
                 Transport.TriggerMessageReceived(messageReplayed.Message);
                 Transport._receivedMessagesIds.TryAdd(messageReplayed.Message.Id, true);
 
