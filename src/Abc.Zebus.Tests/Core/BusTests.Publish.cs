@@ -4,6 +4,7 @@ using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Transport;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Core

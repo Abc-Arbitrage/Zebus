@@ -18,14 +18,14 @@ namespace Abc.Zebus.Testing
 {
     public static class TestExtensions
     {
-        public static TransportMessage ToTransportMessage(this IMessage message, Peer sender = null)
+        public static TransportMessage ToTransportMessage(this IMessage message, Peer sender = null, bool? wasPersisted = null)
         {
             sender = sender ?? new Peer(new PeerId("Abc.Testing.Peer"), "tcp://abctest:159");
 
             var serializer = new MessageSerializer();
             var messageBytes = serializer.Serialize(message);
 
-            return new TransportMessage(message.TypeId(), messageBytes, sender);
+            return new TransportMessage(message.TypeId(), messageBytes, sender) { WasPersisted = wasPersisted };
         }
 
         public static IMessage ToMessage(this TransportMessage transportMessage)

@@ -72,11 +72,16 @@ namespace Abc.Zebus.Testing.Transport
             IsStopped = true;
         }
 
-        public void Send(TransportMessage message, IEnumerable<Peer> peerIds)
+        public void Send(TransportMessage message, IEnumerable<Peer> peers)
         {
-            var targets = peerIds.ToArray();
-            if (targets.Length != 0)
-                _messages.Add(new TransportMessageSent(message, targets));
+            Send(message, peers, new SendContext());
+        }
+
+        public void Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context)
+        {
+            var peerList = peers.ToList();
+            if (peerList.Any())
+                _messages.Add(new TransportMessageSent(message, peerList, context));
 
             var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.MessageBytes);
             if (deserializedMessage != null)

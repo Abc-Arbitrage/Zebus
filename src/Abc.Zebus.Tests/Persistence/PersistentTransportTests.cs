@@ -58,6 +58,21 @@ namespace Abc.Zebus.Tests.Persistence
         }
 
         [Test]
+        public void should_force_WasPersisted_for_replayed_messages()
+        {
+            Transport.Start();
+
+            var sourceTransportMessage = new FakeCommand(123).ToTransportMessage();
+            sourceTransportMessage.WasPersisted = null;
+
+            var replayTransportMessage = sourceTransportMessage.ToReplayedTransportMessage(ReplayId);
+            InnerTransport.RaiseMessageReceived(replayTransportMessage);
+
+            var forwardedTransportMessage = MessagesForwardedToBus.ExpectedSingle();
+            forwardedTransportMessage.WasPersisted.ShouldEqual(true);
+        }
+
+        [Test]
         public void should_forward_a_normal_message_after_a_back_to_live_event()
         {
             Transport.Start();
@@ -189,7 +204,7 @@ namespace Abc.Zebus.Tests.Persistence
         }
 
         [Test]
-        public void should_send_persistent_message_to_persistence_peer_and_to_the_peer()
+        public void should_send_persistent_message_to_the_persistence_and_to_the_peer()
         {
             using (MessageId.PauseIdGeneration())
             {
@@ -197,15 +212,17 @@ namespace Abc.Zebus.Tests.Persistence
 
                 Transport.Send(message, new[] { AnotherPersistentPeer });
 
-                InnerTransport.ExpectExactly(
-                    new TransportMessageSent(message, new[] { AnotherPersistentPeer }),
-                    new TransportMessageSent(new PersistMessageCommand(message, new[] { AnotherPersistentPeer.Id }).ToTransportMessage(Self), new[] { PersistencePeer })
-                    );
+                var expectedPersistenceMessage = new PersistMessageCommand(message, new[] { AnotherPersistentPeer.Id }).ToTransportMessage(Self);
+                InnerTransport.ExpectExactly(new[]
+                {
+                    new TransportMessageSent(message, AnotherPersistentPeer, true),
+                    new TransportMessageSent(expectedPersistenceMessage, PersistencePeer),
+                });
             }
         }
 
         [Test]
-        public void should_send_persistent_message_only_to_persistence_peer_when_peer_is_down()
+        public void should_send_persistent_message_only_to_the_persistence_when_peer_is_down()
         {
             using (MessageId.PauseIdGeneration())
             {
@@ -221,11 +238,14 @@ namespace Abc.Zebus.Tests.Persistence
         [Test]
         public void non_persistent_messages_should_not_be_sent_to_persistence_peer()
         {
-            var message = new FakeNonPersistentCommand(123).ToTransportMessage();
+            using (MessageId.PauseIdGeneration())
+            {
+                var message = new FakeNonPersistentCommand(123).ToTransportMessage();
 
-            Transport.Send(message, new[] { AnotherPersistentPeer });
+                Transport.Send(message, new[] { AnotherPersistentPeer });
 
-            InnerTransport.ExpectExactly(new TransportMessageSent(message, new[] { AnotherPersistentPeer }));
+                InnerTransport.ExpectExactly(new TransportMessageSent(message, new[] { AnotherPersistentPeer }));
+            }
         }
 
         [Test]
@@ -234,14 +254,15 @@ namespace Abc.Zebus.Tests.Persistence
             using (MessageId.PauseIdGeneration())
             {
                 var message = new FakeEvent(123).ToTransportMessage(Self);
-                var persistCommand = new PersistMessageCommand(message, new[] { AnotherPersistentPeer.Id }).ToTransportMessage(Self);
+                var persistenceCommand = new PersistMessageCommand(message, new[] { AnotherPersistentPeer.Id }).ToTransportMessage(Self);
 
                 Transport.Send(message, new[] { AnotherPersistentPeer, AnotherNonPersistentPeer });
 
-                InnerTransport.ExpectExactly(
-                    new TransportMessageSent(message, new[] { AnotherPersistentPeer, AnotherNonPersistentPeer }),
-                    new TransportMessageSent(persistCommand, new[] { PersistencePeer })
-                );
+                InnerTransport.ExpectExactly(new []
+                {
+                    new TransportMessageSent(message).To(AnotherPersistentPeer, true).To(AnotherNonPersistentPeer, false),
+                    new TransportMessageSent(persistenceCommand, PersistencePeer),
+                });
             }
         }
 
@@ -254,7 +275,7 @@ namespace Abc.Zebus.Tests.Persistence
 
                 Transport.Send(message, new[] { AnotherNonPersistentPeer });
 
-                InnerTransport.ExpectExactly(new TransportMessageSent(message, new[] { AnotherNonPersistentPeer }));
+                InnerTransport.ExpectExactly(new TransportMessageSent(message, AnotherNonPersistentPeer));
             }
         }
 
@@ -266,11 +287,33 @@ namespace Abc.Zebus.Tests.Persistence
             {
                 var command = new FakeCommand(123).ToTransportMessage();
                 InnerTransport.RaiseMessageReceived(new ReplayPhaseEnded(StartMessageReplayCommand.ReplayId).ToTransportMessage());
+                InnerTransport.RaiseMessageReceived(command);
+
+                Transport.AckMessage(command);
+
+                var messageHandledMessage = new MessageHandled(command.Id).ToTransportMessage(Self);
+                InnerTransport.ExpectExactly(new TransportMessageSent(messageHandledMessage, PersistencePeer));
+            }
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_consider_WasPersisted_before_publishing_a_MessageHandled_event(bool wasPersisted)
+        {
+            Transport.Start();
+            using (MessageId.PauseIdGeneration())
+            {
+                var command = new FakeCommand(123).ToTransportMessage(wasPersisted: wasPersisted);
+                InnerTransport.RaiseMessageReceived(new ReplayPhaseEnded(StartMessageReplayCommand.ReplayId).ToTransportMessage());
 
                 InnerTransport.RaiseMessageReceived(command);
                 Transport.AckMessage(command);
 
-                InnerTransport.ExpectExactly(new TransportMessageSent(new MessageHandled(command.Id).ToTransportMessage(Self), new[] { PersistencePeer }));
+                if (wasPersisted)
+                    InnerTransport.ExpectExactly(new TransportMessageSent(new MessageHandled(command.Id).ToTransportMessage(Self), PersistencePeer));
+                else
+                    InnerTransport.ExpectNothing();
             }
         }
 
@@ -301,7 +344,6 @@ namespace Abc.Zebus.Tests.Persistence
 
                 // Stopping persistence
                 InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, new byte[0], PersistencePeer));
-
                 InnerTransport.ExpectExactly(new TransportMessageSent(new TransportMessage(MessageTypeId.PersistenceStoppingAck, new byte[0], Self), PersistencePeer));
                 InnerTransport.Messages.Clear();
 
@@ -312,7 +354,7 @@ namespace Abc.Zebus.Tests.Persistence
                 Transport.AckMessage(ackedMessage);
 
                 InnerTransport.AckedMessages.ShouldBeEmpty();
-                InnerTransport.ExpectExactly(new TransportMessageSent(message, AnotherPersistentPeer));
+                InnerTransport.ExpectExactly(new TransportMessageSent(message, AnotherPersistentPeer, true));
                 InnerTransport.Messages.Clear();
 
                 // starting persistence - should send enqueued messages
@@ -334,7 +376,7 @@ namespace Abc.Zebus.Tests.Persistence
 
                 InnerTransport.ExpectExactly(new[]
                 {
-                    new TransportMessageSent(message, AnotherPersistentPeer),
+                    new TransportMessageSent(message, AnotherPersistentPeer, true),
                     new TransportMessageSent(new PersistMessageCommand(message, new[] { AnotherPersistentPeer.Id }).ToTransportMessage(Self), PersistencePeer),
                     new TransportMessageSent(new MessageHandled(ackedMessage.Id).ToTransportMessage(Self), PersistencePeer),
                 });

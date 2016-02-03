@@ -151,23 +151,32 @@ namespace Abc.Zebus.Persistence
             SetInitialPhase();
         }
 
-        public void Send(TransportMessage message, IEnumerable<Peer> peerIds)
+        public void Send(TransportMessage message, IEnumerable<Peer> peers)
         {
-            var peerList = (peerIds as IList<Peer>) ?? peerIds.ToList();
-            var upPeers = (peerList.Count == 1 && peerList[0].IsUp) ? peerList : peerList.Where(peer => peer.IsUp);
+            Send(message, peers, new SendContext());
+        }
 
-            _innerTransport.Send(message, upPeers);
+        public void Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context)
+        {
+            if (context.PersistedPeerIds.Any())
+                throw new ArgumentException("Send invoked with non-empty send context", "context");
 
-            if (!message.MessageTypeId.IsPersistent())
+            var isMessagePersistent = message.MessageTypeId.IsPersistent();
+            var peerList = (peers as IList<Peer>) ?? peers.ToList();
+            var upPeers = (peerList.Count == 1 && peerList[0].IsUp) ? peerList : peerList.Where(peer => peer.IsUp).ToList();
+
+            context.PersistedPeerIds.AddRange(upPeers.Where(peer => isMessagePersistent && _peerDirectory.IsPersistent(peer.Id)).Select(x => x.Id));
+
+            _innerTransport.Send(message, upPeers, context);
+            
+            if (!isMessagePersistent)
                 return;
 
-            var persistentPeerIds = peerList.Where(x => _peerDirectory.IsPersistent(x.Id))
-                                            .Select(x => x.Id)
-                                            .ToArray();
+            var persistentPeerIds = peerList.Where(p => _peerDirectory.IsPersistent(p.Id)).Select(x => x.Id).ToArray();
 
             if (!persistentPeerIds.Any())
                 return;
-
+            
             var persistMessageCommand = new PersistMessageCommand(message, persistentPeerIds);
             EnqueueOrSendToPersistenceService(persistMessageCommand);
         }
@@ -212,7 +221,7 @@ namespace Abc.Zebus.Persistence
                 var ackMessage = _innerTransport.CreateInfrastructureTransportMessage(MessageTypeId.PersistenceStoppingAck);
 
                 _logger.InfoFormat("Sending PersistenceStoppingAck to {0}", transportMessage.Originator.SenderId);
-                _innerTransport.Send(ackMessage, new[] { new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint) });
+                _innerTransport.Send(ackMessage, new[] { new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint) }, new SendContext());
 
                 return;
             }
@@ -253,7 +262,7 @@ namespace Abc.Zebus.Persistence
 
         public void AckMessage(TransportMessage transportMessage)
         {
-            if (transportMessage.ForcePersistenceAck || (_isPersistent && transportMessage.MessageTypeId.IsPersistent()))
+            if (transportMessage.WasPersisted == true || transportMessage.WasPersisted == null && _isPersistent && transportMessage.MessageTypeId.IsPersistent())
             {
                 _logger.DebugFormat("PERSIST ACK: {0} {1}", transportMessage.MessageTypeId, transportMessage.Id);
 
@@ -269,7 +278,7 @@ namespace Abc.Zebus.Persistence
         private void SendToPersistenceService(IMessage message, IEnumerable<Peer> persistentPeers)
         {
             var transportMessage = _serializer.ToTransportMessage(message, MessageId.NextId(), PeerId, InboundEndPoint);
-            _innerTransport.Send(transportMessage, persistentPeers);
+            _innerTransport.Send(transportMessage, persistentPeers, new SendContext());
         }
 
         public int PendingPersistenceSendCount

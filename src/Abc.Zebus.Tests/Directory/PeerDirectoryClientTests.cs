@@ -32,7 +32,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             _configurationMock = new Mock<IBusConfiguration>();
             _configurationMock.SetupGet(x => x.DirectoryServiceEndPoints).Returns(new[] { "tcp://main-directory:777", "tcp://backup-directory:777" });
-            _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(100.Milliseconds());
+            _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(200.Milliseconds());
             _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(false);
 
             _directory = new PeerDirectoryClient(_configurationMock.Object);
@@ -439,8 +439,15 @@ namespace Abc.Zebus.Tests.Directory
         public void should_connect_to_next_directory_if_first_is_failing()
         {
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
-            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.0"), x => { Thread.Sleep(1.Second()); return new RegisterPeerResponse(new PeerDescriptor[0]); });
-            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x => new RegisterPeerResponse(new PeerDescriptor[0]));
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.0"), x =>
+            {
+                Thread.Sleep(1.Second());
+                return new RegisterPeerResponse(new PeerDescriptor[0]);
+            });
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x =>
+            {
+                return new RegisterPeerResponse(new PeerDescriptor[0]);
+            });
 
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
             _directory.Register(_bus, _self, subscriptions);

@@ -3,6 +3,7 @@ using Abc.Zebus.Lotus;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Newtonsoft.Json;
 using NUnit.Framework;
