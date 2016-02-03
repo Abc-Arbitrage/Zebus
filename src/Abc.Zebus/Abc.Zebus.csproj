@@ -205,7 +205,7 @@
     <Compile Include="Peer.cs" />
     <Compile Include="Transport\IZmqSocketOptions.cs" />
     <Compile Include="Transport\IZmqTransportConfiguration.cs" />
-    <Compile Include="Transport\PeerWithPersistenceInfo.cs" />
+    <Compile Include="Transport\SendContext.cs" />
     <Compile Include="Transport\ZmqInboundSocket.cs" />
     <Compile Include="Transport\ZmqOutboundSocket.cs" />
     <Compile Include="Transport\ZmqEndPoint.cs" />

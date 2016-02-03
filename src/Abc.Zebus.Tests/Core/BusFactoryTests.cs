@@ -45,7 +45,7 @@ namespace Abc.Zebus.Tests.Core
             sentMessage.TransportMessage.MessageTypeId.GetMessageType().ShouldEqual(typeof(CommandWithRemoteHandler));
 
             var target = sentMessage.Targets.ExpectedSingle();
-            target.Peer.Id.ShouldEqual(otherPeer.Id);
+            target.Id.ShouldEqual(otherPeer.Id);
         }
 
         [ProtoContract]

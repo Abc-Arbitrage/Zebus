@@ -22,7 +22,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
                 _bus.Publish(@event);
 
-                _transport.ExpectExactly(new TransportMessageSent(@event.ToTransportMessage(_self), new[] { new PeerWithPersistenceInfo(_peerUp, false), new PeerWithPersistenceInfo(_peerDown, false) }));
+                _transport.ExpectExactly(new TransportMessageSent(@event.ToTransportMessage(_self), new[] { _peerUp, _peerDown }));
             }
         }
 
@@ -47,7 +47,7 @@ namespace Abc.Zebus.Tests.Core
 
                 var sentMessage = _transport.Messages.Single();
                 expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
-                var destination = sentMessage.Targets.Single().Peer;
+                var destination = sentMessage.Targets.Single();
                 destination.ShouldHaveSamePropertiesAs(_peerUp);
             }
         }

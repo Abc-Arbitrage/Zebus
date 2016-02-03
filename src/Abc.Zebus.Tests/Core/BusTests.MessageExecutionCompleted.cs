@@ -40,7 +40,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 var messageExecutionCompleted = new MessageExecutionCompleted(transportMessageReceived.Id, 0, null).ToTransportMessage(_self);
-                _transport.ExpectExactly(new TransportMessageSent(messageExecutionCompleted, new PeerWithPersistenceInfo(_peerUp, false)));
+                _transport.ExpectExactly(new TransportMessageSent(messageExecutionCompleted, _peerUp));
             }
         }
 
@@ -56,7 +56,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, 1, null).ToTransportMessage(_self);
-                _transport.Expect(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
+                _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
             }
         }
 
@@ -75,7 +75,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, domainExceptionValue, domainExceptionMessage).ToTransportMessage(_self);
-                _transport.ExpectExactly(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
+                _transport.ExpectExactly(new TransportMessageSent(expectedTransportMessage, _peerUp));
             }
         }
 

@@ -29,7 +29,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 var expectedTransportMessage = new MessageProcessingFailed(transportMessageReceived, commandJson, exception.ToString(), SystemDateTime.UtcNow, new [] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
-                _transport.Expect(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
+                _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
             }
         }
 
@@ -50,7 +50,7 @@ namespace Abc.Zebus.Tests.Core
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 var expectedTransportMessage = new MessageProcessingFailed(transportMessageReceived, messageJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
-                _transport.Expect(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
+                _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
             }
         }
 
@@ -72,7 +72,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Send(command);
 
                 var expectedTransportMessage = new MessageProcessingFailed(command.ToTransportMessage(_self), commandJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
-                _transport.Expect(new TransportMessageSent(expectedTransportMessage, new PeerWithPersistenceInfo(_peerUp, false)));
+                _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
             }
         }
 

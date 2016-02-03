@@ -144,12 +144,33 @@ namespace Abc.Zebus.Tests.Transport
             var message = new FakeCommand(1).ToTransportMessage();
             var otherMessage = new FakeCommand(2).ToTransportMessage();
 
-            sender.Send(message, new[] { new PeerWithPersistenceInfo(receivingPeer, true) });
-            sender.Send(otherMessage, new[] { new PeerWithPersistenceInfo(receivingPeer, false) });
-            
+            sender.Send(message, new[] { receivingPeer }, new SendContext { PersistedPeerIds = { receivingPeer.Id } });
+            sender.Send(otherMessage, new[] { receivingPeer }, new SendContext());
+
             Wait.Until(() => receivedMessages.Count >= 2, 500.Milliseconds());
             receivedMessages.Single(x => x.Id == message.Id).WasPersisted.ShouldEqual(true);
             receivedMessages.Single(x => x.Id == otherMessage.Id).WasPersisted.ShouldEqual(false);
+        }
+
+        [Test, Timeout(5000)]
+        public void should_send_message_to_both_persisted_and_non_persisted_peers()
+        {
+            var sender = CreateAndStartZmqTransport();
+            var receivedMessages = new ConcurrentBag<TransportMessage>();
+
+            var receiver1 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receivingPeer1 = new Peer(new PeerId("Abc.Testing.R1"), receiver1.InboundEndPoint);
+
+            var receiver2 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receivingPeer2 = new Peer(new PeerId("Abc.Testing.R2"), receiver2.InboundEndPoint);
+
+            var message = new FakeCommand(1).ToTransportMessage();
+
+            sender.Send(message, new[] { receivingPeer1, receivingPeer2 }, new SendContext { PersistedPeerIds = { receivingPeer1.Id } });
+
+            Wait.Until(() => receivedMessages.Count >= 2, 500.Milliseconds());
+            receivedMessages.ShouldContain(x => x.Id == message.Id && x.WasPersisted == true);
+            receivedMessages.ShouldContain(x => x.Id == message.Id && x.WasPersisted == false);
         }
 
         [Test]

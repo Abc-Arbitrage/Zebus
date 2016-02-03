@@ -515,7 +515,7 @@ namespace Abc.Zebus.Core
 
         protected void SendTransportMessage(TransportMessage transportMessage, IList<Peer> peers)
         {
-            _transport.Send(transportMessage, peers);
+            _transport.Send(transportMessage, peers, new SendContext());
         }
 
         protected void AckTransportMessage(TransportMessage transportMessage)
