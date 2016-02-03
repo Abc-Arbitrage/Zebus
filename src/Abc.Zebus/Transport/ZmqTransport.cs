@@ -297,19 +297,11 @@ namespace Abc.Zebus.Transport
         {
             _logger.InfoFormat("Sending EndOfStreamAck to {0}", transportMessage.Originator.SenderEndPoint);
 
-            var endOfStreamAck = CreateInfrastructureTransportMessage(MessageTypeId.EndOfStreamAck);
+            var endOfStreamAck = TransportMessage.Infrastructure(MessageTypeId.EndOfStreamAck, PeerId, InboundEndPoint);
             var closingPeer = new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint);
 
             SafeAdd(_outboundSocketActions, OutboundSocketAction.Send(endOfStreamAck, new[] { closingPeer }, new SendContext()));
             SafeAdd(_pendingDisconnects, new PendingDisconnect(closingPeer.Id, SystemDateTime.UtcNow.Add(_configuration.WaitForEndOfStreamAckTimeout)));
-        }
-
-        public TransportMessage CreateInfrastructureTransportMessage(MessageTypeId messageTypeId)
-        {
-            return new TransportMessage(messageTypeId, new byte[0], PeerId, InboundEndPoint, MessageId.NextId())
-            {
-                Environment = _environment
-            };
         }
 
         private bool IsFromCurrentEnvironment(TransportMessage transportMessage)
@@ -380,9 +372,7 @@ namespace Abc.Zebus.Transport
             if (!peers.Any())
                 return;
 
-            transportMessage.Environment = _environment;
-            transportMessage.WasPersisted = wasPersisted;
-            Serialize(outputBuffer, transportMessage);
+            Serialize(outputBuffer, transportMessage, wasPersisted);
 
             foreach (var peer in peers)
             {
@@ -435,8 +425,8 @@ namespace Abc.Zebus.Transport
             {
                 _logger.InfoFormat("Sending EndOfStream to {0}", outboundSocket.EndPoint);
 
-                var endOfStreamMessage = CreateInfrastructureTransportMessage(MessageTypeId.EndOfStream);
-                Serialize(outputBuffer, endOfStreamMessage);
+                var endOfStreamMessage = TransportMessage.Infrastructure(MessageTypeId.EndOfStream, PeerId, InboundEndPoint);
+                Serialize(outputBuffer, endOfStreamMessage, false);
                 outboundSocket.Send(outputBuffer, endOfStreamMessage);
             }
         }
@@ -459,9 +449,12 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        private static void Serialize(MemoryStream outputBuffer, TransportMessage transportMessage)
+        private void Serialize(MemoryStream outputBuffer, TransportMessage transportMessage, bool wasPersisted)
         {
             outputBuffer.Position = 0;
+
+            transportMessage.Environment = _environment;
+            transportMessage.WasPersisted = wasPersisted;
             Serializer.Serialize(outputBuffer, transportMessage);
         }
 
@@ -480,39 +473,39 @@ namespace Abc.Zebus.Transport
         private struct OutboundSocketAction
         {
             private static readonly TransportMessage _disconnectMessage = new TransportMessage(null, null, new PeerId(), null, new MessageId());
+            private readonly IEnumerable<Peer> _targets;
+            private readonly SendContext _context;
 
             public readonly TransportMessage Message;
-            public readonly IEnumerable<Peer> Targets;
-            public readonly SendContext Context;
 
             private OutboundSocketAction(TransportMessage message, IEnumerable<Peer> targets, SendContext context)
             {
                 Message = message;
-                Targets = targets;
-                Context = context;
+                _targets = targets;
+                _context = context;
             }
 
             public bool IsDisconnect => Message == _disconnectMessage;
 
             public IEnumerable<PeerId> PeerIds
             {
-                get { return Targets.Select(x => x.Id); }
+                get { return _targets.Select(x => x.Id); }
             }
 
             public IEnumerable<Peer> GetTransientPeers()
             {
-                foreach (var target in Targets)
+                foreach (var target in _targets)
                 {
-                    if (!Context.PersistedPeerIds.Contains(target.Id))
+                    if (!_context.PersistedPeerIds.Contains(target.Id))
                         yield return target;
                 }
             }
 
             public IEnumerable<Peer> GetPersistentPeer()
             {
-                foreach (var target in Targets)
+                foreach (var target in _targets)
                 {
-                    if (Context.PersistedPeerIds.Contains(target.Id))
+                    if (_context.PersistedPeerIds.Contains(target.Id))
                         yield return target;
                 }
             }
@@ -563,6 +556,4 @@ namespace Abc.Zebus.Transport
             }
         }
     }
-
-    
 }

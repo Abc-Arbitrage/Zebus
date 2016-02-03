@@ -51,5 +51,10 @@ namespace Abc.Zebus.Transport
         {
             return new OriginatorInfo(peerId, peerEndPoint, MessageContext.CurrentMachineName, MessageContext.GetInitiatorUserName());
         }
+
+        internal static TransportMessage Infrastructure(MessageTypeId messageTypeId, PeerId peerId, string senderEndPoint)
+        {
+            return new TransportMessage(messageTypeId, new byte[0], peerId, senderEndPoint, MessageId.NextId());
+        }
     }
 }

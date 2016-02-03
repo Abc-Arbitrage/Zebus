@@ -20,9 +20,6 @@ namespace Abc.Zebus.Transport
         int PendingSendCount { get; }
 
         void Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context);
-
         void AckMessage(TransportMessage transportMessage);
-
-        TransportMessage CreateInfrastructureTransportMessage(MessageTypeId messageTypeId);
     }
 }
