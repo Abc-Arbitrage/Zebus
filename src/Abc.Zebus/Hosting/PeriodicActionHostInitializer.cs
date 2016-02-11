@@ -32,12 +32,12 @@ namespace Abc.Zebus.Hosting
 
         public abstract void DoPeriodicAction();
 
-        public TimeSpan Period { get { return _period; } }
+        public TimeSpan Period => _period;
         public bool ErrorPublicationEnabled { get; set; }
         public int ErrorCountBeforePause { get; set; }
         public TimeSpan ErrorPauseDuration { get; set; }
 
-        protected bool IsRunning { get { return _isRunning; } }
+        protected bool IsRunning => _isRunning;
 
         public override void AfterStart()
         {

@@ -15,10 +15,7 @@ namespace Abc.Zebus.Tests.Directory
         private List<PeerSubscription> _dynamicPeerSubscriptions = new List<PeerSubscription>();
         private List<Peer> _peersHandlingAllMessages = new List<Peer>();
 
-        public bool IsEmpty
-        {
-            get { return _peersHandlingAllMessages.Count == 0 && _dynamicPeerSubscriptions.Count == 0; }
-        }
+        public bool IsEmpty => _peersHandlingAllMessages.Count == 0 && _dynamicPeerSubscriptions.Count == 0;
 
         public void Add(Peer peer, Subscription subscription)
         {

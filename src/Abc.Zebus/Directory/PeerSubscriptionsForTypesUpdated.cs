@@ -30,9 +30,6 @@ namespace Abc.Zebus.Directory
             TimestampUtc = timestampUtc;
         }
 
-        public override string ToString()
-        {
-            return string.Format("PeerId: {0}, TimestampUtc: {1:yyyy-MM-dd HH:mm:ss.fff}", PeerId, TimestampUtc);
-        }
+        public override string ToString() => $"PeerId: {PeerId}, TimestampUtc: {TimestampUtc:yyyy-MM-dd HH:mm:ss.fff}";
     }
 }

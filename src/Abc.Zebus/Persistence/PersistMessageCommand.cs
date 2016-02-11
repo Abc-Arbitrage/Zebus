@@ -18,9 +18,6 @@ namespace Abc.Zebus.Persistence
             Targets = targets;
         }
 
-        public override string ToString()
-        {
-            return "PersistCommand for: " + TransportMessage.MessageTypeId + " " + TransportMessage.Id.Value;
-        }
+        public override string ToString() => "PersistCommand for: " + TransportMessage.MessageTypeId + " " + TransportMessage.Id.Value;
     }
 }

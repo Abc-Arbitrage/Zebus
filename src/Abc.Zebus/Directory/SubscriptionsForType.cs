@@ -21,7 +21,7 @@ namespace Abc.Zebus.Directory
             MessageTypeId = messageTypeId;
             BindingKeys = bindingKeys;
         }
-        
+
         [UsedImplicitly]
         private SubscriptionsForType()
         {
@@ -39,14 +39,10 @@ namespace Abc.Zebus.Directory
         }
 
         public Subscription[] ToSubscriptions()
-        {
-            return BindingKeys == null ? new Subscription[0] : BindingKeys.Select(bindingKey => new Subscription(MessageTypeId, bindingKey)).ToArray();
-        }
+            => BindingKeys?.Select(bindingKey => new Subscription(MessageTypeId, bindingKey)).ToArray() ?? new Subscription[0];
 
         public bool Equals(SubscriptionsForType other)
-        {
-            return Equals(MessageTypeId, other.MessageTypeId) && BindingKeys.SequenceEqual(other.BindingKeys);
-        }
+            => Equals(MessageTypeId, other.MessageTypeId) && BindingKeys.SequenceEqual(other.BindingKeys);
 
         public override bool Equals(object obj)
         {
@@ -54,7 +50,7 @@ namespace Abc.Zebus.Directory
                 return false;
             if (ReferenceEquals(this, obj))
                 return true;
-            if (obj.GetType() != this.GetType())
+            if (obj.GetType() != GetType())
                 return false;
             return Equals((SubscriptionsForType)obj);
         }
@@ -63,7 +59,7 @@ namespace Abc.Zebus.Directory
         {
             unchecked
             {
-                return ((MessageTypeId != null ? MessageTypeId.GetHashCode() : 0) * 397) ^ (BindingKeys != null ? BindingKeys.GetHashCode() : 0);
+                return ((MessageTypeId?.GetHashCode() ?? 0) * 397) ^ (BindingKeys?.GetHashCode() ?? 0);
             }
         }
     }

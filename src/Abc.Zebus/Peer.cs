@@ -40,10 +40,7 @@ namespace Abc.Zebus
         {
         }
 
-        public override string ToString()
-        {
-            return string.Format("{0}, {1}", Id, EndPoint);
-        }
+        public override string ToString() => $"{Id}, {EndPoint}";
 
         public string GetMachineNameFromEndPoint()
         {

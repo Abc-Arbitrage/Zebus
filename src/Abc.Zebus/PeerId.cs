@@ -17,45 +17,19 @@ namespace Abc.Zebus
             _value = value;
         }
 
-        public bool Equals(PeerId other)
-        {
-            return string.Equals(_value, other._value);
-        }
+        public bool Equals(PeerId other) => string.Equals(_value, other._value);
+        public override bool Equals(object obj) => obj is PeerId && Equals((PeerId)obj);
 
-        public override bool Equals(object obj)
-        {
-            return obj is PeerId && Equals((PeerId)obj);
-        }
+        public override int GetHashCode() => _value?.GetHashCode() ?? 0;
 
-        public override int GetHashCode()
-        {
-            return (_value != null ? _value.GetHashCode() : 0);
-        }
+        public static bool operator ==(PeerId left, PeerId right) => left.Equals(right);
+        public static bool operator !=(PeerId left, PeerId right) => !left.Equals(right);
 
-        public static bool operator ==(PeerId left, PeerId right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(PeerId left, PeerId right)
-        {
-            return !left.Equals(right);
-        }
-
-        public override string ToString()
-        {
-            return _value;
-        }
+        public override string ToString() => _value;
 
         public bool IsInstanceOf(string serviceName)
-        {
-            var currentServiceName = _value.Qualifier();
-            return StringComparer.OrdinalIgnoreCase.Equals(currentServiceName, serviceName);
-        }
+            => StringComparer.OrdinalIgnoreCase.Equals(_value.Qualifier(), serviceName);
 
-        public bool IsPersistence()
-        {
-            return IsInstanceOf("Abc.Zebus.PersistenceService");
-        }
+        public bool IsPersistence() => IsInstanceOf("Abc.Zebus.PersistenceService");
     }
 }

@@ -185,10 +185,7 @@ namespace Abc.Zebus.Tests
                 Value = value;
             }
 
-            public override string ToString()
-            {
-                return string.Format("RoutingKey: {0}, Value: {1}", RoutingKey, Value);
-            }
+            public override string ToString() => $"RoutingKey: {RoutingKey}, Value: {Value}";
         }
 
         public class RoutableCommandHandler : IMessageHandler<RoutableCommand>

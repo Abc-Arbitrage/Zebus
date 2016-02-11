@@ -17,7 +17,6 @@ namespace Abc.Zebus.Transport
     {
         private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqTransport));
         private readonly IZmqTransportConfiguration _configuration;
-        private readonly IZmqSocketOptions _socketOptions;
         private readonly ZmqEndPoint _configuredInboundEndPoint;
         private ConcurrentDictionary<PeerId, ZmqOutboundSocket> _outboundSockets;
         private BlockingCollection<OutboundSocketAction> _outboundSocketActions;
@@ -40,7 +39,7 @@ namespace Abc.Zebus.Transport
 
         static void ExtractLibZmq(string platform)
         {
-            var resourceName = string.Format("libzmq-{0}-0.0.0.0.dll", platform);
+            var resourceName = $"libzmq-{platform}-0.0.0.0.dll";
 
             var libraryPath = PathUtil.InBaseDirectory(resourceName);
             if (File.Exists(libraryPath))
@@ -58,12 +57,12 @@ namespace Abc.Zebus.Transport
                 }
             }
         }
-        
+
         public ZmqTransport(IZmqTransportConfiguration configuration, IZmqSocketOptions socketOptions)
         {
             _configuration = configuration;
             _configuredInboundEndPoint = new ZmqEndPoint(configuration.InboundEndPoint);
-            _socketOptions = socketOptions;
+            SocketOptions = socketOptions;
         }
 
         public event Action<TransportMessage> MessageReceived = delegate { };
@@ -74,25 +73,13 @@ namespace Abc.Zebus.Transport
             internal set { _isListening = value; }
         }
 
-        public string InboundEndPoint
-        {
-            get { return _realInboundEndPoint != null ? _realInboundEndPoint.Value : _configuredInboundEndPoint.Value; }
-        }
+        public string InboundEndPoint => _realInboundEndPoint != null ? _realInboundEndPoint.Value : _configuredInboundEndPoint.Value;
 
-        public int PendingSendCount
-        {
-            get { return _outboundSocketActions == null ? 0 : _outboundSocketActions.Count; }
-        }
+        public int PendingSendCount => _outboundSocketActions?.Count ?? 0;
 
-        public IZmqSocketOptions SocketOptions
-        {
-            get { return _socketOptions; }
-        }
+        public IZmqSocketOptions SocketOptions { get; }
 
-        public int OutboundSocketCount
-        {
-            get { return _outboundSockets.Count; }
-        }
+        public int OutboundSocketCount => _outboundSockets.Count;
 
         public PeerId PeerId { get; private set; }
 
@@ -222,15 +209,14 @@ namespace Abc.Zebus.Transport
             ZmqInboundSocket inboundSocket = null;
             try
             {
-                inboundSocket = new ZmqInboundSocket(_context, PeerId, _configuredInboundEndPoint, _socketOptions, _environment);
+                inboundSocket = new ZmqInboundSocket(_context, PeerId, _configuredInboundEndPoint, SocketOptions, _environment);
                 _realInboundEndPoint = inboundSocket.Bind();
                 return inboundSocket;
             }
             catch (Exception ex)
             {
                 state.SetFailed(ex);
-                if (inboundSocket != null)
-                    inboundSocket.Dispose();
+                inboundSocket?.Dispose();
 
                 return null;
             }
@@ -393,7 +379,7 @@ namespace Abc.Zebus.Transport
             var outboundSocket = _outboundSockets.GetValueOrDefault(peer.Id);
             if (outboundSocket == null)
             {
-                outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, _socketOptions);
+                outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, SocketOptions);
                 outboundSocket.Connect();
 
                 _outboundSockets.TryAdd(peer.Id, outboundSocket);
@@ -511,14 +497,10 @@ namespace Abc.Zebus.Transport
             }
 
             public static OutboundSocketAction Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context)
-            {
-                return new OutboundSocketAction(message, peers, context);
-            }
+                => new OutboundSocketAction(message, peers, context);
 
             public static OutboundSocketAction Disconnect(PeerId peerId)
-            {
-                return new OutboundSocketAction(_disconnectMessage, new[] { new Peer(peerId, null) }, null);
-            }
+                => new OutboundSocketAction(_disconnectMessage, new[] { new Peer(peerId, null) }, null);
         }
 
         private class PendingDisconnect

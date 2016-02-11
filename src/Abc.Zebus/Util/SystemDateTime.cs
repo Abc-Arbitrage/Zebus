@@ -4,20 +4,11 @@ namespace Abc.Zebus.Util
 {
     internal static class SystemDateTime
     {
-        public static DateTime Now 
-        { 
-            get { return _nowFunc(); }
-        }
+        public static DateTime Now => _nowFunc();
 
-        public static DateTime UtcNow
-        {
-            get { return _utcNowFunc(); }
-        }
+        public static DateTime UtcNow => _utcNowFunc();
 
-        public static DateTime Today
-        {
-            get { return _nowFunc().Date; }
-        }
+        public static DateTime Today => _nowFunc().Date;
 
         private static Func<DateTime> _nowFunc = () => DateTime.Now;
         private static Func<DateTime> _utcNowFunc = () => DateTime.UtcNow;
@@ -33,8 +24,8 @@ namespace Abc.Zebus.Util
             if (now == null && utcNow == null)
                 throw new ArgumentNullException();
 
-            _nowFunc = () => now != null ? now.Value : utcNow.Value.ToLocalTime();
-            _utcNowFunc = () => utcNow != null ? utcNow.Value : now.Value.ToUniversalTime();
+            _nowFunc = () => now ?? utcNow.Value.ToLocalTime();
+            _utcNowFunc = () => utcNow ?? now.Value.ToUniversalTime();
             return new Scope();
         }
 

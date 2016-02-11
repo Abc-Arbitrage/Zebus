@@ -37,9 +37,6 @@ namespace ABC.ServiceBus.Contracts
             DateTimeUtc = dateTimeUtc;
         }
 
-        public override string ToString()
-        {
-            return string.Format("Key: {0}, DateTimeUtc: {1:G}, ServiceName: {2}, HandlerName: {3}", Key, DateTimeUtc, ServiceName, HandlerName);
-        }
+        public override string ToString() => $"Key: {Key}, DateTimeUtc: {DateTimeUtc:G}, ServiceName: {ServiceName}, HandlerName: {HandlerName}";
     }
 }

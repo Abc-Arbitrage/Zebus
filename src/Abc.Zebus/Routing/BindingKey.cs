@@ -23,9 +23,8 @@ namespace Abc.Zebus.Routing
         [ProtoMember(1, IsRequired = true)]
         private readonly string[] _parts;
 
-        private readonly bool _isJoined;
-
-        public BindingKey(params string[] parts) : this(parts, false)
+        public BindingKey(params string[] parts)
+            : this(parts, false)
         {
         }
 
@@ -36,35 +35,20 @@ namespace Abc.Zebus.Routing
             else
                 _parts = parts;
 
-            _isJoined = isJoined;
+            IsJoined = isJoined;
         }
 
-        public int PartCount
-        {
-            get { return _parts != null ? _parts.Length : 0; }
-        }
+        public int PartCount => _parts?.Length ?? 0;
 
-        public bool IsEmpty
-        {
-            get { return _parts == null || _parts.Length == 1 && _parts[0] == "#"; }
-        }
+        public bool IsEmpty => _parts == null || _parts.Length == 1 && _parts[0] == "#";
 
-        internal bool IsJoined
-        {
-            get { return _isJoined; }
-        }
+        internal bool IsJoined { get; }
 
         [Pure]
-        public string GetPart(int index)
-        {
-            return index < PartCount ? _parts[index] : null;
-        }
+        public string GetPart(int index) => index < PartCount ? _parts[index] : null;
 
         [Pure]
-        public IEnumerable<string> GetParts()
-        {
-            return _parts != null ? _parts.ToList() : Enumerable.Empty<string>();
-        }
+        public IEnumerable<string> GetParts() => _parts?.ToList() ?? Enumerable.Empty<string>();
 
         public override bool Equals(object obj)
         {
@@ -111,34 +95,20 @@ namespace Abc.Zebus.Routing
         }
 
         /// <summary>
-        /// For Qpid compatibility only, do not use in Zebus code.
+        ///     For Qpid compatibility only, do not use in Zebus code.
         /// </summary>
-        internal static BindingKey Joined(string s)
-        {
-            return new BindingKey(new [] { s }, true);
-        }
+        internal static BindingKey Joined(string s) => new BindingKey(new[] { s }, true);
 
-        internal static BindingKey Split(string s)
-        {
-            return new BindingKey(s.Split(_separator));
-        }
+        internal static BindingKey Split(string s) => new BindingKey(s.Split(_separator));
 
         internal static BindingKey Create(IMessage message)
-        {
-            var builder = GetBindingKeyBuilder(message.GetType());
-            return builder != null ? builder.BuildKey(message) : Empty;
-        }
+            => GetBindingKeyBuilder(message.GetType())?.BuildKey(message) ?? Empty;
 
         internal static BindingKey Create(Type messageType, IDictionary<string, string> fieldValues)
-        {
-            var builder = GetBindingKeyBuilder(messageType);
-            return builder != null ? builder.BuildKey(fieldValues) : Empty;
-        }
+            => GetBindingKeyBuilder(messageType)?.BuildKey(fieldValues) ?? Empty;
 
         private static BindingKeyBuilder GetBindingKeyBuilder(Type messageType)
-        {
-            return _builders.GetOrAdd(messageType, _bindingKeyBuilderFactory);
-        }
+            => _builders.GetOrAdd(messageType, _bindingKeyBuilderFactory);
 
         private static BindingKeyBuilder CreateBuilder(Type messageType)
         {
@@ -212,8 +182,8 @@ namespace Abc.Zebus.Routing
                 _valueAccessorFunc = GenerateValueAccessor(propertyValueAccessor, messageType, propertyInfo.PropertyType);
             }
 
-            public int Position { get; private set; }
-            public string Name { get; private set; }
+            public int Position { get; }
+            public string Name { get; }
 
             public string GetValue(IMessage message)
             {
@@ -223,7 +193,7 @@ namespace Abc.Zebus.Routing
                 }
                 catch (NullReferenceException)
                 {
-                    throw new InvalidOperationException(String.Format("Message of type {0} is not valid. Member {1} part of the routing key at position {2} can not be null", message.GetType().Name, Name, Position));
+                    throw new InvalidOperationException($"Message of type {message.GetType().Name} is not valid. Member {Name} part of the routing key at position {Position} can not be null");
                 }
             }
 
@@ -233,8 +203,8 @@ namespace Abc.Zebus.Routing
                 var castedMessage = Expression.Convert(message, messageType);
 
                 var body = typeof(IConvertible).IsAssignableFrom(memberType) && memberType != typeof(string)
-                               ? Expression.Call(valueAccessor(castedMessage), _toStringWithFormatMethod, Expression.Constant(CultureInfo.InvariantCulture))
-                               : Expression.Call(valueAccessor(castedMessage), _toStringMethod);
+                    ? Expression.Call(valueAccessor(castedMessage), _toStringWithFormatMethod, Expression.Constant(CultureInfo.InvariantCulture))
+                    : Expression.Call(valueAccessor(castedMessage), _toStringMethod);
 
                 var lambda = Expression.Lambda(typeof(Func<IMessage, string>), body, message);
                 return (Func<IMessage, string>)lambda.Compile();

@@ -159,7 +159,7 @@ namespace Abc.Zebus.Persistence
                 }
                 catch (Exception exception)
                 {
-                    var errorMessage = string.Format("Unable to handle message {0} during SafetyPhase.", transportMessage.MessageTypeId.FullName);
+                    var errorMessage = $"Unable to handle message {transportMessage.MessageTypeId.FullName} during SafetyPhase.";
                     _logger.Error(errorMessage, exception);
                 }
                 Transport._receivedMessagesIds.TryAdd(transportMessage.Id, true);

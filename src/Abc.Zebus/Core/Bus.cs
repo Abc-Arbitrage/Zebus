@@ -30,10 +30,7 @@ namespace Abc.Zebus.Core
         private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly IStoppingStrategy _stoppingStrategy;
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
-        private PeerId _peerId;
-        private string _environment;
-        private bool _isRunning;
- 
+
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy)
         {
             _transport = transport;
@@ -51,21 +48,21 @@ namespace Abc.Zebus.Core
         public event Action Stopping = delegate { };
         public event Action Stopped = delegate { };
 
-        public PeerId PeerId => _peerId;
-        public string Environment => _environment;
-        public bool IsRunning => _isRunning;
+        public PeerId PeerId { get; private set; }
+        public string Environment { get; private set; }
+        public bool IsRunning { get; private set; }
         public string EndPoint => _transport.InboundEndPoint;
 
         public void Configure(PeerId peerId, string environment)
         {
-            _peerId = peerId;
-            _environment = environment;
+            PeerId = peerId;
+            Environment = environment;
             _transport.Configure(peerId, environment);
         }
 
         public virtual void Start()
         {
-            if (_isRunning)
+            if (IsRunning)
                 throw new InvalidOperationException("Unable to start, the bus is already running");
 
             Starting();
@@ -81,11 +78,11 @@ namespace Abc.Zebus.Core
 
                 _logger.DebugFormat("Starting message dispatcher...");
                 _messageDispatcher.Start();
-                
+
                 _logger.DebugFormat("Starting transport...");
                 _transport.Start();
 
-                _isRunning = true;
+                IsRunning = true;
 
                 _logger.DebugFormat("Registering on directory...");
                 var self = new Peer(PeerId, EndPoint);
@@ -97,7 +94,7 @@ namespace Abc.Zebus.Core
             catch
             {
                 InternalStop(registered);
-                _isRunning = false;
+                IsRunning = false;
                 throw;
             }
 
@@ -126,7 +123,7 @@ namespace Abc.Zebus.Core
 
         public virtual void Stop()
         {
-            if (!_isRunning)
+            if (!IsRunning)
                 throw new InvalidOperationException("Unable to stop, the bus is not running");
 
             Stopping();
@@ -143,7 +140,7 @@ namespace Abc.Zebus.Core
 
             _stoppingStrategy.Stop(_transport, _messageDispatcher);
 
-            _isRunning = false;
+            IsRunning = false;
 
             _subscriptions.Clear();
             _messageIdToTaskCompletionSources.Clear();
@@ -152,37 +149,37 @@ namespace Abc.Zebus.Core
 
         public void Publish(IEvent message)
         {
-            if (!_isRunning)
+            if (!IsRunning)
                 throw new InvalidOperationException("Unable to publish message, the bus is not running");
 
             var peersHandlingMessage = _directory.GetPeersHandlingMessage(message).ToList();
 
             var localDispatchEnabled = LocalDispatch.Enabled;
-            var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == _peerId);
+            var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == PeerId);
             if (shouldBeHandledLocally)
                 HandleLocalMessage(message, null);
 
-            var targetPeers = localDispatchEnabled ? peersHandlingMessage.Where(x => x.Id != _peerId).ToList() : peersHandlingMessage;
+            var targetPeers = localDispatchEnabled ? peersHandlingMessage.Where(x => x.Id != PeerId).ToList() : peersHandlingMessage;
             SendTransportMessage(null, message, targetPeers, true, shouldBeHandledLocally);
         }
 
         public Task<CommandResult> Send(ICommand message)
         {
-            if (!_isRunning)
+            if (!IsRunning)
                 throw new InvalidOperationException("Unable to send message, the bus is not running");
 
             var peers = _directory.GetPeersHandlingMessage(message);
             if (peers.Count == 0)
                 throw new InvalidOperationException("Unable to find peer for specified command, " + BusMessageLogger.ToString(message) + ". Did you change the namespace?");
 
-            var self = peers.FirstOrDefault(x => x.Id == _peerId);
+            var self = peers.FirstOrDefault(x => x.Id == PeerId);
 
             if (self != null)
                 return Send(message, self);
 
             if (peers.Count > 1)
             {
-                var exceptionMessage = string.Format("{0} peers are handling {1}. Peers: {2}.", peers.Count, BusMessageLogger.ToString(message), string.Join(", ", peers.Select(p => p.ToString())));
+                var exceptionMessage = $"{peers.Count} peers are handling {BusMessageLogger.ToString(message)}. Peers: {string.Join(", ", peers.Select(p => p.ToString()))}.";
                 throw new InvalidOperationException(exceptionMessage);
             }
 
@@ -192,14 +189,14 @@ namespace Abc.Zebus.Core
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
             if (peer == null)
-                throw new ArgumentNullException("peer");
+                throw new ArgumentNullException(nameof(peer));
 
-            if (!_isRunning)
+            if (!IsRunning)
                 throw new InvalidOperationException("Unable to send message, the bus is not running");
 
             var taskCompletionSource = new TaskCompletionSource<CommandResult>();
 
-            if (LocalDispatch.Enabled && peer.Id == _peerId)
+            if (LocalDispatch.Enabled && peer.Id == PeerId)
             {
                 HandleLocalMessage(message, taskCompletionSource);
             }
@@ -239,7 +236,7 @@ namespace Abc.Zebus.Core
             var shouldHaveHanlderInvoker = (options & SubscriptionOptions.ThereIsNoHandlerButIKnowWhatIAmDoing) == 0;
             if (shouldHaveHanlderInvoker)
                 EnsureMessageHandlerInvokerExists(subscriptions);
-            
+
             AddSubscriptions(subscriptions);
 
             return new DisposableAction(() => RemoveSubscriptions(subscriptions));
@@ -252,11 +249,11 @@ namespace Abc.Zebus.Core
 
             _messageDispatcher.AddInvoker(eventHandlerInvoker);
 
-            AddSubscriptions(new[] { subscription });
+            AddSubscriptions(subscription);
 
             return new DisposableAction(() =>
             {
-                RemoveSubscriptions(new[] { subscription });
+                RemoveSubscriptions(subscription);
                 _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
             });
         }
@@ -291,14 +288,15 @@ namespace Abc.Zebus.Core
         {
             foreach (var subscription in subscriptions)
             {
-                if (!_messageDispatcher.GetMessageHanlerInvokers().Any(x => x.MessageTypeId == subscription.MessageTypeId))
-                    throw new ArgumentException(string.Format("No handler available for message type Id: {0}", subscription.MessageTypeId));
+                if (_messageDispatcher.GetMessageHanlerInvokers().All(x => x.MessageTypeId != subscription.MessageTypeId))
+                    throw new ArgumentException($"No handler available for message type Id: {subscription.MessageTypeId}");
             }
         }
 
         private void AddSubscriptions(params Subscription[] subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
+
             lock (_subscriptions)
             {
                 foreach (var subscription in subscriptions)
@@ -307,12 +305,14 @@ namespace Abc.Zebus.Core
                     _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
                 }
             }
+
             OnSubscriptionsUpdatedForTypes(updatedTypes);
         }
 
         private void RemoveSubscriptions(params Subscription[] subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
+
             lock (_subscriptions)
             {
                 foreach (var subscription in subscriptions)
@@ -325,18 +325,19 @@ namespace Abc.Zebus.Core
                         _subscriptions[subscription] = subscriptionCount - 1;
                 }
             }
+
             OnSubscriptionsUpdatedForTypes(updatedTypes);
         }
-        
+
         private void OnSubscriptionsUpdatedForTypes(HashSet<MessageTypeId> updatedTypes)
         {
             var subscriptions = GetSubscriptions().Where(sub => updatedTypes.Contains(sub.MessageTypeId));
             var subscriptionsByTypes = SubscriptionsForType.CreateDictionary(subscriptions);
-            
+
             var subscriptionUpdates = new List<SubscriptionsForType>(updatedTypes.Count);
             foreach (var updatedMessageId in updatedTypes)
                 subscriptionUpdates.Add(subscriptionsByTypes.GetValueOrDefault(updatedMessageId, new SubscriptionsForType(updatedMessageId)));
-            
+
             _directory.UpdateSubscriptions(this, subscriptionUpdates);
         }
 
@@ -388,7 +389,7 @@ namespace Abc.Zebus.Core
                 return null;
 
             var context = MessageContext.CreateNew(transportMessage);
-            var continuation = sendAcknowledgment ? GetOnRemoteMessageDispatchedContinuation(transportMessage) : ((dispatch, result) => {}) ;
+            var continuation = sendAcknowledgment ? GetOnRemoteMessageDispatchedContinuation(transportMessage) : ((dispatch, result) => { });
             return new MessageDispatch(context, message, continuation, synchronousDispatch);
         }
 
@@ -437,12 +438,14 @@ namespace Abc.Zebus.Core
             }
             catch (Exception ex)
             {
-                jsonMessage = string.Format("Unable to serialize message :{0}{1}", System.Environment.NewLine, ex);
+                jsonMessage = $"Unable to serialize message :{System.Environment.NewLine}{ex}";
             }
+
             var errorMessages = dispatchResult.Errors.Select(error => error.ToString());
             var errorMessage = string.Join(System.Environment.NewLine + System.Environment.NewLine, errorMessages);
             var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName).ToArray());
             var peers = _directory.GetPeersHandlingMessage(messageProcessingFailed);
+
             SendTransportMessage(ToTransportMessage(messageProcessingFailed, MessageId.NextId()), peers);
         }
 
@@ -559,13 +562,13 @@ namespace Abc.Zebus.Core
         private void HandleDeserializationError(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, Exception exception, TransportMessage transportMessage)
         {
             var dumpLocation = DumpMessageOnDisk(messageTypeId, messageBytes);
-            var errorMessage = string.Format("Unable to deserialize message {0}. Originator: {1}. Message dumped at: {2}\r\n{3}", messageTypeId.FullName, originator.SenderId, dumpLocation, exception);
+            var errorMessage = $"Unable to deserialize message {messageTypeId.FullName}. Originator: {originator.SenderId}. Message dumped at: {dumpLocation}\r\n{exception}";
             _logger.Error(errorMessage);
 
-            if (!_isRunning)
+            if (!IsRunning)
                 return;
 
-            var processingFailed = new MessageProcessingFailed(transportMessage,String.Empty, errorMessage, SystemDateTime.UtcNow, null);
+            var processingFailed = new MessageProcessingFailed(transportMessage, String.Empty, errorMessage, SystemDateTime.UtcNow, null);
             Publish(processingFailed);
         }
 
@@ -577,7 +580,7 @@ namespace Abc.Zebus.Core
                 if (!System.IO.Directory.Exists(dumpDirectory))
                     System.IO.Directory.CreateDirectory(dumpDirectory);
 
-                var dumpFileName = string.Format("{0:yyyyMMdd-HH-mm-ss.fffffff}_{1}", _deserializationFailureTimestampProvider.NextUtcTimestamp(), messageTypeId.FullName);
+                var dumpFileName = $"{_deserializationFailureTimestampProvider.NextUtcTimestamp():yyyyMMdd-HH-mm-ss.fffffff}_{messageTypeId.FullName}";
                 var dumpFilePath = Path.Combine(dumpDirectory, dumpFileName);
                 File.WriteAllBytes(dumpFilePath, messageBytes);
                 return dumpFilePath;
@@ -590,7 +593,7 @@ namespace Abc.Zebus.Core
 
         public void Dispose()
         {
-            if (_isRunning)
+            if (IsRunning)
                 Stop();
         }
     }

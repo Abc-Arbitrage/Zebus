@@ -17,9 +17,6 @@ namespace Abc.Zebus.EventSourcing
         [DataMember(Order = 5)]
         public string UserId { get; internal set; }
 
-        public override string ToString()
-        {
-            return string.Format("Version: {0}, DateTime: {1}", Version, DateTime);
-        }
+        public override string ToString() => $"Version: {Version}, DateTime: {DateTime}";
     }
 }

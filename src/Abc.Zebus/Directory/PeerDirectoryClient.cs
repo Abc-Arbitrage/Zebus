@@ -86,7 +86,7 @@ namespace Abc.Zebus.Directory
         {
             var directoryPeers = GetDirectoryPeers().ToList();
             if (!directoryPeers.Any(peer => TryRegisterOnDirectory(bus, selfDescriptor, peer)))
-                throw new TimeoutException(string.Format("Unable to register peer on directory (tried: {0})", string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"))));
+                throw new TimeoutException($"Unable to register peer on directory (tried: {string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"))})");
         }
 
         private bool TryRegisterOnDirectory(IBus bus, PeerDescriptor self, Peer directoryPeer)
@@ -105,8 +105,7 @@ namespace Abc.Zebus.Directory
                 return false;
             }
 
-            if (response.PeerDescriptors != null)
-                response.PeerDescriptors.ForEach(AddOrUpdatePeerEntry);
+            response.PeerDescriptors?.ForEach(AddOrUpdatePeerEntry);
 
             return true;
         }
@@ -132,9 +131,7 @@ namespace Abc.Zebus.Directory
         }
 
         public IList<Peer> GetPeersHandlingMessage(IMessage message)
-        {
-            return GetPeersHandlingMessage(MessageBinding.FromMessage(message));
-        }
+            => GetPeersHandlingMessage(MessageBinding.FromMessage(message));
 
         public IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding)
         {
@@ -152,15 +149,10 @@ namespace Abc.Zebus.Directory
         }
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
-        {
-            var entry = _peers.GetValueOrDefault(peerId);
-            return entry != null ? entry.ToPeerDescriptor() : null;
-        }
+            => _peers.GetValueOrDefault(peerId)?.ToPeerDescriptor();
 
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()
-        {
-            return _peers.Values.Select(x => x.ToPeerDescriptor()).ToList();
-        }
+            => _peers.Values.Select(x => x.ToPeerDescriptor()).ToList();
 
         // Only internal for testing purposes
         internal IEnumerable<Peer> GetDirectoryPeers()

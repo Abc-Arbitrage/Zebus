@@ -8,10 +8,7 @@ namespace Abc.Zebus.Dispatch
         [ThreadStatic]
         private static bool _localDispatchDisabled;
 
-        public static bool Enabled
-        {
-            get { return !_localDispatchDisabled; }
-        }
+        public static bool Enabled => !_localDispatchDisabled;
 
         public static IDisposable Disable()
         {

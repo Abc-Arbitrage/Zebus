@@ -59,8 +59,8 @@ namespace Abc.Zebus.Util.Extensions
         /// <exception cref="ArgumentNullException">When any parameter is null</exception>
         public static void ForEach<T>([InstantHandle] this IEnumerable<T> enumerable, [InstantHandle] Action<T> action)
         {
-            if (enumerable == null) throw new ArgumentNullException("enumerable");
-            if (action == null) throw new ArgumentNullException("action");
+            if (enumerable == null) throw new ArgumentNullException(nameof(enumerable));
+            if (action == null) throw new ArgumentNullException(nameof(action));
 
             foreach (var t in enumerable)
             {

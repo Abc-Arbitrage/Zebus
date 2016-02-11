@@ -18,9 +18,6 @@ namespace Abc.Zebus.Directory
             TimestampUtc = timestampUtc;
         }
 
-        public override string ToString()
-        {
-            return PeerId.ToString();
-        }
+        public override string ToString() => PeerId.ToString();
     }
 }

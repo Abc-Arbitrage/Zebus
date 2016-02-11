@@ -23,9 +23,6 @@ namespace Abc.Zebus.Directory
             TimestampUtc = logicalClock;
         }
 
-        public override string ToString()
-        {
-            return string.Format("PeerId: {0}, TimestampUtc: {1:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{2}]", PeerId, TimestampUtc, string.Join(", ", Subscriptions.AsEnumerable()));
-        }
+        public override string ToString() => $"PeerId: {PeerId}, TimestampUtc: {TimestampUtc:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{string.Join(", ", Subscriptions.AsEnumerable())}]";
     }
 }

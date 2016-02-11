@@ -86,11 +86,7 @@ namespace Abc.Zebus.Core
             _logger.Logger.Log(_loggerType, logLevel ?? Level.Info, string.Format(format, messageText, messageId, messageSize, peerIdText), null);
         }
 
-        public static string ToString(IMessage message)
-        {
-            var logInfo = GetLogInfo(message);
-            return logInfo.GetMessageText(message);
-        }
+        public static string ToString(IMessage message) => GetLogInfo(message).GetMessageText(message);
 
         private static MessageTypeLogInfo GetLogInfo(IMessage message)
         {
@@ -126,7 +122,7 @@ namespace Abc.Zebus.Core
 
             public string GetMessageText(IMessage message)
             {
-                return _hasToStringOverride ? string.Format("{0} {{{1}}}", _messageTypeName, message) : string.Format("{0}", _messageTypeName);
+                return _hasToStringOverride ? $"{_messageTypeName} {{{message}}}" : $"{_messageTypeName}";
             }
         }
     }

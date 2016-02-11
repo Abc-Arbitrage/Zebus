@@ -27,9 +27,6 @@ namespace ABC.ServiceBus.Contracts
             ServiceName = serviceName;
         }
 
-        public override string ToString()
-        {
-            return string.Format("Key: {0}", Key);
-        }
+        public override string ToString() => $"Key: {Key}";
     }
 }

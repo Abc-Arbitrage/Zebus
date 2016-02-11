@@ -9,10 +9,7 @@ namespace Abc.Zebus.Tests.Persistence
 {
     public class TranscientPersistentTransportTests : PersistentTransportFixture
     {
-        protected override bool IsPersistent
-        {
-            get { return false; }
-        }
+        protected override bool IsPersistent => false;
 
         [Test]
         public void should_receive_messages_immediately_after_start()

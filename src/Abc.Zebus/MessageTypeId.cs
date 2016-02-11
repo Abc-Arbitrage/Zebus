@@ -38,15 +38,9 @@ namespace Abc.Zebus
         public static readonly MessageTypeId PersistenceStopping = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStopping");
         public static readonly MessageTypeId PersistenceStoppingAck = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStoppingAck");
 
-        public Type GetMessageType()
-        {
-            return _messageType ?? (_messageType = TypeUtil.Resolve(FullName));
-        }
+        public Type GetMessageType() => _messageType ?? (_messageType = TypeUtil.Resolve(FullName));
 
-        public bool IsInfrastructure()
-        {
-            return MessageUtil.IsInfrastructure(this);
-        }
+        public bool IsInfrastructure() => MessageUtil.IsInfrastructure(this);
 
         public override string ToString()
         {
@@ -102,19 +96,9 @@ namespace Abc.Zebus
             return Equals((MessageTypeId)obj);
         }
 
-        public static bool operator ==(MessageTypeId left, MessageTypeId right)
-        {
-            return Equals(left, right);
-        }
+        public static bool operator ==(MessageTypeId left, MessageTypeId right) => Equals(left, right);
+        public static bool operator !=(MessageTypeId left, MessageTypeId right) => !Equals(left, right);
 
-        public static bool operator !=(MessageTypeId left, MessageTypeId right)
-        {
-            return !Equals(left, right);
-        }
-
-        public override int GetHashCode()
-        {
-            return (FullName != null ? FullName.GetHashCode() : 0);
-        }
+        public override int GetHashCode() => FullName?.GetHashCode() ?? 0;
     }
 }

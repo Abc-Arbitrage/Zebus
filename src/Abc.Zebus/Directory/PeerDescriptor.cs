@@ -45,14 +45,8 @@ namespace Abc.Zebus.Directory
         {
         }
 
-        public PeerId PeerId
-        {
-            get { return Peer.Id; }
-        }
+        public PeerId PeerId => Peer.Id;
 
-        public override string ToString()
-        {
-            return Peer.ToString();
-        }
+        public override string ToString() => Peer.ToString();
     }
 }

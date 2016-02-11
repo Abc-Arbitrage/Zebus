@@ -68,10 +68,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             private readonly IList<DispatcherTaskScheduler> _taskSchedulers = new List<DispatcherTaskScheduler>();
 
-            public IList<DispatcherTaskScheduler> TaskSchedulers
-            {
-                get { return _taskSchedulers; }
-            }
+            public IList<DispatcherTaskScheduler> TaskSchedulers => _taskSchedulers;
 
             public DispatcherTaskScheduler Create(string queueName)
             {

@@ -51,7 +51,7 @@ namespace Abc.Zebus.Transport
         {
             int size;
 
-            _socket.ReceiveTimeout = timeout.HasValue ? timeout.Value : _options.ReadTimeout;
+            _socket.ReceiveTimeout = timeout ?? _options.ReadTimeout;
             _readBuffer = _socket.Receive(_readBuffer, TimeSpan.MaxValue, out size);
 
             if (size <= 0)

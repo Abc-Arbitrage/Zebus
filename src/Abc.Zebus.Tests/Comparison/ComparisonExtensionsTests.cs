@@ -23,10 +23,7 @@ namespace Abc.Zebus.Tests.Comparison
         {
             private static int _state;
 
-            public static int Value
-            {
-                get { return _state++; }
-            }
+            public static int Value => _state++;
         }
     }
 }

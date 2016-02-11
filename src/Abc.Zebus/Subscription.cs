@@ -40,7 +40,7 @@ namespace Abc.Zebus
         {
         }
 
-        public bool IsMatchingAllMessages { get { return BindingKey.IsEmpty; } }
+        public bool IsMatchingAllMessages => BindingKey.IsEmpty;
 
         public bool Matches(MessageBinding messageBinding)
         {
@@ -90,19 +90,18 @@ namespace Abc.Zebus
             return MessageTypeId.Equals(other.MessageTypeId) && BindingKey.Equals(other.BindingKey);
         }
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as Subscription);
-        }
+        public override bool Equals(object obj) => Equals(obj as Subscription);
 
         public override int GetHashCode()
         {
             unchecked
             {
+                // ReSharper disable NonReadonlyMemberInGetHashCode
                 if (_computedHashCode == 0)
-                    _computedHashCode = ((MessageTypeId != null ? MessageTypeId.GetHashCode() : 0) * 397) ^ BindingKey.GetHashCode();
+                    _computedHashCode = ((MessageTypeId?.GetHashCode() ?? 0) * 397) ^ BindingKey.GetHashCode();
 
                 return _computedHashCode;
+                // ReSharper restore NonReadonlyMemberInGetHashCode
             }
         }
 
@@ -111,7 +110,7 @@ namespace Abc.Zebus
             if (BindingKey.IsEmpty)
                 return MessageTypeId.ToString();
 
-            return string.Format("{0} ({1})", MessageTypeId, BindingKey);
+            return $"{MessageTypeId} ({BindingKey})";
         }
 
         public static Subscription ByExample<TMessage>(Expression<Func<Builder, TMessage>> factory) where TMessage : IMessage
@@ -153,9 +152,7 @@ namespace Abc.Zebus
         }
 
         public static Subscription Any<TMessage>() where TMessage : IMessage
-        {
-            return new Subscription(MessageUtil.TypeId<TMessage>());
-        }
+            => new Subscription(MessageUtil.TypeId<TMessage>());
 
         public static Subscription Matching<TMessage>(Expression<Func<TMessage, bool>> predicate) where TMessage : IMessage
         {
@@ -306,10 +303,7 @@ namespace Abc.Zebus
         [EditorBrowsable(EditorBrowsableState.Never), UsedImplicitly]
         public class Builder
         {
-            public T Any<T>()
-            {
-                return default(T);
-            }
+            public T Any<T>() => default(T);
         }
     }
 }

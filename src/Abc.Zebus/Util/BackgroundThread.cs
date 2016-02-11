@@ -10,16 +10,22 @@ namespace Abc.Zebus.Util
 
         public static Thread Start(ThreadStart startAction, Action abortAction = null)
         {
-            var thread = new Thread(Wrapper(startAction, abortAction));
-            thread.IsBackground = true;
+            var thread = new Thread(Wrapper(startAction, abortAction))
+            {
+                IsBackground = true
+            };
+
             thread.Start();
             return thread;
         }
 
         public static Thread Start<T>(Action<T> startAction, T state, Action abortAction = null)
         {
-            var thread = new Thread(Wrapper(startAction, abortAction));
-            thread.IsBackground = true;
+            var thread = new Thread(Wrapper(startAction, abortAction))
+            {
+                IsBackground = true
+            };
+
             thread.Start(state);
             return thread;
         }
@@ -49,9 +55,7 @@ namespace Abc.Zebus.Util
                     if (abortAction != null)
                         SafeAbort(abortAction);
 
-                    var exceptionState = ex.ExceptionState as EventWaitHandle;
-                    if (exceptionState != null)
-                        exceptionState.Set();
+                    (ex.ExceptionState as EventWaitHandle)?.Set();
                 }
                 catch (Exception ex)
                 {
@@ -63,25 +67,23 @@ namespace Abc.Zebus.Util
         private static ThreadStart Wrapper(ThreadStart action, Action abortAction)
         {
             return () =>
-                       {
-                           try
-                           {
-                               action();
-                           }
-                           catch (ThreadAbortException ex)
-                           {
-                               if (abortAction != null)
-                                   SafeAbort(abortAction);
+            {
+                try
+                {
+                    action();
+                }
+                catch (ThreadAbortException ex)
+                {
+                    if (abortAction != null)
+                        SafeAbort(abortAction);
 
-                               var exceptionState = ex.ExceptionState as EventWaitHandle;
-                               if (exceptionState != null)
-                                   exceptionState.Set();
-                           }
-                           catch (Exception ex)
-                           {
-                               _logger.Error(ex);
-                           }
-                       };
+                    (ex.ExceptionState as EventWaitHandle)?.Set();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex);
+                }
+            };
         }
     }
 }

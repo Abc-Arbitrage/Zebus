@@ -13,9 +13,6 @@ namespace Abc.Zebus.Directory
             PeerId = peerId;
         }
 
-        public override string ToString()
-        {
-            return PeerId.ToString();
-        }
+        public override string ToString() => PeerId.ToString();
     }
 }

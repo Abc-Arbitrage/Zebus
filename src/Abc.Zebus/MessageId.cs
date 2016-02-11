@@ -31,15 +31,9 @@ namespace Abc.Zebus
             Value = value;
         }
 
-        public override string ToString()
-        {
-            return Value.ToString();
-        }
+        public override string ToString() => Value.ToString();
 
-        public bool Equals(MessageId other)
-        {
-            return Value.Equals(other.Value);
-        }
+        public bool Equals(MessageId other) => Value.Equals(other.Value);
 
         public override bool Equals(object obj)
         {
@@ -48,20 +42,10 @@ namespace Abc.Zebus
             return obj is MessageId && Equals((MessageId)obj);
         }
 
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
+        public override int GetHashCode() => Value.GetHashCode();
 
-        public static bool operator ==(MessageId left, MessageId right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(MessageId left, MessageId right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator ==(MessageId left, MessageId right) => left.Equals(right);
+        public static bool operator !=(MessageId left, MessageId right) => !left.Equals(right);
 
         public static IDisposable PauseIdGeneration()
         {
@@ -144,11 +128,7 @@ namespace Abc.Zebus
             return value;
         }
 
-        public DateTime GetDateTime()
-        {
-            var timestamp = GetJavaTicks(Value);
-            return new DateTime(timestamp + _ticksSinceEpoch, DateTimeKind.Utc);
-        }
+        public DateTime GetDateTime() => new DateTime(GetJavaTicks(Value) + _ticksSinceEpoch, DateTimeKind.Utc);
 
 #pragma warning disable 675
         private static long GetJavaTicks(Guid uuid)

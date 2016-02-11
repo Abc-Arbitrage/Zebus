@@ -13,9 +13,6 @@ namespace Abc.Zebus.Persistence
             MessageId = messageId;
         }
 
-        public override string ToString()
-        {
-            return "MessageHandled for: " + MessageId.Value;
-        }
+        public override string ToString() => "MessageHandled for: " + MessageId.Value;
     }
 }
