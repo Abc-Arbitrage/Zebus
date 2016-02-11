@@ -168,7 +168,7 @@ namespace Abc.Zebus.Tests.Core
         public void should_stop_dispatcher_before_transport()
         {
             var transportMock = new Mock<ITransport>();
-            var bus = new Bus(transportMock.Object, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultStoppingStrategy());
+            var bus = new Bus(transportMock.Object, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy());
             var sequence = new SetupSequence();
             _messageDispatcherMock.Setup(dispatch => dispatch.Stop()).InSequence(sequence);
             transportMock.Setup(transport => transport.Stop()).InSequence(sequence);

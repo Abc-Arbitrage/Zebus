@@ -27,13 +27,14 @@ namespace Abc.Zebus.Core
         private readonly IPeerDirectory _directory;
         private readonly IMessageSerializer _serializer;
         private readonly IMessageDispatcher _messageDispatcher;
+        private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly IStoppingStrategy _stoppingStrategy;
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
         private PeerId _peerId;
         private string _environment;
         private bool _isRunning;
  
-        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IStoppingStrategy stoppingStrategy)
+        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy)
         {
             _transport = transport;
             _transport.MessageReceived += OnTransportMessageReceived;
@@ -41,6 +42,7 @@ namespace Abc.Zebus.Core
             _directory.PeerUpdated += OnPeerUpdated;
             _serializer = serializer;
             _messageDispatcher = messageDispatcher;
+            _messageSendingStrategy = messageSendingStrategy;
             _stoppingStrategy = stoppingStrategy;
         }
 
@@ -203,14 +205,17 @@ namespace Abc.Zebus.Core
             }
             else
             {
-                if (!peer.IsResponding && !message.TypeId().IsPersistent() && !message.TypeId().IsInfrastructure())
-                {
-                    var exceptionMessage = string.Format("Unable to send this transient message {0} while peer {1} is not responding.", BusMessageLogger.ToString(message), peer.Id);
-                    throw new InvalidOperationException(exceptionMessage);
-                }
                 var messageId = MessageId.NextId();
+                var transportMessage = ToTransportMessage(message, messageId);
+
+                if (!peer.IsResponding && !_messageSendingStrategy.IsMessagePersistent(transportMessage) && !message.TypeId().IsInfrastructure())
+                    throw new InvalidOperationException($"Unable to send this transient message {BusMessageLogger.ToString(message)} while peer {peer.Id} is not responding.");
+
                 _messageIdToTaskCompletionSources.TryAdd(messageId, taskCompletionSource);
-                SendTransportMessage(messageId, message, peer, true);
+
+                var peers = new[] { peer };
+                LogMessageSend(message, transportMessage, peers);
+                SendTransportMessage(transportMessage, peers);
             }
 
             return taskCompletionSource.Task;
@@ -508,7 +513,7 @@ namespace Abc.Zebus.Core
             var transportMessage = ToTransportMessage(message, messageId ?? MessageId.NextId());
 
             if (logEnabled)
-                _messageLogger.InfoFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.MessageBytes.Length, peers);
+                LogMessageSend(message, transportMessage, peers);
 
             SendTransportMessage(transportMessage, peers);
         }
@@ -516,6 +521,11 @@ namespace Abc.Zebus.Core
         protected void SendTransportMessage(TransportMessage transportMessage, IList<Peer> peers)
         {
             _transport.Send(transportMessage, peers, new SendContext());
+        }
+
+        private void LogMessageSend(IMessage message, TransportMessage transportMessage, IList<Peer> peers)
+        {
+            _messageLogger.InfoFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.MessageBytes.Length, peers);
         }
 
         protected void AckTransportMessage(TransportMessage transportMessage)

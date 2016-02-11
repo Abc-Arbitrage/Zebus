@@ -26,26 +26,21 @@ namespace Abc.Zebus
             return _messageTypeIds.GetOrAdd(messageType, _messageTypeIdFactory);
         }
 
-        public static bool IsPersistent(MessageTypeId messageTypeId)
+        public static bool IsMessageMarkedAsPersistent(MessageTypeId messageTypeId)
         {
             var entry = GetMessageTypeEntry(messageTypeId);
-            return entry.IsPersistent;
+            return entry.IsMarkedAsPersistent;
         }
 
         public static bool IsInfrastructure(MessageTypeId messageTypeId)
         {
             var entry = GetMessageTypeEntry(messageTypeId);
-            return entry.IsInfrastructure;
+            return entry.IsInfrastructureMessage;
         }
 
         private static MessageTypeEntry GetMessageTypeEntry(MessageTypeId messageTypeId)
         {
             return _cache.GetOrAdd(messageTypeId, _messageTypeEntryFactory);
-        }
-
-        internal static void SetIsPersistent(MessageTypeId messageTypeId, bool isPersistent)
-        {
-            _cache.GetOrAdd(messageTypeId, _messageTypeEntryFactory).IsPersistent = isPersistent;
         }
 
         private static MessageTypeEntry LoadMessageTypeEntry(MessageTypeId messageTypeId)
@@ -64,13 +59,13 @@ namespace Abc.Zebus
 
         private class MessageTypeEntry
         {
-            public bool IsPersistent;
-            public readonly bool IsInfrastructure;
+            public readonly bool IsMarkedAsPersistent;
+            public readonly bool IsInfrastructureMessage;
 
-            public MessageTypeEntry(bool isPersistent, bool isInfrastructure)
+            public MessageTypeEntry(bool isMarkedAsPersistent, bool isInfrastructureMessage)
             {
-                IsPersistent = isPersistent;
-                IsInfrastructure = isInfrastructure;
+                IsMarkedAsPersistent = isMarkedAsPersistent;
+                IsInfrastructureMessage = isInfrastructureMessage;
             }
         }
     }

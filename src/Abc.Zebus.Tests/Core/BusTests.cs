@@ -45,7 +45,7 @@ namespace Abc.Zebus.Tests.Core
             _messageDispatcherMock = new Mock<IMessageDispatcher>();
             _messageSerializer = new TestMessageSerializer();
 
-            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultStoppingStrategy());
+            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object,new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy());
             _bus.Configure(_self.Id, _environment);
 
             _invokers = new List<IMessageHandlerInvoker>();
@@ -69,7 +69,7 @@ namespace Abc.Zebus.Tests.Core
         public void should_configure_transport_when_configured()
         {
             var transportMock = new Mock<ITransport>();
-            var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, null, new DefaultStoppingStrategy());
+            var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, null, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy());
 
             bus.Configure(_self.Id, _environment);
 

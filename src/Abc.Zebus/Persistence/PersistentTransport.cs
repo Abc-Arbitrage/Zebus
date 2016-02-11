@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
@@ -22,6 +23,7 @@ namespace Abc.Zebus.Persistence
         private readonly IBusConfiguration _configuration;
         private readonly ITransport _innerTransport;
         private readonly IPeerDirectory _peerDirectory;
+        private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly bool _isPersistent;
         private BlockingCollection<TransportMessage> _pendingReceives;
         private bool _isRunning;
@@ -30,12 +32,13 @@ namespace Abc.Zebus.Persistence
         private Guid? _currentReplayId;
         private volatile bool _persistenceIsDown;
 
-        public PersistentTransport(IBusConfiguration configuration, ITransport innerTransport, IPeerDirectory peerDirectory)
+        public PersistentTransport(IBusConfiguration configuration, ITransport innerTransport, IPeerDirectory peerDirectory, IMessageSendingStrategy messageSendingStrategy)
         {
             _configuration = configuration;
             _isPersistent = configuration.IsPersistent;
             _innerTransport = innerTransport;
             _peerDirectory = peerDirectory;
+            _messageSendingStrategy = messageSendingStrategy;
 
             SetInitialPhase();
 
@@ -165,7 +168,7 @@ namespace Abc.Zebus.Persistence
             if (context.PersistedPeerIds.Any())
                 throw new ArgumentException("Send invoked with non-empty send context", "context");
 
-            var isMessagePersistent = message.MessageTypeId.IsPersistent();
+            var isMessagePersistent = _messageSendingStrategy.IsMessagePersistent(message);
             var peerList = (peers as IList<Peer>) ?? peers.ToList();
             var upPeers = (peerList.Count == 1 && peerList[0].IsUp) ? peerList : peerList.Where(peer => peer.IsUp).ToList();
 
@@ -266,7 +269,7 @@ namespace Abc.Zebus.Persistence
 
         public void AckMessage(TransportMessage transportMessage)
         {
-            if (transportMessage.WasPersisted == true || transportMessage.WasPersisted == null && _isPersistent && transportMessage.MessageTypeId.IsPersistent())
+            if (transportMessage.WasPersisted == true || transportMessage.WasPersisted == null && _isPersistent && _messageSendingStrategy.IsMessagePersistent(transportMessage))
             {
                 _logger.DebugFormat("PERSIST ACK: {0} {1}", transportMessage.MessageTypeId, transportMessage.Id);
 

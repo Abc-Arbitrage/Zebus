@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Testing;
@@ -49,7 +50,7 @@ namespace Abc.Zebus.Tests.Persistence
             PeerDirectory.Setup(dir => dir.IsPersistent(AnotherPersistentPeer.Id)).Returns(true);
             PeerDirectory.Setup(dir => dir.IsPersistent(AnotherNonPersistentPeer.Id)).Returns(false);
 
-            Transport = new PersistentTransport(configuration.Object, InnerTransport, PeerDirectory.Object);
+            Transport = new PersistentTransport(configuration.Object, InnerTransport, PeerDirectory.Object, new DefaultMessageSendingStrategy());
             Transport.Configure(Self.Id, "test");
 
             MessagesForwardedToBus = new ConcurrentQueue<TransportMessage>();

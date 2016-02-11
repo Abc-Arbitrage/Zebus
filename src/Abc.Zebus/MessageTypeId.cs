@@ -43,11 +43,6 @@ namespace Abc.Zebus
             return _messageType ?? (_messageType = TypeUtil.Resolve(FullName));
         }
 
-        public bool IsPersistent()
-        {
-            return MessageUtil.IsPersistent(this);
-        }
-
         public bool IsInfrastructure()
         {
             return MessageUtil.IsInfrastructure(this);

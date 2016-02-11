@@ -12,19 +12,19 @@ namespace Abc.Zebus.Tests
         [Test]
         public void should_detect_transcient_message()
         {
-            MessageUtil.IsPersistent(new MessageTypeId(typeof(TranscientCommand))).ShouldBeFalse();
+            MessageUtil.IsMessageMarkedAsPersistent(new MessageTypeId(typeof(TranscientCommand))).ShouldBeFalse();
         }
 
         [Test]
         public void non_transcient_messages_should_be_persistent()
         {
-            MessageUtil.IsPersistent(new MessageTypeId(typeof(NakedMessage))).ShouldBeTrue();
+            MessageUtil.IsMessageMarkedAsPersistent(new MessageTypeId(typeof(NakedMessage))).ShouldBeTrue();
         }
 
         [Test]
         public void unknow_messages_should_be_persistent()
         {
-            MessageUtil.IsPersistent(new MessageTypeId("Abc.Unknown")).ShouldBeTrue();
+            MessageUtil.IsMessageMarkedAsPersistent(new MessageTypeId("Abc.Unknown")).ShouldBeTrue();
         }
 
         [Test]

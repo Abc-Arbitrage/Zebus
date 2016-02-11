@@ -36,7 +36,8 @@ namespace Abc.Zebus.Initialization
             For<IMessageHandlerInvokerLoader>().Add(ctx => ctx.GetInstance<SyncMessageHandlerInvokerLoader>());
             For<IMessageHandlerInvokerLoader>().Add<AsyncMessageHandlerInvokerLoader>();
 
-            For<IStoppingStrategy>().Use<DefaultStoppingStrategy>();
+            ForSingletonOf<IMessageSendingStrategy>().Use<DefaultMessageSendingStrategy>();
+            ForSingletonOf<IStoppingStrategy>().Use<DefaultStoppingStrategy>();
         }
     }
 }
