@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
@@ -18,11 +19,13 @@ namespace Abc.Zebus.Directory.Handlers
         private readonly HashSet<string> _blacklistedMachines;
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
+        private readonly IDirectorySpeedReporter _speedReporter;
 
-        public DirectoryCommandsHandler(IBus bus, IPeerRepository peerRepository, IDirectoryConfiguration configuration)
+        public DirectoryCommandsHandler(IBus bus, IPeerRepository peerRepository, IDirectoryConfiguration configuration, IDirectorySpeedReporter speedReporter)
         {
             _bus = bus;
             _peerRepository = peerRepository;
+            _speedReporter = speedReporter;
             _blacklistedMachines = configuration.BlacklistedMachines.ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
@@ -41,6 +44,7 @@ namespace Abc.Zebus.Directory.Handlers
             if (!message.Peer.TimestampUtc.HasValue)
                 throw new InvalidOperationException("The TimestampUtc must be provided when registering");
 
+            var stopwatch = Stopwatch.StartNew();
             var peerDescriptor = message.Peer;
             peerDescriptor.Peer.IsUp = true;
             peerDescriptor.Peer.IsResponding = true;
@@ -55,10 +59,12 @@ namespace Abc.Zebus.Directory.Handlers
 
             var registredPeerDescriptors = _peerRepository.GetPeers(loadDynamicSubscriptions: true);
             _bus.Reply(new RegisterPeerResponse(registredPeerDescriptors.ToArray()));
+            _speedReporter.ReportRegistrationDuration(stopwatch.Elapsed);
         }
 
         public void Handle(UnregisterPeerCommand message)
         {
+            var stopwatch = Stopwatch.StartNew();
             var peer = _peerRepository.Get(message.PeerId);
             if (peer == null || peer.TimestampUtc > message.TimestampUtc)
                 return;
@@ -67,13 +73,16 @@ namespace Abc.Zebus.Directory.Handlers
                 StopPeer(message, peer);
             else
                 RemovePeer(message.PeerId);
+            _speedReporter.ReportUnregistrationDuration(stopwatch.Elapsed);
         }
 
         public void Handle(UpdatePeerSubscriptionsCommand message)
         {
+            var stopwatch = Stopwatch.StartNew();
             var peerDescriptor = _peerRepository.UpdatePeerSubscriptions(message.PeerId, message.Subscriptions, message.TimestampUtc);
             if (peerDescriptor != null)
                 _bus.Publish(new PeerSubscriptionsUpdated(peerDescriptor));
+            _speedReporter.ReportSubscriptionUpdateDuration(stopwatch.Elapsed);
         }
 
         private bool IsPeerInConflict(PeerDescriptor existingPeer, PeerDescriptor peerToAdd)
@@ -105,6 +114,8 @@ namespace Abc.Zebus.Directory.Handlers
             if (message.SubscriptionsForTypes == null || message.SubscriptionsForTypes.Length == 0)
                 return;
 
+            var stopwatch = Stopwatch.StartNew();
+
             var subscriptionsToAdd = message.SubscriptionsForTypes.Where(sub => sub.BindingKeys != null && sub.BindingKeys.Any()).ToArray();
             var subscriptionsToRemove = message.SubscriptionsForTypes.Where(sub => sub.BindingKeys == null || !sub.BindingKeys.Any()).ToList();
 
@@ -113,6 +124,8 @@ namespace Abc.Zebus.Directory.Handlers
             if (subscriptionsToRemove.Any())
                 _peerRepository.RemoveDynamicSubscriptionsForTypes(message.PeerId, DateTime.SpecifyKind(message.TimestampUtc, DateTimeKind.Utc), subscriptionsToRemove.Select(sub => sub.MessageTypeId).ToArray());
             _bus.Publish(new PeerSubscriptionsForTypesUpdated(message.PeerId, message.TimestampUtc, message.SubscriptionsForTypes));
+
+            _speedReporter.ReportSubscriptionUpdateForTypesDuration(stopwatch.Elapsed);
         }
     }
 }

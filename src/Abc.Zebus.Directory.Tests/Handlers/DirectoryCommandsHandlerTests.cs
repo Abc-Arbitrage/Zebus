@@ -22,6 +22,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         private Mock<IPeerRepository> _repositoryMock;
         private Mock<IDirectoryConfiguration> _configurationMock;
         private DirectoryCommandsHandler _handler;
+        private Mock<IDirectorySpeedReporter> _speedReporter;
 
         [SetUp]
         public void Setup()
@@ -32,7 +33,8 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             _configurationMock.SetupGet(conf => conf.BlacklistedMachines).Returns(new[] { "ANOTHER_BLACKLISTEDMACHINE", "BLACKlistedMACHINE" });
             _repositoryMock = new Mock<IPeerRepository>();
             _bus = new TestBus();
-            _handler = new DirectoryCommandsHandler(_bus, _repositoryMock.Object, _configurationMock.Object) { Context = MessageContext.CreateOverride(_sender.Id, _sender.EndPoint) };
+            _speedReporter = new Mock<IDirectorySpeedReporter>();
+            _handler = new DirectoryCommandsHandler(_bus, _repositoryMock.Object, _configurationMock.Object, _speedReporter.Object) { Context = MessageContext.CreateOverride(_sender.Id, _sender.EndPoint) };
         }
 
         [TearDown]
@@ -387,6 +389,58 @@ namespace Abc.Zebus.Directory.Tests.Handlers
 
             _repositoryMock.Verify(x => x.AddOrUpdatePeer(It.IsAny<PeerDescriptor>()), Times.Never());
             _bus.ExpectNothing();
+        }
+
+        [Test]
+        public void should_report_registration_speed()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var registerCommand = new RegisterPeerCommand(peerDescriptor);
+
+            _handler.Handle(registerCommand);
+
+            _speedReporter.Verify(x => x.ReportRegistrationDuration(It.Is<TimeSpan>(t => t < 1.Second())));
+        }
+
+        [Test]
+        public void should_report_unregistration_speed()
+        {
+            var peerDescriptor = TestDataBuilder.CreateTransientPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            _repositoryMock.Setup(x => x.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
+
+            _handler.Handle(new UnregisterPeerCommand(peerDescriptor.Peer));
+
+            _speedReporter.Verify(x => x.ReportUnregistrationDuration(It.Is<TimeSpan>(t => t < 1.Second())));
+        }
+
+        [Test]
+        public void should_report_subscription_update_speed()
+        {
+            var originalPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            _repositoryMock.Setup(x => x.Get(originalPeerDescriptor.Peer.Id)).Returns(originalPeerDescriptor);
+            PeerDescriptor updatedPeerDescriptor = null;
+            _repositoryMock.Setup(x => x.AddOrUpdatePeer(It.IsAny<PeerDescriptor>())).Callback<PeerDescriptor>(peer => updatedPeerDescriptor = peer);
+            var newSubscriptions = new[] { new Subscription(new MessageTypeId("Another.Handled.Type")) };
+
+            _handler.Handle(new UpdatePeerSubscriptionsCommand(originalPeerDescriptor.Peer.Id, newSubscriptions, DateTime.UtcNow));
+
+            _speedReporter.Verify(x => x.ReportSubscriptionUpdateDuration(It.Is<TimeSpan>(t => t < 1.Second())));
+        }
+
+        [Test]
+        public void should_report_subscription_update_for_types_speed()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var subscriptionsForTypes = new[]
+            {
+                new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty),
+                new SubscriptionsForType(MessageUtil.GetTypeId(typeof(double)), new BindingKey("bla"))
+            };
+            var now = DateTime.UtcNow;
+
+            _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, now, subscriptionsForTypes));
+
+            _speedReporter.Verify(x => x.ReportSubscriptionUpdateForTypesDuration(It.Is<TimeSpan>(t => t < 1.Second())));
         }
     }
 }

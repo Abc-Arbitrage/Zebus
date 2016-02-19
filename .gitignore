@@ -29,3 +29,5 @@ _ReSharper*/
 output/**
 
 src/packages/**
+*.ncrunchproject
+*.ncrunchsolution

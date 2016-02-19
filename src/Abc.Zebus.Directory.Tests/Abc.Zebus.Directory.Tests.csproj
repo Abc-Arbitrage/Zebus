@@ -93,6 +93,7 @@
     <Compile Include="Configuration\ConfigurationTests.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerDetectorEntryTests.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerDetectorTests.cs" />
+    <Compile Include="DirectorySpeedReporterTests.cs" />
     <Compile Include="PeerDirectoryServerTests.cs" />
     <Compile Include="FakeCommand.cs" />
     <Compile Include="FakeRoutableCommand.cs" />
