@@ -75,3 +75,8 @@ Copyright © 2015 Abc Arbitrage Asset Management
 # License
 
 Zebus is licensed under MIT, refer to [LICENSE.md](https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md) for more information.
+
+# Tools
+We use
+
+[![resharper_icon](https://raw.githubusercontent.com/wiki/Abc-Arbitrage/Zebus/content/icon_ReSharper.png)](https://www.jetbrains.com/resharper/)
