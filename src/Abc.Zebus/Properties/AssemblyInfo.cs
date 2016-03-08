@@ -22,11 +22,9 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Abc.Zebus.EventSourcing.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.EventSourcing.TestTools")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Saga.Tests")]
-
-// TODO: Remove when the legacy bus is gone
-[assembly: InternalsVisibleTo("Abc.Zebus.Gateway")]
-[assembly: InternalsVisibleTo("ABC.EventSourcing")]
-[assembly: InternalsVisibleTo("ABC.EventSourcing.Tests")]
-[assembly: InternalsVisibleTo("Abc.ServiceBus.TestTools")]
 [assembly: InternalsVisibleTo("Abc.ServiceBus.Monitoring.Tests")]
 [assembly: InternalsVisibleTo("Abc.ConfigManagerService.Tests")]
+
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Tests")]
