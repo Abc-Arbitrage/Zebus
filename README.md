@@ -8,4 +8,4 @@ Copyright © 2016 Abc Arbitrage Asset Management
 
 # License
 
-Zebus.Directory is licensed under MIT, refer to [LICENSE.md](https://github.com/Abc-Arbitrage/Zebus.Directory/blob/master/LICENSE.md) for more information.
+Zebus.Perssitence is licensed under MIT, refer to [LICENSE.md](https://github.com/Abc-Arbitrage/Zebus.Persistence/blob/master/LICENSE.md) for more information.
