@@ -260,7 +260,9 @@ namespace Abc.Zebus.Core
 
         public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
         {
-            var eventHandlerInvokers = subscriptions.Select(x => new EventHandlerInvoker(handler, x.MessageTypeId.GetMessageType())).ToList();
+            var eventHandlerInvokers = subscriptions.DistinctBy(x => x.MessageTypeId)
+                                                    .Select(x => new EventHandlerInvoker(handler, x.MessageTypeId.GetMessageType()))
+                                                    .ToList();
 
             foreach (var eventHandlerInvoker in eventHandlerInvokers)
             {

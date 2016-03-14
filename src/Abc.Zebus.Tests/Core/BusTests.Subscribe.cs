@@ -326,6 +326,22 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
+        public void should_only_call_specific_handler_once_per_type()
+        {
+            _bus.Start();
+            _bus.Subscribe(new[]
+            {
+                Subscription.Matching<FakeRoutableCommand>(x => x.Id == 1),
+                Subscription.Matching<FakeRoutableCommand>(x => x.Id == 2),
+                Subscription.Any<FakeCommand>()
+            }, message => { });
+
+            _messageDispatcherMock.Verify(x => x.AddInvoker(It.IsAny<IMessageHandlerInvoker>()), Times.Exactly(2));
+            _messageDispatcherMock.Verify(x => x.AddInvoker(It.Is<IMessageHandlerInvoker>(invoker => invoker.MessageType == typeof(FakeRoutableCommand))), Times.Once);
+            _messageDispatcherMock.Verify(x => x.AddInvoker(It.Is<IMessageHandlerInvoker>(invoker => invoker.MessageType == typeof(FakeCommand))), Times.Once);
+        }
+
+        [Test]
         [Ignore("The implementation is non trivial and will be dealt with later")]
         public void subscriptions_sent_to_the_directory_should_always_be_more_recent_than_the_previous()
         {
