@@ -5,7 +5,7 @@ using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Util;
 
-namespace Abc.Zebus.Persistence.CQL.Tests
+namespace Abc.Zebus.Persistence.CQL.Testing
 {
     public class FakePeerStateRepository : IPeerStateRepository
     {

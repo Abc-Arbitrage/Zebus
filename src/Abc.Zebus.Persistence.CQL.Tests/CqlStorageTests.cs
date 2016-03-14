@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
+using Abc.Zebus.Persistence.CQL.Testing;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Messages;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using Abc.Zebus.Persistence.CQL.Testing;
 using Abc.Zebus.Persistence.CQL.Util;
 using Cassandra;
 using Cassandra.Mapping;

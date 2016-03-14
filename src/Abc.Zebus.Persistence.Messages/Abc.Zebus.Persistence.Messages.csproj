@@ -74,26 +74,26 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Abc.Zebus">
-      <HintPath>..\..\..\lib\packages\Zebus.1.4.5\lib\net45\Abc.Zebus.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.1.4.5\lib\net45\Abc.Zebus.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="log4net">
-      <HintPath>..\..\..\lib\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+      <HintPath>..\..\lib\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\lib\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\lib\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="protobuf-net">
-      <HintPath>..\..\..\lib\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+      <HintPath>..\..\lib\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="StructureMap">
-      <HintPath>..\..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.dll</HintPath>
+      <HintPath>..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="StructureMap.Net4">
-      <HintPath>..\..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.Net4.dll</HintPath>
+      <HintPath>..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.Net4.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

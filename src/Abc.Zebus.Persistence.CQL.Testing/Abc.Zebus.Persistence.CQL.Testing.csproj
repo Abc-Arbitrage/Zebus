@@ -4,13 +4,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{A9B86B14-A1D5-46F8-9F2D-777C204D7C0B}</ProjectGuid>
+    <ProjectGuid>{1059B7D5-1C8F-4702-A6DA-58986FB042F6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Abc.Zebus.Persistence.CQL.Tests</RootNamespace>
-    <AssemblyName>Abc.Zebus.Persistence.CQL.Tests</AssemblyName>
+    <RootNamespace>Abc.Zebus.Persistence.CQL.Testing</RootNamespace>
+    <AssemblyName>Abc.Zebus.Persistence.CQL.Testing</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,7 +21,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,41 +29,14 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Abc.Zebus">
       <HintPath>..\..\lib\packages\Zebus.1.4.5\lib\net45\Abc.Zebus.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Abc.Zebus.Testing">
-      <HintPath>..\..\lib\packages\Zebus.Testing.1.4.5\lib\net45\Abc.Zebus.Testing.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Abc.Zebus.Testing">
-      <HintPath>..\..\lib\packages\Zebus.Testing.1.4.5\lib\net45\Abc.Zebus.Testing.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Cassandra, Version=2.7.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\CassandraCSharpDriver.2.7.2\lib\net40\Cassandra.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="KellermanSoftware.Compare-NET-Objects, Version=3.3.0.0, Culture=neutral, PublicKeyToken=d970ace04cc85217, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\CompareNETObjects.3.03.0.0\lib\net45\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="log4net">
       <HintPath>..\..\lib\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="LZ4">
-      <HintPath>..\..\lib\packages\lz4net.1.0.5.93\lib\net40-client\LZ4.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Moq">
@@ -75,18 +48,11 @@
       <HintPath>..\..\lib\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="protobuf-net">
       <HintPath>..\..\lib\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="StructureMap, Version=3.1.6.186, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="StructureMap">
       <HintPath>..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.dll</HintPath>
       <Private>True</Private>
     </Reference>
@@ -104,33 +70,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BucketIdHelperTests.cs" />
-    <Compile Include="CqlMessageReaderTests.cs" />
-    <Compile Include="Cql\CqlTestFixture.cs" />
-    <Compile Include="PeerStateRepositoryTests.cs" />
-    <Compile Include="CqlStorageTests.cs" />
-    <Compile Include="OldestNonAckedMessageUpdaterPeriodicActionTests.cs" />
+    <Compile Include="CassandraConfigurationMock.cs" />
+    <Compile Include="FakePeerStateRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Abc.Zebus.Persistence.CQL.Testing\Abc.Zebus.Persistence.CQL.Testing.csproj">
-      <Project>{1059b7d5-1c8f-4702-a6da-58986fb042f6}</Project>
-      <Name>Abc.Zebus.Persistence.CQL.Testing</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Abc.Zebus.Persistence.CQL\Abc.Zebus.Persistence.CQL.csproj">
       <Project>{c59cfdda-987b-4948-b016-95982bbe2cfa}</Project>
       <Name>Abc.Zebus.Persistence.CQL</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj">
-      <Project>{a8117c95-b3ca-447c-bcdf-9b6f7a17f290}</Project>
-      <Name>Abc.Zebus.Persistence</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj">
       <Project>{8fc5c46e-9c7f-4905-b8a8-89e154f576cf}</Project>
       <Name>Abc.Zebus.Persistence.Messages</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj">
+      <Project>{a8117c95-b3ca-447c-bcdf-9b6f7a17f290}</Project>
+      <Name>Abc.Zebus.Persistence</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

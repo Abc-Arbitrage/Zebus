@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package >
+	<metadata>
+		<id>Zebus.Persistence.CQL</id>
+		<version>$version$</version>
+		<title>Zebus.Persistence.CQL</title>
+		<authors>$author$</authors>
+		<owners>$author$</owners>
+		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus.Persistence/blob/master/LICENSE.md</licenseUrl>
+		<projectUrl>https://github.com/Abc-Arbitrage/Zebus.Persistence</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>An implementation of the Persistence backed out by Cassandra</description>
+		<releaseNotes></releaseNotes>
+		<copyright>$copyright$</copyright>
+		<tags></tags>
+    <dependencies>
+      <dependency id="Zebus" version="[1.4.5,2.0)" />
+      <dependency id="Zebus.Persistence" version="$version$" />
+      <dependency id="CassandraCSharpDriver" version="[2.7.2,2.8)" />
+	  <dependency id="log4net" version="[2.0.3,2.1)" />
+      <dependency id="lz4net" version="[1.0.5.93,2)" />
+      <dependency id="Microsoft.Tpl.Dataflow" version="[4.5.24,4.6)" />
+      <dependency id="Newtonsoft.Json" version="[7.0.1,7.1)" />
+      <dependency id="protobuf-net" version="[2.0.0.668,2.1)" />
+      <dependency id="structuremap" version="[3.1.6.186,3.2)" />
+    </dependencies>
+	</metadata>
+	<files>
+		<file src="src\Abc.Zebus.Persistence.CQL\bin\$configuration$\Abc.Zebus.Persistence.CQL.dll" target="lib\net45\" />
+		<file src="src\Abc.Zebus.Persistence.CQL\bin\$configuration$\Abc.Zebus.Persistence.CQL.pdb" target="lib\net45\" />
+    
+		<file src="src\Abc.Zebus.Persistence.CQL\**\*.cs" target="src" />
+	</files>
+</package>

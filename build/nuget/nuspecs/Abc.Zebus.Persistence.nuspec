@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package >
+	<metadata>
+		<id>Zebus.Persistence</id>
+		<version>$version$</version>
+		<title>Zebus.Persistence</title>
+		<authors>$author$</authors>
+		<owners>$author$</owners>
+		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus.Persistence/blob/master/LICENSE.md</licenseUrl>
+		<projectUrl>https://github.com/Abc-Arbitrage/Zebus.Persistence</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>$description$</description>
+		<releaseNotes></releaseNotes>
+		<copyright>$copyright$</copyright>
+		<tags></tags>
+    <dependencies>
+      <dependency id="Zebus" version="[1.4.5,2.0)" />
+      <dependency id="log4net" version="2.0.3" />
+      <dependency id="Newtonsoft.Json" version="7.0.1" />
+      <dependency id="protobuf-net" version="2.0.0.668" />
+      <dependency id="structuremap" version="3.1.6.186" />
+    </dependencies>
+	</metadata>
+	<files>
+		<file src="src\Abc.Zebus.Persistence\bin\$configuration$\Abc.Zebus.Persistence.dll" target="lib\net45\" />
+		<file src="src\Abc.Zebus.Persistence.Messages\bin\$configuration$\Abc.Zebus.Persistence.Messages.dll" target="lib\net45\" />
+		<file src="src\Abc.Zebus.Persistence\bin\$configuration$\Abc.Zebus.Persistence.pdb" target="lib\net45\" />
+		<file src="src\Abc.Zebus.Persistence\**\*.cs" target="src" />
+	</files>
+</package>
