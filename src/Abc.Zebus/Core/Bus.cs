@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
@@ -29,9 +30,10 @@ namespace Abc.Zebus.Core
         private readonly IMessageDispatcher _messageDispatcher;
         private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly IStoppingStrategy _stoppingStrategy;
+        private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
 
-        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy)
+        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder)
         {
             _transport = transport;
             _transport.MessageReceived += OnTransportMessageReceived;
@@ -41,6 +43,7 @@ namespace Abc.Zebus.Core
             _messageDispatcher = messageDispatcher;
             _messageSendingStrategy = messageSendingStrategy;
             _stoppingStrategy = stoppingStrategy;
+            _predicateBuilder = predicateBuilder;
         }
 
         public event Action Starting = delegate { };
@@ -244,7 +247,7 @@ namespace Abc.Zebus.Core
 
         public IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage
         {
-            var eventHandlerInvoker = new EventHandlerInvoker<T>(handler);
+            var eventHandlerInvoker = new DynamicMessageHandlerInvoker<T>(handler);
             var subscription = new Subscription(eventHandlerInvoker.MessageTypeId);
 
             _messageDispatcher.AddInvoker(eventHandlerInvoker);
@@ -260,8 +263,8 @@ namespace Abc.Zebus.Core
 
         public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
         {
-            var eventHandlerInvokers = subscriptions.DistinctBy(x => x.MessageTypeId)
-                                                    .Select(x => new EventHandlerInvoker(handler, x.MessageTypeId.GetMessageType()))
+            var eventHandlerInvokers = subscriptions.GroupBy(x => x.MessageTypeId)
+                                                    .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList(), _predicateBuilder))
                                                     .ToList();
 
             foreach (var eventHandlerInvoker in eventHandlerInvokers)

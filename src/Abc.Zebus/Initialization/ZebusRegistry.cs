@@ -4,6 +4,7 @@ using Abc.Zebus.Dispatch;
 using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Persistence;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
@@ -38,6 +39,8 @@ namespace Abc.Zebus.Initialization
 
             ForSingletonOf<IMessageSendingStrategy>().Use<DefaultMessageSendingStrategy>();
             ForSingletonOf<IStoppingStrategy>().Use<DefaultStoppingStrategy>();
+
+            ForSingletonOf<IBindingKeyPredicateBuilder>().Use<BindingKeyPredicateBuilder>();
         }
     }
 }

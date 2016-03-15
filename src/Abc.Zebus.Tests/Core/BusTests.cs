@@ -4,6 +4,7 @@ using System.Linq;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Dispatch;
@@ -45,7 +46,7 @@ namespace Abc.Zebus.Tests.Core
             _messageDispatcherMock = new Mock<IMessageDispatcher>();
             _messageSerializer = new TestMessageSerializer();
 
-            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object,new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy());
+            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>());
             _bus.Configure(_self.Id, _environment);
 
             _invokers = new List<IMessageHandlerInvoker>();
@@ -69,7 +70,7 @@ namespace Abc.Zebus.Tests.Core
         public void should_configure_transport_when_configured()
         {
             var transportMock = new Mock<ITransport>();
-            var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, null, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy());
+            var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, null, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>());
 
             bus.Configure(_self.Id, _environment);
 
@@ -118,7 +119,7 @@ namespace Abc.Zebus.Tests.Core
             }
             catch (TimeoutException)
             {
-                _bus.IsRunning.ShouldBeFalse();    
+                _bus.IsRunning.ShouldBeFalse();
             }
         }
 
@@ -182,7 +183,7 @@ namespace Abc.Zebus.Tests.Core
             var stoppedEventCalled = 0;
             _bus.Stopping += () => stoppingEventCalled = 1;
             _bus.Stopped += () => stoppedEventCalled = stoppingEventCalled + 1;
-           
+
             _bus.Start();
             _bus.Stop();
 

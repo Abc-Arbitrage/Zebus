@@ -18,7 +18,7 @@ namespace Abc.Zebus.Dispatch
         void Dispatch(MessageDispatch dispatch);
         void Dispatch(MessageDispatch dispatch, Func<Type, bool> handlerFilter);
 
-        void AddInvoker(IMessageHandlerInvoker eventHandlerInvoker);
+        void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker);
         void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker);
 
         void Stop();

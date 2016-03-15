@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
+using System.Security.Principal;
 using Abc.Zebus.Util.Annotations;
 using Abc.Zebus.Util.Extensions;
 using ProtoBuf;
@@ -14,6 +13,8 @@ namespace Abc.Zebus.Routing
     [ProtoContract]
     public struct BindingKey : IEquatable<BindingKey>
     {
+        private const string _star = "*";
+        private const string _sharp = "#";
         public static readonly BindingKey Empty = new BindingKey();
 
         private static readonly ConcurrentDictionary<Type, BindingKeyBuilder> _builders = new ConcurrentDictionary<Type, BindingKeyBuilder>();
@@ -40,7 +41,17 @@ namespace Abc.Zebus.Routing
 
         public int PartCount => _parts?.Length ?? 0;
 
-        public bool IsEmpty => _parts == null || _parts.Length == 1 && _parts[0] == "#";
+        public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
+
+        public bool IsSharp(int index)
+        {
+            return _parts[index] == _sharp;
+        }
+
+        public bool IsStar(int index)
+        {
+            return _parts[index] == _star;
+        }
 
         internal bool IsJoined { get; }
 
@@ -89,7 +100,7 @@ namespace Abc.Zebus.Routing
         public override string ToString()
         {
             if (_parts == null)
-                return "#";
+                return _sharp;
 
             return string.Join(".", _parts);
         }
@@ -152,62 +163,9 @@ namespace Abc.Zebus.Routing
                 var parts = new string[_tokens.Length];
                 for (var tokenIndex = 0; tokenIndex < _tokens.Length; ++tokenIndex)
                 {
-                    parts[tokenIndex] = fieldValues.GetValueOrDefault(_tokens[tokenIndex].Name, "*");
+                    parts[tokenIndex] = fieldValues.GetValueOrDefault(_tokens[tokenIndex].Name, _star);
                 }
                 return new BindingKey(parts);
-            }
-        }
-
-        private class BindingKeyToken
-        {
-            private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod("ToString");
-            private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod("ToString");
-            private readonly Func<IMessage, string> _valueAccessorFunc;
-
-            public BindingKeyToken(int position, Type messageType, FieldInfo fieldInfo)
-            {
-                Position = position;
-                Name = fieldInfo.Name;
-
-                Func<Expression, Expression> fieldValueAccessor = m => Expression.Field(m, fieldInfo);
-                _valueAccessorFunc = GenerateValueAccessor(fieldValueAccessor, messageType, fieldInfo.FieldType);
-            }
-
-            public BindingKeyToken(int position, Type messageType, PropertyInfo propertyInfo)
-            {
-                Position = position;
-                Name = propertyInfo.Name;
-
-                Func<Expression, Expression> propertyValueAccessor = m => Expression.Property(m, propertyInfo);
-                _valueAccessorFunc = GenerateValueAccessor(propertyValueAccessor, messageType, propertyInfo.PropertyType);
-            }
-
-            public int Position { get; }
-            public string Name { get; }
-
-            public string GetValue(IMessage message)
-            {
-                try
-                {
-                    return _valueAccessorFunc(message);
-                }
-                catch (NullReferenceException)
-                {
-                    throw new InvalidOperationException($"Message of type {message.GetType().Name} is not valid. Member {Name} part of the routing key at position {Position} can not be null");
-                }
-            }
-
-            private Func<IMessage, string> GenerateValueAccessor(Func<Expression, Expression> valueAccessor, Type messageType, Type memberType)
-            {
-                var message = Expression.Parameter(typeof(IMessage), "m");
-                var castedMessage = Expression.Convert(message, messageType);
-
-                var body = typeof(IConvertible).IsAssignableFrom(memberType) && memberType != typeof(string)
-                    ? Expression.Call(valueAccessor(castedMessage), _toStringWithFormatMethod, Expression.Constant(CultureInfo.InvariantCulture))
-                    : Expression.Call(valueAccessor(castedMessage), _toStringMethod);
-
-                var lambda = Expression.Lambda(typeof(Func<IMessage, string>), body, message);
-                return (Func<IMessage, string>)lambda.Compile();
             }
         }
     }

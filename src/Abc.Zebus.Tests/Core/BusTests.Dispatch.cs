@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
@@ -168,7 +169,7 @@ namespace Abc.Zebus.Tests.Core
         public void should_stop_dispatcher_before_transport()
         {
             var transportMock = new Mock<ITransport>();
-            var bus = new Bus(transportMock.Object, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy());
+            var bus = new Bus(transportMock.Object, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>());
             var sequence = new SetupSequence();
             _messageDispatcherMock.Setup(dispatch => dispatch.Stop()).InSequence(sequence);
             transportMock.Setup(transport => transport.Stop()).InSequence(sequence);

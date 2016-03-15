@@ -44,6 +44,11 @@ namespace Abc.Zebus.Dispatch
             return new Task(() => InvokeMessageHandler(invocation), TaskCreationOptions.HideScheduler);
         }
 
+        public virtual bool ShouldHandle(IMessage message)
+        {
+            return true;
+        }
+
         public static bool MessageShouldBeSubscribedOnStartup(Type messageType, Type handlerType)
         {
             return MessageShouldBeSubscribedOnStartup(messageType, GetExplicitSubscriptionMode(handlerType));
