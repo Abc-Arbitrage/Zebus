@@ -78,7 +78,7 @@
     <Compile Include="Core\IMessageSendingStrategy.cs" />
     <Compile Include="Directory\MarkPeerAsNotRespondingCommand.cs" />
     <Compile Include="Directory\MarkPeerAsRespondingCommand.cs" />
-    <Compile Include="Dispatch\EventHandlerInvoker.cs" />
+    <Compile Include="Dispatch\DynamicMessageHandlerInvoker.cs" />
     <Compile Include="Dispatch\EventHandlerInvoker`1.cs" />
     <Compile Include="Core\IStoppingStrategy.cs" />
     <Compile Include="Core\RoundRobinPeerSelector.cs" />
@@ -113,6 +113,9 @@
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
     <Compile Include="Monitoring\IProvideQueueLength.cs" />
+    <Compile Include="Routing\BindingKeyPredicateBuilder.cs" />
+    <Compile Include="Routing\BindingKeyToken.cs" />
+    <Compile Include="Routing\IBindingKeyPredicateBuilder.cs" />
     <Compile Include="Serialization\PeerIdConverter.cs" />
     <Compile Include="Persistence\PersistentTransport.cs" />
     <Compile Include="Dispatch\Pipes\AfterInvokeArgs.cs" />

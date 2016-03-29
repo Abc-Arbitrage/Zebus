@@ -15,5 +15,6 @@ namespace Abc.Zebus.Dispatch
 
         void InvokeMessageHandler(IMessageHandlerInvocation invocation);
         Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation);
+        bool ShouldHandle(IMessage message);
     }
 }

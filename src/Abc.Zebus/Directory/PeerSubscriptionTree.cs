@@ -144,13 +144,13 @@ namespace Abc.Zebus.Directory
 
                 var nextPart = subscription.GetPart(_nextPartIndex);
 
-                if (nextPart == "#" || nextPart == null)
+                if (subscription.IsSharp(_nextPartIndex) || nextPart == null)
                 {
                     var sharpNode = GetOrCreateSharpNode();
                     return UpdateChildNode(sharpNode, peer, subscription, action, null, _removeSharpNode);
                 }
 
-                if (nextPart == "*")
+                if (subscription.IsStar(_nextPartIndex))
                 {
                     var starNode = GetOrCreateStarNode();
                     return UpdateChildNode(starNode, peer, subscription, action, null, _removeStarNode);

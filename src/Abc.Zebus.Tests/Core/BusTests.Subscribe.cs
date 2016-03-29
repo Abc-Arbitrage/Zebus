@@ -232,7 +232,7 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
 
             var invokers = new List<IMessageHandlerInvoker>();
-            _messageDispatcherMock.Setup(x=>x.AddInvoker(It.IsAny<EventHandlerInvoker<FakeEvent>>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
+            _messageDispatcherMock.Setup(x=>x.AddInvoker(It.IsAny<DynamicMessageHandlerInvoker<FakeEvent>>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
 
             _bus.Subscribe((FakeEvent e) => { });
 
@@ -252,7 +252,7 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
 
             var invokers = new List<IMessageHandlerInvoker>();
-            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<EventHandlerInvoker>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
+            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<DynamicMessageHandlerInvoker>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
 
             var handlerMock = new Mock<IMessageHandler<IMessage>>();
             var subscriptions = new[] { Subscription.Any<FakeEvent>() };
@@ -273,7 +273,7 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
 
             var invokers = new List<IMessageHandlerInvoker>();
-            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<EventHandlerInvoker>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
+            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<DynamicMessageHandlerInvoker>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
 
             var handlerMock = new Mock<IMessageHandler<IMessage>>();
             _bus.Subscribe(Subscription.Any<FakeEvent>(), handlerMock.Object.Handle);
@@ -293,10 +293,10 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
 
             var invokers = new List<IMessageHandlerInvoker>();
-            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<EventHandlerInvoker<FakeEvent>>()))
+            _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<DynamicMessageHandlerInvoker<FakeEvent>>()))
                                   .Callback((IMessageHandlerInvoker i) => invokers.Add(i));
 
-            _messageDispatcherMock.Setup(x => x.RemoveInvoker(It.IsAny<EventHandlerInvoker<FakeEvent>>()))
+            _messageDispatcherMock.Setup(x => x.RemoveInvoker(It.IsAny<DynamicMessageHandlerInvoker<FakeEvent>>()))
                                   .Callback((IMessageHandlerInvoker i) => invokers.Remove(i));
 
             var subscription = _bus.Subscribe((FakeEvent e) => { });
@@ -323,6 +323,22 @@ namespace Abc.Zebus.Tests.Core
             _bus.Start();
             
             subscriptions.Count.ShouldEqual(0);
+        }
+
+        [Test]
+        public void should_only_call_specific_handler_once_per_type()
+        {
+            _bus.Start();
+            _bus.Subscribe(new[]
+            {
+                Subscription.Matching<FakeRoutableCommand>(x => x.Id == 1),
+                Subscription.Matching<FakeRoutableCommand>(x => x.Id == 2),
+                Subscription.Any<FakeCommand>()
+            }, message => { });
+
+            _messageDispatcherMock.Verify(x => x.AddInvoker(It.IsAny<IMessageHandlerInvoker>()), Times.Exactly(2));
+            _messageDispatcherMock.Verify(x => x.AddInvoker(It.Is<IMessageHandlerInvoker>(invoker => invoker.MessageType == typeof(FakeRoutableCommand))), Times.Once);
+            _messageDispatcherMock.Verify(x => x.AddInvoker(It.Is<IMessageHandlerInvoker>(invoker => invoker.MessageType == typeof(FakeCommand))), Times.Once);
         }
 
         [Test]

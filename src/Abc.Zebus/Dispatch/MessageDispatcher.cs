@@ -111,7 +111,8 @@ namespace Abc.Zebus.Dispatch
 
             foreach (var invoker in invokers)
             {
-                Dispatch(dispatch, invoker);
+                if (invoker.ShouldHandle(dispatch.Message))
+                    Dispatch(dispatch, invoker);
             }
         }
 
@@ -137,16 +138,16 @@ namespace Abc.Zebus.Dispatch
                 dispatcherTaskScheduler.Start();
         }
 
-        public void AddInvoker(IMessageHandlerInvoker eventHandlerInvoker)
+        public void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker)
         {
             lock (_invokers)
             {
-                var messageTypeInvokers = _invokers.GetValueOrDefault(eventHandlerInvoker.MessageTypeId) ?? new List<IMessageHandlerInvoker>();
-                var newMessageTypeInvokers = new List<IMessageHandlerInvoker>(messageTypeInvokers.Count + 1);
-                newMessageTypeInvokers.AddRange(messageTypeInvokers);
-                newMessageTypeInvokers.AddRange(eventHandlerInvoker);
+                var existingMessageTypeInvokers = _invokers.GetValueOrDefault(newEventHandlerInvoker.MessageTypeId) ?? new List<IMessageHandlerInvoker>();
+                var newMessageTypeInvokers = new List<IMessageHandlerInvoker>(existingMessageTypeInvokers.Count + 1);
+                newMessageTypeInvokers.AddRange(existingMessageTypeInvokers);
+                newMessageTypeInvokers.Add(newEventHandlerInvoker);
 
-                _invokers[eventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
+                _invokers[newEventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
             }
             
         }
@@ -197,6 +198,7 @@ namespace Abc.Zebus.Dispatch
 
         private void Dispatch(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
+
             var context = dispatch.Context.WithDispatchQueueName(invoker.DispatchQueueName);
             var invocation = _pipeManager.BuildPipeInvocation(invoker, dispatch.Message, context);
 

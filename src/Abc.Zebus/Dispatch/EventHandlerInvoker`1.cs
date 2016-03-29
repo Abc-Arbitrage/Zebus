@@ -2,11 +2,11 @@
 
 namespace Abc.Zebus.Dispatch
 {
-    public class EventHandlerInvoker<T> : MessageHandlerInvoker where T : class, IMessage
+    public class DynamicMessageHandlerInvoker<T> : MessageHandlerInvoker where T : class, IMessage
     {
         private readonly Action<T> _handler;
 
-        public EventHandlerInvoker(Action<T> handler)
+        public DynamicMessageHandlerInvoker(Action<T> handler)
             : base(typeof(DummyHandler), typeof(T), false)
         {
             _handler = handler;

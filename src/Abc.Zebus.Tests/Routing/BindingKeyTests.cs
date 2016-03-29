@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
@@ -7,7 +7,7 @@ using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 
-namespace Abc.Zebus.Tests
+namespace Abc.Zebus.Tests.Routing
 {
     [TestFixture]
     public class BindingKeyTests

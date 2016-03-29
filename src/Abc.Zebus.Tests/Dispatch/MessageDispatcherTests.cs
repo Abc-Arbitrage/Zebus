@@ -297,7 +297,10 @@ namespace Abc.Zebus.Tests.Dispatch
         public void should_dispatch_to_event_handler()
         {
             IMessage receivedMessage = null;
-            _messageDispatcher.AddInvoker(new EventHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent)));
+            var predicateBuilder = new Mock<IBindingKeyPredicateBuilder>();
+            predicateBuilder.Setup(x => x.GetPredicate(It.IsAny<Type>(), It.IsAny<BindingKey>())).Returns(_ => true);
+
+            _messageDispatcher.AddInvoker(new DynamicMessageHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent), new [] {BindingKey.Empty}, predicateBuilder.Object));
 
             var evt = new FakeEvent(123);
             Dispatch(evt);
