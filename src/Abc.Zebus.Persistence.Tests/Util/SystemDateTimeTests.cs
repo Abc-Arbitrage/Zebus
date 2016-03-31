@@ -9,6 +9,12 @@ namespace Abc.Zebus.Persistence.Tests.Util
     [TestFixture]
     public class SystemDateTimeTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            SystemDateTime.Reset();
+        }
+
         [Test]
         public void should_be_equal_to_datetime_when_not_set_or_paused()
         {
@@ -17,8 +23,8 @@ namespace Abc.Zebus.Persistence.Tests.Util
             var dateTimeNow = DateTime.Now;
             var sysDateTimeNow = SystemDateTime.Now;
 
-            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(TimeSpanCreation.Milliseconds(2));
-            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(TimeSpanCreation.Milliseconds(2));
+            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(2.Milliseconds());
+            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(2.Milliseconds());
         }
 
         [Test]
@@ -27,13 +33,13 @@ namespace Abc.Zebus.Persistence.Tests.Util
             using (SystemDateTime.PauseTime())
             {
                 var utcNow = SystemDateTime.UtcNow;
-                Thread.Sleep(TimeSpanCreation.Milliseconds(50));
+                Thread.Sleep(50.Milliseconds());
                 utcNow.ShouldEqual(SystemDateTime.UtcNow);
                 utcNow.ShouldEqual(SystemDateTime.UtcNow);
                 utcNow.ShouldEqual(SystemDateTime.UtcNow);
 
                 var now = SystemDateTime.Now;
-                Thread.Sleep(TimeSpanCreation.Milliseconds(50));
+                Thread.Sleep(50.Milliseconds());
                 now.ShouldEqual(SystemDateTime.Now);
                 now.ShouldEqual(SystemDateTime.Now);
                 now.ShouldEqual(SystemDateTime.Now);
@@ -46,9 +52,9 @@ namespace Abc.Zebus.Persistence.Tests.Util
             using (SystemDateTime.PauseTime())
             {
                 var now = SystemDateTime.UtcNow;
-                Thread.Sleep(TimeSpanCreation.Milliseconds(50));
+                Thread.Sleep(50.Milliseconds());
                 SystemDateTime.Reset();
-                Thread.Sleep(TimeSpanCreation.Milliseconds(50));
+                Thread.Sleep(50.Milliseconds());
 
                 SystemDateTime.UtcNow.ShouldBeGreaterThan(now);
                 SystemDateTime.Now.ShouldBeGreaterThan(now);
