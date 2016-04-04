@@ -17,6 +17,16 @@ namespace Abc.Zebus
             ErrorCode = errorCode;
         }
 
+        public DomainException(string message)
+            : this(null, ErrorStatus.UnknownError.Code, message)
+        {
+        }
+
+        public DomainException(string message, Exception innerException)
+            : this(innerException, ErrorStatus.UnknownError.Code, message)
+        {
+        }
+
         public DomainException(int errorCode, string message)
             : this(null, errorCode, message)
         {
