@@ -23,8 +23,8 @@ namespace Abc.Zebus.Persistence.Tests.Util
             var dateTimeNow = DateTime.Now;
             var sysDateTimeNow = SystemDateTime.Now;
 
-            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(2.Milliseconds());
-            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(2.Milliseconds());
+            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(5.Milliseconds());
+            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(5.Milliseconds());
         }
 
         [Test]
