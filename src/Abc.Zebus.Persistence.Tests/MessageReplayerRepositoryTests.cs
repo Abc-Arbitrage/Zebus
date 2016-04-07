@@ -22,7 +22,7 @@ namespace Abc.Zebus.Persistence.Tests
             var transportMock = new Mock<ITransport>();
             var batchPersisterMock = new Mock<IInMemoryMessageMatcher>();
             var storage = new Mock<IStorage>();
-            var speedReporter = new Mock<IReplaySpeedReporter>();
+            var speedReporter = new Mock<IReporter>();
 
             _repository = new MessageReplayerRepository(persistenceConfigurationMock.Object, storage.Object, new TestBus(), transportMock.Object, batchPersisterMock.Object, speedReporter.Object);
 

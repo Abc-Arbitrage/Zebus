@@ -140,7 +140,7 @@ namespace Abc.Zebus.Persistence.Matching
                 }
                 catch
                 {
-                    _logger.Fatal("A message of type [" + entry.MessageTypeId + "] failed to be persisted in one by one mode");
+                    _logger.Fatal("A message of type [" + entry.MessageTypeName + "] failed to be persisted in one by one mode");
                 }
             }
         }
@@ -149,18 +149,7 @@ namespace Abc.Zebus.Persistence.Matching
         internal void PersistBatch(List<MatcherEntry> batch)
         {
             var entriesToInsert = batch.Where(x => !x.IsEventWaitHandle).ToList();
-
-            if (entriesToInsert.Any())
-            {
-                var fattestMessage = entriesToInsert.OrderByDescending(msg => msg.MessageBytes?.Length ?? 0).First();
-                _logger.InfoFormat("Persisting a message batch => [Message count: {0} Total size in bytes: {1} Fattest message: [{2}] at {3} bytes]",
-                                   entriesToInsert.Count,
-                                   entriesToInsert.Sum(msg => msg.MessageBytes?.Length ?? 0),
-                                   fattestMessage.MessageTypeId,
-                                   fattestMessage.MessageBytes?.Length ?? 0);
-            }
-
-
+            
             _storage.Write(entriesToInsert);
             
             foreach (var entry in batch.Where(x => x.IsEventWaitHandle))

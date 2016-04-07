@@ -14,11 +14,11 @@ namespace Abc.Zebus.Persistence
         private readonly IBus _bus;
         private readonly ITransport _transport;
         private readonly IInMemoryMessageMatcher _inMemoryMessageMatcher;
-        private readonly IReplaySpeedReporter _speedReporter;
+        private readonly IReporter _speedReporter;
         private bool _messageReplayersEnabled = true;
 
         public MessageReplayerRepository(IPersistenceConfiguration persistenceConfiguration, IStorage storage, IBus bus, ITransport transport,
-                                         IInMemoryMessageMatcher inMemoryMessageMatcher, IReplaySpeedReporter speedReporter)
+                                         IInMemoryMessageMatcher inMemoryMessageMatcher, IReporter speedReporter)
         {
             _persistenceConfiguration = persistenceConfiguration;
             _storage = storage;

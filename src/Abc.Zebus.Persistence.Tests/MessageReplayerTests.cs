@@ -59,7 +59,7 @@ namespace Abc.Zebus.Persistence.Tests
 
             readerMock.Setup(x => x.GetUnackedMessages()).Returns(_insertedMessages);
 
-            var speedReporter = new Mock<IReplaySpeedReporter>();
+            var speedReporter = new Mock<IReporter>();
 
             _replayer = new MessageReplayer(_configurationMock.Object, _storageMock.Object, _bus, _transport, _messageMatcherMock.Object, _targetPeer, _replayId, speedReporter.Object);
 

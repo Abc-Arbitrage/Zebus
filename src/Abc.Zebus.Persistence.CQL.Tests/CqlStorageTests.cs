@@ -21,13 +21,15 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         private CqlStorage _storage;
         private FakePeerStateRepository _peerStateRepository;
         private Mock<IPersistenceConfiguration> _configurationMock;
+        private Mock<IReporter> _reporterMock;
 
         [SetUp]
         public void SetUp()
         {
             _configurationMock = new Mock<IPersistenceConfiguration>();
+            _reporterMock = new Mock<IReporter>();
             _peerStateRepository = new FakePeerStateRepository();
-            _storage = new CqlStorage(DataContext, _peerStateRepository, _configurationMock.Object);
+            _storage = new CqlStorage(DataContext, _peerStateRepository, _configurationMock.Object, _reporterMock.Object);
             _storage.Start();
         }
 
@@ -41,7 +43,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         public void should_initialize_peer_state_repository_on_start()
         {
             var peerStateRepository = new FakePeerStateRepository();
-            var storage = new CqlStorage(DataContext, peerStateRepository, _configurationMock.Object);
+            var storage = new CqlStorage(DataContext, peerStateRepository, _configurationMock.Object, _reporterMock.Object);
             storage.Start();
 
             peerStateRepository.IsInitialized.ShouldBeTrue();
@@ -51,7 +53,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         public void should_save_peer_state_repository_on_stop()
         {
             var peerStateRepository = new FakePeerStateRepository();
-            var storage = new CqlStorage(DataContext, peerStateRepository, _configurationMock.Object);
+            var storage = new CqlStorage(DataContext, peerStateRepository, _configurationMock.Object, _reporterMock.Object);
             storage.Start();
             storage.Stop();
 
@@ -266,7 +268,20 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                                                       .Select(i => new FakeTransportMessage(null, BitConverter.GetBytes(i), null)), true);
             }
         }
-        
+
+        [Test]
+        public void should_report_storage_informations()
+        {
+            var peer = new PeerId("peer");
+
+            _storage.Write(new[]
+            {
+                MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message"), new byte[] { 0x01, 0x02, 0x03 }),
+                MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message.Fat"), new byte[] { 0x01, 0x02, 0x03, 0x04 }),
+            });
+
+            _reporterMock.Verify(r => r.AddStorageReport(2, 7, 4, "Abc.Message.Fat"));
+        }
         
         private class FakeTransportMessage : TransportMessage
         {

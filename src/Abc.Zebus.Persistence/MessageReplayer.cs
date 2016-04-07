@@ -27,7 +27,7 @@ namespace Abc.Zebus.Persistence
         private readonly Peer _self;
         private readonly Peer _peer;
         private readonly Guid _replayId;
-        private readonly IReplaySpeedReporter _speedReporter;
+        private readonly IReporter _reporter;
         private CancellationTokenSource _cancellationTokenSource;
         private Thread _runThread;
         private readonly Stopwatch _stopwatch = new Stopwatch();
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Persistence
         private readonly SendContext _emptySendContext = new SendContext();
 
         public MessageReplayer(IPersistenceConfiguration persistenceConfiguration, IStorage storage,  IBus bus, ITransport transport,
-                               IInMemoryMessageMatcher inMemoryMessageMatcher, Peer peer, Guid replayId, IReplaySpeedReporter speedReporter)
+                               IInMemoryMessageMatcher inMemoryMessageMatcher, Peer peer, Guid replayId, IReporter reporter)
         {
             _persistenceConfiguration = persistenceConfiguration;
             _storage = storage;
@@ -45,7 +45,7 @@ namespace Abc.Zebus.Persistence
             _self = new Peer(transport.PeerId, transport.InboundEndPoint);
             _peer = peer;
             _replayId = replayId;
-            _speedReporter = speedReporter;
+            _reporter = reporter;
             _replayBatchSize = _persistenceConfiguration.ReplayBatchSize;
 
             UnackedMessageCountThatReleasesNextBatch = _persistenceConfiguration.ReplayUnackedMessageCountThatReleasesNextBatch;
@@ -160,7 +160,7 @@ namespace Abc.Zebus.Persistence
                     _logger.Info($"Read and send for last batch of {messageSentCount} msgs for {_peer.Id} took {readAndSendDuration.Value}. ({messageSentCount / readAndSendDuration.Value.TotalSeconds} msg/s)");
                     WaitForAcks(cancellationToken);
                     _logger.Info($"Last batch for {_peer.Id} took {batchDuration.Value} to be totally replayed ({messageSentCount / batchDuration.Value.TotalSeconds} msg/s)");
-                    _speedReporter.AddReplaySpeedInfo(messageSentCount, readAndSendDuration.Value.TotalSeconds, batchDuration.Value.TotalSeconds);
+                    _reporter.AddReplaySpeedReport(messageSentCount, readAndSendDuration.Value.TotalSeconds, batchDuration.Value.TotalSeconds);
                 }
 
                 _logger.Info($"Replay finished for peer {_peer.Id}. Disposing the reader");

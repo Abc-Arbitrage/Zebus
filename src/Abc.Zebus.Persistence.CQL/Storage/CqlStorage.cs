@@ -16,18 +16,21 @@ namespace Abc.Zebus.Persistence.CQL.Storage
     public class CqlStorage : IStorage, IDisposable
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(CqlStorage));
+        private static readonly Task _completedTask = Task.FromResult(false);
 
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly IPeerStateRepository _peerStateRepository;
         private readonly IPersistenceConfiguration _configuration;
+        private readonly IReporter _reporter;
         private readonly ParallelPersistor _parallelPersistor;
         private readonly PreparedStatement _preparedStatement;
 
-        public CqlStorage(PersistenceCqlDataContext dataContext, IPeerStateRepository peerStateRepository, IPersistenceConfiguration configuration)
+        public CqlStorage(PersistenceCqlDataContext dataContext, IPeerStateRepository peerStateRepository, IPersistenceConfiguration configuration, IReporter reporter)
         {
             _dataContext = dataContext;
             _peerStateRepository = peerStateRepository;
             _configuration = configuration;
+            _reporter = reporter;
 
             _preparedStatement = dataContext.Session.Prepare(dataContext.PersistentMessages.Insert(new PersistentMessage()).SetTTL(0).SetTimestamp(default(DateTimeOffset)).ToString());
             _parallelPersistor = new ParallelPersistor(dataContext.Session, 64, 4 * 64);
@@ -49,6 +52,12 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public Task Write(IList<MatcherEntry> entriesToPersist)
         {
+            if (entriesToPersist.Count == 0)
+                return _completedTask;
+
+            var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageBytes?.Length ?? 0).First();
+            _reporter.AddStorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageBytes?.Length ?? 0), fattestMessage.MessageBytes?.Length ?? 0, fattestMessage.MessageTypeName);
+
             var insertTasks = new List<Task>(entriesToPersist.Count);
             var countByPeer = new Dictionary<PeerId, int>();
             foreach (var matcherEntry in entriesToPersist)

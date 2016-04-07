@@ -6,11 +6,11 @@ namespace Abc.Zebus.Persistence.Matching
 {
     public class MatcherEntry
     {
-        private MatcherEntry(PeerId peerId, MessageId messageId, string messageTypeId, byte[] messageBytes, bool isAck, EventWaitHandle waitHandle)
+        private MatcherEntry(PeerId peerId, MessageId messageId, string messageTypeName, byte[] messageBytes, bool isAck, EventWaitHandle waitHandle)
         {
             PeerId = peerId;
             MessageId = messageId;
-            MessageTypeId = messageTypeId;
+            MessageTypeName = messageTypeName;
             MessageBytes = messageBytes;
             TimestampUtc = SystemDateTime.UtcNow;
             IsAck = isAck;
@@ -19,7 +19,7 @@ namespace Abc.Zebus.Persistence.Matching
 
         public PeerId PeerId { get; }
         public MessageId MessageId { get; }
-        public string MessageTypeId { get; }
+        public string MessageTypeName { get; }
         public byte[] MessageBytes { get; }
         public EventWaitHandle WaitHandle { get; }
         public DateTime TimestampUtc { get; }
@@ -29,7 +29,7 @@ namespace Abc.Zebus.Persistence.Matching
 
         public static MatcherEntry Message(PeerId peerId, MessageId messageId, MessageTypeId messageTypeId, byte[] bytes)
         {
-            return new MatcherEntry(peerId, messageId, messageTypeId.ToString(), bytes, false, null);
+            return new MatcherEntry(peerId, messageId, messageTypeId.FullName, bytes, false, null);
         }
 
         public static MatcherEntry Ack(PeerId peerId, MessageId messageId)
