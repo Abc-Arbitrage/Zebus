@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Abc.Zebus.Persistence.Matching;
+using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Transport;
 

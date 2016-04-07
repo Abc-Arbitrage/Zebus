@@ -6,6 +6,7 @@ using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Util;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Messages;
+using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Util;
 using Cassandra;

@@ -1,4 +1,4 @@
-﻿namespace Abc.Zebus.Persistence
+﻿namespace Abc.Zebus.Persistence.Reporter
 {
     public class ReplaySpeedReport
     {

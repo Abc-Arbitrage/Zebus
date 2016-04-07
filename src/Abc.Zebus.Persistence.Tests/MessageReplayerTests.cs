@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Messages;
+using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Tests.TestUtil;
 using Abc.Zebus.Persistence.Util;

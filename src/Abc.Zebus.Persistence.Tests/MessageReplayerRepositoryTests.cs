@@ -1,5 +1,6 @@
 ﻿using System;
 using Abc.Zebus.Persistence.Matching;
+using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
