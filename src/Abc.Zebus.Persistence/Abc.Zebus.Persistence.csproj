@@ -86,7 +86,8 @@
     <Compile Include="..\SharedVersionInfo.cs">
       <Link>Properties\SharedVersionInfo.cs</Link>
     </Compile>
-    <Compile Include="IReporter.cs" />
+    <Compile Include="Initialization\PersistenceRegistry.cs" />
+    <Compile Include="Reporter\IReporter.cs" />
     <Compile Include="Matching\InMemoryMessageMatcher.cs" />
     <Compile Include="Matching\MatcherEntry.cs" />
     <Compile Include="Matching\IInMemoryMessageMatcher.cs" />
@@ -101,8 +102,9 @@
     <Compile Include="Initialization\InMemoryMessageMatcherInitializer.cs" />
     <Compile Include="Initialization\MessageReplayerInitializer.cs" />
     <Compile Include="IPersistenceConfiguration.cs" />
-    <Compile Include="ReplaySpeedReport.cs" />
-    <Compile Include="StorageReport.cs" />
+    <Compile Include="Reporter\NoopReporter.cs" />
+    <Compile Include="Reporter\ReplaySpeedReport.cs" />
+    <Compile Include="Reporter\StorageReport.cs" />
     <Compile Include="Storage\IMessageReader.cs" />
     <Compile Include="Storage\IStorage.cs" />
     <Compile Include="MessageReplayer.cs" />
