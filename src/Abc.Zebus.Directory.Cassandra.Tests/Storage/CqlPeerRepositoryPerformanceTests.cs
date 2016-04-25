@@ -13,7 +13,8 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 {
-    [TestFixture, Ignore("Performance tests")]
+    [TestFixture]
+    [Ignore("Performance tests")]
     public class CqlPeerRepositoryPerformanceTests : CqlTestFixture<DirectoryDataContext, ICassandraConfiguration>
     {
         protected override string Hosts
@@ -85,6 +86,21 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             }
             return subscriptionForTypes.ToArray();
         }
+
+        // Latest (2.1/3.0.5)
+        //        Elapsed: 00:00:00.1526403
+        //        100 iterations in 162 ms (616,2 iterations/sec)
+        //        Latencies :
+        //        Min :                 555µs
+        //        Avg :               1 623µs
+        //        Median :              702µs
+        //        95 percentile :      1 096µs
+        //        99 percentile :      1 705µs
+        //        Max :              90 558µs (Iteration #0)
+        //        G0 : 0
+        //        G1 : 0
+        //        G2 : 0
+
 
         // UselessKey
         //        100 iterations in 953 ms (105,0 iterations/sec)
