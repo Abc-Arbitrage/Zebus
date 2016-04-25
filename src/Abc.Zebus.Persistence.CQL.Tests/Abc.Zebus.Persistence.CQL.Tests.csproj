@@ -47,9 +47,9 @@
       <HintPath>..\..\lib\packages\Zebus.Testing.1.4.5\lib\net45\Abc.Zebus.Testing.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Cassandra, Version=2.7.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
+    <Reference Include="Cassandra, Version=3.0.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\CassandraCSharpDriver.2.7.2\lib\net40\Cassandra.dll</HintPath>
+      <HintPath>..\..\lib\packages\CassandraCSharpDriver.3.0.5\lib\net40\Cassandra.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="KellermanSoftware.Compare-NET-Objects, Version=3.3.0.0, Culture=neutral, PublicKeyToken=d970ace04cc85217, processorArchitecture=MSIL">
