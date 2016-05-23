@@ -1,2 +1,2 @@
-call tools\nant\nant.exe -buildfile:build\Zebus.build
+powershell tools\cake\build.ps1 build\Zebus.cake Test
 pause
