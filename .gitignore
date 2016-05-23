@@ -33,3 +33,4 @@ output/**
 src/_NCrunch_Abc.Zebus/**
 lib/packages/**
 tools/cake/tools/Cake/*
+tools/cake/tools/nuget.exe
