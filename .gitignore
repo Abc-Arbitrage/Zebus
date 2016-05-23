@@ -33,3 +33,5 @@ output/**
 lib/packages/**
 *.ncrunchproject
 *.ncrunchsolution
+tools/cake/tools/Cake/*
+tools/cake/tools/nuget.exe
