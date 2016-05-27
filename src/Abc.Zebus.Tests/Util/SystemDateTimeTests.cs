@@ -51,7 +51,7 @@ namespace Abc.Zebus.Tests.Util
                 Thread.Sleep(50.Milliseconds());
 
                 SystemDateTime.UtcNow.ShouldBeGreaterThan(now);
-                SystemDateTime.Now.ShouldBeGreaterThan(now);
+                SystemDateTime.Now.ShouldBeGreaterThan(now.ToLocalTime());
             }
         }
 
@@ -88,7 +88,7 @@ namespace Abc.Zebus.Tests.Util
             {
                 SystemDateTime.Now.ShouldEqual(fakeUtcNow.ToLocalTime());
                 SystemDateTime.UtcNow.ShouldEqual(fakeUtcNow);
-                SystemDateTime.Today.ShouldEqual(fakeUtcNow.Date);
+                SystemDateTime.Today.ShouldEqual(fakeUtcNow.ToLocalTime().Date);
             }
         }
 
