@@ -307,7 +307,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
             senderTransport.SocketOptions.SendHighWaterMark = 1;
-            senderTransport.SocketOptions.SendTimeout = 50.Milliseconds();
+            senderTransport.SocketOptions.SendTimeout = 20.Milliseconds();
             senderTransport.SocketOptions.SendRetriesBeforeSwitchingToClosedState = 0;
 
             var receivedMessages = new List<TransportMessage>();
