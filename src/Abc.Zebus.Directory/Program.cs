@@ -5,6 +5,7 @@ using System.Threading;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.DeadPeerDetection;
+using Abc.Zebus.Directory.Initialization;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Util;
@@ -58,6 +59,7 @@ namespace Abc.Zebus.Directory
         {
             busFactory.ConfigureContainer(c =>
             {
+                c.AddRegistry<DirectoryRegistry>();
                 c.ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
 
                 c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
