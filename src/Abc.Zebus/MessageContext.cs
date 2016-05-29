@@ -21,6 +21,7 @@ namespace Abc.Zebus
         public virtual MessageId MessageId { get; private set; }
         public virtual OriginatorInfo Originator { get; private set; }
         public string DispatchQueueName { get; private set; }
+        public DateTime? ReceptionTimeUtc { get; private set; }
 
         public PeerId SenderId => Originator.SenderId;
         public string SenderEndPoint => Originator.SenderEndPoint;
@@ -74,8 +75,10 @@ namespace Abc.Zebus
             {
                 MessageId = transportMessage.Id,
                 Originator = transportMessage.Originator,
+                ReceptionTimeUtc = transportMessage.ReceptionTimeUtc
             };
         }
+
 
         public static MessageContext CreateOverride(PeerId peerId, string peerEndPoint)
         {
@@ -89,6 +92,7 @@ namespace Abc.Zebus
                 MessageId = MessageId.NextId(),
                 Originator = originator,
                 DispatchQueueName = currentContext?.DispatchQueueName,
+                ReceptionTimeUtc = currentContext?.ReceptionTimeUtc
             };
         }
 
@@ -128,6 +132,7 @@ namespace Abc.Zebus
             {
                 _context = context;
                 DispatchQueueName = dispatchQueueName;
+                ReceptionTimeUtc = context.ReceptionTimeUtc;
             }
 
             public override MessageId MessageId => _context.MessageId;
