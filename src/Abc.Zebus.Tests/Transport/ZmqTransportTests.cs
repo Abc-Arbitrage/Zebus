@@ -344,8 +344,8 @@ namespace Abc.Zebus.Tests.Transport
             var senderTransport = CreateAndStartZmqTransport();
             senderTransport.SocketOptions.SendHighWaterMark = 3;
 
-            var receviedMessages = new List<TransportMessage>();
-            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receviedMessages.Add);
+            var receivedMessages = new List<TransportMessage>();
+            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
             var receiver = new Peer(new PeerId("Abc.Testing.Receiver.Up"), receiverTransport.InboundEndPoint);
 
             var messageBytes = new byte[5000];
@@ -354,16 +354,16 @@ namespace Abc.Zebus.Tests.Transport
             var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), messageBytes, new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
             senderTransport.Send(bigMessage, new[] { receiver });
 
-            Wait.Until(() => receviedMessages.Count == 1, 150.Milliseconds());
+            Wait.Until(() => receivedMessages.Count == 1, 150.Milliseconds());
 
-            receviedMessages[0].ShouldHaveSamePropertiesAs(bigMessage);
+            receivedMessages[0].ShouldHaveSamePropertiesAs(bigMessage, nameof(bigMessage.ReceptionTimeUtc));
 
             var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), new byte[1], new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
             senderTransport.Send(smallMessage, new[] { receiver });
 
-            Wait.Until(() => receviedMessages.Count == 2, 150.Milliseconds());
+            Wait.Until(() => receivedMessages.Count == 2, 150.Milliseconds());
 
-            receviedMessages[1].ShouldHaveSamePropertiesAs(smallMessage);
+            receivedMessages[1].ShouldHaveSamePropertiesAs(smallMessage, nameof(bigMessage.ReceptionTimeUtc));
         }
 
         [Test]

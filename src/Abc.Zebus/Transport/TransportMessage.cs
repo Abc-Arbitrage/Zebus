@@ -25,6 +25,7 @@ namespace Abc.Zebus.Transport
         [ProtoMember(6, IsRequired = false)]
         public bool? WasPersisted { get; set; }
 
+        [ProtoIgnore]
         public DateTime ReceptionTimeUtc { get; private set; }
 
         public TransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer sender)
@@ -43,18 +44,21 @@ namespace Abc.Zebus.Transport
             MessageTypeId = messageTypeId;
             MessageBytes = messageBytes;
             Originator = originator;
-            ReceptionTimeUtc = DateTime.UtcNow;
         }
 
         [UsedImplicitly]
         private TransportMessage()
-        {
-            ReceptionTimeUtc = DateTime.UtcNow;
+        { 
         }
 
         private static OriginatorInfo CreateOriginator(PeerId peerId, string peerEndPoint)
         {
             return new OriginatorInfo(peerId, peerEndPoint, MessageContext.CurrentMachineName, MessageContext.GetInitiatorUserName());
+        }
+
+        public void SetReceptionTime(DateTime receptionTimeUtc)
+        {
+            ReceptionTimeUtc = receptionTimeUtc;
         }
 
         internal static TransportMessage Infrastructure(MessageTypeId messageTypeId, PeerId peerId, string senderEndPoint)
