@@ -126,6 +126,7 @@
     <Compile Include="Hosting\HostInitializerHelperTests.cs" />
     <Compile Include="Hosting\PeriodicActionHostInitializerTests.cs" />
     <Compile Include="Initialization\ZebusRegistryTests.cs" />
+    <Compile Include="Lotus\CustomProcessingFailedTests.cs" />
     <Compile Include="Lotus\ReplayMessageHandlerTests.cs" />
     <Compile Include="MessageContextTests.cs" />
     <Compile Include="Messages\FakeCommandWithTimestamp.cs" />

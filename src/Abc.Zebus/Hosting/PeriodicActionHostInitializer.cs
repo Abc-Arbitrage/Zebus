@@ -123,7 +123,7 @@ namespace Abc.Zebus.Hosting
 
             try
             {
-                _bus.Publish(new CustomProcessingFailed(GetType().FullName, error.ToString(), DateTime.UtcNow));
+                _bus.Publish(new CustomProcessingFailed(GetType().FullName, error.ToString()));
             }
             catch (Exception ex)
             {
