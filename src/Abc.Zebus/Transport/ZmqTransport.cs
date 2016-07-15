@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -239,6 +240,8 @@ namespace Abc.Zebus.Transport
             try
             {
                 var transportMessage = Serializer.Deserialize<TransportMessage>(inputBuffer);
+                transportMessage.SetReceptionTime(DateTime.UtcNow);
+
                 if (!IsFromCurrentEnvironment(transportMessage))
                     return;
 
