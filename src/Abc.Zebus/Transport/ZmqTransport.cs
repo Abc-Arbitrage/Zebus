@@ -83,7 +83,7 @@ namespace Abc.Zebus.Transport
 
         public PeerId PeerId { get; private set; }
 
-        public void SetLogId(int logId)
+        internal void SetLogId(int logId)
         {
             _logger = LogManager.GetLogger(typeof(ZmqTransport).FullName + "#" + logId);
         }
