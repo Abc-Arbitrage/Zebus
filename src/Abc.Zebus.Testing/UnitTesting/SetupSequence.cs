@@ -14,7 +14,7 @@ namespace Abc.Zebus.Testing.UnitTesting
     /// sequence.Verify();
     /// </code>
     /// </summary>
-    public class SetupSequence
+    internal class SetupSequence
     {
         private readonly List<string> _errorMessages = new List<string>();
         private int _expectedOrderSequence;

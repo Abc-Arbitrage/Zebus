@@ -7,7 +7,7 @@ using Moq.Language.Flow;
 
 namespace Abc.Zebus.Testing.UnitTesting
 {
-    public static class MoqExtensions
+    internal static class MoqExtensions
     {
         public static void CaptureEnumerable<TMock, TArg, TArg0>(this Mock<TMock> mock, TArg0 arg0, Expression<Action<TMock, TArg0, IEnumerable<TArg>>> action, ICollection<TArg> target) where TMock : class
         {

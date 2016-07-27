@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: Guid("2b782073-d62a-4e5e-91ed-e5c2290974b3")]
 
 [assembly: InternalsVisibleTo("Abc.Zebus.Tests")]
-[assembly: InternalsVisibleTo("Abc.Zebus.Integration")]
-[assembly: InternalsVisibleTo("Abc.Zebus.Persistence")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory.Tests")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory.Cassandra.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Tests")]

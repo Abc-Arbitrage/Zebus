@@ -2,7 +2,7 @@
 
 namespace Abc.Zebus.Testing.Extensions
 {
-    public static class ExtendSystemDateTime
+    internal static class ExtendSystemDateTime
     {
         public static DateTime RoundToMillisecond(this DateTime input)
         {

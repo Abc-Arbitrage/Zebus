@@ -4,7 +4,7 @@ using KellermanSoftware.CompareNetObjects.TypeComparers;
 
 namespace Abc.Zebus.Testing.Comparison
 {
-    public static class ComparisonExtensions
+    internal static class ComparisonExtensions
     {
         public static bool DeepCompare<T>(this T firstObj, T secondObj, params string[] elementsToIgnore)
         {

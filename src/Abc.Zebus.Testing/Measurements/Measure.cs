@@ -6,7 +6,7 @@ using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Testing.Measurements
 {
-    public static class Measure
+    internal static class Measure
     {
         private const double _µsInOneSecond = 1000000;
         private static readonly object _lock = new object();

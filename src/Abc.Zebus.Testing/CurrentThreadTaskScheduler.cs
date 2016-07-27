@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Abc.Zebus.Testing
 {
-    public sealed class CurrentThreadTaskScheduler : TaskScheduler
+    internal sealed class CurrentThreadTaskScheduler : TaskScheduler
     {
         /// <summary>Runs the provided Task synchronously on the current thread.</summary>
         /// <param name="task">The task to be executed.</param>

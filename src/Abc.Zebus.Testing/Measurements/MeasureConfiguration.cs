@@ -2,7 +2,7 @@ using System;
 
 namespace Abc.Zebus.Testing.Measurements
 {
-    public class MeasureConfiguration
+    internal class MeasureConfiguration
     {
         public int Iteration { get; set; }
         public int WarmUpIteration { get; set; }

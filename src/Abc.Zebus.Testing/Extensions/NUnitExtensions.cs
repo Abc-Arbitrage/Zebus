@@ -14,10 +14,10 @@ using NUnit.Framework.Constraints;
 
 namespace Abc.Zebus.Testing.Extensions
 {
-    public delegate void MethodThatThrows();
+    internal delegate void MethodThatThrows();
 
     [DebuggerStepThrough]
-    public static class NUnitExtensions
+    internal static class NUnitExtensions
     {
         public static void ShouldBeFalse(this bool condition, string message = null)
         {
