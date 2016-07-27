@@ -208,7 +208,6 @@
     <Compile Include="Persistence\IPersistentTransport.cs" />
     <Compile Include="Transport\ITransport.cs" />
     <Compile Include="Peer.cs" />
-    <Compile Include="Transport\IZmqSocketOptions.cs" />
     <Compile Include="Transport\IZmqTransportConfiguration.cs" />
     <Compile Include="Transport\SendContext.cs" />
     <Compile Include="Transport\ZmqInboundSocket.cs" />

@@ -11,13 +11,13 @@ namespace Abc.Zebus.Transport
         private readonly ZmqContext _context;
         private readonly PeerId _peerId;
         private readonly ZmqEndPoint _originalEndpoint;
-        private readonly IZmqSocketOptions _options;
+        private readonly ZmqSocketOptions _options;
         private readonly string _environment;
         private byte[] _readBuffer = new byte[0];
         private ZmqSocket _socket;
         private ZmqEndPoint _endPoint;
 
-        public ZmqInboundSocket(ZmqContext context, PeerId peerId, ZmqEndPoint originalEndpoint, IZmqSocketOptions options, string environment)
+        public ZmqInboundSocket(ZmqContext context, PeerId peerId, ZmqEndPoint originalEndpoint, ZmqSocketOptions options, string environment)
         {
             _context = context;
             _peerId = peerId;

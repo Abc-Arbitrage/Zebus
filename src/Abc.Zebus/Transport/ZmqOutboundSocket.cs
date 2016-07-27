@@ -9,78 +9,89 @@ namespace Abc.Zebus.Transport
     public class ZmqOutboundSocket
     {
         private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqOutboundSocket));
+        private readonly Stopwatch _closedStateStopwatch = new Stopwatch();
         private readonly ZmqContext _context;
-        private readonly PeerId _peerId;
-        private readonly IZmqSocketOptions _options;
+        private readonly ZmqSocketOptions _options;
         private ZmqSocket _socket;
         private int _failedSendCount;
         private bool _isInClosedState;
-        private Stopwatch _closedStateStopwatch;
-        private bool _isConnected;
+        private TimeSpan _closedStateDuration;
 
-        public ZmqOutboundSocket(ZmqContext context, PeerId peerId, string endPoint, IZmqSocketOptions options)
+        public ZmqOutboundSocket(ZmqContext context, PeerId peerId, string endPoint, ZmqSocketOptions options)
         {
             _context = context;
-            _peerId = peerId;
             _options = options;
+            PeerId = peerId;
             EndPoint = endPoint;
         }
 
+        public PeerId PeerId { get; }
+        public bool IsConnected { get; private set; }
         public string EndPoint { get; private set; }
 
-        public void Connect()
+        public void ConnectFor(TransportMessage message)
         {
-            _socket = _context.CreateSocket(SocketType.PUSH);
-            _socket.SendHighWatermark = _options.SendHighWaterMark;
-            _socket.TcpKeepalive = TcpKeepaliveBehaviour.Enable;
-            _socket.TcpKeepaliveIdle = 30;
-            _socket.TcpKeepaliveIntvl = 3;
-            _socket.SetPeerId(_peerId);
+            if (!CanSendOrConnect(message))
+                return;
 
             try
             {
+                _socket = _context.CreateSocket(SocketType.PUSH);
+                _socket.SendHighWatermark = _options.SendHighWaterMark;
+                _socket.TcpKeepalive = TcpKeepaliveBehaviour.Enable;
+                _socket.TcpKeepaliveIdle = 30;
+                _socket.TcpKeepaliveIntvl = 3;
+                _socket.SetPeerId(PeerId);
+
                 _socket.Connect(EndPoint);
+
+                IsConnected = true;
+
+                _logger.InfoFormat("Socket connected, Peer: {0}, EndPoint: {1}", PeerId, EndPoint);
             }
-            catch
+            catch (Exception ex)
             {
                 _socket.Dispose();
-                throw;
-            }
+                _socket = null;
+                IsConnected = false;
 
-            _logger.InfoFormat("Socket connected, Peer: {0}, EndPoint: {1}", _peerId, EndPoint);
-            _isConnected = true;
+                _logger.ErrorFormat("Unable to connect socket, Peer: {0}, EndPoint: {1}, Exception: {2}", PeerId, EndPoint, ex);
+
+                SwitchToClosedState(_options.ClosedStateDurationAfterConnectFailure);
+            }
         }
 
-        public void Reconnect(string endPoint)
+        public void ReconnectFor(string endPoint, TransportMessage message)
         {
             Disconnect();
             EndPoint = endPoint;
-            Connect();
+            ConnectFor(message);
         }
 
         public void Disconnect()
         {
-            if (!_isConnected)
+            if (!IsConnected)
                 return;
 
-            _socket.Linger = TimeSpan.Zero;
-            _socket.Dispose();
+            try
+            {
+                _socket.Linger = TimeSpan.Zero;
+                _socket.Dispose();
 
-            _logger.InfoFormat("Socket disconnected, Peer: {0}", _peerId);
-            _isConnected = false;
+                _logger.InfoFormat("Socket disconnected, Peer: {0}", PeerId);
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorFormat("Unable to disconnect socket, Peer: {0}, Exception: {1}", PeerId, ex);
+            }
+
+            IsConnected = false;
         }
 
         public void Send(MemoryStream buffer, TransportMessage message)
         {
-            if (_isInClosedState)
-            {
-                if (_closedStateStopwatch.Elapsed < _options.ClosedStateDuration)
-                {
-                    _logger.DebugFormat("Send ignored in closed state, Peer: {0}, MessageTypeId: {1}, MessageId: {2}", _peerId, message.MessageTypeId, message.Id);
-                    return;
-                }
-                SwitchToOpenState();
-            }
+            if (!CanSendOrConnect(message))
+                return;
 
             if (_socket.SendWithTimeout(buffer.GetBuffer(), (int)buffer.Position, _options.SendTimeout) >= 0)
             {
@@ -88,28 +99,43 @@ namespace Abc.Zebus.Transport
                 return;
             }
 
-            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}", _peerId, message.MessageTypeId, message.Id);
+            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}", PeerId, message.MessageTypeId, message.Id);
 
             if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)
-                SwitchToClosedState();
+                SwitchToClosedState(_options.ClosedStateDurationAfterSendFailure);
 
             ++_failedSendCount;
         }
 
-        private void SwitchToClosedState()
+        private bool CanSendOrConnect(TransportMessage message)
         {
-            _logger.InfoFormat("Switching to closed state, Peer: {0}", _peerId);
+            if (_isInClosedState)
+            {
+                if (_closedStateStopwatch.Elapsed < _closedStateDuration)
+                {
+                    _logger.DebugFormat("Send or connect ignored in closed state, Peer: {0}, MessageTypeId: {1}, MessageId: {2}", PeerId, message.MessageTypeId, message.Id);
+                    return false;
+                }
+                SwitchToOpenState();
+            }
+            return true;
+        }
 
-            _closedStateStopwatch = Stopwatch.StartNew();
+        private void SwitchToClosedState(TimeSpan duration)
+        {
+            _logger.InfoFormat("Switching to closed state, Peer: {0}, Duration: {1}", PeerId, duration);
+
+            _closedStateStopwatch.Start();
+            _closedStateDuration = duration;
             _isInClosedState = true;
         }
 
         private void SwitchToOpenState()
         {
-            _logger.InfoFormat("Switching back to open state, Peer: {0}", _peerId);
+            _logger.InfoFormat("Switching back to open state, Peer: {0}", PeerId);
 
             _isInClosedState = false;
-            _closedStateStopwatch = null;
+            _closedStateStopwatch.Reset();
         }
     }
 }

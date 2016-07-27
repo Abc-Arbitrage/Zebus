@@ -15,9 +15,9 @@ namespace Abc.Zebus.Transport
 {
     public class ZmqTransport : ITransport
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqTransport));
         private readonly IZmqTransportConfiguration _configuration;
         private readonly ZmqEndPoint _configuredInboundEndPoint;
+        private ILog _logger = LogManager.GetLogger(typeof(ZmqTransport));
         private ConcurrentDictionary<PeerId, ZmqOutboundSocket> _outboundSockets;
         private BlockingCollection<OutboundSocketAction> _outboundSocketActions;
         private BlockingCollection<PendingDisconnect> _pendingDisconnects;
@@ -58,7 +58,7 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        public ZmqTransport(IZmqTransportConfiguration configuration, IZmqSocketOptions socketOptions)
+        public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions)
         {
             _configuration = configuration;
             _configuredInboundEndPoint = new ZmqEndPoint(configuration.InboundEndPoint);
@@ -77,11 +77,16 @@ namespace Abc.Zebus.Transport
 
         public int PendingSendCount => _outboundSocketActions?.Count ?? 0;
 
-        public IZmqSocketOptions SocketOptions { get; }
+        public ZmqSocketOptions SocketOptions { get; }
 
         public int OutboundSocketCount => _outboundSockets.Count;
 
         public PeerId PeerId { get; private set; }
+
+        public void SetLogId(int logId)
+        {
+            _logger = LogManager.GetLogger(typeof(ZmqTransport).FullName + "#" + logId);
+        }
 
         public void Configure(PeerId peerId, string environment)
         {
@@ -127,14 +132,27 @@ namespace Abc.Zebus.Transport
 
         public void Stop()
         {
+            Stop(false);
+        }
+
+        public void Stop(bool discardPendingMessages)
+        {
             if (!_isRunning)
                 return;
 
             _pendingDisconnects.CompleteAdding();
+
+            if (discardPendingMessages)
+                DiscardItems(_pendingDisconnects);
+
             if (!_disconnectThread.Join(30.Seconds()))
                 _logger.Error("Unable to terminate disconnect thread");
 
             _outboundSocketActions.CompleteAdding();
+
+            if (discardPendingMessages)
+                DiscardItems(_outboundSocketActions);
+
             if (!_outboundThread.Join(30.Seconds()))
                 _logger.Error("Unable to terminate outbound thread");
 
@@ -147,6 +165,14 @@ namespace Abc.Zebus.Transport
 
             _context.Dispose();
             _logger.InfoFormat("{0} Stopped", PeerId);
+        }
+
+        private static void DiscardItems<T>(BlockingCollection<T> collection)
+        {
+            T item;
+            while (collection.TryTake(out item))
+            {
+            }
         }
 
         public void Send(TransportMessage message, IEnumerable<Peer> peers)
@@ -342,14 +368,7 @@ namespace Abc.Zebus.Transport
                 if (!_outboundSockets.TryRemove(peerId, out outboundSocket))
                     continue;
 
-                try
-                {
-                    outboundSocket.Disconnect();
-                }
-                catch (Exception ex)
-                {
-                    _logger.ErrorFormat("Failed to disconnect peer, PeerId: {0}, Exception: {1}", peerId, ex);
-                }
+                outboundSocket.Disconnect();
             }
         }
 
@@ -362,31 +381,34 @@ namespace Abc.Zebus.Transport
 
             foreach (var peer in peers)
             {
+                var outboundSocket = GetConnectedOutboundSocket(peer, transportMessage);
+                if (!outboundSocket.IsConnected)
+                    continue;
+
                 try
                 {
-                    var outboundSocket = GetConnectedOutboundSocket(peer);
                     outboundSocket.Send(outputBuffer, transportMessage);
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorFormat("Failed to send message, PeerId: {0}, Exception: {1}", peer.Id, ex);
+                    _logger.Error($"Failed to send message, PeerId: {peer.Id}, EndPoint: {peer.EndPoint}, Exception: {ex}");
                 }
             }
         }
 
-        private ZmqOutboundSocket GetConnectedOutboundSocket(Peer peer)
+        private ZmqOutboundSocket GetConnectedOutboundSocket(Peer peer, TransportMessage transportMessage)
         {
-            var outboundSocket = _outboundSockets.GetValueOrDefault(peer.Id);
-            if (outboundSocket == null)
+            ZmqOutboundSocket outboundSocket;
+            if (!_outboundSockets.TryGetValue(peer.Id, out outboundSocket))
             {
                 outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, SocketOptions);
-                outboundSocket.Connect();
+                outboundSocket.ConnectFor(transportMessage);
 
                 _outboundSockets.TryAdd(peer.Id, outboundSocket);
             }
             else if (outboundSocket.EndPoint != peer.EndPoint)
             {
-                outboundSocket.Reconnect(peer.EndPoint);
+                outboundSocket.ReconnectFor(peer.EndPoint, transportMessage);
             }
 
             return outboundSocket;
@@ -394,20 +416,22 @@ namespace Abc.Zebus.Transport
 
         private void GracefullyDisconnectOutboundSockets(MemoryStream outputBuffer)
         {
-            _outboundSocketsToStop = new CountdownEvent(_outboundSockets.Count);
+            var connectedOutboundSockets = _outboundSockets.Values.Where(x => x.IsConnected).ToList();
 
-            SendEndOfStreamMessages(outputBuffer);
+            _outboundSocketsToStop = new CountdownEvent(connectedOutboundSockets.Count);
+
+            SendEndOfStreamMessages(connectedOutboundSockets, outputBuffer);
 
             _logger.InfoFormat("Waiting for {0} outbound socket end of stream acks", _outboundSocketsToStop.InitialCount);
             if (!_outboundSocketsToStop.Wait(_configuration.WaitForEndOfStreamAckTimeout))
                 _logger.WarnFormat("{0} peers did not respond to end of stream", _outboundSocketsToStop.CurrentCount);
 
-            DisconnectPeers(_outboundSockets.Keys.ToList());
+            DisconnectPeers(connectedOutboundSockets.Select(x => x.PeerId).ToList());
         }
 
-        private void SendEndOfStreamMessages(MemoryStream outputBuffer)
+        private void SendEndOfStreamMessages(List<ZmqOutboundSocket> connectedOutboundSockets, MemoryStream outputBuffer)
         {
-            foreach (var outboundSocket in _outboundSockets.Values)
+            foreach (var outboundSocket in connectedOutboundSockets)
             {
                 _logger.InfoFormat("Sending EndOfStream to {0}", outboundSocket.EndPoint);
 

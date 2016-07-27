@@ -22,7 +22,6 @@ namespace Abc.Zebus.Initialization
             ForSingletonOf<IDispatcherTaskSchedulerFactory>().Use<DispatcherTaskSchedulerFactory>();
             For<IMessageSerializer>().Use<MessageSerializer>();
 
-            ForSingletonOf<IZmqSocketOptions>().Use<ZmqSocketOptions>();
             ForSingletonOf<IPersistentTransport>().Use<PersistentTransport>().Ctor<ITransport>().Is<ZmqTransport>();
             Forward<IPersistentTransport, ITransport>();
 

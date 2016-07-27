@@ -3,7 +3,7 @@ using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Transport
 {
-    public class ZmqSocketOptions : IZmqSocketOptions
+    public class ZmqSocketOptions
     {
         public ZmqSocketOptions()
         {
@@ -11,7 +11,8 @@ namespace Abc.Zebus.Transport
             SendHighWaterMark = 20000;
             SendTimeout = 100.Milliseconds();
             SendRetriesBeforeSwitchingToClosedState = 2;
-            ClosedStateDuration = 15.Seconds();
+            ClosedStateDurationAfterSendFailure = 15.Seconds();
+            ClosedStateDurationAfterConnectFailure = 2.Minutes();
             ReceiveHighWaterMark = 20000;
         }
 
@@ -19,7 +20,8 @@ namespace Abc.Zebus.Transport
         public int SendHighWaterMark { get; set; }
         public TimeSpan SendTimeout { get; set; }
         public int SendRetriesBeforeSwitchingToClosedState { get; set; }
-        public TimeSpan ClosedStateDuration { get; set; }
+        public TimeSpan ClosedStateDurationAfterSendFailure { get; set; }
+        public TimeSpan ClosedStateDurationAfterConnectFailure { get; set; }
         public int ReceiveHighWaterMark { get; set; }
     }
 }
