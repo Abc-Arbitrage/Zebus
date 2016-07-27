@@ -1,3 +1,10 @@
+## 1.5.0
+### Bug fixes
+ - Use a circuit-breaker to reduce unresolvable peer performance impact
+
+### Code cleanup
+ - Make internal a few testing types that were not intented to be available outside Zebus
+
 ## 1.3.1
 ### Bug fixes
  - Error codes of locally handled commands are returned properly
