@@ -8,6 +8,8 @@ using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
+using Microsoft.VisualBasic;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace Abc.Zebus.Directory.DeadPeerDetection
 {
@@ -86,7 +88,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 return;
             }
 
-            var canPeerBeUnregistered = !descriptor.IsPersistent || descriptor.HasDebuggerAttached;
+            var canPeerBeUnregistered = (!descriptor.IsPersistent || descriptor.HasDebuggerAttached) && IsNotIntheProtectedList(descriptor);
             if (canPeerBeUnregistered)
             {
                 _bus.Send(new UnregisterPeerCommand(descriptor.Peer, timeoutTimestampUtc));
@@ -97,6 +99,12 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 
                 descriptor.Peer.IsResponding = false;
             }
+        }
+
+        private bool IsNotIntheProtectedList(PeerDescriptor descriptor)
+        {
+            var peerId = descriptor.PeerId.ToString();
+            return !_configuration.WildcardsForPeersNotToDecommissionOnTimeout.Any(x => Operators.LikeString(peerId, x, CompareMethod.Text));
         }
 
         private void OnPeerResponding(DeadPeerDetectorEntry entry,DateTime timeoutTimestampUtc)

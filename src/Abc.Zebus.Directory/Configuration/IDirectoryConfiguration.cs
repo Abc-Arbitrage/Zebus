@@ -35,6 +35,11 @@ namespace Abc.Zebus.Directory.Configuration
         string[] BlacklistedMachines { get; }
 
         /// <summary>
+        /// Peers that should not be decommisionned on timeout, whether they are persistent or not
+        /// </summary>
+        string[] WildcardsForPeersNotToDecommissionOnTimeout { get; }
+
+        /// <summary>
         /// USE WITH CAUTION
         /// This feature prevents the Peers from subscribing dynamically (https://github.com/Abc-Arbitrage/Zebus/wiki/Routing)
         /// to the events published by the Directory server.
