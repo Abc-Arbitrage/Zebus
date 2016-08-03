@@ -227,7 +227,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         };
 
         [Test]
-        [TestCaseSource(nameof(_peersNotToDecommissionExamples))]
+        [TestCaseSource("_peersNotToDecommissionExamples")]
         public void should_mark_as_not_responding_if_a_transient_peer_in_the_whitelist_does_not_respond_in_time(string peerNotToDecommission)
         {
             _peersNotToDecommission = new[] { peerNotToDecommission };
