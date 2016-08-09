@@ -73,8 +73,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Abc.Zebus">
-      <HintPath>..\..\lib\packages\Zebus.1.4.5\lib\net45\Abc.Zebus.dll</HintPath>
+    <Reference Include="Abc.Zebus, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\packages\Zebus.1.5.0\lib\net45\Abc.Zebus.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="log4net">
