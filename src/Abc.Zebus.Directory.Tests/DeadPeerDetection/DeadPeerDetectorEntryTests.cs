@@ -108,8 +108,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 peerRespondingCount++;
             };
 
-            var ackTask1 = Task.Run(() => _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, null)), pingTimestampUtc));
-            var ackTask2 = Task.Run(() => _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, null)), pingTimestampUtc));
+            var ackTask1 = Task.Run(() => _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, string.Empty, null)), pingTimestampUtc));
+            var ackTask2 = Task.Run(() => _entry.OnPingCommandAck(Task.FromResult(new CommandResult(0, string.Empty, null)), pingTimestampUtc));
 
             Thread.Sleep(10);
             manualResetEvent.Set();

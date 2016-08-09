@@ -541,7 +541,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 try
                 {
                     var result = handler != null ? handler(command) : null;
-                    taskCompletionSource.SetResult(new CommandResult(0, result));
+                    taskCompletionSource.SetResult(new CommandResult(0, string.Empty, result));
                 }
                 catch (Exception)
                 {
