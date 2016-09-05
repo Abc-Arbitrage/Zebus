@@ -6,6 +6,19 @@ namespace Abc.Zebus.EventSourcing
     [DataContract]
     public class DomainEventSourcing
     {
+        public DomainEventSourcing()
+        {
+        }
+
+        public DomainEventSourcing(Guid eventId, Guid aggregateId, DateTime dateTime, int version, string userId)
+        {
+            EventId = eventId;
+            AggregateId = aggregateId;
+            DateTime = dateTime;
+            Version = version;
+            UserId = userId;
+        }
+
         [DataMember(Order = 1)]
         public Guid EventId { get; internal set; }
         [DataMember(Order = 2)]
