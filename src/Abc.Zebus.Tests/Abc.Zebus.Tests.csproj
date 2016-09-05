@@ -90,13 +90,14 @@
     <Compile Include="Core\BusPerformanceTests.cs" />
     <Compile Include="Core\BusTests.cs" />
     <Compile Include="Core\BusTests.Send.cs" />
-    <Compile Include="Core\BusTests.MessageExecutionCompleted.cs" />
-    <Compile Include="Core\BusTests.MessageProcessingFailed.cs" />
+    <Compile Include="Core\BusTests.CompletionMessages.cs" />
+    <Compile Include="Core\BusTests.DispatchErrors.cs" />
     <Compile Include="Core\BusTests.Reply.cs" />
     <Compile Include="Core\BusTests.Dispatch.cs" />
     <Compile Include="Core\BusTests.Publish.cs" />
     <Compile Include="Core\BusTests.Subscribe.cs" />
     <Compile Include="Core\BusTests.DeserializationErrors.cs" />
+    <Compile Include="Core\BusTests.Core.cs" />
     <Compile Include="Core\MessageContextAwareBusTests.cs" />
     <Compile Include="Core\RoundRobinPeerSelectorTests.cs" />
     <Compile Include="Directory\PeerDirectoryClientTests.Performance.cs" />
