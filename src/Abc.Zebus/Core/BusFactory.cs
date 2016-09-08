@@ -35,7 +35,7 @@ namespace Abc.Zebus.Core
             Container = container;
         }
 
-        public IContainer Container { get; private set; }
+        public IContainer Container { get; }
         public bool EnableTimeoutCommandDispatch { get; set; }
 
         public BusFactory WithConfiguration(string directoryEndPoints, string environment)
@@ -135,11 +135,12 @@ namespace Abc.Zebus.Core
                 RegistrationTimeout = 10.Second();
             }
 
-            public string[] DirectoryServiceEndPoints { get; set; }
-            public TimeSpan RegistrationTimeout { get; set; }
-            public TimeSpan StartReplayTimeout { get; set; }
-            public bool IsPersistent { get; set; }
-            public bool IsDirectoryPickedRandomly { get; set; }
+            public string[] DirectoryServiceEndPoints { get; }
+            public TimeSpan RegistrationTimeout { get; }
+            public TimeSpan StartReplayTimeout => 30.Seconds();
+            public bool IsPersistent => false;
+            public bool IsDirectoryPickedRandomly => false;
+            public bool IsErrorPublicationEnabled => false;
         }
 
         private class ZmqTransportConfiguration : IZmqTransportConfiguration
@@ -151,7 +152,6 @@ namespace Abc.Zebus.Core
             }
 
             public string InboundEndPoint { get; set; }
-
             public TimeSpan WaitForEndOfStreamAckTimeout { get; set; }
         }
 
@@ -160,7 +160,6 @@ namespace Abc.Zebus.Core
             _transportConfiguration.InboundEndPoint = endpoint;
             return this;
         }
-
 
         public BusFactory WithWaitForEndOfStreamAckTimeout(TimeSpan timeout)
         {

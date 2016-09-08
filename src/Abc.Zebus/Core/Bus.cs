@@ -31,9 +31,10 @@ namespace Abc.Zebus.Core
         private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly IStoppingStrategy _stoppingStrategy;
         private readonly IBindingKeyPredicateBuilder _predicateBuilder;
+        private readonly IBusConfiguration _configuration;
         private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
 
-        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder)
+        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
         {
             _transport = transport;
             _transport.MessageReceived += OnTransportMessageReceived;
@@ -44,6 +45,7 @@ namespace Abc.Zebus.Core
             _messageSendingStrategy = messageSendingStrategy;
             _stoppingStrategy = stoppingStrategy;
             _predicateBuilder = predicateBuilder;
+            _configuration = configuration;
         }
 
         public event Action Starting = delegate { };
@@ -55,6 +57,7 @@ namespace Abc.Zebus.Core
         public string Environment { get; private set; }
         public bool IsRunning { get; private set; }
         public string EndPoint => _transport.InboundEndPoint;
+        public string DeserializationFailureDumpDirectoryPath { get; set; } = PathUtil.InBaseDirectory("deserialization_failure_dumps");
 
         public void Configure(PeerId peerId, string environment)
         {
@@ -430,7 +433,7 @@ namespace Abc.Zebus.Core
 
         private void SendMessageProcessingFailedIfNeeded(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage failingTransportMessage = null)
         {
-            if (dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is DomainException))
+            if (!_configuration.IsErrorPublicationEnabled || !IsRunning || dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is DomainException))
                 return;
 
             if (failingTransportMessage == null)
@@ -570,7 +573,7 @@ namespace Abc.Zebus.Core
             var errorMessage = $"Unable to deserialize message {messageTypeId.FullName}. Originator: {originator.SenderId}. Message dumped at: {dumpLocation}\r\n{exception}";
             _logger.Error(errorMessage);
 
-            if (!IsRunning)
+            if (!_configuration.IsErrorPublicationEnabled || !IsRunning)
                 return;
 
             var processingFailed = new MessageProcessingFailed(transportMessage, String.Empty, errorMessage, SystemDateTime.UtcNow, null);
@@ -581,12 +584,11 @@ namespace Abc.Zebus.Core
         {
             try
             {
-                var dumpDirectory = PathUtil.InBaseDirectory("deserialization_failure_dumps");
-                if (!System.IO.Directory.Exists(dumpDirectory))
-                    System.IO.Directory.CreateDirectory(dumpDirectory);
+                if (!System.IO.Directory.Exists(DeserializationFailureDumpDirectoryPath))
+                    System.IO.Directory.CreateDirectory(DeserializationFailureDumpDirectoryPath);
 
                 var dumpFileName = $"{_deserializationFailureTimestampProvider.NextUtcTimestamp():yyyyMMdd-HH-mm-ss.fffffff}_{messageTypeId.FullName}";
-                var dumpFilePath = Path.Combine(dumpDirectory, dumpFileName);
+                var dumpFilePath = Path.Combine(DeserializationFailureDumpDirectoryPath, dumpFileName);
                 File.WriteAllBytes(dumpFilePath, messageBytes);
                 return dumpFilePath;
             }

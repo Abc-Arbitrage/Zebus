@@ -1,4 +1,5 @@
 ﻿using System;
+using Abc.Zebus.Lotus;
 
 namespace Abc.Zebus
 {
@@ -33,5 +34,10 @@ namespace Abc.Zebus
         /// to a random Directory when needed
         /// </summary>
         bool IsDirectoryPickedRandomly { get; }
+
+        /// <summary>
+        ///  Indicates whether <see cref="MessageProcessingFailed"/> should be published on handler errors.
+        /// </summary>
+        bool IsErrorPublicationEnabled { get; }
     }
 }
