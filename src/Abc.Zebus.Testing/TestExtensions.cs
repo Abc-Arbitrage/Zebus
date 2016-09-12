@@ -7,7 +7,6 @@ using Abc.Zebus.Dispatch;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Directory;
-using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Transport;
@@ -100,6 +99,11 @@ namespace Abc.Zebus.Testing
         public static IMessageHandlerInvocation ToInvocation(this IMessage message)
         {
             return ToInvocation(message, MessageContext.CreateTest("u.name"));
+        }
+
+        public static IEnumerable<Subscription> OfMessageType<T>(this IEnumerable<Subscription> subscriptions) where T : IMessage
+        {
+            return subscriptions.Where(x => x.MessageTypeId == MessageUtil.TypeId<T>());
         }
     }
 }
