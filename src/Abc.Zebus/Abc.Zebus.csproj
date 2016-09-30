@@ -238,7 +238,6 @@
     <Compile Include="Util\PathUtil.cs" />
     <Compile Include="Util\SystemDateTime.cs" />
     <Compile Include="Util\TcpUtil.cs" />
-    <Compile Include="Util\CustomThreadPoolTaskScheduler.cs" />
     <Compile Include="Util\TaskUtil.cs" />
     <Compile Include="Util\TypeUtil.cs" />
     <Compile Include="Util\UniqueTimestampProvider.cs" />

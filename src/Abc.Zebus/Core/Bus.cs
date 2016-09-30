@@ -32,7 +32,6 @@ namespace Abc.Zebus.Core
         private readonly IStoppingStrategy _stoppingStrategy;
         private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private readonly IBusConfiguration _configuration;
-        private CustomThreadPoolTaskScheduler _completionResultTaskScheduler;
 
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
         {
@@ -76,7 +75,6 @@ namespace Abc.Zebus.Core
             var registered = false;
             try
             {
-                _completionResultTaskScheduler = new CustomThreadPoolTaskScheduler(4);
                 _logger.DebugFormat("Loading invokers...");
                 _messageDispatcher.LoadMessageHandlerInvokers();
 
@@ -150,7 +148,6 @@ namespace Abc.Zebus.Core
 
             _subscriptions.Clear();
             _messageIdToTaskCompletionSources.Clear();
-            _completionResultTaskScheduler.Dispose();
         }
 
         public void Publish(IEvent message)
@@ -477,8 +474,7 @@ namespace Abc.Zebus.Core
             var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId, message.Payload, transportMessage) : null;
             var commandResult = new CommandResult(message.ErrorCode, message.ResponseMessage, response);
 
-            var task = new Task(() => taskCompletionSource.SetResult(commandResult));
-            task.Start(_completionResultTaskScheduler);
+            Task.Run(() => taskCompletionSource.SetResult(commandResult));
         }
 
         protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
