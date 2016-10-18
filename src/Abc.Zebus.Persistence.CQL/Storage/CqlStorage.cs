@@ -72,6 +72,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                 var insertTask = _parallelPersistor.Insert(_preparedStatement.Bind(matcherEntry.PeerId.ToString(),
                                                                                BucketIdHelper.GetBucketId(messageDateTime),
                                                                                messageDateTime.Ticks,
+                                                                               matcherEntry.MessageId.Value,
                                                                                matcherEntry.IsAck,
                                                                                matcherEntry.MessageBytes,
                                                                                (int)PersistentMessagesTimeToLive.TotalSeconds,

@@ -58,7 +58,6 @@ namespace Abc.Zebus.Persistence.CQL.Util
                         }
                         catch (InvalidOperationException) // thrown by BufferBlock when stopping
                         {
-                            _log.Info("Received stop signal");
                             break;
                         }
                         catch (Exception ex)

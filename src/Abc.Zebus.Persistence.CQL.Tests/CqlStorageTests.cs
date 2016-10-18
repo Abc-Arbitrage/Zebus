@@ -84,6 +84,27 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             writeTimeRow.GetValue<long>(0).ShouldEqual(ToUnixMicroSeconds(messageId.GetDateTime()));
         }
 
+        [Test]
+        public void should_not_overwrite_messages_with_same_time_component_and_different_message_id()
+        {
+            var messageBytes = new byte[512];
+            new Random().NextBytes(messageBytes);
+            var messageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9706-ae1ea5dcf365"));      // Time component @2016-01-01 00:00:00Z
+            var otherMessageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9806-f1ef55aac8e9")); // Time component @2016-01-01 00:00:00Z
+            var peerId = "Abc.Peer.0";
+
+            _storage.Write(new List<MatcherEntry>
+            {
+                MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes),
+                MatcherEntry.Message(new PeerId(peerId), otherMessageId, MessageTypeId.PersistenceStopping, messageBytes),
+            });
+
+            WaitUntilAMessageIsWrittenToStorage();
+
+            var retrievedMessages = DataContext.PersistentMessages.Execute().ToList();
+            retrievedMessages.Count.ShouldEqual(2);
+        }
+
         private long ToUnixMicroSeconds(DateTime timestamp)
         {
             var origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
@@ -162,7 +183,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
         private void WaitUntilAMessageIsWrittenToStorage(TimeSpan? timeout = null)
         {
-            Wait.Until(() => DataContext.PersistentMessages.Execute().Count() <= 1, timeout ?? 2.Seconds());
+            Wait.Until(() => DataContext.PersistentMessages.Execute().Any(), timeout ?? 2.Seconds());
         }
 
         private long GetBucketIdFromMessageId(MessageId message)
@@ -200,6 +221,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                     BucketId = BucketIdHelper.GetBucketId(firstTime),
                     PeerId = peerId.ToString(),
                     IsAcked = false,
+                    MessageId = firstMessageId.Value,
                     TransportMessage = new byte[] { 0x01, 0x02, 0x03 },
                     UniqueTimestampInTicks = firstTime.Ticks
                 });
@@ -208,6 +230,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                     BucketId = BucketIdHelper.GetBucketId(secondTime),
                     PeerId = peerId.ToString(),
                     IsAcked = false,
+                    MessageId = secondMessageId.Value,
                     TransportMessage = new byte[] { 0x04, 0x05, 0x06 },
                     UniqueTimestampInTicks = secondTime.Ticks
                 });

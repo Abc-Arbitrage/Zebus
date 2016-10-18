@@ -1,4 +1,5 @@
-﻿using Cassandra.Mapping.Attributes;
+﻿using System;
+using Cassandra.Mapping.Attributes;
 
 namespace Abc.Zebus.Persistence.CQL.Data
 {
@@ -13,9 +14,13 @@ namespace Abc.Zebus.Persistence.CQL.Data
         [Column("BucketId")]
         public long BucketId { get; set; }
 
-        [ClusteringKey]
+        [ClusteringKey(0)]
         [Column("UniqueTimestampInTicks")]
         public long UniqueTimestampInTicks { get; set; }
+
+        [ClusteringKey(1)]
+        [Column("MessageId")]
+        public Guid MessageId { get; set; }
 
         [Column("IsAcked")]
         public bool IsAcked { get; set; }
