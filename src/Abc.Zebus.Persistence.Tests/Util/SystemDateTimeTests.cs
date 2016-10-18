@@ -51,7 +51,7 @@ namespace Abc.Zebus.Persistence.Tests.Util
         {
             using (SystemDateTime.PauseTime())
             {
-                var now = SystemDateTime.UtcNow;
+                var now = SystemDateTime.UtcNow.ToLocalTime();
                 Thread.Sleep(50.Milliseconds());
                 SystemDateTime.Reset();
                 Thread.Sleep(50.Milliseconds());
@@ -94,7 +94,7 @@ namespace Abc.Zebus.Persistence.Tests.Util
             {
                 SystemDateTime.Now.ShouldEqual(fakeUtcNow.ToLocalTime());
                 SystemDateTime.UtcNow.ShouldEqual(fakeUtcNow);
-                SystemDateTime.Today.ShouldEqual(fakeUtcNow.Date);
+                SystemDateTime.Today.ShouldEqual(fakeUtcNow.ToLocalTime().Date);
             }
         }
 
