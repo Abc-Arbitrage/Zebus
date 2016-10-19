@@ -51,13 +51,13 @@ namespace Abc.Zebus.Persistence.Tests.Util
         {
             using (SystemDateTime.PauseTime())
             {
-                var now = SystemDateTime.UtcNow.ToLocalTime();
+                var now = SystemDateTime.UtcNow;
                 Thread.Sleep(50.Milliseconds());
                 SystemDateTime.Reset();
                 Thread.Sleep(50.Milliseconds());
 
                 SystemDateTime.UtcNow.ShouldBeGreaterThan(now);
-                SystemDateTime.Now.ShouldBeGreaterThan(now);
+                SystemDateTime.Now.ShouldBeGreaterThan(now.ToLocalTime());
             }
         }
 
