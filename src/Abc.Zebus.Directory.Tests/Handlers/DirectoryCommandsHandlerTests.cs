@@ -126,7 +126,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
 
             var exception = typeof(InvalidOperationException).ShouldBeThrownBy(() => _handler.Handle(registerCommand));
 
-            exception.Message.ShouldEqual("Peer BLACKLISTEDMACHINE is not allowed to register on this directory");
+            exception.Message.ShouldEqual("Peer Abc.Testing.0 on host BLACKLISTEDMACHINE is not allowed to register on this directory");
         }
 
         [Test]
