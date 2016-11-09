@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("ABC arbitrage Asset Management")]
 [assembly: AssemblyProduct("Abc.Zebus.Tests.TestExe")]
-[assembly: AssemblyCopyright("Copyright © ABC arbitrage Asset Management 2015")]
+[assembly: AssemblyCopyright("Copyright © ABC arbitrage Asset Management 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
