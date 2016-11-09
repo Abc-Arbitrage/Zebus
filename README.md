@@ -37,6 +37,7 @@ The piece of code that is the point of entry to use Zebus, the methods that you 
 On startup, the bus will scan your assemblies for message handlers and notify the other peers that you are interested by those messages. When a peer publishes a message, it will use the Directory to know who handles it and send the message directly to the correct recipients.
 
 ### Receiver
+
 ```csharp
 public class MyHandler : IMessageHandler<MyEvent>
 {
@@ -48,13 +49,16 @@ public class MyHandler : IMessageHandler<MyEvent>
 ```
 
 ### Sender
+
 ```csharp
 public void MethodThatSends(IBus bus)
 {
     bus.Publish(new MyEvent { Value = 42 });
 }
 ```
+
 ### Event description
+
 ```csharp
 [ProtoContract]
 public class MyEvent : IEvent
@@ -63,9 +67,15 @@ public class MyEvent : IEvent
     public int Value { get; set; }
 }
 ```
+
 And you're set ! This is all the code you need to send an event from one machine to the other. If you want to read more about how the magic happens, have a look at the [wiki](https://github.com/Abc-Arbitrage/Zebus/wiki). Or if you want a more detailed walkthrough (what to reference, how to start the Bus...) visit the [Quick start](https://github.com/Abc-Arbitrage/Zebus/wiki/Quick-start) page.
 
+# Requirements
+
+On Windows, you will need to have [Microsoft Visual C++ 2015 Redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=53587) installed in order to load the x86 or the x64 version of `libzmq` embedded in the project.
+
 # Release notes
+
 We try to stick to the [semantic versioning](http://semver.org/) principles and keep the [release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES.md) up to date.
 
 # Copyright
