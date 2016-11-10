@@ -251,7 +251,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Transport\libzmq-4.0.8-v140-mt" />
+    <None Include="Transport\libzmq-4.0.5-v140-mt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Transport\libzmq-x64-0.0.0.0.pdb" />
