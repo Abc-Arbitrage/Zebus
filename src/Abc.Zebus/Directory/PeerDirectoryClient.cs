@@ -157,13 +157,21 @@ namespace Abc.Zebus.Directory
         // Only internal for testing purposes
         internal IEnumerable<Peer> GetDirectoryPeers()
         {
-            _directoryPeers = _configuration.DirectoryServiceEndPoints.Select(CreateDirectoryPeer);
+            var directoryPeerIdPrefix = EnsureTrailingDot(_configuration.DirectoryServicePeerIdPrefix);
+            _directoryPeers = _configuration.DirectoryServiceEndPoints.Select( (endpoint, index) => CreateDirectoryPeer(directoryPeerIdPrefix, endpoint, index));
             return _configuration.IsDirectoryPickedRandomly ? _directoryPeers.Shuffle() : _directoryPeers;
         }
 
-        private static Peer CreateDirectoryPeer(string endPoint, int index)
+        private string EnsureTrailingDot(string directoryServicePeerIdPrefix)
         {
-            var peerId = new PeerId("Abc.Zebus.DirectoryService." + index);
+            return directoryServicePeerIdPrefix.EndsWith(".")
+                ? directoryServicePeerIdPrefix
+                : directoryServicePeerIdPrefix + ".";
+        }
+
+        private static Peer CreateDirectoryPeer(string directoryPeerIdPrefix, string endPoint, int index)
+        {
+            var peerId = new PeerId(directoryPeerIdPrefix + index);
             return new Peer(peerId, endPoint);
         }
 

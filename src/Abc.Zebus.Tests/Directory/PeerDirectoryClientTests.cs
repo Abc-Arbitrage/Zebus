@@ -31,6 +31,7 @@ namespace Abc.Zebus.Tests.Directory
         public void Setup()
         {
             _configurationMock = new Mock<IBusConfiguration>();
+            _configurationMock.SetupGet(x => x.DirectoryServicePeerIdPrefix).Returns("The.Directory");
             _configurationMock.SetupGet(x => x.DirectoryServiceEndPoints).Returns(new[] { "tcp://main-directory:777", "tcp://backup-directory:777" });
             _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(200.Milliseconds());
             _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(false);
@@ -53,7 +54,7 @@ namespace Abc.Zebus.Tests.Directory
             {
                 _directory.Register(_bus, _self, subscriptions);
 
-                var expectedRecipientId = new PeerId("Abc.Zebus.DirectoryService.0");
+                var expectedRecipientId = new PeerId("The.Directory.0");
                 _bus.Commands.Count().ShouldEqual(1);
 
                 var register = _bus.Commands.OfType<RegisterPeerCommand>().ExpectedSingle();
@@ -439,12 +440,12 @@ namespace Abc.Zebus.Tests.Directory
         public void should_connect_to_next_directory_if_first_is_failing()
         {
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
-            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.0"), x =>
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("The.Directory.0"), x =>
             {
                 Thread.Sleep(1.Second());
                 return new RegisterPeerResponse(new PeerDescriptor[0]);
             });
-            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x =>
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("The.Directory.1"), x =>
             {
                 return new RegisterPeerResponse(new PeerDescriptor[0]);
             });
@@ -454,8 +455,8 @@ namespace Abc.Zebus.Tests.Directory
 
             var contactedPeers = _bus.GetContactedPeerIds().ToList();
             contactedPeers.Count.ShouldEqual(2);
-            contactedPeers.ShouldContain(new PeerId("Abc.Zebus.DirectoryService.0"));
-            contactedPeers.ShouldContain(new PeerId("Abc.Zebus.DirectoryService.1"));
+            contactedPeers.ShouldContain(new PeerId("The.Directory.0"));
+            contactedPeers.ShouldContain(new PeerId("The.Directory.1"));
         }
 
         [Test]

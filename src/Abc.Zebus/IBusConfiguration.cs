@@ -6,6 +6,12 @@ namespace Abc.Zebus
     public interface IBusConfiguration
     {
         /// <summary>
+        /// Prefix used to create directories peer ids.
+        /// Expected to be something like "Some.Peer." or "Some.Peer".
+        /// </summary>
+        string DirectoryServicePeerIdPrefix { get; }
+
+        /// <summary>
         /// The list of directories that can be used by the Bus to register.
         /// The syntax is "tcp://hostname:port"
         /// </summary>
