@@ -85,8 +85,13 @@ namespace Abc.Zebus.Directory
         private void TryRegisterOnDirectory(IBus bus, PeerDescriptor selfDescriptor)
         {
             var directoryPeers = GetDirectoryPeers().ToList();
-            if (!directoryPeers.Any(peer => TryRegisterOnDirectory(bus, selfDescriptor, peer)))
-                throw new TimeoutException($"Unable to register peer on directory (tried: {string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"))})");
+            if (directoryPeers.Any(peer => TryRegisterOnDirectory(bus, selfDescriptor, peer)))
+                return;
+
+            var directoryPeersText = string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"));
+            var message = $"Unable to register peer on directory (tried: {directoryPeersText}) after {_configuration.RegistrationTimeout}";
+            _logger.Error(message);
+            throw new TimeoutException(message);
         }
 
         private bool TryRegisterOnDirectory(IBus bus, PeerDescriptor self, Peer directoryPeer)
