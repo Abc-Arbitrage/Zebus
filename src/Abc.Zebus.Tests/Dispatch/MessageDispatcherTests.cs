@@ -38,10 +38,10 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _invocation = null;
             _pipeManagerMock = new Mock<IPipeManager>();
-            _pipeManagerMock.Setup(x => x.BuildPipeInvocation(It.IsAny<IMessageHandlerInvoker>(), It.IsAny<IMessage>(), It.IsAny<MessageContext>()))
-                            .Returns<IMessageHandlerInvoker, IMessage, MessageContext>((invoker, message, messageContext) =>
+            _pipeManagerMock.Setup(x => x.BuildPipeInvocation(It.IsAny<IMessageHandlerInvoker>(), It.IsAny<List<IMessage>>(), It.IsAny<MessageContext>()))
+                            .Returns<IMessageHandlerInvoker, List<IMessage>, MessageContext>((invoker, messages, messageContext) =>
                             {
-                                _invocation = new TestPipeInvocation(message, messageContext, invoker);
+                                _invocation = new TestPipeInvocation(messages, messageContext, invoker);
                                 return _invocation;
                             });
 

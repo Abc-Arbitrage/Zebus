@@ -149,7 +149,6 @@ namespace Abc.Zebus.Dispatch
 
                 _invokers[newEventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
             }
-            
         }
 
         public void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker)
@@ -198,9 +197,8 @@ namespace Abc.Zebus.Dispatch
 
         private void Dispatch(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
-
             var context = dispatch.Context.WithDispatchQueueName(invoker.DispatchQueueName);
-            var invocation = _pipeManager.BuildPipeInvocation(invoker, dispatch.Message, context);
+            var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { dispatch.Message }, context);
 
             var isInSameDispatchQueue = ShouldRunInCurrentDispatchQueue(invoker.DispatchQueueName, dispatch.Context.DispatchQueueName);
 

@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             _message = new FakeCommand(123);
             _messageContext = MessageContext.CreateTest("u.name");
             _pipes = new List<IPipe>();
-            _invocation = new PipeInvocation(_invoker, _message, _messageContext, _pipes);
+            _invocation = new PipeInvocation(_invoker, new List<IMessage> { _message }, _messageContext, _pipes);
             _handlerInvocation = _invocation;
         }
 

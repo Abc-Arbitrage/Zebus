@@ -29,7 +29,7 @@ namespace Abc.Zebus.Dispatch
         {
             using (invocation.SetupForInvocation())
             {
-                _handler(invocation.Message);
+                _handler(invocation.Messages[0]);
             }
         }
 

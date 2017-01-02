@@ -42,10 +42,10 @@ namespace Abc.Zebus.Dispatch.Pipes
                 pipeListEntry.ReloadEnabledPipes();
         }
 
-        public PipeInvocation BuildPipeInvocation(IMessageHandlerInvoker messageHandlerInvoker, IMessage message, MessageContext messageContext)
+        public PipeInvocation BuildPipeInvocation(IMessageHandlerInvoker messageHandlerInvoker, List<IMessage> messages, MessageContext messageContext)
         {
             var pipes = GetEnabledPipes(messageHandlerInvoker.MessageHandlerType);
-            return new PipeInvocation(messageHandlerInvoker, message, messageContext, pipes);
+            return new PipeInvocation(messageHandlerInvoker, messages, messageContext, pipes);
         }
 
         public IEnumerable<IPipe> GetEnabledPipes(Type messageHandlerType)

@@ -29,7 +29,7 @@ namespace Abc.Zebus.Dispatch
             var handler = CreateHandler(invocation.Context);
             using (invocation.SetupForInvocation(handler))
             {
-                _handleAction(handler, invocation.Message);
+                _handleAction(handler, invocation.Messages[0]);
             }
         }
 

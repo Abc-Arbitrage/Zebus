@@ -36,13 +36,11 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_instanciate_new_message_context_aware_bus_for_every_handler_without_race_conditions()
         {
-            var busMock = new Mock<IBus>();
-
             var handlerData = new TestAsyncHandlerHelper();
 
             var container = new Container(x =>
             {
-                x.ForSingletonOf<IBus>().Use(busMock.Object);
+                x.ForSingletonOf<IBus>().Use(new TestBus());
                 x.ForSingletonOf<TestAsyncHandlerHelper>().Use(handlerData);
             });
 

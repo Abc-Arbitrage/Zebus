@@ -24,7 +24,7 @@ namespace Abc.Zebus.Dispatch
         {
             using (invocation.SetupForInvocation())
             {
-                _handler((T)invocation.Message);
+                _handler((T)invocation.Messages[0]);
             }
         }
     }

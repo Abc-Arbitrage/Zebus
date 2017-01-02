@@ -8,13 +8,19 @@ namespace Abc.Zebus.Testing.Dispatch
 {
     public class TestPipeInvocation : PipeInvocation
     {
-        public TestPipeInvocation(IMessage message, Type handlerType, Exception exception = null) : base(new TestMessageHandlerInvoker(handlerType, message.GetType()), message, MessageContext.CreateTest("u.name"), new List<IPipe>())
+        public TestPipeInvocation(IMessage message, Type handlerType, Exception exception = null)
+            : base(new TestMessageHandlerInvoker(handlerType, message.GetType()), new List<IMessage> { message }, MessageContext.CreateTest("u.name"), new List<IPipe>())
         {
             AddExceptionCallback(exception);
         }
 
         public TestPipeInvocation(IMessage message, MessageContext messageContext, IMessageHandlerInvoker invoker)
-            : base(invoker, message, messageContext, new List<IPipe>())
+            : base(invoker, new List<IMessage> { message }, messageContext, new List<IPipe>())
+        {
+        }
+
+        public TestPipeInvocation(List<IMessage> messages, MessageContext messageContext, IMessageHandlerInvoker invoker)
+            : base(invoker, messages, messageContext, new List<IPipe>())
         {
         }
 

@@ -47,7 +47,6 @@ namespace Abc.Zebus.Dispatch
             throw new NotSupportedException("The FlushableBlockingCollection doesn't allow peeking");
         }
 
-
         protected override void QueueTask(Task task)
         {
             _tasks.Add(task);

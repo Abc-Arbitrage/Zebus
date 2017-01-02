@@ -12,6 +12,7 @@ namespace Abc.Zebus.Dispatch
         bool ShouldCreateStartedTasks { get; }
         string DispatchQueueName { get; }
         bool CanInvokeSynchronously { get; }
+        int BatchSize { get; }
 
         void InvokeMessageHandler(IMessageHandlerInvocation invocation);
         Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation);

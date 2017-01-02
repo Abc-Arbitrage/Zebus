@@ -106,9 +106,13 @@
     <Compile Include="Dispatch\IMessageHandlerInvocation.cs" />
     <Compile Include="BusExtensions.cs" />
     <Compile Include="ErrorStatus.cs" />
+    <Compile Include="Dispatch\BatchedMessageHandlerInvoker.cs" />
     <Compile Include="Hosting\HostInitializer.cs" />
     <Compile Include="Hosting\HostInitializerHelper.cs" />
     <Compile Include="Hosting\PeriodicActionHostInitializer.cs" />
+    <Compile Include="IBatchMessageHandler.cs" />
+    <Compile Include="ICommandHandler`1.cs" />
+    <Compile Include="IMessageHandler`1.cs" />
     <Compile Include="IMultiEventHandler.cs" />
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />

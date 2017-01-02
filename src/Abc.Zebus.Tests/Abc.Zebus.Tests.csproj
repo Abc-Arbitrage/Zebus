@@ -104,6 +104,7 @@
     <Compile Include="Directory\PeerSubscriptionList.cs" />
     <Compile Include="Directory\PeerSubscriptionTreeTests.Performance.cs" />
     <Compile Include="Dispatch\AsyncMessageHandlerInvokerTests.cs" />
+    <Compile Include="Dispatch\BatchedMessageHandlerInvokerTests.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommandHandler.cs" />
