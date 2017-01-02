@@ -20,7 +20,6 @@ namespace Abc.Zebus
         public virtual IMessage ReplyResponse { get; internal set; }
         public virtual MessageId MessageId { get; private set; }
         public virtual OriginatorInfo Originator { get; private set; }
-        public string DispatchQueueName { get; private set; }
 
         public PeerId SenderId => Originator.SenderId;
         public string SenderEndPoint => Originator.SenderEndPoint;
@@ -29,11 +28,6 @@ namespace Abc.Zebus
         public Peer GetSender()
         {
             return new Peer(SenderId, SenderEndPoint);
-        }
-
-        public MessageContext WithDispatchQueueName(string dispatchQueueName)
-        {
-            return new MessageContextWithDispatchQueueName(this, dispatchQueueName);
         }
 
         public static MessageContext Current => _current;
@@ -79,7 +73,6 @@ namespace Abc.Zebus
 
         public static MessageContext CreateOverride(PeerId peerId, string peerEndPoint)
         {
-            var currentContext = Current;
             var initiatorUserName = GetInitiatorUserName();
 
             var originator = new OriginatorInfo(peerId, peerEndPoint, CurrentMachineName, initiatorUserName);
@@ -88,7 +81,6 @@ namespace Abc.Zebus
             {
                 MessageId = MessageId.NextId(),
                 Originator = originator,
-                DispatchQueueName = currentContext?.DispatchQueueName,
             };
         }
 
@@ -118,38 +110,6 @@ namespace Abc.Zebus
                 return ErrorStatus.NoError;
 
             return new ErrorStatus(ReplyCode, ReplyMessage);
-        }
-
-        private class MessageContextWithDispatchQueueName : MessageContext
-        {
-            private readonly MessageContext _context;
-
-            public MessageContextWithDispatchQueueName(MessageContext context, string dispatchQueueName)
-            {
-                _context = context;
-                DispatchQueueName = dispatchQueueName;
-            }
-
-            public override MessageId MessageId => _context.MessageId;
-            public override OriginatorInfo Originator => _context.Originator;
-
-            public override int ReplyCode
-            {
-                get { return _context.ReplyCode; }
-                internal set { _context.ReplyCode = value; }
-            }
-
-            public override string ReplyMessage
-            {
-                get { return _context.ReplyMessage; }
-                internal set { _context.ReplyMessage = value; }
-            }
-
-            public override IMessage ReplyResponse
-            {
-                get { return _context.ReplyResponse; }
-                internal set { _context.ReplyResponse = value; }
-            }
         }
     }
 }

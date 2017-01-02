@@ -33,7 +33,7 @@ namespace Abc.Zebus.Tests.Dispatch
             invocationMock.SetupGet(x => x.Context).Returns(messageContext);
             invocationMock.SetupGet(x => x.Messages).Returns(new List<IMessage> { new ScanCommand1() });
 
-            invoker.InvokeMessageHandlerAsync(invocationMock.Object).RunSynchronously();
+            invoker.InvokeMessageHandler(invocationMock.Object);
 
             invocationMock.Verify(x => x.SetupForInvocation(handler));
         }

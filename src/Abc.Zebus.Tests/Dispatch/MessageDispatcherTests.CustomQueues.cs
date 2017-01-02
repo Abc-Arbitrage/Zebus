@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages;
@@ -38,7 +39,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 return handler2;
             });
 
-            Dispatch(new DispatchCommand());
+            DispatchFromDefaultDispatchQueue(new DispatchCommand());
 
             syncHandler.Called.ShouldBeTrue("Sync handler should be run synchronously");
 
@@ -46,7 +47,7 @@ namespace Abc.Zebus.Tests.Dispatch
             Wait.Until(() => handler2List.Count == 1 && handler2List[0].HandleStarted, 150.Milliseconds(), "second handler should be started");
 
             syncHandler.Called = false;
-            Dispatch(new DispatchCommand());
+            DispatchFromDefaultDispatchQueue(new DispatchCommand());
 
             syncHandler.Called.ShouldBeTrue("Sync handler should be run synchronously");
             handler1List.Count.ShouldEqual(1, "Next handler should not be created yet");
@@ -87,20 +88,25 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var handler = new SyncCommandHandlerWithQueueName1() { WaitForSignal = true };
-            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler);
-
-            var task = Task.Run(() =>
+            var handler1 = new SyncCommandHandlerWithQueueName1
             {
-                var context = MessageContext.CreateTest("u.name").WithDispatchQueueName("DispatchQueue1");
-                Dispatch(new DispatchCommand(), context);
-            });
+                Callback = () =>
+                {
+                    var handler2 = new SyncCommandHandlerWithQueueName1();
+                    _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler2);
 
-            Thread.Sleep(150);
-            task.IsCompleted.ShouldBeFalse("Dispatch should run synchronously");
+                    // should be run synchronously
+                    Dispatch(new DispatchCommand());
 
-            handler.CalledSignal.Set();
-            Wait.Until(() => task.IsCompleted, 150.Milliseconds());
+                    Wait.Until(() => handler2.HandleStopped, 500.Milliseconds());
+                }
+            };
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler1);
+
+            // should be enqueued
+            Dispatch(new DispatchCommand());
+
+            Wait.Until(() => handler1.HandleStopped, 500.Milliseconds());
         }
 
         [Test]
@@ -109,7 +115,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.ConfigureHandlerFilter(x => x == typeof(ForwardCommandHandler) || x == typeof(SyncCommandHandlerWithQueueName1));
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var handler1 = new ForwardCommandHandler { Action = x => Dispatch(new DispatchCommand(), x) };
+            var handler1 = new ForwardCommandHandler { Action = x => Dispatch(new DispatchCommand()) };
             _containerMock.Setup(x => x.GetInstance(typeof(ForwardCommandHandler))).Returns(handler1);
 
             var handler2 = new SyncCommandHandlerWithQueueName1();
@@ -130,7 +136,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(new DispatchCommand());
 
-            Wait.Until(() => handler.DispatchQueueName != null, 150.Milliseconds());
+            Wait.Until(() => handler.DispatchQueueName != null, 500.Milliseconds());
 
             var queueSource = new UseOtherQueue();
             handler.DispatchQueueName.ShouldEqual(queueSource.QueueName);
@@ -139,45 +145,23 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_wait_for_TaskSchedulers_to_stop()
         {
-            MakeSureOneTaskSchedulerIsActive();
-
-            var canStop = new ManualResetEvent(false);
-            var tasksAreWaiting = new CountdownEvent(3);
-            var count = 0;
-
-            foreach (var taskScheduler in _taskSchedulerFactory.TaskSchedulers)
-            {
-               Interlocked.Increment(ref count);
-                StartTask(() =>
-                {
-                    tasksAreWaiting.Signal();
-                    canStop.WaitOne();
-                    Interlocked.Decrement(ref count);
-                }, taskScheduler);
-            }
-
-            tasksAreWaiting.Wait();
-
-            var stopTask = Task.Factory.StartNew(() => _messageDispatcher.Stop());
-            Wait.Until(() => stopTask.Status == TaskStatus.Running, 5);
-            stopTask.IsCompleted.ShouldBeFalse();
-            
-            canStop.Set();
-            
-            stopTask.Wait(1.Second()).ShouldBeTrue();
-            count.ShouldEqual(0);
-        }
-
-        private void MakeSureOneTaskSchedulerIsActive()
-        {
             _messageDispatcher.LoadMessageHandlerInvokers();
-            var handler = new SyncCommandHandlerWithOtherQueueName();
-            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithOtherQueueName))).Returns(handler);
-            Dispatch(new DispatchCommand());
 
-            _taskSchedulerFactory.TaskSchedulers.Count.ShouldBeGreaterOrEqualThan(1);
+            var command = new BlockableCommand { IsBlocking = true };
+
+            Dispatch(command);
+
+            Wait.Until(() => command.HandleStarted, 500.Milliseconds());
+
+            var stopTask = Task.Run(() => _messageDispatcher.Stop());
+
+            Thread.Sleep(200);
+            stopTask.IsCompleted.ShouldBeFalse();
+
+            command.BlockingSignal.Set();
+            stopTask.Wait(500.Milliseconds()).ShouldBeTrue();
         }
-        
+
         [Test]
         public void should_throw_exception_if_calling_dispatched_when_stopped()
         {
@@ -185,28 +169,30 @@ namespace Abc.Zebus.Tests.Dispatch
             Assert.Throws<InvalidOperationException>(() => Dispatch(new DispatchCommand()));
         }
 
-
-        private void StartTask(Action action, TaskScheduler taskScheduler = null)
-        {
-            if (taskScheduler == null)
-                taskScheduler = TaskScheduler.Default;
-
-            Task.Factory.StartNew(action, new CancellationToken(), TaskCreationOptions.None, taskScheduler);
-        }
-
         [Test]
         public void should_restart_TaskSchedulers()
         {
-            MakeSureOneTaskSchedulerIsActive();
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var handler = new SyncCommandHandlerWithOtherQueueName();
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithOtherQueueName))).Returns(handler);
+            Dispatch(new DispatchCommand());
+
+            _dispatchQueueFactory.DispatchQueues.Count.ShouldBeGreaterOrEqualThan(1);
 
             _messageDispatcher.Stop();
+
+            foreach (var taskScheduler in _dispatchQueueFactory.DispatchQueues)
+            {
+                taskScheduler.IsRunning.ShouldBeFalse();
+            }
+
             _messageDispatcher.Start();
 
-            foreach (var taskScheduler in _taskSchedulerFactory.TaskSchedulers)
+            foreach (var taskScheduler in _dispatchQueueFactory.DispatchQueues)
             {
                 taskScheduler.IsRunning.ShouldBeTrue();
             }
-
         }
     }
 }

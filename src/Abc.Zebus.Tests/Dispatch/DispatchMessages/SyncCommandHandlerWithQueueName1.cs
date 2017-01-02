@@ -1,23 +1,25 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using Abc.Zebus.Dispatch;
 
 namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
 {
     [DispatchQueueName("DispatchQueue1")]
-    public class SyncCommandHandlerWithQueueName1 : IMessageHandler<DispatchCommand>, IMessageContextAware
+    public class SyncCommandHandlerWithQueueName1 : IMessageHandler<DispatchCommand>
     {
         public readonly EventWaitHandle CalledSignal = new AutoResetEvent(false);
         public bool WaitForSignal;
         public bool HandleStarted;
         public bool HandleStopped;
         public string DispatchQueueName { get; set; }
-
-        public MessageContext Context { get; set; }
+        public Action Callback;
 
         public void Handle(DispatchCommand message)
         {
             HandleStarted = true;
-            DispatchQueueName = Context.DispatchQueueName;
+            DispatchQueueName = DispatchQueue.GetCurrentDispatchQueueName();
+
+            Callback?.Invoke();
 
             if (WaitForSignal)
                 CalledSignal.WaitOne();

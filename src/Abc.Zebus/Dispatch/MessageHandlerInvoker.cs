@@ -34,16 +34,14 @@ namespace Abc.Zebus.Dispatch
         public MessageTypeId MessageTypeId { get; }
         public bool ShouldBeSubscribedOnStartup { get; }
         public string DispatchQueueName { get; }
+        public virtual MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Synchronous;
         public int BatchSize { get; private set; }
-
-        public virtual bool ShouldCreateStartedTasks => false;
-        public virtual bool CanInvokeSynchronously => true;
 
         public abstract void InvokeMessageHandler(IMessageHandlerInvocation invocation);
 
         public virtual Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
         {
-            return new Task(() => InvokeMessageHandler(invocation), TaskCreationOptions.HideScheduler);
+            throw new NotSupportedException("InvokeMessageHandlerAsync is not supported in Synchronous mode");
         }
 
         public virtual bool ShouldHandle(IMessage message)

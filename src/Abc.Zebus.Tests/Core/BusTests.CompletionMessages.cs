@@ -93,7 +93,7 @@ namespace Abc.Zebus.Tests.Core
                     var commandCompleted = new MessageExecutionCompleted(MessageId.NextId(), 1, "Error message");
                     _transport.RaiseMessageReceived(commandCompleted.ToTransportMessage());
 
-                    var receivedAck = task.Wait(10);
+                    var receivedAck = task.Wait(500);
 
                     receivedAck.ShouldBeTrue();
                     task.Result.ErrorCode.ShouldEqual(1);

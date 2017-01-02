@@ -9,9 +9,8 @@ namespace Abc.Zebus.Dispatch
         Type MessageType { get; }
         MessageTypeId MessageTypeId { get; }
         bool ShouldBeSubscribedOnStartup { get; }
-        bool ShouldCreateStartedTasks { get; }
         string DispatchQueueName { get; }
-        bool CanInvokeSynchronously { get; }
+        MessageHandlerInvokerMode Mode { get; }
         int BatchSize { get; }
 
         void InvokeMessageHandler(IMessageHandlerInvocation invocation);

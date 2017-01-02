@@ -5,33 +5,28 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Util.Extensions;
-using log4net;
 
 namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatcher : IMessageDispatcher, IProvideQueueLength
     {
         private static readonly List<IMessageHandlerInvoker> _emptyInvokers = new List<IMessageHandlerInvoker>();
+        private readonly ConcurrentDictionary<string, DispatchQueue> _dispatchQueues = new ConcurrentDictionary<string, DispatchQueue>(StringComparer.OrdinalIgnoreCase);
         private readonly IMessageHandlerInvokerLoader[] _invokerLoaders;
-        private readonly ILog _logger = LogManager.GetLogger(typeof(MessageDispatcher));
-        private readonly IPipeManager _pipeManager;
-        private readonly ConcurrentDictionary<string, DispatcherTaskScheduler> _schedulersByQueueName = new ConcurrentDictionary<string, DispatcherTaskScheduler>(StringComparer.OrdinalIgnoreCase);
-        private readonly IDispatcherTaskSchedulerFactory _taskSchedulerFactory;
+        private readonly IDispatchQueueFactory _dispatchQueueFactory;
         private ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>> _invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _handlerFilter;
         private Func<Type, bool> _messageFilter;
         private volatile bool _isRunning;
         
-        public MessageDispatcher(IPipeManager pipeManager, IMessageHandlerInvokerLoader[] invokerLoaders, IDispatcherTaskSchedulerFactory taskSchedulerFactory)
+        public MessageDispatcher(IMessageHandlerInvokerLoader[] invokerLoaders, IDispatchQueueFactory dispatchQueueFactory)
         {
-            _pipeManager = pipeManager;
             _invokerLoaders = invokerLoaders;
-            _taskSchedulerFactory = taskSchedulerFactory;
+            _dispatchQueueFactory = dispatchQueueFactory;
         }
 
         public void ConfigureAssemblyFilter(Func<Assembly, bool> assemblyFilter)
@@ -123,7 +118,7 @@ namespace Abc.Zebus.Dispatch
 
             _isRunning = false;
 
-            var stopTasks = _schedulersByQueueName.Values.Select(scheduler => Task.Factory.StartNew(scheduler.Stop)).ToArray();
+            var stopTasks = _dispatchQueues.Values.Select(scheduler => Task.Factory.StartNew(scheduler.Stop)).ToArray();
             Task.WaitAll(stopTasks);
         }
 
@@ -134,8 +129,10 @@ namespace Abc.Zebus.Dispatch
 
             _isRunning = true;
 
-            foreach (var dispatcherTaskScheduler in _schedulersByQueueName.Values)
-                dispatcherTaskScheduler.Start();
+            foreach (var dispatchQueue in _dispatchQueues.Values)
+            {
+                dispatchQueue.Start();
+            }
         }
 
         public void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker)
@@ -166,17 +163,17 @@ namespace Abc.Zebus.Dispatch
 
         public int Purge()
         {
-            return _schedulersByQueueName.Values.Sum(taskScheduler => taskScheduler.PurgeTasks());
+            return _dispatchQueues.Values.Sum(x => x.Purge());
         }
 
         public int GetReceiveQueueLength()
         {
-            return _schedulersByQueueName.Values.Sum(taskScheduler => taskScheduler.TaskCount);
+            return _dispatchQueues.Values.Sum(x => x.QueueLength);
         }
 
-        private DispatcherTaskScheduler CreateAndStartTaskScheduler(string queueName)
+        private DispatchQueue CreateAndStartDispatchQueue(string queueName)
         {
-            var taskScheduler = _taskSchedulerFactory.Create(queueName);
+            var taskScheduler = _dispatchQueueFactory.Create(queueName);
             taskScheduler.Start();
 
             return taskScheduler;
@@ -197,69 +194,21 @@ namespace Abc.Zebus.Dispatch
 
         private void Dispatch(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
-            var context = dispatch.Context.WithDispatchQueueName(invoker.DispatchQueueName);
-            var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { dispatch.Message }, context);
+            var dispatchQueue = _dispatchQueues.GetOrAdd(invoker.DispatchQueueName, CreateAndStartDispatchQueue);
 
-            var isInSameDispatchQueue = ShouldRunInCurrentDispatchQueue(invoker.DispatchQueueName, dispatch.Context.DispatchQueueName);
-
-            if (invoker.CanInvokeSynchronously && (dispatch.ShouldRunSynchronously || isInSameDispatchQueue))
-                DispatchSync(invocation, dispatch);
-            else
-                DispatchAsync(invocation, dispatch);
-        }
-
-        private void DispatchAsync(PipeInvocation invocation, MessageDispatch dispatch)
-        {
-            var invocationTask = invocation.RunAsync();
-            invocationTask.ContinueWith(task => dispatch.SetHandled(invocation.Invoker, GetException(task)), TaskContinuationOptions.ExecuteSynchronously);
-
-            if (invocationTask.Status != TaskStatus.Created)
-                return;
-
-            if (invocation.Invoker.ShouldCreateStartedTasks)
+            if (invoker.Mode == MessageHandlerInvokerMode.Asynchronous)
             {
-                var exception = new InvalidProgramException($"{invocation.Invoker.MessageHandlerType.Name}.Handle({invocation.Invoker.MessageType.Name}) did not start the returned task");
-                dispatch.SetHandled(invocation.Invoker, exception);
+                dispatchQueue.RunAsync(dispatch, invoker);
                 return;
             }
 
-            var taskScheduler = GetTaskScheduler(invocation.Invoker.DispatchQueueName);
-            invocationTask.Start(taskScheduler);
-        }
-
-        private Exception GetException(Task task)
-        {
-            if (!task.IsFaulted)
-                return null;
-
-            var exception = task.Exception != null ? task.Exception.InnerException : new Exception("Task failed");
-            _logger.Error(exception);
-
-            return exception;
-        }
-
-        private TaskScheduler GetTaskScheduler(string queueName)
-        {
-            return _schedulersByQueueName.GetOrAdd(queueName, CreateAndStartTaskScheduler);
-        }
-
-        private static void DispatchSync(PipeInvocation invocation, MessageDispatch dispatch)
-        {
-            Exception exception = null;
-            try
+            if (dispatch.ShouldRunSynchronously)
             {
-                invocation.Run();
+                dispatchQueue.Run(dispatch, invoker);
+                return;
             }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-            dispatch.SetHandled(invocation.Invoker, exception);
-        }
 
-        private static bool ShouldRunInCurrentDispatchQueue(string invokerDispatchQueueName, string currentDispatchQueueName)
-        {
-            return invokerDispatchQueueName != null && invokerDispatchQueueName.Equals(currentDispatchQueueName, StringComparison.OrdinalIgnoreCase);
+            dispatchQueue.RunOrEnqueue(dispatch, invoker);
         }
     }
 }

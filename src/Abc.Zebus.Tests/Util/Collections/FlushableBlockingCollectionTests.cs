@@ -104,13 +104,13 @@ namespace Abc.Zebus.Tests.Util.Collections
             Thread.Sleep(50);
 
             Console.WriteLine("Flush #1");
-            var flushedItems1 = collection.Flush(true);
+            var flushedItems1 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems1.Count);
 
             Thread.Sleep(50);
 
             Console.WriteLine("Flush #2");
-            var flushedItems2 = collection.Flush(true);
+            var flushedItems2 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems2.Count);
 
             Task.WaitAll(t1, t2, t3);
@@ -155,7 +155,7 @@ namespace Abc.Zebus.Tests.Util.Collections
 
             Thread.Sleep(100);
             Console.WriteLine("Flush #1");
-            var flushedItems1 = collection.Flush(true);
+            var flushedItems1 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems1.Count);
 
             foreach (var item in Enumerable.Range(1 * batchSize, batchSize))
@@ -165,7 +165,7 @@ namespace Abc.Zebus.Tests.Util.Collections
 
             Thread.Sleep(100);
             Console.WriteLine("Flush #2");
-            var flushedItems2 = collection.Flush(true);
+            var flushedItems2 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems2.Count);
 
             foreach (var item in Enumerable.Range(2 * batchSize, batchSize))
@@ -175,7 +175,7 @@ namespace Abc.Zebus.Tests.Util.Collections
 
             Thread.Sleep(100);
             Console.WriteLine("Flush #3");
-            var flushedItems3 = collection.Flush(true);
+            var flushedItems3 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems3.Count);
 
             collection.CompleteAdding();
@@ -190,9 +190,8 @@ namespace Abc.Zebus.Tests.Util.Collections
             }
         }
 
-        [TestCase(true)]
-        [TestCase(false)]
-        public void should_flush_multiple_times(bool waitForCompletion)
+        [Test]
+        public void should_flush_multiple_times()
         {
             var collection = new FlushableBlockingCollection<int>();
 
@@ -212,7 +211,7 @@ namespace Abc.Zebus.Tests.Util.Collections
             {
                 for (var i = 0; i < 10; ++i)
                 {
-                    flushedItems.Add(collection.Flush(waitForCompletion));
+                    flushedItems.Add(collection.Flush());
                     Thread.Sleep(50);
                 }
                 Console.WriteLine("Flusher done");

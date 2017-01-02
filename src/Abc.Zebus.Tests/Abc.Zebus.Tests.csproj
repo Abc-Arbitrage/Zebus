@@ -108,11 +108,13 @@
     <Compile Include="Dispatch\DispatchMessages\AsyncCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommandHandler.cs" />
+    <Compile Include="Dispatch\DispatchMessages\BlockableCommand.cs" />
+    <Compile Include="Dispatch\DispatchMessages\BlockableCommandHandler.cs" />
     <Compile Include="Dispatch\DispatchMessages\CapturingTaskSchedulerAsyncCommandHandler.cs" />
     <Compile Include="Dispatch\DispatchMessages\CapturingTaskSchedulerSyncCommandHandler.cs" />
     <Compile Include="Dispatch\DispatchMessages\ForwardCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\ForwardCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatcherTaskSchedulerTests.cs" />
+    <Compile Include="Dispatch\DispatchQueueTests.cs" />
     <Compile Include="Dispatch\DispatchMessages\ManualCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\ManualCommandHandler.cs" />
     <Compile Include="Dispatch\DynamicMessageHandlerInvokerTests.cs" />
@@ -124,6 +126,7 @@
     <Compile Include="Dispatch\DispatchMessages\RoutableCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\RoutableCommandHandler.cs" />
     <Compile Include="Dispatch\DispatchMessages\SyncCommandHandlerWithQueueName2.cs" />
+    <Compile Include="Dispatch\Pipes\AsyncPipeInvocationTests.cs" />
     <Compile Include="DomainExceptionTests.cs" />
     <Compile Include="Hosting\HostInitializerHelperTests.cs" />
     <Compile Include="Hosting\PeriodicActionHostInitializerTests.cs" />

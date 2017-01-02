@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Testing;
@@ -64,7 +65,8 @@ namespace Abc.Zebus.Tests
 
             var runTask = Task.Run(() =>
             {
-                using (MessageContext.SetCurrent(MessageContext.CreateTest().WithDispatchQueueName(DispatchQueueNameScanner.DefaultQueueName)))
+                using (DispatchQueue.SetCurrentDispatchQueueName(DispatchQueueNameScanner.DefaultQueueName))
+                using (MessageContext.SetCurrent(MessageContext.CreateTest()))
                 {
                     while (running)
                     {

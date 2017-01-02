@@ -31,18 +31,6 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         }
 
         [Test]
-        public void should_invoke_handler_async()
-        {
-            IMessageHandlerInvocation capturedMessageHandlerInvocation = null;
-            _invoker.InvokeMessageHandlerCallback = x => capturedMessageHandlerInvocation = x;
-
-            _invocation.RunAsync().RunSynchronously();
-
-            _invoker.Invoked.ShouldBeTrue();
-            capturedMessageHandlerInvocation.ShouldEqual(_invocation);
-        }
-
-        [Test]
         public void should_inject_message_context_to_handler()
         {
             var handler = new Handler();
@@ -150,53 +138,6 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
                     _invocation.Run();
                 }
             });
-
-            exception.ShouldNotBeNull();
-        }
-
-        [Test]
-        public void should_invoke_pipes_in_order_async()
-        {
-            var order = new List<int>();
-
-            _pipes.Add(new FakePipe
-            {
-                Name = "Pipe1",
-                BeforeCallback = x => order.Add(1),
-                AfterCallback = x => order.Add(5),
-            });
-
-            _pipes.Add(new FakePipe
-            {
-                Name = "Pipe2",
-                BeforeCallback = x => order.Add(2),
-                AfterCallback = x => order.Add(4),
-            });
-
-            _invoker.InvokeMessageHandlerCallback = x => order.Add(3);
-
-            _invocation.RunAsync().RunSynchronously();
-
-            order.Count.ShouldEqual(5);
-            order.ShouldBeOrdered();
-        }
-
-        [Test]
-        public void should_get_exception_async()
-        {
-            Exception exception = null;
-
-            _pipes.Add(new FakePipe
-            {
-                AfterCallback = x => exception = x.Exception
-            });
-
-            _invoker.InvokeMessageHandlerCallback = x =>
-            {
-                throw new ArgumentException("Foo");
-            };
-
-            _invocation.RunAsync().RunSynchronously();
 
             exception.ShouldNotBeNull();
         }

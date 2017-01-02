@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
+using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Dispatch.Pipes
@@ -85,9 +88,21 @@ namespace Abc.Zebus.Dispatch.Pipes
         protected internal virtual Task RunAsync()
         {
             var runTask = _invoker.InvokeMessageHandlerAsync(this);
-            runTask.ContinueWith(task => AfterInvoke(_pipeStates, task.IsFaulted, task.Exception), TaskContinuationOptions.ExecuteSynchronously);
 
-            return runTask;
+            if (runTask.Status == TaskStatus.Created)
+            {
+                var exception = new InvalidProgramException($"{Invoker.MessageHandlerType.Name}.Handle({Invoker.MessageType.Name}) did not start the returned task");
+                runTask = TaskUtil.FromError(exception);
+            }
+
+            Action<Task> continuation = task =>
+            {
+                AfterInvoke(_pipeStates, task.IsFaulted, task.Exception);
+                if (task.IsFaulted)
+                    ExceptionDispatchInfo.Capture(task.Exception.InnerException).Throw();
+            };
+
+            return runTask.ContinueWith(continuation, TaskContinuationOptions.ExecuteSynchronously);
         }
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation()
