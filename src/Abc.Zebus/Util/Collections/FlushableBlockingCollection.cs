@@ -28,14 +28,21 @@ namespace Abc.Zebus.Util.Collections
             _addSignal.Set();
         }
 
-        public IEnumerable<T> GetConsumingEnumerable()
+        public IEnumerable<List<T>> GetConsumingEnumerable(int maxSize)
         {
+            var items = new List<T>(maxSize);
             while (!IsAddingCompletedAndEmpty)
             {
                 T item;
                 if (_queue.TryDequeue(out item))
                 {
-                    yield return item;
+                    items.Clear();
+                    items.Add(item);
+                    while (items.Count < maxSize && _queue.TryDequeue(out item))
+                    {
+                        items.Add(item);
+                    }
+                    yield return items;
                 }
                 else
                 {

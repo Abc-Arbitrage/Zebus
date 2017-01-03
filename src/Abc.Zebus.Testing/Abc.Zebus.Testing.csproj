@@ -76,6 +76,7 @@
     <Compile Include="CurrentThreadTaskScheduler.cs" />
     <Compile Include="Directory\TestPeerDirectory.cs" />
     <Compile Include="Dispatch\TestAsyncMessageHandlerInvoker.cs" />
+    <Compile Include="Dispatch\TestBatchedMessageHandlerInvoker.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker`1.cs" />
     <Compile Include="Dispatch\TestAsyncMessageHandlerInvoker`1.cs" />
@@ -86,7 +87,6 @@
     <Compile Include="Measurements\Measure.cs" />
     <Compile Include="Measurements\MeasureConfiguration.cs" />
     <Compile Include="MessageSerializationTester.cs" />
-    <Compile Include="Dispatch\TestPipeInvocation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestBus.cs" />
     <Compile Include="TestExtensions.cs" />

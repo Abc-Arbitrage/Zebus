@@ -10,9 +10,7 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Util.Collections
 {
-    [TestFixture]
-    [Ignore]
-    [Category("ManualOnly")]
+    [TestFixture, Ignore("Manual tests")]
     public class FlushableBlockingCollectionPerformanceTests
     {
         [Test]
@@ -39,7 +37,7 @@ namespace Abc.Zebus.Tests.Util.Collections
             var watch = Stopwatch.StartNew();
 
             var enqueue = Task.Run(() => Enumerable.Range(0, 50000000).ForEach(queue.Add));
-            var dequeue = Task.Run(() => queue.GetConsumingEnumerable().ForEach(x => { }));
+            var dequeue = Task.Run(() => queue.GetConsumingEnumerable(1).ForEach(x => { }));
 
             enqueue.Wait();
             queue.CompleteAdding();
@@ -73,7 +71,7 @@ namespace Abc.Zebus.Tests.Util.Collections
             var queue = new FlushableBlockingCollection<Stopwatch>();
 
             var elapsed = TimeSpan.Zero;
-            var dequeue = Task.Run(() => queue.GetConsumingEnumerable().ForEach(x => elapsed += x.Elapsed));
+            var dequeue = Task.Run(() => queue.GetConsumingEnumerable(1).ForEach(x => elapsed += x[0].Elapsed));
 
             for (var i = 0; i < 5000; ++i)
             {
@@ -113,12 +111,13 @@ namespace Abc.Zebus.Tests.Util.Collections
             Console.WriteLine("{0}", elapsed.TotalMilliseconds / 5000);
         }
 
-        [Test]
-        public void MeasureCpuUsage()
+        [TestCase(1)]
+        [TestCase(200)]
+        public void MeasureCpuUsage(int batchSize)
         {
             var queue = new FlushableBlockingCollection<Stopwatch>();
 
-            var dequeue = Task.Run(() => queue.GetConsumingEnumerable().ForEach(x => { }));
+            var dequeue = Task.Run(() => queue.GetConsumingEnumerable(batchSize).ForEach(x => { }));
 
             Console.WriteLine("Use the Process Explorer, Luke");
 

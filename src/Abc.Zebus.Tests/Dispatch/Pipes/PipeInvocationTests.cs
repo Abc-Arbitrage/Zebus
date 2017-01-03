@@ -47,7 +47,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             var beforeCalled = false;
             var handler = new Handler();
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 Name = "Pipe1",
                 BeforeCallback = x => beforeCalled = true
@@ -78,7 +78,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         {
             var order = new List<int>();
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 Name = "Pipe1",
                 BeforeCallback = x =>
@@ -93,7 +93,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
                 },
             });
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 Name = "Pipe2",
                 BeforeCallback = x =>
@@ -121,7 +121,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         {
             Exception exception = null;
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 AfterCallback = x => exception = x.Exception
             });

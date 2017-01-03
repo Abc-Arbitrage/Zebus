@@ -168,7 +168,7 @@
     <Compile Include="Persistence\PersistentTransportFixture.cs" />
     <Compile Include="Persistence\TranscientPersistentTransportTests.cs" />
     <Compile Include="Dispatch\Pipes\AttributePipeSourceTests.cs" />
-    <Compile Include="Dispatch\Pipes\FakePipe.cs" />
+    <Compile Include="Dispatch\Pipes\TestPipe.cs" />
     <Compile Include="Dispatch\Pipes\FakePipeSource.cs" />
     <Compile Include="Dispatch\Pipes\PipeInvocationTests.cs" />
     <Compile Include="Dispatch\Pipes\PipeManagerTests.cs" />

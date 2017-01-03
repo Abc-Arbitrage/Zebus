@@ -11,10 +11,10 @@ namespace Abc.Zebus.Dispatch
         bool ShouldBeSubscribedOnStartup { get; }
         string DispatchQueueName { get; }
         MessageHandlerInvokerMode Mode { get; }
-        int BatchSize { get; }
 
         void InvokeMessageHandler(IMessageHandlerInvocation invocation);
         Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation);
         bool ShouldHandle(IMessage message);
+        bool CanMergeWith(IMessageHandlerInvoker other);
     }
 }

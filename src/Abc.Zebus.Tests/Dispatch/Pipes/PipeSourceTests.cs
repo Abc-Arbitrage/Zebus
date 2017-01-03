@@ -14,11 +14,11 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         [Test]
         public void should_create_pipe()
         {
-            var pipe = new FakePipe();
+            var pipe = new TestPipe();
             var containerMock = new Mock<IContainer>();
-            containerMock.Setup(x => x.GetInstance<FakePipe>()).Returns(pipe);
+            containerMock.Setup(x => x.GetInstance<TestPipe>()).Returns(pipe);
 
-            var source = new PipeSource<FakePipe>(containerMock.Object);
+            var source = new PipeSource<TestPipe>(containerMock.Object);
 
             var pipes = source.GetPipes(typeof(FakeMessageHandler));
 

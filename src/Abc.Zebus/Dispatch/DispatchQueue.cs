@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch.Pipes;
@@ -16,14 +18,16 @@ namespace Abc.Zebus.Dispatch
 
         private readonly ILog _logger = LogManager.GetLogger(typeof(DispatchQueue));
         private readonly IPipeManager _pipeManager;
+        private readonly int _batchSize;
         private readonly string _name;
         private FlushableBlockingCollection<Entry> _queue = new FlushableBlockingCollection<Entry>();
         private Thread _thread;
         private volatile bool _isRunning;
 
-        public DispatchQueue(IPipeManager pipeManager, string name)
+        public DispatchQueue(IPipeManager pipeManager, int batchSize, string name)
         {
             _pipeManager = pipeManager;
+            _batchSize = batchSize;
             _name = name;
         }
 
@@ -80,12 +84,14 @@ namespace Abc.Zebus.Dispatch
             _currentDispatchQueueName = _name;
             try
             {
-                foreach (var entry in _queue.GetConsumingEnumerable())
+                var batch = new Batch(_batchSize);
+                
+                foreach (var entries in _queue.GetConsumingEnumerable(_batchSize))
                 {
                     if (!IsRunning)
                         break;
 
-                    Run(entry.Dispatch, entry.Invoker);
+                    ProcessEntries(entries, batch);
                 }
 
                 _logger.Info(_name + " processing stopped");
@@ -96,23 +102,55 @@ namespace Abc.Zebus.Dispatch
             }
         }
 
+        private void ProcessEntries(List<Entry> entries, Batch batch)
+        {
+            batch.Add(entries[0]);
+
+            for (int index = 1; index < entries.Count; index++)
+            {
+                var entry = entries[index];
+
+                if (!entry.Invoker.CanMergeWith(batch.FirstEntry.Invoker))
+                    RunBatch(batch);
+
+                batch.Add(entry);
+            }
+
+            RunBatch(batch);
+        }
+
+        private void RunBatch(Batch batch)
+        {
+            var exception = Run(batch.FirstEntry.Invoker, batch.FirstEntry.Dispatch.Context, batch.Messages);
+            batch.SetHandled(exception);
+            batch.Clear();
+        }
+
         public void Run(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
-            Exception exception = null;
+            var exception = Run(invoker, dispatch.Context, new List<IMessage> { dispatch.Message });
+            dispatch.SetHandled(invoker, exception);
+        }
+
+        private Exception Run(IMessageHandlerInvoker invoker, MessageContext context, List<IMessage> messages)
+        {
             try
             {
-                var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { dispatch.Message }, dispatch.Context);
+                var invocation = _pipeManager.BuildPipeInvocation(invoker, messages, context);
                 invocation.Run();
+
+                return null;
             }
             catch (Exception ex)
             {
-                exception = ex;
+                return ex;
             }
-            dispatch.SetHandled(invoker, exception);
         }
 
         public void RunAsync(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
+            _logger.Info($"{invoker.MessageType}, {invoker.MessageHandlerType}, {invoker.Mode}");
+
             var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { dispatch.Message }, dispatch.Context);
 
             var invocationTask = invocation.RunAsync();
@@ -166,6 +204,40 @@ namespace Abc.Zebus.Dispatch
 
             public MessageDispatch Dispatch;
             public IMessageHandlerInvoker Invoker;
+        }
+
+        private class Batch
+        {
+            public readonly List<Entry> Entries;
+            public readonly List<IMessage> Messages;
+
+            public Batch(int capacity)
+            {
+                Entries = new List<Entry>(capacity);
+                Messages = new List<IMessage>(capacity);
+            }
+
+            public Entry FirstEntry => Entries[0];
+
+            public void Add(Entry entry)
+            {
+                Entries.Add(entry);
+                Messages.Add(entry.Dispatch.Message);
+            }
+
+            public void SetHandled(Exception error)
+            {
+                foreach (var entry in Entries)
+                {
+                    entry.Dispatch.SetHandled(entry.Invoker, error);
+                }
+            }
+
+            public void Clear()
+            {
+                Entries.Clear();
+                Messages.Clear();
+            }
         }
     }
 }

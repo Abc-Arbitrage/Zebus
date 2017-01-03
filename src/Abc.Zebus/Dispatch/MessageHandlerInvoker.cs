@@ -17,14 +17,13 @@ namespace Abc.Zebus.Dispatch
         [ThreadStatic]
         private static MessageContextAwareBus _dispatchBus;
 
-        protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null, int batchSize = 1)
+        protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null)
         {
             MessageHandlerType = handlerType;
             DispatchQueueName = DispatchQueueNameScanner.GetQueueName(handlerType);
             MessageType = messageType;
             MessageTypeId = new MessageTypeId(MessageType);
             ShouldBeSubscribedOnStartup = shouldBeSubscribedOnStartup ?? MessageShouldBeSubscribedOnStartup(messageType);
-            BatchSize = batchSize;
 
             _instance = CreateConstructorInstance(handlerType);
         }
@@ -35,7 +34,6 @@ namespace Abc.Zebus.Dispatch
         public bool ShouldBeSubscribedOnStartup { get; }
         public string DispatchQueueName { get; }
         public virtual MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Synchronous;
-        public int BatchSize { get; private set; }
 
         public abstract void InvokeMessageHandler(IMessageHandlerInvocation invocation);
 
@@ -47,6 +45,11 @@ namespace Abc.Zebus.Dispatch
         public virtual bool ShouldHandle(IMessage message)
         {
             return true;
+        }
+
+        public virtual bool CanMergeWith(IMessageHandlerInvoker other)
+        {
+            return false;
         }
 
         public static bool MessageShouldBeSubscribedOnStartup(Type messageType, Type handlerType)

@@ -141,6 +141,7 @@ namespace Abc.Zebus.Core
             public bool IsPersistent => false;
             public bool IsDirectoryPickedRandomly => false;
             public bool IsErrorPublicationEnabled => false;
+            public int MessagesBatchSize => 200;
         }
 
         private class ZmqTransportConfiguration : IZmqTransportConfiguration

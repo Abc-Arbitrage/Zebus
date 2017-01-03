@@ -39,5 +39,7 @@ namespace Abc.Zebus
         ///  Indicates whether <see cref="MessageProcessingFailed"/> should be published on handler errors.
         /// </summary>
         bool IsErrorPublicationEnabled { get; }
+
+        int MessagesBatchSize { get; }
     }
 }

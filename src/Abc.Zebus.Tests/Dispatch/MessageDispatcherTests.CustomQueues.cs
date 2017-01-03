@@ -169,29 +169,27 @@ namespace Abc.Zebus.Tests.Dispatch
             Assert.Throws<InvalidOperationException>(() => Dispatch(new DispatchCommand()));
         }
 
-        [Test]
-        public void should_restart_TaskSchedulers()
+        [Test, Repeat(5)]
+        public void should_restart_dispatch_queues()
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var handler = new SyncCommandHandlerWithOtherQueueName();
-            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithOtherQueueName))).Returns(handler);
             Dispatch(new DispatchCommand());
 
             _dispatchQueueFactory.DispatchQueues.Count.ShouldBeGreaterOrEqualThan(1);
 
             _messageDispatcher.Stop();
 
-            foreach (var taskScheduler in _dispatchQueueFactory.DispatchQueues)
+            foreach (var dispatchQueue in _dispatchQueueFactory.DispatchQueues)
             {
-                taskScheduler.IsRunning.ShouldBeFalse();
+                dispatchQueue.IsRunning.ShouldBeFalse();
             }
 
             _messageDispatcher.Start();
 
-            foreach (var taskScheduler in _dispatchQueueFactory.DispatchQueues)
+            foreach (var dispatchQueue in _dispatchQueueFactory.DispatchQueues)
             {
-                taskScheduler.IsRunning.ShouldBeTrue();
+                dispatchQueue.IsRunning.ShouldBeTrue();
             }
         }
     }

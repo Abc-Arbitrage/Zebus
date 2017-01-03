@@ -18,7 +18,7 @@ namespace Abc.Zebus.Dispatch
         private static readonly MethodInfo _toListMethodInfo = typeof(Enumerable).GetMethod("ToList");
 
         public BatchedMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
-            : base(handlerType, messageType, shouldBeSubscribedOnStartup, 200)
+            : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
             _container = container;
             _handleAction = GenerateHandleAction(handlerType, messageType);
@@ -72,6 +72,12 @@ namespace Abc.Zebus.Dispatch
                 var error = string.Format("The message handler {0} has an async void Handle method. If you think there are valid use cases for this, please discuss it with the dev team", handlerType);
                 throw new InvalidProgramException(error);
             }
+        }
+
+        public override bool CanMergeWith(IMessageHandlerInvoker other)
+        {
+            var otherBatchedInvoker = other as BatchedMessageHandlerInvoker;
+            return otherBatchedInvoker != null && otherBatchedInvoker.MessageHandlerType == MessageHandlerType && otherBatchedInvoker.MessageType == MessageType;
         }
     }
 }
