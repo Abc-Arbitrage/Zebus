@@ -30,7 +30,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
 
             var message = new FakeCommand(123);
             var messageContext = MessageContext.CreateTest("u.name");
-            var invoker = new TestMessageHandlerInvoker(typeof(FakeCommandHandler), typeof(FakeCommand));
+            var invoker = new TestMessageHandlerInvoker<FakeCommand>();
             var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { message }, messageContext);
 
             invocation.Pipes.Single().ShouldEqual(pipe);

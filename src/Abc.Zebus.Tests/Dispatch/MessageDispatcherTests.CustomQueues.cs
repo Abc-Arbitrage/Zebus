@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Abc.Zebus.Dispatch;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages;
@@ -143,22 +142,22 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
-        public void should_wait_for_TaskSchedulers_to_stop()
+        public void should_wait_for_dispatch_to_stop()
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var command = new BlockableCommand { IsBlocking = true };
+            var message = new ExecutableEvent { IsBlocking = true };
 
-            Dispatch(command);
+            Dispatch(message);
 
-            Wait.Until(() => command.HandleStarted, 500.Milliseconds());
+            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
 
             var stopTask = Task.Run(() => _messageDispatcher.Stop());
 
             Thread.Sleep(200);
             stopTask.IsCompleted.ShouldBeFalse();
 
-            command.BlockingSignal.Set();
+            message.Unblock();
             stopTask.Wait(500.Milliseconds()).ShouldBeTrue();
         }
 

@@ -4,6 +4,7 @@ using Abc.Zebus.Dispatch;
 using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Tests.Dispatch.DispatchMessages;
 using Abc.Zebus.Tests.Messages;
 using NUnit.Framework;
 
@@ -14,17 +15,17 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
     {
         private PipeInvocation _invocation;
         private IMessageHandlerInvocation _handlerInvocation;
-        private TestMessageHandlerInvoker _invoker;
-        private FakeCommand _message;
+        private TestMessageHandlerInvoker<ExecutableEvent> _invoker;
+        private ExecutableEvent _message;
         private MessageContext _messageContext;
         private List<IPipe> _pipes;
 
         [SetUp]
         public void Setup()
         {
-            _invoker = new TestMessageHandlerInvoker<FakeCommand>();
-            _message = new FakeCommand(123);
-            _messageContext = MessageContext.CreateTest("u.name");
+            _invoker = new TestMessageHandlerInvoker<ExecutableEvent>();
+            _message = new ExecutableEvent();
+            _messageContext = MessageContext.CreateTest();
             _pipes = new List<IPipe>();
             _invocation = new PipeInvocation(_invoker, new List<IMessage> { _message }, _messageContext, _pipes);
             _handlerInvocation = _invocation;
@@ -108,7 +109,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
                 },
             });
 
-            _invoker.InvokeMessageHandlerCallback = x => order.Add(3);
+            _message.Callback = x => order.Add(3);
 
             _invocation.Run();
             
@@ -126,7 +127,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
                 AfterCallback = x => exception = x.Exception
             });
 
-            _invoker.InvokeMessageHandlerCallback = x =>
+            _message.Callback = x =>
             {
                 throw new ArgumentException("Foo");
             };

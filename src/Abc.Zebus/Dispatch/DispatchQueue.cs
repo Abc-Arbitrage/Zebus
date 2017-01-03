@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,11 +37,6 @@ namespace Abc.Zebus.Dispatch
         public void Dispose()
         {
             Stop();
-            if (_queue != null)
-            {
-                _queue.Dispose();
-                _queue = null;
-            }
         }
 
         public void Enqueue(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
@@ -52,7 +46,7 @@ namespace Abc.Zebus.Dispatch
 
         public void Start()
         {
-            if (IsRunning)
+            if (_isRunning)
                 return;
 
             _isRunning = true;
@@ -67,7 +61,7 @@ namespace Abc.Zebus.Dispatch
 
         public void Stop()
         {
-            if (!IsRunning)
+            if (!_isRunning)
                 return;
 
             _isRunning = false;
@@ -85,12 +79,9 @@ namespace Abc.Zebus.Dispatch
             try
             {
                 var batch = new Batch(_batchSize);
-                
-                foreach (var entries in _queue.GetConsumingEnumerable(_batchSize))
-                {
-                    if (!IsRunning)
-                        break;
 
+                foreach (var entries in _queue.GetConsumingEnumerable(_batchSize).TakeWhile(x => _isRunning))
+                {
                     ProcessEntries(entries, batch);
                 }
 
@@ -104,12 +95,10 @@ namespace Abc.Zebus.Dispatch
 
         private void ProcessEntries(List<Entry> entries, Batch batch)
         {
-            batch.Add(entries[0]);
+            batch.Add(entries.First());
 
-            for (int index = 1; index < entries.Count; index++)
+            foreach (var entry in entries.Skip(1))
             {
-                var entry = entries[index];
-
                 if (!entry.Invoker.CanMergeWith(batch.FirstEntry.Invoker))
                     RunBatch(batch);
 
@@ -121,6 +110,11 @@ namespace Abc.Zebus.Dispatch
 
         private void RunBatch(Batch batch)
         {
+            if (!_isRunning)
+            {
+                batch.Clear();
+                return;
+            }
             var exception = Run(batch.FirstEntry.Invoker, batch.FirstEntry.Dispatch.Context, batch.Messages);
             batch.SetHandled(exception);
             batch.Clear();
@@ -128,6 +122,9 @@ namespace Abc.Zebus.Dispatch
 
         public void Run(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
+            if (!_isRunning)
+                return;
+
             var exception = Run(invoker, dispatch.Context, new List<IMessage> { dispatch.Message });
             dispatch.SetHandled(invoker, exception);
         }
@@ -182,12 +179,14 @@ namespace Abc.Zebus.Dispatch
                 Enqueue(dispatch, invoker);
         }
 
-        public static string GetCurrentDispatchQueueName()
+        // for unit tests
+        internal static string GetCurrentDispatchQueueName()
         {
             return _currentDispatchQueueName;
         }
 
-        public static IDisposable SetCurrentDispatchQueueName(string queueName)
+        // for unit tests
+        internal static IDisposable SetCurrentDispatchQueueName(string queueName)
         {
             _currentDispatchQueueName = queueName;
 

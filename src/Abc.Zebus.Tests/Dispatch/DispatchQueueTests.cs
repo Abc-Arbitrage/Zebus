@@ -8,6 +8,7 @@ using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Tests.Dispatch.DispatchMessages;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
 using NUnit.Framework;
@@ -30,45 +31,50 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_not_run_invoker_when_queue_is_not_started()
         {
-            var started = new ManualResetEvent(false);
-            EnqueueInvocation(x => started.Set());
+            var message = new ExecutableEvent();
+            EnqueueInvocation(message);
 
-            var executed = started.WaitOne(100.Milliseconds());
-            executed.ShouldBeFalse();
+            Thread.Sleep(200);
+
+            message.HandleStarted.ShouldBeFalse();
         }
 
         [Test]
         public void should_run_invoker_when_queue_is_started()
         {
-            var started = new ManualResetEvent(false);
-            
+            var message = new ExecutableEvent();
+
             _dispatchQueue.Start();
-            EnqueueInvocation(x => started.Set());
+            EnqueueInvocation(message);
             
-            var executed = started.WaitOne(500.Milliseconds());
-            executed.ShouldBeTrue();
+            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
+        }
+
+        [Test]
+        public void should_run_continuation()
+        {
+            _dispatchQueue.Start();
+
+            var task = EnqueueInvocation(new ExecutableEvent());
+
+            task.Wait(500.Milliseconds()).ShouldBeTrue();
         }
 
         [Test]
         public void should_finish_current_invocation_before_stopping()
         {
-            var currentInvokerStarted = new ManualResetEvent(false);
-            var currentInvokerFinished = new ManualResetEvent(false);
+            var message = new ExecutableEvent { IsBlocking = true };
 
             _dispatchQueue.Start();
-            EnqueueInvocation(x =>
-            {
-                currentInvokerStarted.Set();
-                currentInvokerFinished.WaitOne();
-            });
+            EnqueueInvocation(message);
 
-            currentInvokerStarted.WaitOne(500.Milliseconds()).ShouldBeTrue();
+            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
 
             var stopTask = Task.Run(() => _dispatchQueue.Stop());
             Thread.Sleep(100);
             stopTask.IsCompleted.ShouldBeFalse();
 
-            Task.Run(() => currentInvokerFinished.Set());
+            Task.Run(() => message.Unblock());
             stopTask.Wait(500.Milliseconds()).ShouldBeTrue();
         }
 
@@ -77,38 +83,66 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _dispatchQueue.Start();
 
-            var message1HandleStarted = false;
-            EnqueueInvocation(x =>
-            {
-                message1HandleStarted = true;
-                Thread.Sleep(300);
-            });
+            var message = new ExecutableEvent { IsBlocking = true };
+            EnqueueInvocation(message);
 
-            Wait.Until(() => message1HandleStarted, 500.Milliseconds());
+            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
 
-            EnqueueInvocation(x => { });
-            EnqueueInvocation(x => { });
+            EnqueueInvocation(new ExecutableEvent());
+            EnqueueInvocation(new ExecutableEvent());
 
             _dispatchQueue.QueueLength.ShouldEqual(2);
 
             _dispatchQueue.Purge();
 
             _dispatchQueue.QueueLength.ShouldEqual(0);
+
+            message.Unblock();
         }
 
-        [Test, Timeout(1000)]
+        [Test]
         public void should_restart()
         {
             _dispatchQueue.Start();
             _dispatchQueue.Stop();
 
-            var started = new ManualResetEvent(false);
-            EnqueueInvocation(x => started.Set());
+            var message = new ExecutableEvent { IsBlocking = true };
+            EnqueueInvocation(message);
 
             _dispatchQueue.Start();
 
-            started.WaitOne();
-            Assert.Pass();
+            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
+        }
+
+        [Test, Repeat(5)]
+        public void should_stop_processing_messages_after_stop()
+        {
+            var firstMessage = new ExecutableEvent { IsBlocking = true };
+            EnqueueInvocation(firstMessage);
+
+            var otherMessageTasks = new List<Task>();
+            otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
+            otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
+
+            _dispatchQueue.Start();
+
+            Thread.Sleep(50);
+
+            otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
+            otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
+
+            var stopTask = Task.Run(() => _dispatchQueue.Stop());
+
+            Wait.Until(() => _dispatchQueue.IsRunning == false, 500.Milliseconds());
+
+            firstMessage.Unblock();
+
+            stopTask.Wait(500.Milliseconds()).ShouldBeTrue();
+
+            foreach (var otherMessageTask in otherMessageTasks)
+            {
+                otherMessageTask.IsCompleted.ShouldBeFalse();
+            }
         }
         
         [Test]
@@ -116,22 +150,26 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _dispatchQueue.Start();
 
-            var firstHandlerSignal = new ManualResetEvent(false);
-            EnqueueInvocation(x => firstHandlerSignal.WaitOne());
+            var message0 = new ExecutableEvent { IsBlocking = true };
+            EnqueueInvocation(message0);
 
-            var callParameters = new List<List<FakeEvent>>();
-            Action<List<FakeEvent>> callback = messages => callParameters.Add(messages);
+            var invokedBatches = new List<List<IMessage>>();
 
-            EnqueueBatchedInvocation(callback);
-            EnqueueBatchedInvocation(callback);
-            EnqueueBatchedInvocation(callback);
+            var messages = Enumerable.Range(0, 10)
+                                     .Select(x => new ExecutableEvent { Callback = i => invokedBatches.Add(i.Messages.ToList()) })
+                                     .ToList();
 
-            firstHandlerSignal.Set();
-            
-            Wait.Until(() => callParameters.Count >= 1, 50000.Milliseconds());
+            foreach (var message in messages)
+            {
+                EnqueueBatchedInvocation(message);
+            }
 
-            callParameters.Count.ShouldEqual(1);
-            callParameters[0].Count.ShouldEqual(3);
+            message0.Unblock();
+
+            Wait.Until(() => invokedBatches.Count >= 1, 500.Milliseconds());
+
+            var invokedBatch = invokedBatches.ExpectedSingle();
+            invokedBatch.ShouldBeEquivalentTo(messages);
         }
 
         [Test]
@@ -139,16 +177,16 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _dispatchQueue.Start();
 
-            var firstHandlerSignal = new ManualResetEvent(false);
-            EnqueueInvocation(x => firstHandlerSignal.WaitOne());
+            var firstMessage = new ExecutableEvent { IsBlocking = true };
+            EnqueueInvocation(firstMessage);
 
-            var dispatch1 = EnqueueBatchedInvocation(null);
-            var dispatch2 = EnqueueBatchedInvocation(null);
+            var dispatch1 = EnqueueBatchedInvocation(new ExecutableEvent());
+            var dispatch2 = EnqueueBatchedInvocation(new ExecutableEvent());
 
-            firstHandlerSignal.Set();
+            firstMessage.Unblock();
 
-            dispatch1.Wait(50000.Milliseconds()).ShouldBeTrue();
-            dispatch2.Wait(50000.Milliseconds()).ShouldBeTrue();
+            dispatch1.Wait(500.Milliseconds()).ShouldBeTrue();
+            dispatch2.Wait(500.Milliseconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -156,16 +194,18 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _dispatchQueue.Start();
 
-            var firstHandlerSignal = new ManualResetEvent(false);
-            EnqueueInvocation(x => firstHandlerSignal.WaitOne());
+            var firstMessage = new ExecutableEvent { IsBlocking = true };
+            EnqueueInvocation(firstMessage);
 
-            var dispatch1 = EnqueueBatchedInvocation(x => Throw());
-            var dispatch2 = EnqueueBatchedInvocation(x => Throw());
+            var dispatch1 = EnqueueBatchedInvocation(new ExecutableEvent { Callback = x => Throw() });
+            var dispatch2 = EnqueueBatchedInvocation(new ExecutableEvent());
 
-            firstHandlerSignal.Set();
+            firstMessage.Unblock();
 
-            Wait.Until(() => dispatch2.IsFaulted, 500.Milliseconds());
-            Wait.Until(() => dispatch1.IsFaulted, 500.Milliseconds());
+            dispatch1.Wait(500.Milliseconds()).ShouldBeTrue();
+            dispatch1.Result.Errors.ShouldNotBeEmpty();
+            dispatch2.Wait(500.Milliseconds()).ShouldBeTrue();
+            dispatch2.Result.Errors.ShouldNotBeEmpty();
         }
 
         private static void Throw()
@@ -173,34 +213,32 @@ namespace Abc.Zebus.Tests.Dispatch
             throw new Exception("Test");
         }
 
-        private void EnqueueInvocation(Action<IMessageHandlerInvocation> callback)
+        private Task<DispatchResult> EnqueueInvocation(ExecutableEvent message)
         {
-            var dispatch = new MessageDispatch(MessageContext.CreateTest(), new FakeEvent(0), (d, r) => { });
+            var tcs = new TaskCompletionSource<DispatchResult>();
+
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, (d, r) => tcs.SetResult(r));
             dispatch.SetHandlerCount(1);
 
-            var invoker = new TestMessageHandlerInvoker<FakeEvent> { InvokeMessageHandlerCallback = callback };
+            var invoker = new TestMessageHandlerInvoker<ExecutableEvent>();
 
             _dispatchQueue.Enqueue(dispatch, invoker);
+
+            return tcs.Task;
         }
 
-        private Task<DispatchResult> EnqueueBatchedInvocation(Action<List<FakeEvent>> callback)
+        private Task<DispatchResult> EnqueueBatchedInvocation(ExecutableEvent message)
         {
-            var taskcompletionSource = new TaskCompletionSource<DispatchResult>();
+            var tcs = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest(), new FakeEvent(0), (d, r) =>
-            {
-                if (r.Errors.Any())
-                    taskcompletionSource.SetException(r.Errors);
-                else
-                    taskcompletionSource.SetResult(r);
-            });
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, (d, r) => tcs.SetResult(r));
             dispatch.SetHandlerCount(1);
 
-            var invoker = new TestBatchedMessageHandlerInvoker<FakeEvent> { HandlerCallback = callback };
+            var invoker = new TestBatchedMessageHandlerInvoker<FakeEvent>();
 
             _dispatchQueue.Enqueue(dispatch, invoker);
 
-            return taskcompletionSource.Task;
+            return tcs.Task;
         }
     }
 }

@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Dispatch;
-using Abc.Zebus.Testing.Dispatch;
+using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Testing.Extensions;
-using Abc.Zebus.Tests.Dispatch.DispatchMessages;
-using Moq;
 using NUnit.Framework;
 using StructureMap;
 
@@ -24,12 +22,10 @@ namespace Abc.Zebus.Tests.Dispatch
                 new Message { Id = 2 },
             };
 
-            var invocationMock = new Mock<IMessageHandlerInvocation>();
-            invocationMock.SetupGet(x => x.Context).Returns(MessageContext.CreateTest());
-            invocationMock.SetupGet(x => x.Messages).Returns(messages);
-
             var invoker = new BatchedMessageHandlerInvoker(container, typeof(Handler), typeof(Message));
-            invoker.InvokeMessageHandler(invocationMock.Object);
+            var invocation = new PipeInvocation(invoker, messages, MessageContext.CreateTest(), new IPipe[0]);
+
+            invocation.Run();
 
             handler.Messages.ShouldEqual(messages.Cast<Message>().ToList());
         }

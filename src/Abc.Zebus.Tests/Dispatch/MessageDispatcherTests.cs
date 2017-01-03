@@ -305,15 +305,15 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var command1 = new BlockableCommand { IsBlocking = true };
+            var firstMessage = new ExecutableEvent { IsBlocking = true };
 
-            Dispatch(command1);
+            Dispatch(firstMessage);
 
-            Wait.Until(() => command1.HandleStarted, 500.Milliseconds());
+            Wait.Until(() => firstMessage.HandleStarted, 500.Milliseconds());
 
-            Dispatch(new BlockableCommand());
-            Dispatch(new BlockableCommand());
-            Dispatch(new BlockableCommand());
+            Dispatch(new ExecutableEvent());
+            Dispatch(new ExecutableEvent());
+            Dispatch(new ExecutableEvent());
 
             var dispatchQueue = _dispatchQueueFactory.DispatchQueues.ExpectedSingle();
             dispatchQueue.QueueLength.ShouldEqual(3);
@@ -323,7 +323,7 @@ namespace Abc.Zebus.Tests.Dispatch
             purgeCount.ShouldEqual(3);
             dispatchQueue.QueueLength.ShouldEqual(0);
 
-            command1.BlockingSignal.Set();
+            firstMessage.Unblock();
         }
 
         [Test]

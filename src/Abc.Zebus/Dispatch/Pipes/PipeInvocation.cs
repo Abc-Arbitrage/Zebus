@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Util;
@@ -31,10 +30,7 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         public IMessageHandlerInvoker Invoker => _invoker;
 
-        public List<IMessage> Messages
-        {
-            get { return _messages; }
-        }
+        public List<IMessage> Messages => _messages;
 
         public MessageContext Context => _messageContext;
 

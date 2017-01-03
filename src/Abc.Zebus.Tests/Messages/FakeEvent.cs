@@ -7,7 +7,7 @@ namespace Abc.Zebus.Tests.Messages
     {
         [ProtoMember(1, IsRequired = true)] public readonly int FakeId;
         
-        FakeEvent()
+        private FakeEvent()
         {
         }
 

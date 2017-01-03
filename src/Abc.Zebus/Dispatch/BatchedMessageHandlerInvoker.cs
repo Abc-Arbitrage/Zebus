@@ -33,12 +33,18 @@ namespace Abc.Zebus.Dispatch
             }
         }
 
-        internal object CreateHandler(MessageContext messageContext)
+        public override bool CanMergeWith(IMessageHandlerInvoker other)
+        {
+            var otherBatchedInvoker = other as BatchedMessageHandlerInvoker;
+            return otherBatchedInvoker != null && otherBatchedInvoker.MessageHandlerType == MessageHandlerType && otherBatchedInvoker.MessageType == MessageType;
+        }
+
+        private object CreateHandler(MessageContext messageContext)
         {
             return CreateHandler(_container, messageContext);
         }
 
-        public static Action<object, List<IMessage>> GenerateHandleAction(Type handlerType, Type messageType)
+        private static Action<object, List<IMessage>> GenerateHandleAction(Type handlerType, Type messageType)
         {
             var handleMethod = GetHandleMethodOrThrow(handlerType, messageType);
             ThrowsIfAsyncVoid(handlerType, handleMethod);
@@ -72,12 +78,6 @@ namespace Abc.Zebus.Dispatch
                 var error = string.Format("The message handler {0} has an async void Handle method. If you think there are valid use cases for this, please discuss it with the dev team", handlerType);
                 throw new InvalidProgramException(error);
             }
-        }
-
-        public override bool CanMergeWith(IMessageHandlerInvoker other)
-        {
-            var otherBatchedInvoker = other as BatchedMessageHandlerInvoker;
-            return otherBatchedInvoker != null && otherBatchedInvoker.MessageHandlerType == MessageHandlerType && otherBatchedInvoker.MessageType == MessageType;
         }
     }
 }
