@@ -25,7 +25,6 @@ namespace Abc.Zebus.Tests.Dispatch
     {
         private MessageDispatcher _messageDispatcher;
         private Mock<IContainer> _containerMock;
-        private volatile DispatchResultRef _dispatchResultRef;
         private DispatchQueueFactory _dispatchQueueFactory;
         private PipeManager _pipeManager;
 
@@ -234,9 +233,9 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.LoadMessageHandlerInvokers();
 
             var command = new FailingCommand(new InvalidOperationException(":'("));
-            DispatchAndWaitForCompletion(command);
+            var result = DispatchAndWaitForCompletion(command);
 
-            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
+            var error = result.Errors.ExpectedSingle();
             error.ShouldEqual(command.Exception);
         }
 
@@ -246,11 +245,9 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.LoadMessageHandlerInvokers();
 
             var command = new AsyncFailingCommand(new InvalidOperationException(":'("));
-            DispatchAndWaitForCompletion(command);
+            var result = DispatchAndWaitForCompletion(command);
 
-            Wait.Until(() => _dispatchResultRef != null, 2.Seconds());
-
-            var error = _dispatchResultRef.Value.Errors.ExpectedSingle();
+            var error = result.Errors.ExpectedSingle();
             error.ShouldEqual(command.Exception);
         }
 
@@ -270,9 +267,9 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.LoadMessageHandlerInvokers();
 
             var command = new AsyncDoNotStartTaskCommand();
-            DispatchAndWaitForCompletion(command);
+            var result = DispatchAndWaitForCompletion(command);
 
-            _dispatchResultRef.Value.Errors.Count.ShouldEqual(1);
+            result.Errors.Count.ShouldEqual(1);
         }
 
         [Test]
@@ -350,19 +347,13 @@ namespace Abc.Zebus.Tests.Dispatch
             asyncHandler.TaskScheduler.ShouldEqual(TaskScheduler.Default);
         }
 
-        private void DispatchAndWaitForCompletion(IMessage message)
+        private DispatchResult DispatchAndWaitForCompletion(IMessage message)
         {
-            var signal = new ManualResetEvent(false);
-            _dispatchResultRef = null;
+            var dispatch = Dispatch(message);
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, (x, r) =>
-            {
-                _dispatchResultRef = new DispatchResultRef(r);
-                signal.Set();
-            });
-            _messageDispatcher.Dispatch(dispatch);
+            dispatch.Wait(500).ShouldBeTrue("Dispatch should be completed");
 
-            signal.WaitOne(500).ShouldBeTrue("Dispatch should be completed");
+            return dispatch.Result;
         }
 
         private void DispatchFromDefaultDispatchQueue(IMessage message)
@@ -373,22 +364,14 @@ namespace Abc.Zebus.Tests.Dispatch
             }
         }
 
-        private void Dispatch(IMessage message)
+        private Task<DispatchResult> Dispatch(IMessage message)
         {
-            _dispatchResultRef = null;
+            var taskCompletionSource = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, (x, r) => _dispatchResultRef = new DispatchResultRef(r));
+            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, (x, r) => taskCompletionSource.SetResult(r));
             _messageDispatcher.Dispatch(dispatch);
-        }
 
-        private class DispatchResultRef
-        {
-            public readonly DispatchResult Value;
-
-            public DispatchResultRef(DispatchResult value)
-            {
-                Value = value;
-            }
+            return taskCompletionSource.Task;
         }
 
         private class DispatchQueueFactory : IDispatchQueueFactory
