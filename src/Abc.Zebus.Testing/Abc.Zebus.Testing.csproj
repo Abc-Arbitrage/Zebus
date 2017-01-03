@@ -76,6 +76,7 @@
     <Compile Include="CurrentThreadTaskScheduler.cs" />
     <Compile Include="Directory\TestPeerDirectory.cs" />
     <Compile Include="Dispatch\IExecutableMessage.cs" />
+    <Compile Include="Dispatch\TestBatchedMessageHandlerInvoker`1.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker`1.cs" />
     <Compile Include="Dispatch\TestAsyncMessageHandlerInvoker`1.cs" />
     <Compile Include="Extensions\ExtendSystemDateTime.cs" />

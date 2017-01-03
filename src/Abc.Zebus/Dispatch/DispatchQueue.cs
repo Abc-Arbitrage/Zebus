@@ -78,6 +78,8 @@ namespace Abc.Zebus.Dispatch
             _currentDispatchQueueName = _name;
             try
             {
+                _logger.Info(_name + " processing started");
+
                 var batch = new Batch(_batchSize);
 
                 foreach (var entries in _queue.GetConsumingEnumerable(_batchSize).TakeWhile(x => _isRunning))
@@ -146,8 +148,6 @@ namespace Abc.Zebus.Dispatch
 
         public void RunAsync(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
-            _logger.Info($"{invoker.MessageType}, {invoker.MessageHandlerType}, {invoker.Mode}");
-
             var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { dispatch.Message }, dispatch.Context);
 
             var invocationTask = invocation.RunAsync();
