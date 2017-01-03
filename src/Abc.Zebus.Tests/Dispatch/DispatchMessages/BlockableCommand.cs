@@ -1,28 +1,29 @@
 ﻿using System;
 using System.Threading;
 using Abc.Zebus.Dispatch;
+using ProtoBuf;
 
 namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
 {
-    [DispatchQueueName("DispatchQueue1")]
-    public class SyncCommandHandlerWithQueueName1 : IMessageHandler<DispatchCommand>
+    [ProtoContract]
+    public class BlockableCommand : ICommand
     {
-        public readonly EventWaitHandle CalledSignal = new AutoResetEvent(false);
-        public bool WaitForSignal;
+        public readonly EventWaitHandle BlockingSignal = new AutoResetEvent(false);
+        public bool IsBlocking;
         public bool HandleStarted;
         public bool HandleStopped;
         public string DispatchQueueName { get; set; }
         public Action Callback;
 
-        public void Handle(DispatchCommand message)
+        public void Handle()
         {
             HandleStarted = true;
             DispatchQueueName = DispatchQueue.GetCurrentDispatchQueueName();
 
             Callback?.Invoke();
 
-            if (WaitForSignal)
-                CalledSignal.WaitOne();
+            if (IsBlocking)
+                BlockingSignal.WaitOne();
 
             HandleStopped = true;
         }

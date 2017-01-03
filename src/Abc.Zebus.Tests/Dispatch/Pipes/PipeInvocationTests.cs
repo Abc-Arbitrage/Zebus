@@ -26,20 +26,8 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             _message = new FakeCommand(123);
             _messageContext = MessageContext.CreateTest("u.name");
             _pipes = new List<IPipe>();
-            _invocation = new PipeInvocation(_invoker, _message, _messageContext, _pipes);
+            _invocation = new PipeInvocation(_invoker, new List<IMessage> { _message }, _messageContext, _pipes);
             _handlerInvocation = _invocation;
-        }
-
-        [Test]
-        public void should_invoke_handler_async()
-        {
-            IMessageHandlerInvocation capturedMessageHandlerInvocation = null;
-            _invoker.InvokeMessageHandlerCallback = x => capturedMessageHandlerInvocation = x;
-
-            _invocation.RunAsync().RunSynchronously();
-
-            _invoker.Invoked.ShouldBeTrue();
-            capturedMessageHandlerInvocation.ShouldEqual(_invocation);
         }
 
         [Test]
@@ -59,7 +47,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             var beforeCalled = false;
             var handler = new Handler();
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 Name = "Pipe1",
                 BeforeCallback = x => beforeCalled = true
@@ -90,7 +78,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         {
             var order = new List<int>();
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 Name = "Pipe1",
                 BeforeCallback = x =>
@@ -105,7 +93,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
                 },
             });
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 Name = "Pipe2",
                 BeforeCallback = x =>
@@ -133,7 +121,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         {
             Exception exception = null;
 
-            _pipes.Add(new FakePipe
+            _pipes.Add(new TestPipe
             {
                 AfterCallback = x => exception = x.Exception
             });
@@ -150,53 +138,6 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
                     _invocation.Run();
                 }
             });
-
-            exception.ShouldNotBeNull();
-        }
-
-        [Test]
-        public void should_invoke_pipes_in_order_async()
-        {
-            var order = new List<int>();
-
-            _pipes.Add(new FakePipe
-            {
-                Name = "Pipe1",
-                BeforeCallback = x => order.Add(1),
-                AfterCallback = x => order.Add(5),
-            });
-
-            _pipes.Add(new FakePipe
-            {
-                Name = "Pipe2",
-                BeforeCallback = x => order.Add(2),
-                AfterCallback = x => order.Add(4),
-            });
-
-            _invoker.InvokeMessageHandlerCallback = x => order.Add(3);
-
-            _invocation.RunAsync().RunSynchronously();
-
-            order.Count.ShouldEqual(5);
-            order.ShouldBeOrdered();
-        }
-
-        [Test]
-        public void should_get_exception_async()
-        {
-            Exception exception = null;
-
-            _pipes.Add(new FakePipe
-            {
-                AfterCallback = x => exception = x.Exception
-            });
-
-            _invoker.InvokeMessageHandlerCallback = x =>
-            {
-                throw new ArgumentException("Foo");
-            };
-
-            _invocation.RunAsync().RunSynchronously();
 
             exception.ShouldNotBeNull();
         }

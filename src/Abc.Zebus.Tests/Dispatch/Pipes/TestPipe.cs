@@ -3,11 +3,11 @@ using Abc.Zebus.Dispatch.Pipes;
 
 namespace Abc.Zebus.Tests.Dispatch.Pipes
 {
-    public class FakePipe : IPipe
+    public class TestPipe : IPipe
     {
-        public FakePipe()
+        public TestPipe()
         {
-            Name = "FakePipe";
+            Name = "TestPipe";
         }
 
         public string Name { get; set; }
@@ -15,15 +15,19 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         public bool IsAutoEnabled { get; set; }
         public Action<BeforeInvokeArgs> BeforeCallback { get; set; }
         public Action<AfterInvokeArgs> AfterCallback { get; set; }
+        public BeforeInvokeArgs BeforeInvokeArgs { get; private set; }
+        public AfterInvokeArgs AfterInvokeArgs { get; private set; }
 
         public void BeforeInvoke(BeforeInvokeArgs args)
         {
             BeforeCallback?.Invoke(args);
+            BeforeInvokeArgs = args;
         }
 
         public void AfterInvoke(AfterInvokeArgs args)
         {
             AfterCallback?.Invoke(args);
+            AfterInvokeArgs = args;
         }
     }
 }

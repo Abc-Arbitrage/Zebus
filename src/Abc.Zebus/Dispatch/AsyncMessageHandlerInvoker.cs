@@ -18,9 +18,7 @@ namespace Abc.Zebus.Dispatch
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 
-        public override bool CanInvokeSynchronously => false;
-
-        public override bool ShouldCreateStartedTasks => true;
+        public override MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Asynchronous;
 
         internal object CreateHandler(MessageContext messageContext)
         {
@@ -29,7 +27,7 @@ namespace Abc.Zebus.Dispatch
 
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
         {
-            throw new NotSupportedException();
+            throw new NotSupportedException("InvokeMessageHandler is not supported in Asynchronous mode");
         }
 
         public override Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
@@ -39,7 +37,7 @@ namespace Abc.Zebus.Dispatch
                 var handler = CreateHandler(_container, invocation.Context);
                 using (invocation.SetupForInvocation(handler))
                 {
-                    return _handleAction(handler, invocation.Message);
+                    return _handleAction(handler, invocation.Messages[0]);
                 }
             }
             catch (Exception ex)

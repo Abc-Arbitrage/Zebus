@@ -15,9 +15,9 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         [Test]
         public void should_create_pipe_from_attribute()
         {
-            var pipe = new FakePipe();
+            var pipe = new TestPipe();
             var containerMock = new Mock<IContainer>();
-            containerMock.Setup(x => x.GetInstance(typeof(FakePipe))).Returns(pipe);
+            containerMock.Setup(x => x.GetInstance(typeof(TestPipe))).Returns(pipe);
 
             var source = new AttributePipeSource(containerMock.Object);
 
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
 
         public class FakePipeAttribute : PipeAttribute
         {
-            public FakePipeAttribute() : base(typeof(FakePipe))
+            public FakePipeAttribute() : base(typeof(TestPipe))
             {
             }
         }

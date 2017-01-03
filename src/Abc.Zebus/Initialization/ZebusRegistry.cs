@@ -19,7 +19,7 @@ namespace Abc.Zebus.Initialization
             ForSingletonOf<IMessageDispatcher>().Use<MessageDispatcher>();
             Forward<IMessageDispatcher, IProvideQueueLength>();
 
-            ForSingletonOf<IDispatcherTaskSchedulerFactory>().Use<DispatcherTaskSchedulerFactory>();
+            ForSingletonOf<IDispatchQueueFactory>().Use<DispatchQueueFactory>();
             For<IMessageSerializer>().Use<MessageSerializer>();
 
             ForSingletonOf<IPersistentTransport>().Use<PersistentTransport>().Ctor<ITransport>().Is<ZmqTransport>();

@@ -236,14 +236,13 @@ namespace Abc.Zebus.Tests.Core
 
                 _bus.Subscribe((FakeEvent e) => { });
 
-                invokers.Count.ShouldEqual(1);
-                invokers[0].CanInvokeSynchronously.ShouldBeTrue();
-                invokers[0].DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
-                invokers[0].MessageHandlerType.ShouldNotBeNull();
-                invokers[0].MessageType.ShouldEqual(typeof(FakeEvent));
-                invokers[0].MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
-                invokers[0].ShouldBeSubscribedOnStartup.ShouldBeFalse();
-                invokers[0].ShouldCreateStartedTasks.ShouldBeFalse();
+                var invoker = invokers.ExpectedSingle();
+                invoker.Mode.ShouldEqual(MessageHandlerInvokerMode.Synchronous);
+                invoker.DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
+                invoker.MessageHandlerType.ShouldNotBeNull();
+                invoker.MessageType.ShouldEqual(typeof(FakeEvent));
+                invoker.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
+                invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
             }
 
             [Test]
@@ -258,13 +257,12 @@ namespace Abc.Zebus.Tests.Core
                 var subscriptions = new[] { Subscription.Any<FakeEvent>() };
                 _bus.Subscribe(subscriptions, handlerMock.Object.Handle);
 
-                invokers.Count.ShouldEqual(1);
-                invokers[0].CanInvokeSynchronously.ShouldBeTrue();
-                invokers[0].DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
-                invokers[0].MessageHandlerType.ShouldNotBeNull();
-                invokers[0].MessageType.ShouldEqual(typeof(FakeEvent));
-                invokers[0].MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
-                invokers[0].ShouldCreateStartedTasks.ShouldBeFalse();
+                var invoker = invokers.ExpectedSingle();
+                invoker.Mode.ShouldEqual(MessageHandlerInvokerMode.Synchronous);
+                invoker.DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
+                invoker.MessageHandlerType.ShouldNotBeNull();
+                invoker.MessageType.ShouldEqual(typeof(FakeEvent));
+                invoker.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
             }
 
             [Test]
@@ -278,13 +276,12 @@ namespace Abc.Zebus.Tests.Core
                 var handlerMock = new Mock<IMessageHandler<IMessage>>();
                 _bus.Subscribe(Subscription.Any<FakeEvent>(), handlerMock.Object.Handle);
 
-                invokers.Count.ShouldEqual(1);
-                invokers[0].CanInvokeSynchronously.ShouldBeTrue();
-                invokers[0].DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
-                invokers[0].MessageHandlerType.ShouldNotBeNull();
-                invokers[0].MessageType.ShouldEqual(typeof(FakeEvent));
-                invokers[0].MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
-                invokers[0].ShouldCreateStartedTasks.ShouldBeFalse();
+                var invoker = invokers.ExpectedSingle();
+                invoker.Mode.ShouldEqual(MessageHandlerInvokerMode.Synchronous);
+                invoker.DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
+                invoker.MessageHandlerType.ShouldNotBeNull();
+                invoker.MessageType.ShouldEqual(typeof(FakeEvent));
+                invoker.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
             }
 
             [Test]

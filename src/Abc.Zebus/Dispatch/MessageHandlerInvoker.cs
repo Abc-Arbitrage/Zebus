@@ -33,20 +33,23 @@ namespace Abc.Zebus.Dispatch
         public MessageTypeId MessageTypeId { get; }
         public bool ShouldBeSubscribedOnStartup { get; }
         public string DispatchQueueName { get; }
-
-        public virtual bool ShouldCreateStartedTasks => false;
-        public virtual bool CanInvokeSynchronously => true;
+        public virtual MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Synchronous;
 
         public abstract void InvokeMessageHandler(IMessageHandlerInvocation invocation);
 
         public virtual Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
         {
-            return new Task(() => InvokeMessageHandler(invocation), TaskCreationOptions.HideScheduler);
+            throw new NotSupportedException("InvokeMessageHandlerAsync is not supported in Synchronous mode");
         }
 
         public virtual bool ShouldHandle(IMessage message)
         {
             return true;
+        }
+
+        public virtual bool CanMergeWith(IMessageHandlerInvoker other)
+        {
+            return false;
         }
 
         public static bool MessageShouldBeSubscribedOnStartup(Type messageType, Type handlerType)

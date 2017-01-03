@@ -14,8 +14,10 @@ namespace Abc.Zebus.Tests.Util.Collections
     [TestFixture]
     public class FlushableBlockingCollectionTests
     {
-        [Test]
-        public void should_get_consuming_enumerable()
+        [TestCase(1)]
+        [TestCase(20)]
+        [TestCase(200)]
+        public void should_get_consuming_enumerable(int batchSize)
         {
             var consumedItems = new List<int>();
 
@@ -23,7 +25,7 @@ namespace Abc.Zebus.Tests.Util.Collections
 
             var t1 = Task.Run(() => Enumerable.Range(0, 1000000).Select(x => 2 * x).ForEach(bc.Add));
             var t2 = Task.Run(() => Enumerable.Range(0, 1000000).Select(x => 2 * x + 1).ForEach(bc.Add));
-            var consume = Task.Run(() => bc.GetConsumingEnumerable().ForEach(consumedItems.Add));
+            var consume = Task.Run(() => bc.GetConsumingEnumerable(batchSize).ForEach(consumedItems.AddRange));
 
             Task.WaitAll(t1, t2);
 
@@ -47,32 +49,26 @@ namespace Abc.Zebus.Tests.Util.Collections
             var consumedItems = new List<int>();
             var consume = Task.Run(() =>
             {
-                var index = 0;
-                foreach (var item in collection.GetConsumingEnumerable())
+                foreach (var batch in collection.GetConsumingEnumerable(5))
                 {
-                    consumedItems.Add(item);
+                    consumedItems.AddRange(batch);
 
                     // simulate consumption lag
-                    if (index % 10000 == 0)
-                        Thread.Sleep(20);
-
-                    ++index;
+                    Thread.Sleep(0);
                 }
 
+                Console.WriteLine("{0} consumed items", consumedItems.Count);
                 Console.WriteLine("Consumer done");
             });
 
-            const int writerItemCount = 300000;
+            const int writerItemCount = 30000;
 
             var t1 = Task.Run(() =>
             {
                 foreach (var item in Enumerable.Range(0, writerItemCount).Select(x => 3 * x))
                 {
                     collection.Add(item);
-                    if ((item - 0) % 1000 == 0)
-                        Thread.Sleep(10);
-                    else
-                        Thread.Yield();
+                    Thread.SpinWait(1 << 4);
                 }
                 Console.WriteLine("T1 done");
             });
@@ -81,10 +77,7 @@ namespace Abc.Zebus.Tests.Util.Collections
                 foreach (var item in Enumerable.Range(0, writerItemCount).Select(x => 3 * x + 1))
                 {
                     collection.Add(item);
-                    if ((item  - 1) % 1000 == 0)
-                        Thread.Sleep(10);
-                    else
-                        Thread.Yield();
+                    Thread.SpinWait(1 << 4);
                 }
                 Console.WriteLine("T2 done");
             });
@@ -93,30 +86,29 @@ namespace Abc.Zebus.Tests.Util.Collections
                 foreach (var item in Enumerable.Range(0, writerItemCount).Select(x => 3 * x + 2))
                 {
                     collection.Add(item);
-                    if ((item - 2) % 1000 == 0)
-                        Thread.Sleep(10);
-                    else
-                        Thread.Yield();
+                    Thread.SpinWait(1 << 4);
+                    Thread.SpinWait(1 << 4);
                 }
                 Console.WriteLine("T3 done");
             });
 
-            Thread.Sleep(50);
+            Thread.Sleep(100);
 
             Console.WriteLine("Flush #1");
-            var flushedItems1 = collection.Flush(true);
-            Console.WriteLine("{0} flushed items", flushedItems1.Count);
+            var flushedItems1 = collection.Flush();
 
-            Thread.Sleep(50);
+            Thread.Sleep(100);
 
             Console.WriteLine("Flush #2");
-            var flushedItems2 = collection.Flush(true);
-            Console.WriteLine("{0} flushed items", flushedItems2.Count);
+            var flushedItems2 = collection.Flush();
 
             Task.WaitAll(t1, t2, t3);
 
             collection.CompleteAdding();
             consume.Wait();
+
+            Console.WriteLine("{0} flushed items (#1)", flushedItems1.Count);
+            Console.WriteLine("{0} flushed items (#2)", flushedItems2.Count);
 
             var exectedItems = Enumerable.Range(0, writerItemCount * 3).ToHashSet();
             var items = consumedItems.Concat(flushedItems1).Concat(flushedItems2).ToList();
@@ -135,14 +127,15 @@ namespace Abc.Zebus.Tests.Util.Collections
             var consumedItems = new List<int>();
             var consume = Task.Run(() =>
             {
-                foreach (var item in collection.GetConsumingEnumerable())
+                foreach (var batch in collection.GetConsumingEnumerable(10))
                 {
-                    consumedItems.Add(item);
+                    consumedItems.AddRange(batch);
 
                     // simulate very slow consumer
-                    Thread.Sleep(10);
+                    Thread.Sleep(2);
                 }
 
+                Console.WriteLine("{0} consumed items", consumedItems.Count);
                 Console.WriteLine("Consumer done");
             });
 
@@ -155,7 +148,7 @@ namespace Abc.Zebus.Tests.Util.Collections
 
             Thread.Sleep(100);
             Console.WriteLine("Flush #1");
-            var flushedItems1 = collection.Flush(true);
+            var flushedItems1 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems1.Count);
 
             foreach (var item in Enumerable.Range(1 * batchSize, batchSize))
@@ -165,7 +158,7 @@ namespace Abc.Zebus.Tests.Util.Collections
 
             Thread.Sleep(100);
             Console.WriteLine("Flush #2");
-            var flushedItems2 = collection.Flush(true);
+            var flushedItems2 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems2.Count);
 
             foreach (var item in Enumerable.Range(2 * batchSize, batchSize))
@@ -175,7 +168,7 @@ namespace Abc.Zebus.Tests.Util.Collections
 
             Thread.Sleep(100);
             Console.WriteLine("Flush #3");
-            var flushedItems3 = collection.Flush(true);
+            var flushedItems3 = collection.Flush();
             Console.WriteLine("{0} flushed items", flushedItems3.Count);
 
             collection.CompleteAdding();
@@ -190,18 +183,17 @@ namespace Abc.Zebus.Tests.Util.Collections
             }
         }
 
-        [TestCase(true)]
-        [TestCase(false)]
-        public void should_flush_multiple_times(bool waitForCompletion)
+        [Test]
+        public void should_flush_multiple_times()
         {
             var collection = new FlushableBlockingCollection<int>();
 
             var consumedItems = new List<int>();
             var consumerTask = Task.Run(() =>
             {
-                foreach (var item in collection.GetConsumingEnumerable())
+                foreach (var batch in collection.GetConsumingEnumerable(10))
                 {
-                    consumedItems.Add(item);
+                    consumedItems.AddRange(batch);
                     Thread.Yield();
                 }
                 Console.WriteLine("Consumer done");
@@ -212,7 +204,7 @@ namespace Abc.Zebus.Tests.Util.Collections
             {
                 for (var i = 0; i < 10; ++i)
                 {
-                    flushedItems.Add(collection.Flush(waitForCompletion));
+                    flushedItems.Add(collection.Flush());
                     Thread.Sleep(50);
                 }
                 Console.WriteLine("Flusher done");

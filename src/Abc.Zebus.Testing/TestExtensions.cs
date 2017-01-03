@@ -89,7 +89,7 @@ namespace Abc.Zebus.Testing
         {
             var invocationMock = new Mock<IMessageHandlerInvocation>();
             invocationMock.SetupGet(x => x.Context).Returns(context);
-            invocationMock.SetupGet(x => x.Message).Returns(message);
+            invocationMock.SetupGet(x => x.Messages).Returns(new List<IMessage> { message });
             invocationMock.Setup(x => x.SetupForInvocation()).Returns(() => MessageContext.SetCurrent(context));
             invocationMock.Setup(x => x.SetupForInvocation(It.IsAny<object>())).Returns(() => MessageContext.SetCurrent(context));
 

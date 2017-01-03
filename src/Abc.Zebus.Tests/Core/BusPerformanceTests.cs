@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Measurements;
@@ -120,7 +121,8 @@ namespace Abc.Zebus.Tests.Core
                 .WithHandlers(typeof(PerfCommandHandler), typeof(PerfEventHandler))
                 .CreateAndStartInMemoryBus();
 
-            using (MessageContext.SetCurrent(MessageContext.CreateTest().WithDispatchQueueName(DispatchQueueNameScanner.DefaultQueueName)))
+            using (DispatchQueue.SetCurrentDispatchQueueName(DispatchQueueNameScanner.DefaultQueueName))
+            using (MessageContext.SetCurrent(MessageContext.CreateTest()))
             {
                 Measure.Execution(500000, () => bus.Send(new PerfCommand(42)));
             }

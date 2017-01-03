@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Testing.Dispatch;
@@ -24,13 +25,13 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         [Test]
         public void should_build_invocation_with_pipe()
         {
-            var pipe = new FakePipe { IsAutoEnabled = true };
+            var pipe = new TestPipe { IsAutoEnabled = true };
             _pipeSource.Pipes.Add(pipe);
 
             var message = new FakeCommand(123);
             var messageContext = MessageContext.CreateTest("u.name");
             var invoker = new TestMessageHandlerInvoker(typeof(FakeCommandHandler), typeof(FakeCommand));
-            var invocation = _pipeManager.BuildPipeInvocation(invoker, message, messageContext);
+            var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { message }, messageContext);
 
             invocation.Pipes.Single().ShouldEqual(pipe);
         }
@@ -38,7 +39,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         [Test]
         public void should_load_pipes()
         {
-            var pipe = new FakePipe { IsAutoEnabled = false };
+            var pipe = new TestPipe { IsAutoEnabled = false };
             _pipeSource.Pipes.Add(pipe);
 
             _pipeManager.EnablePipe(pipe.Name);
@@ -49,9 +50,9 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         [Test]
         public void should_sort_pipes()
         {
-            _pipeSource.Pipes.Add(new FakePipe { Name = "Fake1", Priority = 1, IsAutoEnabled = true});
-            _pipeSource.Pipes.Add(new FakePipe { Name = "Fake2", Priority = 100, IsAutoEnabled = true });
-            _pipeSource.Pipes.Add(new FakePipe { Name = "Fake3", Priority = 50, IsAutoEnabled = true });
+            _pipeSource.Pipes.Add(new TestPipe { Name = "Fake1", Priority = 1, IsAutoEnabled = true});
+            _pipeSource.Pipes.Add(new TestPipe { Name = "Fake2", Priority = 100, IsAutoEnabled = true });
+            _pipeSource.Pipes.Add(new TestPipe { Name = "Fake3", Priority = 50, IsAutoEnabled = true });
 
             var enabledPipes = _pipeManager.GetEnabledPipes(typeof(FakeCommandHandler)).AsList();
             enabledPipes.Count.ShouldEqual(3);
@@ -61,7 +62,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         [Test]
         public void should_disable_pipe()
         {
-            var pipe = new FakePipe { IsAutoEnabled = true };
+            var pipe = new TestPipe { IsAutoEnabled = true };
             _pipeSource.Pipes.Add(pipe);
 
             var enabledPipes = _pipeManager.GetEnabledPipes(typeof(FakeCommandHandler));
@@ -75,7 +76,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         [Test]
         public void should_enable_pipe()
         {
-            var pipe = new FakePipe { IsAutoEnabled = false };
+            var pipe = new TestPipe { IsAutoEnabled = false };
             _pipeSource.Pipes.Add(pipe);
 
             var pipesBeforeEnable = _pipeManager.GetEnabledPipes(typeof(FakeCommandHandler));
