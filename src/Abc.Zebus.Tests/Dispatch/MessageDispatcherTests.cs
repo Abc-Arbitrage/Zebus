@@ -309,7 +309,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(firstMessage);
 
-            Wait.Until(() => firstMessage.HandleStarted, 500.Milliseconds());
+            firstMessage.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
 
             Dispatch(new ExecutableEvent());
             Dispatch(new ExecutableEvent());
@@ -358,10 +358,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
         private void DispatchFromDefaultDispatchQueue(IMessage message)
         {
-            using (DispatchQueue.SetCurrentDispatchQueueName(DispatchQueueNameScanner.DefaultQueueName))
-            {
-                Dispatch(message);
-            }
+            DispatchAndWaitForCompletion(new ExecutableEvent { Callback = x => Dispatch(message) });
         }
 
         private Task<DispatchResult> Dispatch(IMessage message)

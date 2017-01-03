@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Util;
@@ -16,7 +15,6 @@ namespace Abc.Zebus.Dispatch.Pipes
         private readonly List<IMessage> _messages;
         private readonly MessageContext _messageContext;
         private readonly IList<IPipe> _pipes;
-        private object[] _pipeStates;
 
         public PipeInvocation(IMessageHandlerInvoker invoker, List<IMessage> messages, MessageContext messageContext, IEnumerable<IPipe> pipes)
         {
@@ -41,7 +39,7 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         protected internal virtual void Run()
         {
-            _pipeStates = BeforeInvoke();
+            var pipeStates = BeforeInvoke();
 
             try
             {
@@ -49,11 +47,11 @@ namespace Abc.Zebus.Dispatch.Pipes
             }
             catch (Exception exception)
             {
-                AfterInvoke(_pipeStates, true, exception);
+                AfterInvoke(pipeStates, true, exception);
                 throw;
             }
 
-            AfterInvoke(_pipeStates, false, null);
+            AfterInvoke(pipeStates, false, null);
         }
 
         private object[] BeforeInvoke()
@@ -71,9 +69,6 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         private void AfterInvoke(object[] pipeStates, bool isFaulted, Exception exception)
         {
-            if (pipeStates == null)
-                throw new InvalidOperationException("Missing pipe states, did you call SetupForInvocation in your handler invoker?");
-
             for (var pipeIndex = _pipes.Count - 1; pipeIndex >= 0; --pipeIndex)
             {
                 var afterInvokeArgs = new AfterInvokeArgs(this, pipeStates[pipeIndex], isFaulted, exception);
@@ -83,6 +78,8 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         protected internal virtual Task RunAsync()
         {
+            var pipeStates = BeforeInvoke();
+
             var runTask = _invoker.InvokeMessageHandlerAsync(this);
 
             if (runTask.Status == TaskStatus.Created)
@@ -91,21 +88,13 @@ namespace Abc.Zebus.Dispatch.Pipes
                 runTask = TaskUtil.FromError(exception);
             }
 
-            Action<Task> continuation = task =>
-            {
-                AfterInvoke(_pipeStates, task.IsFaulted, task.Exception);
-                if (task.IsFaulted)
-                    ExceptionDispatchInfo.Capture(task.Exception.InnerException).Throw();
-            };
+            runTask.ContinueWith(task => AfterInvoke(pipeStates, task.IsFaulted, task.Exception), TaskContinuationOptions.ExecuteSynchronously);
 
-            return runTask.ContinueWith(continuation, TaskContinuationOptions.ExecuteSynchronously);
+            return runTask;
         }
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation()
         {
-            if (_pipeStates == null)
-                _pipeStates = BeforeInvoke();
-
             _messageLogger.InfoFormat("HANDLE: {0} [{1}]", _messages[0], _messageContext.MessageId);
 
             return MessageContext.SetCurrent(_messageContext);
@@ -113,9 +102,6 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation(object messageHandler)
         {
-            if (_pipeStates == null)
-                _pipeStates = BeforeInvoke();
-
             _messageLogger.InfoFormat("HANDLE: {0} [{1}]", _messages[0], _messageContext.MessageId);
 
             ApplyMutations(messageHandler);

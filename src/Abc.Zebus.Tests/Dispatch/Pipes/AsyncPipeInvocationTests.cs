@@ -71,21 +71,18 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         {
             Exception exceptionFromPipe = null;
 
-            _pipes.Add(new TestPipe
-            {
-                AfterCallback = x => exceptionFromPipe = x.Exception
-            });
+            _pipes.Add(new TestPipe { AfterCallback = x => exceptionFromPipe = x.Exception });
 
-            _message.Callback = x =>
-            {
-                throw new ArgumentException("Foo");
-            };
+            var expectedException = new ArgumentException("Foo");
+            _message.Callback = x => { throw expectedException; };
 
-            Exception exceptionFromInvocation = null;
-            _invocation.RunAsync().ContinueWith(t => exceptionFromInvocation = t.Exception.InnerExceptions.ExpectedSingle()).Wait();
+            var task = _invocation.RunAsync().ContinueWith(t => t.Exception.InnerExceptions.ExpectedSingle());
+            task.Wait(500.Milliseconds()).ShouldBeTrue();
+
+            var exceptionFromInvocation = task.Result;
 
             exceptionFromPipe.ShouldNotBeNull();
-            exceptionFromInvocation.ShouldNotBeNull();
+            exceptionFromInvocation.ShouldEqual(expectedException);
         }
     }
 }

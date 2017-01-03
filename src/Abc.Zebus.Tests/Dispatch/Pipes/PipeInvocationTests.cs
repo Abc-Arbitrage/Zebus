@@ -43,24 +43,6 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
         }
 
         [Test]
-        public void should_call_before_invoke_on_the_pipes_when_preparing_the_handler()
-        {
-            var beforeCalled = false;
-            var handler = new Handler();
-
-            _pipes.Add(new TestPipe
-            {
-                Name = "Pipe1",
-                BeforeCallback = x => beforeCalled = true
-            });
-
-            using (_handlerInvocation.SetupForInvocation(handler))
-            {
-                beforeCalled.ShouldBeTrue();
-            }
-        }
-
-        [Test]
         public void should_apply_mutations()
         {
             var handler = new Handler();

@@ -150,7 +150,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(message);
 
-            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
+            message.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
 
             var stopTask = Task.Run(() => _messageDispatcher.Stop());
 

@@ -36,7 +36,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Thread.Sleep(200);
 
-            message.HandleStarted.ShouldBeFalse();
+            message.HandleStarted.IsSet.ShouldBeFalse();
         }
 
         [Test]
@@ -46,8 +46,8 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _dispatchQueue.Start();
             EnqueueInvocation(message);
-            
-            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
+
+            message.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -68,7 +68,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
             EnqueueInvocation(message);
 
-            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
+            message.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
 
             var stopTask = Task.Run(() => _dispatchQueue.Stop());
             Thread.Sleep(100);
@@ -86,7 +86,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var message = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(message);
 
-            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
+            message.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
 
             EnqueueInvocation(new ExecutableEvent());
             EnqueueInvocation(new ExecutableEvent());
@@ -111,7 +111,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _dispatchQueue.Start();
 
-            Wait.Until(() => message.HandleStarted, 500.Milliseconds());
+            message.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
         }
 
         [Test, Repeat(5)]
@@ -145,13 +145,14 @@ namespace Abc.Zebus.Tests.Dispatch
             }
         }
         
-        [Test]
+        [Test, Repeat(5)]
         public void should_batch_messages()
         {
             _dispatchQueue.Start();
 
             var message0 = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(message0);
+            message0.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
 
             var invokedBatches = new List<List<IMessage>>();
 

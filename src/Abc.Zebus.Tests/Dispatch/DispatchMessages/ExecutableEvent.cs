@@ -9,25 +9,22 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
     [ProtoContract]
     public class ExecutableEvent : ICommand, IExecutableMessage
     {
-        private readonly EventWaitHandle _blockingSignal = new AutoResetEvent(false);
+        private readonly ManualResetEventSlim _blockingSignal = new ManualResetEventSlim();
 
         public bool IsBlocking { get; set; }
         public Action<IMessageHandlerInvocation> Callback { get; set; }
-        public bool HandleStarted { get; private set; }
-        public bool HandleStopped { get; private set; }
+        public ManualResetEventSlim HandleStarted { get; } = new ManualResetEventSlim();
         public string DispatchQueueName { get; private set; }
 
         public void Execute(IMessageHandlerInvocation invocation)
         {
-            HandleStarted = true;
+            HandleStarted.Set();
             DispatchQueueName = DispatchQueue.GetCurrentDispatchQueueName();
 
             Callback?.Invoke(invocation);
 
             if (IsBlocking)
-                _blockingSignal.WaitOne();
-
-            HandleStopped = true;
+                _blockingSignal.Wait();
         }
 
         public void Unblock()
