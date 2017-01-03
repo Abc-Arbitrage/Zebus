@@ -6,7 +6,7 @@ using StructureMap;
 
 namespace Abc.Zebus.Testing.Dispatch
 {
-    public class TestBatchedMessageHandlerInvoker<TMessage> : BatchedMessageHandlerInvoker where TMessage : class
+    public class TestBatchedMessageHandlerInvoker<TMessage> : BatchedMessageHandlerInvoker where TMessage : class, IEvent
     {
         public TestBatchedMessageHandlerInvoker() : this(new Mock<IContainer>())
         {
