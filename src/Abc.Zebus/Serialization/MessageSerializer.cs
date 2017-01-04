@@ -6,21 +6,22 @@ namespace Abc.Zebus.Serialization
     {
         private readonly Serializer _serializer = new Serializer();
 
-        public IMessage Deserialize(MessageTypeId messageTypeId, byte[] messageBytes)
+        public IMessage Deserialize(MessageTypeId messageTypeId, Stream stream)
         {
             var messageType = messageTypeId.GetMessageType();
             if (messageType == null)
                 return null;
 
-            return (IMessage)_serializer.Deserialize(messageType, new MemoryStream(messageBytes));
+            return (IMessage)_serializer.Deserialize(messageType, stream);
         }
 
-        public byte[] Serialize(IMessage message)
+        public Stream Serialize(IMessage message)
         {
             var stream = new MemoryStream();
             _serializer.Serialize(stream, message);
+            stream.Position = 0;
 
-            return stream.ToArray();
+            return stream;
         }
     }
 }

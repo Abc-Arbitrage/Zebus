@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
+using ProtoBuf;
 
 namespace Abc.Zebus.Testing.Comparison
 {
@@ -26,7 +28,8 @@ namespace Abc.Zebus.Testing.Comparison
                     {
                         // TODO : Is this still used?
                         new EquatableComparer()
-                    }
+                    },
+                    AttributesToIgnore = new List<Type> { typeof(ProtoIgnoreAttribute) },
                 }
             };
         }

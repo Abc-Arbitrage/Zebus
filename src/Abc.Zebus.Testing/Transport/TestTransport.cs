@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Serialization;
@@ -83,7 +84,7 @@ namespace Abc.Zebus.Testing.Transport
             if (peerList.Any())
                 _messages.Add(new TransportMessageSent(message, peerList, context));
 
-            var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.MessageBytes);
+            var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.Content);
             if (deserializedMessage != null)
                 MessagesSent.Add(deserializedMessage);
         }
@@ -95,7 +96,7 @@ namespace Abc.Zebus.Testing.Transport
 
         public TransportMessage CreateInfrastructureTransportMessage(MessageTypeId messageTypeId)
         {
-            return new TransportMessage(messageTypeId, new byte[0], PeerId, InboundEndPoint, MessageId.NextId());
+            return new TransportMessage(messageTypeId, new MemoryStream(), PeerId, InboundEndPoint, MessageId.NextId());
         }
 
         public void RaiseMessageReceived(TransportMessage transportMessage)

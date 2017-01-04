@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Serialization;
@@ -68,7 +69,8 @@ namespace Abc.Zebus.Core
 
         public static MessageExecutionCompleted Success(MessageId sourceCommandId, IMessage payload, IMessageSerializer serializer)
         {
-            var payloadBytes = serializer.Serialize(payload);
+            var payloadStream = serializer.Serialize(payload);
+            var payloadBytes = ToBytes(payloadStream);
 
             return new MessageExecutionCompleted(sourceCommandId, payload.TypeId(), payloadBytes);
         }
@@ -78,6 +80,17 @@ namespace Abc.Zebus.Core
             var errorStatus = CommandResult.GetErrorStatus(exceptions);
 
             return new MessageExecutionCompleted(sourceCommandId, errorStatus.Code, errorStatus.Message);
+        }
+
+        private static byte[] ToBytes(Stream payloadStream)
+        {
+            var memoryStream = payloadStream as MemoryStream;
+            if (memoryStream == null)
+            {
+                memoryStream = new MemoryStream();
+                payloadStream.CopyTo(memoryStream);
+            }
+            return memoryStream.ToArray();
         }
     }
 }

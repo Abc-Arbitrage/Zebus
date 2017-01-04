@@ -118,6 +118,12 @@
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
     <Compile Include="Monitoring\IProvideQueueLength.cs" />
+    <Compile Include="Serialization\Protobuf\ByteArray.cs" />
+    <Compile Include="Serialization\Protobuf\ByteString.cs" />
+    <Compile Include="Serialization\Protobuf\CodedInputStream.cs" />
+    <Compile Include="Serialization\Protobuf\CodedOutputStream.ComputeSize.cs" />
+    <Compile Include="Serialization\Protobuf\CodedOutputStream.cs" />
+    <Compile Include="Serialization\Protobuf\InvalidProtocolBufferException.cs" />
     <Compile Include="Routing\BindingKeyPredicateBuilder.cs" />
     <Compile Include="Routing\BindingKeyToken.cs" />
     <Compile Include="Routing\IBindingKeyPredicateBuilder.cs" />
@@ -196,6 +202,7 @@
     <Compile Include="Routing\Routable.cs" />
     <Compile Include="Routing\RoutingPositionAttribute.cs" />
     <Compile Include="EventSourcing\SerializationIdAttribute.cs" />
+    <Compile Include="Serialization\Protobuf\WireFormat.cs" />
     <Compile Include="SubscriptionMode.cs" />
     <Compile Include="SubscriptionModeAttribute.cs" />
     <Compile Include="TransientAttribute.cs" />
@@ -215,6 +222,8 @@
     <Compile Include="Peer.cs" />
     <Compile Include="Transport\IZmqTransportConfiguration.cs" />
     <Compile Include="Transport\SendContext.cs" />
+    <Compile Include="Transport\TransportMessageReader.cs" />
+    <Compile Include="Transport\TransportMessageWriter.cs" />
     <Compile Include="Transport\ZmqInboundSocket.cs" />
     <Compile Include="Transport\ZmqOutboundSocket.cs" />
     <Compile Include="Transport\ZmqEndPoint.cs" />

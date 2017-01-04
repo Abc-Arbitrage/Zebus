@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
@@ -18,7 +19,7 @@ namespace Abc.Zebus.Tests.Lotus
         public void Should_replay_messages_on_failed_handlers()
         {
             var peer = new Peer(new PeerId("Test"), "test://test");
-            var message = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), new byte[20], peer);
+            var message = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), new MemoryStream(new byte[20]), peer);
 
             var dispatcher = new FakeMessageDispatcher();
             var handler = new ReplayMessageHandler(dispatcher, new FakeDispatchFactory());
@@ -32,7 +33,7 @@ namespace Abc.Zebus.Tests.Lotus
         public void Should_replay_messages_on_all_handlers()
         {
             var peer = new Peer(new PeerId("Test"), "test://test");
-            var message = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), new byte[20], peer);
+            var message = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), new MemoryStream(new byte[20]), peer);
 
             var dispatcher = new FakeMessageDispatcher();
             var handler = new ReplayMessageHandler(dispatcher, new FakeDispatchFactory());

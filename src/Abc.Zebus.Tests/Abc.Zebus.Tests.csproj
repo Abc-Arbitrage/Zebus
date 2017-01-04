@@ -187,6 +187,8 @@
     <Compile Include="SubscriptionTests.Legacy.cs" />
     <Compile Include="TestDataBuilder.cs" />
     <Compile Include="Transport\BackwardCompatibilityTests.cs" />
+    <Compile Include="Transport\TransportMessageReaderTests.cs" />
+    <Compile Include="Transport\TransportMessageWriterTests.cs" />
     <Compile Include="Transport\ZmqTests.cs" />
     <Compile Include="Transport\ZmqTransportPerformanceTests.cs" />
     <Compile Include="Transport\ZmqTransportTests.cs" />

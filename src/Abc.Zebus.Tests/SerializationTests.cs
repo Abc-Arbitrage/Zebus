@@ -1,10 +1,12 @@
 ﻿using System;
+using System.IO;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using ProtoBuf;
 
 namespace Abc.Zebus.Tests
 {
@@ -18,7 +20,7 @@ namespace Abc.Zebus.Tests
             {
                 MessageId.NextId(),
                 new MessageTypeId("X"),
-                new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3}, new PeerId("peer"), "endpoint", MessageId.NextId()),
+                new TransportMessage(new MessageTypeId("lol"), new MemoryStream(new byte[] { 1, 2, 3 }), new PeerId("peer"), "endpoint", MessageId.NextId()),
                 new BindingKey("Abc", "123"),
                 new Peer(new PeerId("Abc.Testing.0"), "tcp://abctest:123", true, true),
             };
@@ -51,6 +53,26 @@ namespace Abc.Zebus.Tests
         {
             public PeerId PeerId1;
             public PeerId? PeerId2 = null;
+        }
+
+        [ProtoContract]
+        public class Foo1
+        {
+            [ProtoMember(1, IsRequired = true)]
+            public int Id;
+
+            [ProtoMember(2, IsRequired = true)]
+            public byte[] Bytes;
+        }
+
+        [ProtoContract]
+        public class Foo2
+        {
+            [ProtoMember(1, IsRequired = true)]
+            public int Id;
+
+            [ProtoMember(2, IsRequired = true)]
+            public Stream Stream;
         }
     }
 }
