@@ -258,17 +258,6 @@ namespace Abc.Zebus.Serialization.Protobuf
         }
 
         /// <summary>
-        /// Write a byte string, without a tag, to the stream.
-        /// The data is length-prefixed.
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void WriteBytes(ByteString value)
-        {
-            WriteLength(value.Length);
-            value.WriteRawBytesTo(this);
-        }
-
-        /// <summary>
         /// Writes a uint32 value, without a tag, to the stream.
         /// </summary>
         /// <param name="value">The value to write</param>

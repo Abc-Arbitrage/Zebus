@@ -120,7 +120,6 @@
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
     <Compile Include="Monitoring\IProvideQueueLength.cs" />
     <Compile Include="Serialization\Protobuf\ByteArray.cs" />
-    <Compile Include="Serialization\Protobuf\ByteString.cs" />
     <Compile Include="Serialization\Protobuf\CodedInputStream.cs" />
     <Compile Include="Serialization\Protobuf\CodedOutputStream.ComputeSize.cs" />
     <Compile Include="Serialization\Protobuf\CodedOutputStream.cs" />

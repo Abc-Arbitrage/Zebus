@@ -144,15 +144,6 @@ namespace Abc.Zebus.Serialization.Protobuf
 
         /// <summary>
         /// Computes the number of bytes that would be needed to encode a
-        /// bytes field, including the tag.
-        /// </summary>
-        public static int ComputeBytesSize(ByteString value)
-        {
-            return ComputeLengthSize(value.Length) + value.Length;
-        }
-
-        /// <summary>
-        /// Computes the number of bytes that would be needed to encode a
         /// uint32 field, including the tag.
         /// </summary>
         public static int ComputeUInt32Size(uint value)
