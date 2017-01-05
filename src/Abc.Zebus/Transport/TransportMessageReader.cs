@@ -144,7 +144,7 @@ namespace Abc.Zebus.Transport
                     input.ReadFixed64();
                     break;
                 case WireType.String:
-                    input.ReadString();
+                    input.SkipString();
                     break;
                 case WireType.StartGroup:
                     break;

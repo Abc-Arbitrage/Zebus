@@ -41,16 +41,17 @@ namespace Abc.Zebus.Serialization
             if (!HasParameterLessConstructor(messageType) && messageType != typeof(string))
                 obj = FormatterServices.GetUninitializedObject(messageType);
 
-
             return RuntimeTypeModel.Default.Deserialize(stream, obj, messageType);
         }
 
         private bool HasParameterLessConstructor(Type messageType)
         {
-            return _hasParameterLessConstructorByType.GetOrAdd(messageType, type =>
-                {
-                    return messageType.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[0], null) != null;
-                });
+            return _hasParameterLessConstructorByType.GetOrAdd(messageType, type => ComputeHasParameterLessConstructor(type));
+        }
+
+        private static bool ComputeHasParameterLessConstructor(Type type)
+        {
+            return type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[0], null) != null;
         }
     }
 }

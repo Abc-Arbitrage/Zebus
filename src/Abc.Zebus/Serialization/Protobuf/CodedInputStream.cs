@@ -263,6 +263,12 @@ namespace Abc.Zebus.Serialization.Protobuf
             return result;
         }
 
+        public void SkipString()
+        {
+            int length = ReadLength();
+            bufferPos += length;
+        }
+
         /// <summary>
         /// Reads a uint32 field value from the stream.
         /// </summary>   
