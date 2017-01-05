@@ -57,9 +57,8 @@ namespace Abc.Zebus.Serialization.Protobuf
         /// <summary>
         /// The index of the buffer at which we need to refill from the stream (if there is one).
         /// </summary>
-        private int bufferSize;
+        private readonly int bufferSize;
 
-        private int bufferSizeAfterLimit = 0;
         /// <summary>
         /// The position within the current buffer (i.e. the next byte to read)
         /// </summary>
@@ -73,43 +72,7 @@ namespace Abc.Zebus.Serialization.Protobuf
 
         private readonly byte[] guidBuffer = new byte[16];
 
-        /// <summary>
-        /// The next tag, used to store the value read by PeekTag.
-        /// </summary>
-        private uint nextTag = 0;
-        private bool hasNextTag = false;
-
-        internal const int DefaultRecursionLimit = 64;
-        internal const int DefaultSizeLimit = 64 << 20; // 64MB
-        internal const int BufferSize = 4096;
-
-        /// <summary>
-        /// The total number of bytes read before the current buffer. The
-        /// total bytes read up to the current position can be computed as
-        /// totalBytesRetired + bufferPos.
-        /// </summary>
-        private int totalBytesRetired = 0;
-
-        /// <summary>
-        /// The absolute position of the end of the current message.
-        /// </summary> 
-        private int currentLimit = int.MaxValue;
-
-        private int recursionDepth = 0;
-
-        private readonly int recursionLimit;
-        private readonly int sizeLimit;
-
         #region Construction
-        // Note that the checks are performed such that we don't end up checking obviously-valid things
-        // like non-null references for arrays we've just created.
-
-        /// <summary>
-        /// Creates a new CodedInputStream reading data from the given byte array.
-        /// </summary>
-        public CodedInputStream(byte[] buffer) : this(buffer, 0, buffer.Length)
-        {
-        }
 
         /// <summary>
         /// Creates a new CodedInputStream reading data from the given
@@ -133,124 +96,16 @@ namespace Abc.Zebus.Serialization.Protobuf
             this.buffer = buffer;
             this.bufferPos = offset;
             this.bufferSize = length;
-            this.sizeLimit = DefaultSizeLimit;
-            this.recursionLimit = DefaultRecursionLimit;
         }
-
-        /// <summary>
-        /// Creates a new CodedInputStream reading data from the given
-        /// stream and buffer, using the specified limits.
-        /// </summary>
-        /// <remarks>
-        /// This chains to the version with the default limits instead of vice versa to avoid
-        /// having to check that the default values are valid every time.
-        /// </remarks>
-        internal CodedInputStream(byte[] buffer, int bufferPos, int bufferSize, int sizeLimit, int recursionLimit) : this(buffer, bufferPos, bufferSize)
-        {
-            if (sizeLimit <= 0)
-            {
-                throw new ArgumentOutOfRangeException("sizeLimit", "Size limit must be positive");
-            }
-            if (recursionLimit <= 0)
-            {
-                throw new ArgumentOutOfRangeException("recursionLimit!", "Recursion limit must be positive");
-            }
-            this.sizeLimit = sizeLimit;
-            this.recursionLimit = recursionLimit;
-        }
+        
         #endregion
-
-        /// <summary>
-        /// Creates a <see cref="CodedInputStream"/> with the specified size and recursion limits, reading
-        /// from an input stream.
-        /// </summary>
-        /// <remarks>
-        /// This method exists separately from the constructor to reduce the number of constructor overloads.
-        /// It is likely to be used considerably less frequently than the constructors, as the default limits
-        /// are suitable for most use cases.
-        /// </remarks>
-        /// <param name="input">The input stream to read from</param>
-        /// <param name="sizeLimit">The total limit of data to read from the stream.</param>
-        /// <param name="recursionLimit">The maximum recursion depth to allow while reading.</param>
-        /// <returns>A <c>CodedInputStream</c> reading from <paramref name="input"/> with the specified size
-        /// and recursion limits.</returns>
-        public static CodedInputStream CreateWithLimits(Stream input, int sizeLimit, int recursionLimit)
-        {
-            return new CodedInputStream(new byte[BufferSize], 0, 0, sizeLimit, recursionLimit);
-        }
 
         /// <summary>
         /// Returns the current position in the input stream, or the position in the input buffer
         /// </summary>
         public long Position { get { return bufferPos; } }
 
-        /// <summary>
-        /// Returns the last tag read, or 0 if no tags have been read or we've read beyond
-        /// the end of the stream.
-        /// </summary>
-        internal uint LastTag { get { return lastTag; } }
-
-        /// <summary>
-        /// Returns the size limit for this stream.
-        /// </summary>
-        /// <remarks>
-        /// This limit is applied when reading from the underlying stream, as a sanity check. It is
-        /// not applied when reading from a byte array data source without an underlying stream.
-        /// The default value is 64MB.
-        /// </remarks>
-        /// <value>
-        /// The size limit.
-        /// </value>
-        public int SizeLimit { get { return sizeLimit; } }
-
-        /// <summary>
-        /// Returns the recursion limit for this stream. This limit is applied whilst reading messages,
-        /// to avoid maliciously-recursive data.
-        /// </summary>
-        /// <remarks>
-        /// The default limit is 64.
-        /// </remarks>
-        /// <value>
-        /// The recursion limit for this stream.
-        /// </value>
-        public int RecursionLimit { get { return recursionLimit; } }
-
-        #region Validation
-        /// <summary>
-        /// Verifies that the last call to ReadTag() returned tag 0 - in other words,
-        /// we've reached the end of the stream when we expected to.
-        /// </summary>
-        /// <exception cref="InvalidProtocolBufferException">The 
-        /// tag read was not the one specified</exception>
-        internal void CheckReadEndOfStreamTag()
-        {
-            if (lastTag != 0)
-            {
-                throw InvalidProtocolBufferException.MoreDataAvailable();
-            }
-        }
-        #endregion
-
         #region Reading of tags etc
-
-        /// <summary>
-        /// Peeks at the next field tag. This is like calling <see cref="ReadTag"/>, but the
-        /// tag is not consumed. (So a subsequent call to <see cref="ReadTag"/> will return the
-        /// same value.)
-        /// </summary>
-        public uint PeekTag()
-        {
-            if (hasNextTag)
-            {
-                return nextTag;
-            }
-
-            uint savedLast = lastTag;
-            nextTag = ReadTag();
-            hasNextTag = true;
-            lastTag = savedLast; // Undo the side effect of ReadTag
-            return nextTag;
-        }
 
         public bool TryReadTag(out uint number, out WireType wireType)
         {
@@ -277,13 +132,6 @@ namespace Abc.Zebus.Serialization.Protobuf
         /// <returns>The next field tag, or 0 for end of stream. (0 is never a valid tag.)</returns>
         public uint ReadTag()
         {
-            if (hasNextTag)
-            {
-                lastTag = nextTag;
-                hasNextTag = false;
-                return lastTag;
-            }
-
             // Optimize for the incredibly common case of having at least two bytes left in the buffer,
             // and those two bytes being enough to get the tag. This will be true for fields up to 4095.
             if (bufferPos + 2 <= bufferSize)
@@ -325,64 +173,6 @@ namespace Abc.Zebus.Serialization.Protobuf
                 throw InvalidProtocolBufferException.InvalidTag();
             }
             return lastTag;
-        }
-
-        /// <summary>
-        /// Skips the data for the field with the tag we've just read.
-        /// This should be called directly after <see cref="ReadTag"/>, when
-        /// the caller wishes to skip an unknown field.
-        /// </summary>
-        public void SkipLastField()
-        {
-            if (lastTag == 0)
-            {
-                throw new InvalidOperationException("SkipLastField cannot be called at the end of a stream");
-            }
-            switch (WireFormat.GetTagWireType(lastTag))
-            {
-                case WireFormat.WireType.StartGroup:
-                    SkipGroup();
-                    break;
-                case WireFormat.WireType.EndGroup:
-                    // Just ignore; there's no data following the tag.
-                    break;
-                case WireFormat.WireType.Fixed32:
-                    ReadFixed32();
-                    break;
-                case WireFormat.WireType.Fixed64:
-                    ReadFixed64();
-                    break;
-                case WireFormat.WireType.LengthDelimited:
-                    var length = ReadLength();
-                    SkipRawBytes(length);
-                    break;
-                case WireFormat.WireType.Varint:
-                    ReadRawVarint32();
-                    break;
-            }
-        }
-
-        private void SkipGroup()
-        {
-            // Note: Currently we expect this to be the way that groups are read. We could put the recursion
-            // depth changes into the ReadTag method instead, potentially...
-            recursionDepth++;
-            if (recursionDepth >= recursionLimit)
-            {
-                throw InvalidProtocolBufferException.RecursionLimitExceeded();
-            }
-            uint tag;
-            do
-            {
-                tag = ReadTag();
-                if (tag == 0)
-                {
-                    throw InvalidProtocolBufferException.TruncatedMessage();
-                }
-                // This recursion will allow us to handle nested groups.
-                SkipLastField();
-            } while (WireFormat.GetTagWireType(tag) != WireFormat.WireType.EndGroup);
-            recursionDepth--;
         }
 
         /// <summary>
@@ -474,16 +264,16 @@ namespace Abc.Zebus.Serialization.Protobuf
             {
                 return "";
             }
-            if (length <= bufferSize - bufferPos)
+            if (length > bufferSize - bufferPos)
             {
-                // Fast path:  We already have the bytes in a contiguous buffer, so
-                //   just copy directly from it.
-                String result = CodedOutputStream.Utf8Encoding.GetString(buffer, bufferPos, length);
-                bufferPos += length;
-                return result;
+                throw InvalidProtocolBufferException.TruncatedMessage();
             }
-            // Slow path: Build a byte array first then copy it.
-            return CodedOutputStream.Utf8Encoding.GetString(ReadRawBytes(length), 0, length);
+
+            // Fast path:  We already have the bytes in a contiguous buffer, so
+            //   just copy directly from it.
+            var result = CodedOutputStream.Utf8Encoding.GetString(buffer, bufferPos, length);
+            bufferPos += length;
+            return result;
         }
 
         /// <summary>
@@ -553,19 +343,6 @@ namespace Abc.Zebus.Serialization.Protobuf
             throw InvalidProtocolBufferException.SizeLimitExceeded();
         }
 
-        private Guid ReadGuidSlow()
-        {
-            var bytes = new byte[16];
-            var bytes1 = ReadRawBytes(8);
-            ByteArray.Copy(bytes1, 0, bytes, 0, 8);
-
-            ReadTag();
-            var bytes2 = ReadRawBytes(8);
-            ByteArray.Copy(bytes2, 0, bytes, 8, 8);
-
-            return new Guid(bytes);
-        }
-
         /// <summary>
         /// Reads a length for length-delimited data.
         /// </summary>
@@ -576,21 +353,6 @@ namespace Abc.Zebus.Serialization.Protobuf
         public int ReadLength()
         {
             return (int) ReadRawVarint32();
-        }
-
-        /// <summary>
-        /// Peeks at the next tag in the stream. If it matches <paramref name="tag"/>,
-        /// the tag is consumed and the method returns <c>true</c>; otherwise, the
-        /// stream is left in the original position and the method returns <c>false</c>.
-        /// </summary>
-        public bool MaybeConsumeTag(uint tag)
-        {
-            if (PeekTag() == tag)
-            {
-                hasNextTag = false;
-                return true;
-            }
-            return false;
         }
 
         #endregion
@@ -834,141 +596,13 @@ namespace Abc.Zebus.Serialization.Protobuf
         #region Internal reading and buffer management
 
         /// <summary>
-        /// Sets currentLimit to (current position) + byteLimit. This is called
-        /// when descending into a length-delimited embedded message. The previous
-        /// limit is returned.
-        /// </summary>
-        /// <returns>The old limit.</returns>
-        internal int PushLimit(int byteLimit)
-        {
-            if (byteLimit < 0)
-            {
-                throw InvalidProtocolBufferException.NegativeSize();
-            }
-            byteLimit += totalBytesRetired + bufferPos;
-            int oldLimit = currentLimit;
-            if (byteLimit > oldLimit)
-            {
-                throw InvalidProtocolBufferException.TruncatedMessage();
-            }
-            currentLimit = byteLimit;
-
-            RecomputeBufferSizeAfterLimit();
-
-            return oldLimit;
-        }
-
-        private void RecomputeBufferSizeAfterLimit()
-        {
-            bufferSize += bufferSizeAfterLimit;
-            int bufferEnd = totalBytesRetired + bufferSize;
-            if (bufferEnd > currentLimit)
-            {
-                // Limit is in current buffer.
-                bufferSizeAfterLimit = bufferEnd - currentLimit;
-                bufferSize -= bufferSizeAfterLimit;
-            }
-            else
-            {
-                bufferSizeAfterLimit = 0;
-            }
-        }
-
-        /// <summary>
-        /// Discards the current limit, returning the previous limit.
-        /// </summary>
-        internal void PopLimit(int oldLimit)
-        {
-            currentLimit = oldLimit;
-            RecomputeBufferSizeAfterLimit();
-        }
-
-        /// <summary>
-        /// Returns whether or not all the data before the limit has been read.
-        /// </summary>
-        /// <returns></returns>
-        internal bool ReachedLimit
-        {
-            get
-            {
-                if (currentLimit == int.MaxValue)
-                {
-                    return false;
-                }
-                int currentAbsolutePosition = totalBytesRetired + bufferPos;
-                return currentAbsolutePosition >= currentLimit;
-            }
-        }
-
-        /// <summary>
         /// Returns true if the stream has reached the end of the input. This is the
         /// case if either the end of the underlying input source has been reached or
         /// the stream has reached a limit created using PushLimit.
         /// </summary>
         public bool IsAtEnd
         {
-            get { return bufferPos == bufferSize && !RefillBuffer(false); }
-        }
-
-        /// <summary>
-        /// Called when buffer is empty to read more bytes from the
-        /// input.  If <paramref name="mustSucceed"/> is true, RefillBuffer() gurantees that
-        /// either there will be at least one byte in the buffer when it returns
-        /// or it will throw an exception.  If <paramref name="mustSucceed"/> is false,
-        /// RefillBuffer() returns false if no more bytes were available.
-        /// </summary>
-        /// <param name="mustSucceed"></param>
-        /// <returns></returns>
-        private bool RefillBuffer(bool mustSucceed)
-        {
-            if (bufferPos < bufferSize)
-            {
-                throw new InvalidOperationException("RefillBuffer() called when buffer wasn't empty.");
-            }
-
-            if (totalBytesRetired + bufferSize == currentLimit)
-            {
-                // Oops, we hit a limit.
-                if (mustSucceed)
-                {
-                    throw InvalidProtocolBufferException.TruncatedMessage();
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            totalBytesRetired += bufferSize;
-
-            bufferPos = 0;
-            bufferSize = 0;
-            if (bufferSize < 0)
-            {
-                throw new InvalidOperationException("Stream.Read returned a negative count");
-            }
-            if (bufferSize == 0)
-            {
-                if (mustSucceed)
-                {
-                    throw InvalidProtocolBufferException.TruncatedMessage();
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                RecomputeBufferSizeAfterLimit();
-                int totalBytesRead =
-                    totalBytesRetired + bufferSize + bufferSizeAfterLimit;
-                if (totalBytesRead > sizeLimit || totalBytesRead < 0)
-                {
-                    throw InvalidProtocolBufferException.SizeLimitExceeded();
-                }
-                return true;
-            }
+            get { return bufferPos == bufferSize; }
         }
 
         /// <summary>
@@ -981,7 +615,7 @@ namespace Abc.Zebus.Serialization.Protobuf
         {
             if (bufferPos == bufferSize)
             {
-                RefillBuffer(true);
+                throw InvalidProtocolBufferException.TruncatedMessage();
             }
             return buffer[bufferPos++];
         }
@@ -999,149 +633,16 @@ namespace Abc.Zebus.Serialization.Protobuf
                 throw InvalidProtocolBufferException.NegativeSize();
             }
 
-            if (totalBytesRetired + bufferPos + size > currentLimit)
+            if (size > bufferSize - bufferPos)
             {
-                // Read to the end of the stream (up to the current limit) anyway.
-                SkipRawBytes(currentLimit - totalBytesRetired - bufferPos);
-                // Then fail.
                 throw InvalidProtocolBufferException.TruncatedMessage();
             }
 
-            if (size <= bufferSize - bufferPos)
-            {
-                // We have all the bytes we need already.
-                byte[] bytes = new byte[size];
-                ByteArray.Copy(buffer, bufferPos, bytes, 0, size);
-                bufferPos += size;
-                return bytes;
-            }
-            else if (size < buffer.Length)
-            {
-                // Reading more bytes than are in the buffer, but not an excessive number
-                // of bytes.  We can safely allocate the resulting array ahead of time.
-
-                // First copy what we have.
-                byte[] bytes = new byte[size];
-                int pos = bufferSize - bufferPos;
-                ByteArray.Copy(buffer, bufferPos, bytes, 0, pos);
-                bufferPos = bufferSize;
-
-                // We want to use RefillBuffer() and then copy from the buffer into our
-                // byte array rather than reading directly into our byte array because
-                // the input may be unbuffered.
-                RefillBuffer(true);
-
-                while (size - pos > bufferSize)
-                {
-                    Buffer.BlockCopy(buffer, 0, bytes, pos, bufferSize);
-                    pos += bufferSize;
-                    bufferPos = bufferSize;
-                    RefillBuffer(true);
-                }
-
-                ByteArray.Copy(buffer, 0, bytes, pos, size - pos);
-                bufferPos = size - pos;
-
-                return bytes;
-            }
-            else
-            {
-                // The size is very large.  For security reasons, we can't allocate the
-                // entire byte array yet.  The size comes directly from the input, so a
-                // maliciously-crafted message could provide a bogus very large size in
-                // order to trick the app into allocating a lot of memory.  We avoid this
-                // by allocating and reading only a small chunk at a time, so that the
-                // malicious message must actually *be* extremely large to cause
-                // problems.  Meanwhile, we limit the allowed size of a message elsewhere.
-
-                // Remember the buffer markers since we'll have to copy the bytes out of
-                // it later.
-                int originalBufferPos = bufferPos;
-                int originalBufferSize = bufferSize;
-
-                // Mark the current buffer consumed.
-                totalBytesRetired += bufferSize;
-                bufferPos = 0;
-                bufferSize = 0;
-
-                // Read all the rest of the bytes we need.
-                int sizeLeft = size - (originalBufferSize - originalBufferPos);
-                List<byte[]> chunks = new List<byte[]>();
-
-                while (sizeLeft > 0)
-                {
-                    byte[] chunk = new byte[Math.Min(sizeLeft, buffer.Length)];
-                    int pos = 0;
-                    if (pos < chunk.Length)
-                    {
-                        throw InvalidProtocolBufferException.TruncatedMessage();
-                    }
-                    sizeLeft -= chunk.Length;
-                    chunks.Add(chunk);
-                }
-
-                // OK, got everything.  Now concatenate it all into one buffer.
-                byte[] bytes = new byte[size];
-
-                // Start by copying the leftover bytes from this.buffer.
-                int newPos = originalBufferSize - originalBufferPos;
-                ByteArray.Copy(buffer, originalBufferPos, bytes, 0, newPos);
-
-                // And now all the chunks.
-                foreach (byte[] chunk in chunks)
-                {
-                    Buffer.BlockCopy(chunk, 0, bytes, newPos, chunk.Length);
-                    newPos += chunk.Length;
-                }
-
-                // Done.
-                return bytes;
-            }
-        }
-
-        /// <summary>
-        /// Reads and discards <paramref name="size"/> bytes.
-        /// </summary>
-        /// <exception cref="InvalidProtocolBufferException">the end of the stream
-        /// or the current limit was reached</exception>
-        private void SkipRawBytes(int size)
-        {
-            if (size < 0)
-            {
-                throw InvalidProtocolBufferException.NegativeSize();
-            }
-
-            if (totalBytesRetired + bufferPos + size > currentLimit)
-            {
-                // Read to the end of the stream anyway.
-                SkipRawBytes(currentLimit - totalBytesRetired - bufferPos);
-                // Then fail.
-                throw InvalidProtocolBufferException.TruncatedMessage();
-            }
-
-            if (size <= bufferSize - bufferPos)
-            {
-                // We have all the bytes we need already.
-                bufferPos += size;
-            }
-            else
-            {
-                // Skipping more bytes than are in the buffer.  First skip what we have.
-                int pos = bufferSize - bufferPos;
-
-                // ROK 5/7/2013 Issue #54: should retire all bytes in buffer (bufferSize)
-                // totalBytesRetired += pos;
-                totalBytesRetired += bufferSize;
-                
-                bufferPos = 0;
-                bufferSize = 0;
-
-                // Then skip directly from the InputStream for the rest.
-                if (pos < size)
-                {
-                    throw InvalidProtocolBufferException.TruncatedMessage();
-                }
-            }
+            // We have all the bytes we need already.
+            byte[] bytes = new byte[size];
+            ByteArray.Copy(buffer, bufferPos, bytes, 0, size);
+            bufferPos += size;
+            return bytes;
         }
 
         #endregion
