@@ -225,6 +225,39 @@ namespace Abc.Zebus.Serialization.Protobuf
         }
 
         /// <summary>
+        /// Writes a string field value, without a tag, to the stream.
+        /// The data is length-prefixed.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="length"></param>
+        public void WriteString(string value, int length)
+        {
+            // Optimise the case where we have enough space to write
+            // the string directly to the buffer, which should be common.
+            WriteLength(length);
+            if (buffer.Length - position >= length)
+            {
+                if (length == value.Length) // Must be all ASCII...
+                {
+                    for (int i = 0; i < length; i++)
+                    {
+                        buffer[position + i] = (byte)value[i];
+                    }
+                }
+                else
+                {
+                    Utf8Encoding.GetBytes(value, 0, value.Length, buffer, position);
+                }
+                position += length;
+            }
+            else
+            {
+                byte[] bytes = Utf8Encoding.GetBytes(value);
+                WriteRawBytes(bytes);
+            }
+        }
+
+        /// <summary>
         /// Write a byte string, without a tag, to the stream.
         /// The data is length-prefixed.
         /// </summary>
@@ -533,28 +566,24 @@ namespace Abc.Zebus.Serialization.Protobuf
             position += length;
         }
 
-        public void WriteRawBytes(Stream stream)
+        public void WriteRawStream(Stream stream)
         {
-            EnsureCapacity((int)stream.Length);
+            var length = (int)stream.Length;
+            EnsureCapacity(length);
 
             var memoryStream = stream as MemoryStream;
             if (memoryStream != null)
-                WriteRawBytesCore(memoryStream);
+            {
+                ByteArray.Copy(memoryStream.GetBuffer(), 0, buffer, position, length);
+                position += length;
+            }
             else
-                WriteRawBytesCore(stream);
+            {
+                WriteRawStreamSlow(stream);
+            }
         }
 
-        private void WriteRawBytesCore(MemoryStream stream)
-        {
-            var streamBuffer = stream.GetBuffer();
-            var streamLength = (int)stream.Length;
-
-            ByteArray.Copy(streamBuffer, 0, buffer, position, streamLength);
-
-            position += streamLength;
-        }
-
-        private void WriteRawBytesCore(Stream stream)
+        private void WriteRawStreamSlow(Stream stream)
         {
             const int blockSize = 4096;
 

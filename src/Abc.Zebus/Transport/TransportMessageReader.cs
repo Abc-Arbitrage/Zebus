@@ -7,12 +7,13 @@ namespace Abc.Zebus.Transport
 {
     internal static class TransportMessageReader
     {
-        internal static TransportMessage Read(this CodedInputStream input)
+        internal static TransportMessage ReadTransportMessage(this CodedInputStream input)
         {
             var transportMessage = new TransportMessage();
+
             uint number;
             WireType wireType;
-            while (input.TryReadTag(out number, out wireType))
+            while (!input.IsAtEnd && input.TryReadTag(out number, out wireType))
             {
                 switch (number)
                 {

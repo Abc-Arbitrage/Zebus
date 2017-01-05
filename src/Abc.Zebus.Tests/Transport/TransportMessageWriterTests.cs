@@ -2,6 +2,7 @@
 using System.Text;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Testing.Measurements;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
@@ -18,7 +19,7 @@ namespace Abc.Zebus.Tests.Transport
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
             var stream = new CodedOutputStream();
-            TransportMessageWriter.Write(stream, transportMessage);
+            stream.WriteTransportMessage(transportMessage);
 
             var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
             deserializedTransportMessage1.Id.ShouldEqual(transportMessage.Id);
@@ -38,22 +39,60 @@ namespace Abc.Zebus.Tests.Transport
         }
 
         [Test]
+        public void should_serialize_transport_message_with_empty_strings()
+        {
+            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            transportMessage.Environment = null;
+            transportMessage.Originator = new OriginatorInfo(new PeerId(null), null, null, null);
+
+            var stream = new CodedOutputStream();
+            stream.WriteTransportMessage(transportMessage);
+
+            var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            deserializedTransportMessage1.Id.ShouldEqual(transportMessage.Id);
+            deserializedTransportMessage1.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
+            deserializedTransportMessage1.GetContentBytes().ShouldEqual(transportMessage.GetContentBytes());
+            deserializedTransportMessage1.Originator.InitiatorUserName.ShouldEqual(transportMessage.Originator.InitiatorUserName);
+            deserializedTransportMessage1.Environment.ShouldEqual(transportMessage.Environment);
+            deserializedTransportMessage1.WasPersisted.ShouldEqual(true);
+        }
+
+        [Test]
         public void should_serialize_transport_message_twice()
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
             var stream = new CodedOutputStream();
-            TransportMessageWriter.Write(stream, transportMessage);
+            stream.WriteTransportMessage(transportMessage);
 
             var deserialized1 = Serializer.Deserialize<TransportMessage2>(new MemoryStream(stream.Buffer, 0, stream.Position));
             deserialized1.WasPersisted.ShouldEqual(true);
 
             stream.Position = 0;
             transportMessage.WasPersisted = false;
-            TransportMessageWriter.Write(stream, transportMessage);
+            stream.WriteTransportMessage(transportMessage);
 
             var deserialized2 = Serializer.Deserialize<TransportMessage2>(new MemoryStream(stream.Buffer, 0, stream.Position));
             deserialized2.WasPersisted.ShouldEqual(false);
+        }
+
+        [Test, Ignore("Manual test")]
+        public void MeasureWritePerformance()
+        {
+            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var stream = new CodedOutputStream();
+
+            stream.WriteTransportMessage(transportMessage);
+
+            const int count = 10 * 1000 * 1000;
+            using (Measure.Throughput(count))
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    stream.Position = 0;
+                    stream.WriteTransportMessage(transportMessage);
+                }
+            }
         }
 
         [ProtoContract]

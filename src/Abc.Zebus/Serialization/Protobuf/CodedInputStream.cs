@@ -64,12 +64,6 @@ namespace Abc.Zebus.Serialization.Protobuf
         /// </summary>
         private int bufferPos = 0;
 
-        /// <summary>
-        /// The last tag we read. 0 indicates we've read to the end of the stream
-        /// (or haven't read anything yet).
-        /// </summary>
-        private uint lastTag = 0;
-
         private readonly byte[] guidBuffer = new byte[16];
 
         #region Construction
@@ -132,47 +126,40 @@ namespace Abc.Zebus.Serialization.Protobuf
         /// <returns>The next field tag, or 0 for end of stream. (0 is never a valid tag.)</returns>
         public uint ReadTag()
         {
-            // Optimize for the incredibly common case of having at least two bytes left in the buffer,
-            // and those two bytes being enough to get the tag. This will be true for fields up to 4095.
-            if (bufferPos + 2 <= bufferSize)
+            // Optimize for the incredibly common case of having at least one byte left in the buffer,
+            // and this byte being enough to get the tag. This will be true for fields up to 31.
+            if (bufferPos + 1 <= bufferSize)
             {
-                int tmp = buffer[bufferPos++];
-                if (tmp < 128)
+                uint tag = buffer[bufferPos];
+                if (tag < 128)
                 {
-                    lastTag = (uint)tmp;
-                }
-                else
-                {
-                    int result = tmp & 0x7f;
-                    if ((tmp = buffer[bufferPos++]) < 128)
+                    bufferPos++;
+                    if (tag == 0)
                     {
-                        result |= tmp << 7;
-                        lastTag = (uint) result;
+                        // If we actually read zero, that's not a valid tag.
+                        throw InvalidProtocolBufferException.InvalidTag();
                     }
-                    else
-                    {
-                        // Nope, rewind and go the potentially slow route.
-                        bufferPos -= 2;
-                        lastTag = ReadRawVarint32();
-                    }
+                    return tag;
                 }
             }
-            else
-            {
-                if (IsAtEnd)
-                {
-                    lastTag = 0;
-                    return 0; // This is the only case in which we return 0.
-                }
+            return ReadTagSlow();
+        }
 
-                lastTag = ReadRawVarint32();
+        private uint ReadTagSlow()
+        {
+            if (IsAtEnd)
+            {
+                return 0;
             }
-            if (lastTag == 0)
+
+            uint tag = ReadRawVarint32();
+            if (tag == 0)
             {
                 // If we actually read zero, that's not a valid tag.
                 throw InvalidProtocolBufferException.InvalidTag();
             }
-            return lastTag;
+
+            return tag;
         }
 
         /// <summary>

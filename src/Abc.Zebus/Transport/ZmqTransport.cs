@@ -264,7 +264,7 @@ namespace Abc.Zebus.Transport
         {
             try
             {
-                var transportMessage = inputStream.Read();
+                var transportMessage = inputStream.ReadTransportMessage();
 
                 if (!IsFromCurrentEnvironment(transportMessage))
                     return;
@@ -467,7 +467,7 @@ namespace Abc.Zebus.Transport
             transportMessage.Environment = _environment;
             transportMessage.WasPersisted = wasPersisted;
 
-            TransportMessageWriter.Write(outputStream, transportMessage);
+            outputStream.WriteTransportMessage(transportMessage);
         }
 
         private void SafeAdd<T>(BlockingCollection<T> collection, T item)
