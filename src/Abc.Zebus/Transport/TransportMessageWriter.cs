@@ -38,28 +38,13 @@ namespace Abc.Zebus.Transport
 
         private static void Write(CodedOutputStream output, MessageId messageId)
         {
-            var size = 1 + GetMessageSizeWithLength(CalculateSize(messageId.Value));
+            var size = 1 + GetMessageSizeWithLength(CodedOutputStream.GuidSize);
             output.WriteLength(size);
             output.WriteRawTag(10);
-            Write(output, messageId.Value);
+
+            output.WriteGuid(messageId.Value);
         }
-
-        private static void Write(CodedOutputStream output, Guid guid)
-        {
-            output.WriteLength(CalculateSize(guid));
-
-            var blob = guid.ToByteArray();
-            output.WriteRawTag(9);
-            output.WriteRawBytes(blob, 0, 8);
-            output.WriteRawTag(17);
-            output.WriteRawBytes(blob, 8, 8);
-        }
-
-        private static int CalculateSize(Guid guid)
-        {
-            return 1 + 8 + 1 + 8;
-        }
-
+        
         private static void Write(CodedOutputStream output, MessageTypeId messageTypeId)
         {
             var size = 1 + CodedOutputStream.ComputeStringSize(messageTypeId.FullName);

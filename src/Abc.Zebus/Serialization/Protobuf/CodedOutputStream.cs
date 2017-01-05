@@ -502,6 +502,17 @@ namespace Abc.Zebus.Serialization.Protobuf
             WriteRawByte((byte) value);
         }
 
+        public void WriteGuid(Guid value)
+        {
+            WriteLength(GuidSize);
+
+            var blob = value.ToByteArray();
+            WriteRawTag(9);
+            WriteRawBytes(blob, 0, 8);
+            WriteRawTag(17);
+            WriteRawBytes(blob, 8, 8);
+        }
+
         /// <summary>
         /// Writes out an array of bytes.
         /// </summary>
@@ -524,13 +535,33 @@ namespace Abc.Zebus.Serialization.Protobuf
 
         public void WriteRawBytes(Stream stream)
         {
+            EnsureCapacity((int)stream.Length);
+
+            var memoryStream = stream as MemoryStream;
+            if (memoryStream != null)
+                WriteRawBytesCore(memoryStream);
+            else
+                WriteRawBytesCore(stream);
+        }
+
+        private void WriteRawBytesCore(MemoryStream stream)
+        {
+            var streamBuffer = stream.GetBuffer();
+            var streamLength = (int)stream.Length;
+
+            ByteArray.Copy(streamBuffer, 0, buffer, position, streamLength);
+
+            position += streamLength;
+        }
+
+        private void WriteRawBytesCore(Stream stream)
+        {
             const int blockSize = 4096;
 
             stream.Position = 0;
 
             while (true)
             {
-                EnsureCapacity(blockSize);
                 var readCount = stream.Read(buffer, position, blockSize);
                 position += readCount;
                 if (readCount != blockSize)

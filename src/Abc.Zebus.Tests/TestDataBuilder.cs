@@ -22,8 +22,16 @@ namespace Abc.Zebus.Tests
             var content = new byte[1234];
             new Random().NextBytes(content);
 
-            return CreateTransportMessage<TMessage>(new MemoryStream(content));
+            return CreateTransportMessage<TMessage>(CreateStream(content));
         }
+
+        public static MemoryStream CreateStream(byte[] content)
+        {
+            var contentStream = new MemoryStream();
+            contentStream.Write(content, 0, content.Length);
+            return contentStream;
+        }
+
         public static TransportMessage CreateTransportMessage<TMessage>(Stream content)
         {
             return new TransportMessage(new MessageTypeId(typeof(TMessage)), content, new PeerId("Abc.Testing.0"), "tcp://testing:1234", MessageId.NextId())

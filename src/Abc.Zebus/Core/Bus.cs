@@ -155,7 +155,7 @@ namespace Abc.Zebus.Core
             if (!IsRunning)
                 throw new InvalidOperationException("Unable to publish message, the bus is not running");
 
-            var peersHandlingMessage = _directory.GetPeersHandlingMessage(message).ToList();
+            var peersHandlingMessage = _directory.GetPeersHandlingMessage(message);
 
             var localDispatchEnabled = LocalDispatch.Enabled;
             var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == PeerId);

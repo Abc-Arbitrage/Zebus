@@ -98,18 +98,7 @@ namespace Abc.Zebus.Transport
 
         private static Guid ReadGuid(CodedInputStream input)
         {
-            input.ReadLength();
-
-            input.ReadTag();
-            var bytes = new byte[16];
-            var bytes1 = input.ReadRawBytes(8);
-            ByteArray.Copy(bytes1, 0, bytes, 0, 8);
-
-            input.ReadTag();
-            var bytes2 = input.ReadRawBytes(8);
-            ByteArray.Copy(bytes2, 0, bytes, 8, 8);
-
-            return new Guid(bytes);
+            return input.ReadGuid();
         }
 
         private static Stream ReadStream(CodedInputStream input)

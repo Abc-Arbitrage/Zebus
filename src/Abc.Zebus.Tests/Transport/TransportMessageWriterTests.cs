@@ -40,13 +40,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_serialize_transport_message_twice()
         {
-            var contentBytes = Encoding.ASCII.GetBytes(new string('X', 1000));
-            var content = new MemoryStream(contentBytes);
-            var transportMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), content, new PeerId("Abc.Testing.0"), "tcp://testing:1234", MessageId.NextId())
-            {
-                Environment = "Test",
-                WasPersisted = true,
-            };
+            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
             var stream = new CodedOutputStream();
             TransportMessageWriter.Write(stream, transportMessage);

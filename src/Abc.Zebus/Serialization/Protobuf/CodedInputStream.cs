@@ -71,6 +71,8 @@ namespace Abc.Zebus.Serialization.Protobuf
         /// </summary>
         private uint lastTag = 0;
 
+        private readonly byte[] guidBuffer = new byte[16];
+
         /// <summary>
         /// The next tag, used to store the value read by PeekTag.
         /// </summary>
@@ -533,6 +535,35 @@ namespace Abc.Zebus.Serialization.Protobuf
         public long ReadSInt64()
         {
             return DecodeZigZag64(ReadRawVarint64());
+        }
+
+        public Guid ReadGuid()
+        {
+            ReadLength();
+            if (bufferSize - bufferPos >= CodedOutputStream.GuidSize)
+            {
+                ReadTag();
+                ByteArray.Copy(buffer, bufferPos, guidBuffer, 0, 8);
+                bufferPos += 8;
+                ReadTag();
+                ByteArray.Copy(buffer, bufferPos, guidBuffer, 8, 8);
+                bufferPos += 8;
+                return new Guid(guidBuffer);
+            }
+            throw InvalidProtocolBufferException.SizeLimitExceeded();
+        }
+
+        private Guid ReadGuidSlow()
+        {
+            var bytes = new byte[16];
+            var bytes1 = ReadRawBytes(8);
+            ByteArray.Copy(bytes1, 0, bytes, 0, 8);
+
+            ReadTag();
+            var bytes2 = ReadRawBytes(8);
+            ByteArray.Copy(bytes2, 0, bytes, 8, 8);
+
+            return new Guid(bytes);
         }
 
         /// <summary>
