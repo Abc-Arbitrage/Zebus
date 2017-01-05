@@ -44,12 +44,10 @@ namespace Abc.Zebus.Tests
                 return;
             }
 
-            RunReceiver();
+            var test = new BusPerformanceTests();
+            test.MeasureEventThroughputWithoutPersistence();
 
-//            var test = new BusPerformanceTests();
-//            test.MeasureEventThroughputWithManyReceivers(1000000, 10);
-//
-//            Console.ReadKey();
+            Console.ReadKey();
         }
 
         private static void RunLocalDispatch()

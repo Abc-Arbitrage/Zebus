@@ -39,7 +39,7 @@ namespace Abc.Zebus.Tests.Core
                 {
                     var transportMessage = command.ToTransportMessage();
 
-                    var messageProcessingFailedBytes = new MessageProcessingFailed(null, null, null, DateTime.UtcNow, null).ToTransportMessage().MessageBytes;
+                    var messageProcessingFailedBytes = new MessageProcessingFailed(null, null, null, DateTime.UtcNow, null).ToTransportMessage().Content;
                     _messageSerializer.AddSerializationFuncFor<MessageProcessingFailed>(x =>
                     {
                         x.FailingMessage.ShouldEqual(transportMessage);

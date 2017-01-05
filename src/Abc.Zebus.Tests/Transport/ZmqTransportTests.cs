@@ -368,14 +368,14 @@ namespace Abc.Zebus.Tests.Transport
             var messageBytes = new byte[5000];
             new Random().NextBytes(messageBytes);
 
-            var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), messageBytes, new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
+            var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(messageBytes), new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
             senderTransport.Send(bigMessage, new[] { receiver });
 
             Wait.Until(() => receviedMessages.Count == 1, 150.Milliseconds());
 
             receviedMessages[0].ShouldHaveSamePropertiesAs(bigMessage);
 
-            var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), new byte[1], new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
+            var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(new byte[1]), new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
             senderTransport.Send(smallMessage, new[] { receiver });
 
             Wait.Until(() => receviedMessages.Count == 2, 150.Milliseconds());
@@ -409,7 +409,7 @@ namespace Abc.Zebus.Tests.Transport
             bool receivedWhileNotListening = false;
             receivingTransport.MessageReceived += message =>
             {
-                var cmdWithTimetamp = (FakeCommandWithTimestamp)messageSerializer.Deserialize(message.MessageTypeId, message.MessageBytes);
+                var cmdWithTimetamp = (FakeCommandWithTimestamp)messageSerializer.Deserialize(message.MessageTypeId, message.Content);
 
                 if (cmdWithTimetamp.Timestamp > ((CapturingIsListeningTimeZmqTransport)receivingTransport).IsListeningSwitchTimestamp)
                     receivedWhileNotListening = true;

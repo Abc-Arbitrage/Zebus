@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
-using Abc.Zebus.Util;
 using ProtoBuf.Meta;
 
 namespace Abc.Zebus.Serialization
@@ -12,11 +11,6 @@ namespace Abc.Zebus.Serialization
     {
         private readonly ConcurrentDictionary<Type, bool> _hasParameterLessConstructorByType = new ConcurrentDictionary<Type, bool>();
 
-        public byte[] SerializeToBytes(object message)
-        {
-            return Serialize(message).ToArray();
-        }
-        
         public MemoryStream Serialize(object message)
         {
             var stream = new MemoryStream();
@@ -36,12 +30,7 @@ namespace Abc.Zebus.Serialization
             }
         }
 
-        public T Deserialize<T>(byte[] bytes)
-        {
-            return (T)Deserialize(typeof(T), new MemoryStream(bytes));
-        }
-
-        public object Deserialize(Type messageType, MemoryStream stream)
+        public object Deserialize(Type messageType, Stream stream)
         {
             if (messageType == null)
                 return null;
@@ -54,12 +43,6 @@ namespace Abc.Zebus.Serialization
 
 
             return RuntimeTypeModel.Default.Deserialize(stream, obj, messageType);
-        }
-
-        public object Deserialize(string messageTypeName, MemoryStream stream)
-        {
-            var messageType = TypeUtil.Resolve(messageTypeName);
-            return Deserialize(messageType, stream);
         }
 
         private bool HasParameterLessConstructor(Type messageType)

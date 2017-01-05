@@ -18,7 +18,7 @@ namespace Abc.Zebus.Tests.Core
     public class BusPerformanceTests
     {
         // this must be a valid directory endpoint
-        private const string _directoryEndPoint = "tcp://<directory-address>:<port>";
+        private static readonly string _directoryEndPoint = Environment.GetEnvironmentVariable("ZEBUS_TEST_DIRECTORY", EnvironmentVariableTarget.User);
 
         [Test]
         public void MeasureCommandThroughputWithoutPersistence()
@@ -54,7 +54,7 @@ namespace Abc.Zebus.Tests.Core
             // 25/11/2013 CAO: 66k/s
             // 10/12/2013 CAO: 72k/s
 
-            const int messageCount = 500000;
+            const int messageCount = 1000 * 1000;
 
             var receiver = CreateAndStartReceiver();
             var sender = CreateAndStartSender();
@@ -64,6 +64,7 @@ namespace Abc.Zebus.Tests.Core
                 for (var i = 1; i <= messageCount; ++i)
                 {
                     sender.Publish(new PerfEvent(i));
+                    Thread.SpinWait(1 << 4);
                 }
 
                 var spinWait = new SpinWait();

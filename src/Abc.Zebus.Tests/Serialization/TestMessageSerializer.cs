@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Util.Extensions;
 
@@ -8,10 +9,10 @@ namespace Abc.Zebus.Tests.Serialization
     public class TestMessageSerializer : IMessageSerializer
     {
         private readonly Dictionary<MessageTypeId, Exception> _serializationExceptions = new Dictionary<MessageTypeId, Exception>();
-        private readonly Dictionary<MessageTypeId, Func<IMessage, byte[]>> _serializationFuncs = new Dictionary<MessageTypeId, Func<IMessage, byte[]>>();
+        private readonly Dictionary<MessageTypeId, Func<IMessage, Stream>> _serializationFuncs = new Dictionary<MessageTypeId, Func<IMessage, Stream>>();
         private readonly MessageSerializer _serializer = new MessageSerializer();
 
-        public void AddSerializationFuncFor<TMessage>(Func<TMessage, byte[]> func) where TMessage : IMessage
+        public void AddSerializationFuncFor<TMessage>(Func<TMessage, Stream> func) where TMessage : IMessage
         {
             _serializationFuncs.Add(MessageUtil.TypeId<TMessage>(), msg => func((TMessage)msg));
         }
@@ -26,16 +27,16 @@ namespace Abc.Zebus.Tests.Serialization
             _serializationExceptions.Add(MessageUtil.TypeId<TMessage>(), exception);
         }
 
-        public IMessage Deserialize(MessageTypeId messageTypeId, byte[] messageBytes)
+        public IMessage Deserialize(MessageTypeId messageTypeId, Stream stream)
         {
             var exception = _serializationExceptions.GetValueOrDefault(messageTypeId);
             if (exception != null)
                 throw exception;
 
-            return _serializer.Deserialize(messageTypeId, messageBytes);
+            return _serializer.Deserialize(messageTypeId, stream);
         }
 
-        public byte[] Serialize(IMessage message)
+        public Stream Serialize(IMessage message)
         {
             var exception = _serializationExceptions.GetValueOrDefault(message.TypeId());
             if (exception != null)

@@ -11,7 +11,7 @@ namespace Abc.Zebus.Serialization
 
         public static IMessage ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage)
         {
-            return serializer.Deserialize(transportMessage.MessageTypeId, transportMessage.MessageBytes);
+            return serializer.Deserialize(transportMessage.MessageTypeId, transportMessage.Content);
         }
     }
 }

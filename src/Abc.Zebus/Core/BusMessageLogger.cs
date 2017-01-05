@@ -38,7 +38,7 @@ namespace Abc.Zebus.Core
         }
 
         [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, MessageId? messageId = null, int messageSize = 0, PeerId peerId = default(PeerId))
+        public void InfoFormat(string format, IMessage message, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
         {
             var logInfo = GetLogInfo(message);
             if (!logInfo.Logger.IsInfoEnabled)
@@ -49,7 +49,7 @@ namespace Abc.Zebus.Core
         }
 
         [StringFormatMethod("format")]
-        public void DebugFormat(string format, IMessage message, MessageId? messageId = null, int messageSize = 0, PeerId peerId = default(PeerId))
+        public void DebugFormat(string format, IMessage message, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
         {
             var logInfo = GetLogInfo(message);
             if (!logInfo.Logger.IsDebugEnabled)
@@ -60,7 +60,7 @@ namespace Abc.Zebus.Core
         }
 
         [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, MessageId messageId, int messageSize, IList<Peer> peers, Level logLevel = null)
+        public void InfoFormat(string format, IMessage message, MessageId messageId, long messageSize, IList<Peer> peers, Level logLevel = null)
         {
             if (peers.Count == 0)
             {

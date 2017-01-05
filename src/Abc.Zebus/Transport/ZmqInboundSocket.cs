@@ -1,4 +1,5 @@
 ﻿using System;
+using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Util;
 using log4net;
 using ZeroMQ;
@@ -47,7 +48,7 @@ namespace Abc.Zebus.Transport
             _socket.Dispose();
         }
 
-        public bool TryReceive(MutableMemoryStream inputBuffer, TimeSpan? timeout = null)
+        public CodedInputStream Receive(TimeSpan? timeout = null)
         {
             int size;
 
@@ -55,11 +56,9 @@ namespace Abc.Zebus.Transport
             _readBuffer = _socket.Receive(_readBuffer, TimeSpan.MaxValue, out size);
 
             if (size <= 0)
-                return false;
+                return null;
 
-            inputBuffer.SetBuffer(_readBuffer, 0, size);
-
-            return true;
+            return new CodedInputStream(_readBuffer, 0, size);
         }
 
         private ZmqSocket CreateSocket()

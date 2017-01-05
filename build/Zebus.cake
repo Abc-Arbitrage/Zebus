@@ -29,7 +29,7 @@ Task("Test")
     .Does(() =>
 {
     
-    NUnit(outputDirectory + "/*.Tests.dll", new NUnitSettings {
+    NUnit(outputDirectory + "/Abc.Zebus.Tests.exe", new NUnitSettings {
                                                                    ToolPath = MakeAbsolute(File("../tools/nunit/nunit-console.exe")),
                                                                    NoResults = true
                                                               });

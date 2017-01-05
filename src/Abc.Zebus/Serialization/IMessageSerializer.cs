@@ -1,8 +1,10 @@
-﻿namespace Abc.Zebus.Serialization
+﻿using System.IO;
+
+namespace Abc.Zebus.Serialization
 {
     public interface IMessageSerializer
     {
-        IMessage Deserialize(MessageTypeId messageTypeId, byte[] messageBytes);
-        byte[] Serialize(IMessage message);
+        Stream Serialize(IMessage message);
+        IMessage Deserialize(MessageTypeId messageTypeId, Stream stream);
     }
 }

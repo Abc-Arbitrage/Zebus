@@ -22,9 +22,9 @@ namespace Abc.Zebus.Testing
             sender = sender ?? new Peer(new PeerId("Abc.Testing.Peer"), "tcp://abctest:159");
 
             var serializer = new MessageSerializer();
-            var messageBytes = serializer.Serialize(message);
+            var content = serializer.Serialize(message);
 
-            return new TransportMessage(message.TypeId(), messageBytes, sender) { WasPersisted = wasPersisted };
+            return new TransportMessage(message.TypeId(), content, sender) { WasPersisted = wasPersisted };
         }
 
         public static IMessage ToMessage(this TransportMessage transportMessage)
