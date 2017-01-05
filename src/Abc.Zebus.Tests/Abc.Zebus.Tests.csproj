@@ -188,8 +188,10 @@
     <Compile Include="SubscriptionTests.Legacy.cs" />
     <Compile Include="TestDataBuilder.cs" />
     <Compile Include="Transport\BackwardCompatibilityTests.cs" />
+    <Compile Include="Transport\V1_5_0\OriginatorInfo_1_5_0.cs" />
     <Compile Include="Transport\TransportMessageReaderTests.cs" />
     <Compile Include="Transport\TransportMessageWriterTests.cs" />
+    <Compile Include="Transport\V1_5_0\TransportMessage_1_5_0.cs" />
     <Compile Include="Transport\ZmqTests.cs" />
     <Compile Include="Transport\ZmqTransportPerformanceTests.cs" />
     <Compile Include="Transport\ZmqTransportTests.cs" />

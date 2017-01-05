@@ -52,7 +52,8 @@ namespace Abc.Zebus.Transport
             uint number;
             WireType wireType;
             var senderId = new PeerId();
-            string senderEndPoint = null, senderMachineName = null, initiatorUserName = null;
+            string senderEndPoint = null;
+            string initiatorUserName = null;
 
             while (input.Position < endPosition && input.TryReadTag(out number, out wireType))
             {
@@ -64,9 +65,6 @@ namespace Abc.Zebus.Transport
                     case 2:
                         senderEndPoint = input.ReadString();
                         break;
-                    case 3:
-                        senderMachineName = input.ReadString();
-                        break;
                     case 5:
                         initiatorUserName = input.ReadString();
                         break;
@@ -76,7 +74,7 @@ namespace Abc.Zebus.Transport
                 }
             }
 
-            return new OriginatorInfo(senderId, senderEndPoint, senderMachineName, initiatorUserName);
+            return new OriginatorInfo(senderId, senderEndPoint, null, initiatorUserName);
         }
 
         private static PeerId ReadPeerId(CodedInputStream input)

@@ -4,6 +4,7 @@ using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Tests.Transport.V1_5_0;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
 using ProtoBuf;
@@ -14,28 +15,41 @@ namespace Abc.Zebus.Tests.Transport
     public class TransportMessageWriterTests
     {
         [Test]
-        public void should_serialize_transport_message()
+        public void should_serialize_transport_message_and_read_from_protobuf()
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
             var stream = new CodedOutputStream();
             stream.WriteTransportMessage(transportMessage);
 
-            var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
-            deserializedTransportMessage1.Id.ShouldEqual(transportMessage.Id);
-            deserializedTransportMessage1.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
-            deserializedTransportMessage1.GetContentBytes().ShouldEqual(transportMessage.GetContentBytes());
-            deserializedTransportMessage1.Originator.InitiatorUserName.ShouldEqual(transportMessage.Originator.InitiatorUserName);
-            deserializedTransportMessage1.Environment.ShouldEqual(transportMessage.Environment);
-            deserializedTransportMessage1.WasPersisted.ShouldEqual(true);
+            var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            deserialized.Id.ShouldEqual(transportMessage.Id);
+            deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
+            deserialized.GetContentBytes().ShouldEqual(transportMessage.GetContentBytes());
+            deserialized.Originator.ShouldEqualDeeply(transportMessage.Originator);
+            deserialized.Originator.SenderMachineName.ShouldEqual(transportMessage.Originator.SenderMachineName);
+            deserialized.Environment.ShouldEqual(transportMessage.Environment);
+            deserialized.WasPersisted.ShouldEqual(true);
+        }
 
-            var deserializedTransportMessage2 = Serializer.Deserialize<TransportMessage2>(new MemoryStream(stream.Buffer, 0, stream.Position));
-            deserializedTransportMessage2.Id.ShouldEqual(transportMessage.Id);
-            deserializedTransportMessage2.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
-            deserializedTransportMessage2.Content.ShouldEqual(transportMessage.GetContentBytes());
-            deserializedTransportMessage2.Originator.InitiatorUserName.ShouldEqual(transportMessage.Originator.InitiatorUserName);
-            deserializedTransportMessage2.Environment.ShouldEqual(transportMessage.Environment);
-            deserializedTransportMessage2.WasPersisted.ShouldEqual(true);
+        [Test]
+        public void should_serialize_transport_message_and_read_from_protobuf_1_5_0()
+        {
+            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+
+            var stream = new CodedOutputStream();
+            stream.WriteTransportMessage(transportMessage);
+
+            var deserialized = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            deserialized.Id.ShouldEqual(transportMessage.Id);
+            deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
+            deserialized.Content.ShouldEqual(transportMessage.GetContentBytes());
+            deserialized.Originator.SenderId.ShouldEqual(transportMessage.Originator.SenderId);
+            deserialized.Originator.SenderEndPoint.ShouldEqual(transportMessage.Originator.SenderEndPoint);
+            deserialized.Originator.SenderMachineName.ShouldEqual(transportMessage.Originator.SenderMachineName);
+            deserialized.Originator.InitiatorUserName.ShouldEqual(transportMessage.Originator.InitiatorUserName);
+            deserialized.Environment.ShouldEqual(transportMessage.Environment);
+            deserialized.WasPersisted.ShouldEqual(true);
         }
 
         [Test]
@@ -65,14 +79,14 @@ namespace Abc.Zebus.Tests.Transport
             var stream = new CodedOutputStream();
             stream.WriteTransportMessage(transportMessage);
 
-            var deserialized1 = Serializer.Deserialize<TransportMessage2>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserialized1 = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(stream.Buffer, 0, stream.Position));
             deserialized1.WasPersisted.ShouldEqual(true);
 
             stream.Position = 0;
             transportMessage.WasPersisted = false;
             stream.WriteTransportMessage(transportMessage);
 
-            var deserialized2 = Serializer.Deserialize<TransportMessage2>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserialized2 = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(stream.Buffer, 0, stream.Position));
             deserialized2.WasPersisted.ShouldEqual(false);
         }
 
@@ -93,29 +107,6 @@ namespace Abc.Zebus.Tests.Transport
                     stream.WriteTransportMessage(transportMessage);
                 }
             }
-        }
-
-        [ProtoContract]
-        public class TransportMessage2
-        {
-            [ProtoMember(1, IsRequired = true)]
-            public readonly MessageId Id;
-
-            [ProtoMember(2, IsRequired = true)]
-            public readonly MessageTypeId MessageTypeId;
-
-            [ProtoMember(3, IsRequired = true)]
-            public readonly byte[] Content;
-
-            [ProtoMember(4, IsRequired = true)]
-            public readonly OriginatorInfo Originator;
-
-            [ProtoMember(5, IsRequired = false)]
-            public string Environment { get; set; }
-
-            [ProtoMember(6, IsRequired = false)]
-            public bool? WasPersisted { get; set; }
-
         }
     }
 }

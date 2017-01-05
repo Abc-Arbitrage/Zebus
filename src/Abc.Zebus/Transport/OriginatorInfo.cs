@@ -1,4 +1,5 @@
-﻿using Abc.Zebus.Util.Annotations;
+﻿using System;
+using Abc.Zebus.Util.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus.Transport
@@ -13,7 +14,7 @@ namespace Abc.Zebus.Transport
         public readonly string SenderEndPoint;
 
         [ProtoMember(3, IsRequired = true)]
-        public readonly string SenderMachineName;
+        internal readonly string SenderMachineName;
 
         [ProtoMember(5, IsRequired = true)]
         public string InitiatorUserName;
@@ -29,6 +30,12 @@ namespace Abc.Zebus.Transport
         [UsedImplicitly]
         private OriginatorInfo()
         {
+        }
+
+        public string GetSenderMachineNameFromEndPoint()
+        {
+            var uri = new Uri(SenderEndPoint);
+            return uri.Host;
         }
     }
 }
