@@ -12,37 +12,37 @@ namespace Abc.Zebus.Tests
         [Test]
         public void should_detect_transcient_message()
         {
-            MessageUtil.IsMessageMarkedAsPersistent(new MessageTypeId(typeof(TranscientCommand))).ShouldBeFalse();
+            new MessageTypeId(typeof(TranscientCommand)).IsPersistent().ShouldBeFalse();
         }
 
         [Test]
         public void non_transcient_messages_should_be_persistent()
         {
-            MessageUtil.IsMessageMarkedAsPersistent(new MessageTypeId(typeof(NakedMessage))).ShouldBeTrue();
+            new MessageTypeId(typeof(NakedMessage)).IsPersistent().ShouldBeTrue();
         }
 
         [Test]
         public void unknow_messages_should_be_persistent()
         {
-            MessageUtil.IsMessageMarkedAsPersistent(new MessageTypeId("Abc.Unknown")).ShouldBeTrue();
+            new MessageTypeId("Abc.Unknown").IsPersistent().ShouldBeTrue();
         }
 
         [Test]
         public void should_detect_infrastructure_message()
         {
-            MessageUtil.IsInfrastructure(new MessageTypeId(typeof(InfrastructureMessage))).ShouldBeTrue();
+            new MessageTypeId(typeof(InfrastructureMessage)).IsInfrastructure().ShouldBeTrue();
         }
 
         [Test]
         public void non_infrastructure_messages_should_not_be_infrastructure()
         {
-            MessageUtil.IsInfrastructure(new MessageTypeId(typeof(NakedMessage))).ShouldBeFalse();
+            new MessageTypeId(typeof(NakedMessage)).IsInfrastructure().ShouldBeFalse();
         }
 
         [Test]
         public void unknow_messages_should_not_be_infrastructure()
         {
-            MessageUtil.IsInfrastructure(new MessageTypeId("Abc.Unknown")).ShouldBeFalse();
+            new MessageTypeId("Abc.Unknown").IsInfrastructure().ShouldBeFalse();
         }
         
         [Test]

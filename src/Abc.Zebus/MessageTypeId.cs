@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Text;
-using Abc.Zebus.Util;
 using ProtoBuf;
 
 namespace Abc.Zebus
@@ -8,18 +6,21 @@ namespace Abc.Zebus
     [ProtoContract]
     public class MessageTypeId : IEquatable<MessageTypeId>
     {
-        private Type _messageType;
-        private string _fullName;
+        public static readonly MessageTypeId EndOfStream = new MessageTypeId("Abc.Zebus.Transport.EndOfStream");
+        public static readonly MessageTypeId EndOfStreamAck = new MessageTypeId("Abc.Zebus.Transport.EndOfStreamAck");
+        public static readonly MessageTypeId PersistenceStopping = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStopping");
+        public static readonly MessageTypeId PersistenceStoppingAck = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStoppingAck");
+
+        private MessageTypeDescriptor _descriptor;
 
         public MessageTypeId(Type messageType)
         {
-            _messageType = messageType;
-            FullName = GetFullnameWithNoAssemblyOrVersion(messageType);
+            _descriptor = MessageUtil.GetMessageTypeDescriptor(messageType);
         }
 
         public MessageTypeId(string fullName)
         {
-            FullName = fullName;
+            _descriptor = MessageUtil.GetMessageTypeDescriptor(fullName);
         }
 
         private MessageTypeId()
@@ -29,76 +30,39 @@ namespace Abc.Zebus
         [ProtoMember(1, IsRequired = true)]
         public string FullName
         {
-            get { return _fullName; }
-            private set { _fullName = string.Intern(value); }
+            get { return _descriptor?.FullName; }
+            private set { _descriptor = MessageUtil.GetMessageTypeDescriptor(value); }
         }
 
-        public static readonly MessageTypeId EndOfStream = new MessageTypeId("Abc.Zebus.Transport.EndOfStream");
-        public static readonly MessageTypeId EndOfStreamAck = new MessageTypeId("Abc.Zebus.Transport.EndOfStreamAck");
-        public static readonly MessageTypeId PersistenceStopping = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStopping");
-        public static readonly MessageTypeId PersistenceStoppingAck = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStoppingAck");
+        public Type GetMessageType() => _descriptor?.MessageType;
 
-        public Type GetMessageType() => _messageType ?? (_messageType = TypeUtil.Resolve(FullName));
+        public bool IsInfrastructure() => _descriptor != null ? _descriptor.IsInfrastructure : false;
 
-        public bool IsInfrastructure() => MessageUtil.IsInfrastructure(this);
+        public bool IsPersistent() => _descriptor != null ? _descriptor.IsPersistent : true;
 
         public override string ToString()
         {
             var lastDotIndex = FullName.LastIndexOf('.');
             return lastDotIndex != -1 ? FullName.Substring(lastDotIndex + 1) : FullName;
         }
-        
-        private string GetFullnameWithNoAssemblyOrVersion(Type messageType)
-        {
-            if (!messageType.IsGenericType)
-                return messageType.FullName;
-
-            var genericTypeDefinition = messageType.GetGenericTypeDefinition();
-            var builder = new StringBuilder();
-            if (messageType.IsNested)
-                builder.AppendFormat("{0}+", messageType.DeclaringType.FullName);
-            else
-                builder.AppendFormat("{0}.", genericTypeDefinition.Namespace);
-
-            var backQuoteIndex = genericTypeDefinition.Name.IndexOf('`');
-            builder.Append(genericTypeDefinition.Name.Substring(0, backQuoteIndex));
-            builder.Append("<");
-            foreach (var genericArgument in messageType.GetGenericArguments())
-            {
-                if (genericArgument.IsGenericType)
-                    throw new InvalidOperationException("Nested generics are not supported");
-                builder.AppendFormat("{0}.{1}, ", genericArgument.Namespace, genericArgument.Name);
-            }
-                
-
-            builder.Length -= 2;
-            builder.Append(">");
-            return builder.ToString();
-        }
 
         public bool Equals(MessageTypeId other)
         {
-            if (ReferenceEquals(null, other))
-                return false;
-            if (ReferenceEquals(this, other))
-                return true;
-            return string.Equals(FullName, other.FullName);
+            return other != null && _descriptor == other._descriptor;
         }
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj))
-                return false;
-            if (ReferenceEquals(this, obj))
-                return true;
-            if (obj.GetType() != this.GetType())
-                return false;
-            return Equals((MessageTypeId)obj);
+            return Equals(obj as MessageTypeId);
+        }
+
+        public override int GetHashCode()
+        {
+            return _descriptor != null ? _descriptor.GetHashCode() : 0;
         }
 
         public static bool operator ==(MessageTypeId left, MessageTypeId right) => Equals(left, right);
-        public static bool operator !=(MessageTypeId left, MessageTypeId right) => !Equals(left, right);
 
-        public override int GetHashCode() => FullName?.GetHashCode() ?? 0;
+        public static bool operator !=(MessageTypeId left, MessageTypeId right) => !Equals(left, right);
     }
 }

@@ -4,7 +4,6 @@ namespace Abc.Zebus.Core
 {
     public class DefaultMessageSendingStrategy : IMessageSendingStrategy
     {
-        public bool IsMessagePersistent(TransportMessage transportMessage)
-            => MessageUtil.IsMessageMarkedAsPersistent(transportMessage.MessageTypeId);
+        public bool IsMessagePersistent(TransportMessage transportMessage) => transportMessage.MessageTypeId.IsPersistent();
     }
 }

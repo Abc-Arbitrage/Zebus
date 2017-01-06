@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus
 {
     public static class MessageUtil
     {
-        private static readonly ConcurrentDictionary<MessageTypeId, MessageTypeEntry> _cache = new ConcurrentDictionary<MessageTypeId, MessageTypeEntry>();
-        private static readonly ConcurrentDictionary<Type, MessageTypeId> _messageTypeIds = new ConcurrentDictionary<Type, MessageTypeId>();
+        private static readonly ConcurrentDictionary<string, MessageTypeDescriptor> _descriptorsByFullName = new ConcurrentDictionary<string, MessageTypeDescriptor>();
+        private static readonly ConcurrentDictionary<Type, MessageTypeDescriptor> _descriptorsByType = new ConcurrentDictionary<Type, MessageTypeDescriptor>();
 
-        private static readonly Func<MessageTypeId, MessageTypeEntry> _messageTypeEntryFactory = LoadMessageTypeEntry;
-        private static readonly Func<Type, MessageTypeId> _messageTypeIdFactory = CreateMessageTypeId;
+        private static readonly Func<string, MessageTypeDescriptor> _loadDescriptorFromName = LoadMessageTypeDescriptor;
+        private static readonly Func<Type, MessageTypeDescriptor> _loadDescriptorFromType = LoadMessageTypeDescriptor;
 
         public static MessageTypeId TypeId<T>() where T : IMessage
         {
@@ -23,50 +24,34 @@ namespace Abc.Zebus
 
         public static MessageTypeId GetTypeId(Type messageType)
         {
-            return _messageTypeIds.GetOrAdd(messageType, _messageTypeIdFactory);
-        }
-
-        public static bool IsMessageMarkedAsPersistent(MessageTypeId messageTypeId)
-        {
-            var entry = GetMessageTypeEntry(messageTypeId);
-            return entry.IsMarkedAsPersistent;
-        }
-
-        public static bool IsInfrastructure(MessageTypeId messageTypeId)
-        {
-            var entry = GetMessageTypeEntry(messageTypeId);
-            return entry.IsInfrastructureMessage;
-        }
-
-        private static MessageTypeEntry GetMessageTypeEntry(MessageTypeId messageTypeId)
-        {
-            return _cache.GetOrAdd(messageTypeId, _messageTypeEntryFactory);
-        }
-
-        private static MessageTypeEntry LoadMessageTypeEntry(MessageTypeId messageTypeId)
-        {
-            var messageType = messageTypeId.GetMessageType();
-            var isPersistent = !(messageType != null && Attribute.IsDefined(messageType, typeof(TransientAttribute)));
-            var isInfrastructure = messageType != null && Attribute.IsDefined(messageType, typeof(InfrastructureAttribute));
-
-            return new MessageTypeEntry(isPersistent, isInfrastructure);
-        }
-
-        private static MessageTypeId CreateMessageTypeId(Type messageType)
-        {
             return new MessageTypeId(messageType);
         }
 
-        private class MessageTypeEntry
+        internal static MessageTypeDescriptor GetMessageTypeDescriptor(string fullName)
         {
-            public readonly bool IsMarkedAsPersistent;
-            public readonly bool IsInfrastructureMessage;
+            if (fullName == null)
+                return MessageTypeDescriptor.Null;
 
-            public MessageTypeEntry(bool isMarkedAsPersistent, bool isInfrastructureMessage)
-            {
-                IsMarkedAsPersistent = isMarkedAsPersistent;
-                IsInfrastructureMessage = isInfrastructureMessage;
-            }
+            return _descriptorsByFullName.GetOrAdd(fullName, _loadDescriptorFromName);
+        }
+
+        private static MessageTypeDescriptor LoadMessageTypeDescriptor(string fullName)
+        {
+            return MessageTypeDescriptor.Load(fullName);
+        }
+
+        internal static MessageTypeDescriptor GetMessageTypeDescriptor(Type messageType)
+        {
+            if (messageType == null)
+                return MessageTypeDescriptor.Null;
+
+            return _descriptorsByType.GetOrAdd(messageType, _loadDescriptorFromType);
+        }
+
+        private static MessageTypeDescriptor LoadMessageTypeDescriptor(Type messageType)
+        {
+            var fullName = TypeUtil.GetFullnameWithNoAssemblyOrVersion(messageType);
+            return GetMessageTypeDescriptor(fullName);
         }
     }
 }
