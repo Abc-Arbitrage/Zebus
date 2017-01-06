@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Core;
@@ -18,7 +19,7 @@ namespace Abc.Zebus.Persistence
 
         private readonly ILog _logger = LogManager.GetLogger(typeof(PersistentTransport));
         private readonly ConcurrentDictionary<MessageId, bool> _receivedMessagesIds = new ConcurrentDictionary<MessageId, bool>();
-        private readonly BlockingCollection<IMessage> _messagesWaitingForPersistence = new BlockingCollection<IMessage>();
+        private readonly BlockingCollection<TransportMessage> _messagesWaitingForPersistence = new BlockingCollection<TransportMessage>();
         private readonly IMessageSerializer _serializer = new MessageSerializer();
         private readonly IBusConfiguration _configuration;
         private readonly ITransport _innerTransport;
@@ -45,7 +46,7 @@ namespace Abc.Zebus.Persistence
             _innerTransport.MessageReceived += OnTransportMessageReceived;
         }
 
-        public event Action<TransportMessage> MessageReceived = delegate { };
+        public event Action<TransportMessage> MessageReceived;
 
         public PeerId PeerId => _innerTransport.PeerId;
 
@@ -89,18 +90,22 @@ namespace Abc.Zebus.Persistence
 
             _logger.InfoFormat("Sending {0} enqueued messages to the persistence", _messagesWaitingForPersistence.Count);
 
-            IMessage messageToSend;
+            TransportMessage messageToSend;
             while (_messagesWaitingForPersistence.TryTake(out messageToSend))
+            {
                 SendToPersistenceService(messageToSend, persistencePeers);
+            }
         }
 
         private void EnqueueOrSendToPersistenceService(IMessage message)
         {
+            var transportMessage = _serializer.ToTransportMessage(message, PeerId, InboundEndPoint);
+
             var peers = _peerDirectory.GetPeersHandlingMessage(message);
             if (_persistenceIsDown || peers.Count == 0)
             {
                 _logger.Info("Enqueing in temp persistence buffer: " + message);
-                _messagesWaitingForPersistence.Add(message);
+                _messagesWaitingForPersistence.Add(transportMessage);
 
                 if (!_persistenceIsDown)
                     ReplayMessagesWaitingForPersistence();
@@ -108,7 +113,7 @@ namespace Abc.Zebus.Persistence
                 return;
             }
 
-            SendToPersistenceService(message, peers);
+            SendToPersistenceService(transportMessage, peers);
         }
 
         public void Configure(PeerId peerId, string environment)
@@ -164,7 +169,7 @@ namespace Abc.Zebus.Persistence
             if (context.PersistedPeerIds.Count == 0)
                 return;
             
-            var persistMessageCommand = new PersistMessageCommand(message, context.PersistedPeerIds.ToArray());
+            var persistMessageCommand = new PersistMessageCommand(message, context.PersistedPeerIds);
             EnqueueOrSendToPersistenceService(persistMessageCommand);
         }
 
@@ -234,7 +239,7 @@ namespace Abc.Zebus.Persistence
             {
                 _persistenceIsDown = true;
 
-                var ackMessage = TransportMessage.Infrastructure(MessageTypeId.PersistenceStoppingAck, _innerTransport.PeerId, _innerTransport.InboundEndPoint);
+                var ackMessage = new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), _innerTransport.PeerId, _innerTransport.InboundEndPoint);
 
                 _logger.InfoFormat("Sending PersistenceStoppingAck to {0}", transportMessage.Originator.SenderId);
                 _innerTransport.Send(ackMessage, new[] { new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint) }, new SendContext());
@@ -272,7 +277,7 @@ namespace Abc.Zebus.Persistence
 
         private void TriggerMessageReceived(TransportMessage transportMessage)
         {
-            MessageReceived(transportMessage);
+            MessageReceived?.Invoke(transportMessage);
         }
 
         public void AckMessage(TransportMessage transportMessage)
@@ -285,10 +290,9 @@ namespace Abc.Zebus.Persistence
             }
         }
 
-        private void SendToPersistenceService(IMessage message, IEnumerable<Peer> persistentPeers)
+        private void SendToPersistenceService(TransportMessage transportMessage, IEnumerable<Peer> persistencePeers)
         {
-            var transportMessage = _serializer.ToTransportMessage(message, MessageId.NextId(), PeerId, InboundEndPoint);
-            _innerTransport.Send(transportMessage, persistentPeers, new SendContext());
+            _innerTransport.Send(transportMessage, persistencePeers, new SendContext());
         }
     }
 }

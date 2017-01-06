@@ -198,30 +198,8 @@ namespace Abc.Zebus.Serialization.Protobuf
         /// <param name="value">The value to write</param>
         public void WriteString(string value)
         {
-            // Optimise the case where we have enough space to write
-            // the string directly to the buffer, which should be common.
             int length = Utf8Encoding.GetByteCount(value);
-            WriteLength(length);
-            if (buffer.Length - position >= length)
-            {
-                if (length == value.Length) // Must be all ASCII...
-                {
-                    for (int i = 0; i < length; i++)
-                    {
-                        buffer[position + i] = (byte)value[i];
-                    }
-                }
-                else
-                {
-                    Utf8Encoding.GetBytes(value, 0, value.Length, buffer, position);
-                }
-                position += length;
-            }
-            else
-            {
-                byte[] bytes = Utf8Encoding.GetBytes(value);
-                WriteRawBytes(bytes);
-            }
+            WriteString(value, length);
         }
 
         /// <summary>
@@ -526,13 +504,21 @@ namespace Abc.Zebus.Serialization.Protobuf
 
         public void WriteGuid(Guid value)
         {
-            WriteLength(GuidSize);
+            EnsureCapacity(GuidSize + 1);
+
+            buffer[position++] = GuidSize; // length
 
             var blob = value.ToByteArray();
-            WriteRawTag(9);
-            WriteRawBytes(blob, 0, 8);
-            WriteRawTag(17);
-            WriteRawBytes(blob, 8, 8);
+            buffer[position++] = 1 << 3 | 1; // tag
+            for (var i = 0; i < 8; i++)
+            {
+                buffer[position++] = blob[i];
+            }
+            buffer[position++] = 2 << 3 | 1; // tag
+            for (var i = 8; i < 16; i++)
+            {
+                buffer[position++] = blob[i];
+            }
         }
 
         /// <summary>

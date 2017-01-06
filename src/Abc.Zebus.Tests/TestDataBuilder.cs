@@ -34,7 +34,7 @@ namespace Abc.Zebus.Tests
 
         public static TransportMessage CreateTransportMessage<TMessage>(Stream content)
         {
-            return new TransportMessage(new MessageTypeId(typeof(TMessage)), content, new PeerId("Abc.Testing.0"), "tcp://testing:1234", MessageId.NextId())
+            return new TransportMessage(new MessageTypeId(typeof(TMessage)), content, new PeerId("Abc.Testing.0"), "tcp://testing:1234")
             {
                 Environment = "Test",
                 WasPersisted = true,

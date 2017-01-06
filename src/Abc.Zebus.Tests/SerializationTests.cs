@@ -20,7 +20,7 @@ namespace Abc.Zebus.Tests
             {
                 MessageId.NextId(),
                 new MessageTypeId("X"),
-                new TransportMessage(new MessageTypeId("lol"), new MemoryStream(new byte[] { 1, 2, 3 }), new PeerId("peer"), "endpoint", MessageId.NextId()),
+                new TransportMessage(new MessageTypeId("lol"), new MemoryStream(new byte[] { 1, 2, 3 }), new PeerId("peer"), "endpoint"),
                 new BindingKey("Abc", "123"),
                 new Peer(new PeerId("Abc.Testing.0"), "tcp://abctest:123", true, true),
             };

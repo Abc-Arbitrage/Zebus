@@ -64,7 +64,7 @@ namespace Abc.Zebus.Transport
             SocketOptions = socketOptions;
         }
 
-        public event Action<TransportMessage> MessageReceived = delegate { };
+        public event Action<TransportMessage> MessageReceived;
 
         public virtual bool IsListening
         {
@@ -282,7 +282,7 @@ namespace Abc.Zebus.Transport
                 }
 
                 if (IsListening)
-                    MessageReceived(transportMessage);
+                    MessageReceived?.Invoke(transportMessage);
             }
             catch (Exception ex)
             {
@@ -310,7 +310,7 @@ namespace Abc.Zebus.Transport
         {
             _logger.InfoFormat("Sending EndOfStreamAck to {0}", transportMessage.Originator.SenderEndPoint);
 
-            var endOfStreamAck = TransportMessage.Infrastructure(MessageTypeId.EndOfStreamAck, PeerId, InboundEndPoint);
+            var endOfStreamAck = new TransportMessage(MessageTypeId.EndOfStreamAck, new MemoryStream(), PeerId, InboundEndPoint);
             var closingPeer = new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint);
 
             SafeAdd(_outboundSocketActions, OutboundSocketAction.Send(endOfStreamAck, new[] { closingPeer }, new SendContext()));
@@ -436,7 +436,7 @@ namespace Abc.Zebus.Transport
             {
                 _logger.InfoFormat("Sending EndOfStream to {0}", outboundSocket.EndPoint);
 
-                var endOfStreamMessage = TransportMessage.Infrastructure(MessageTypeId.EndOfStream, PeerId, InboundEndPoint);
+                var endOfStreamMessage = new TransportMessage(MessageTypeId.EndOfStream, new MemoryStream(), PeerId, InboundEndPoint);
                 Serialize(outputStream, endOfStreamMessage, false);
                 outboundSocket.Send(outputStream.Buffer, outputStream.Position, endOfStreamMessage);
             }
@@ -484,7 +484,7 @@ namespace Abc.Zebus.Transport
 
         private struct OutboundSocketAction
         {
-            private static readonly TransportMessage _disconnectMessage = new TransportMessage(null, null, new PeerId(), null, new MessageId());
+            private static readonly TransportMessage _disconnectMessage = new TransportMessage(null, null, new PeerId(), null);
             private readonly IEnumerable<Peer> _targets;
             private readonly SendContext _context;
 

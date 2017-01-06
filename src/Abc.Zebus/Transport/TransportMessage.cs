@@ -2,6 +2,7 @@
 using System.IO;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Annotations;
+using Newtonsoft.Json;
 using ProtoBuf;
 
 namespace Abc.Zebus.Transport
@@ -22,7 +23,7 @@ namespace Abc.Zebus.Transport
             set { Content = new MemoryStream(value); }
         }
 
-        [ProtoIgnore]
+        [ProtoIgnore, JsonIgnore]
         public Stream Content { get; internal set; }
 
         [ProtoMember(4, IsRequired = true)]
@@ -38,18 +39,18 @@ namespace Abc.Zebus.Transport
         internal List<PeerId> PersistentPeerIds { get; set; }
 
         public TransportMessage(MessageTypeId messageTypeId, Stream content, Peer sender)
-            : this(messageTypeId, content, sender.Id, sender.EndPoint, MessageId.NextId())
+            : this(messageTypeId, content, sender.Id, sender.EndPoint)
         {
         }
 
-        public TransportMessage(MessageTypeId messageTypeId, Stream content, PeerId senderId, string senderEndPoint, MessageId messageId)
-            : this (messageTypeId, content, CreateOriginator(senderId, senderEndPoint), messageId)
+        public TransportMessage(MessageTypeId messageTypeId, Stream content, PeerId senderId, string senderEndPoint)
+            : this (messageTypeId, content, CreateOriginator(senderId, senderEndPoint))
         {
         }
 
-        public TransportMessage(MessageTypeId messageTypeId, Stream content, OriginatorInfo originator, MessageId messageId)
+        public TransportMessage(MessageTypeId messageTypeId, Stream content, OriginatorInfo originator)
         {
-            Id = messageId;
+            Id = MessageId.NextId();
             MessageTypeId = messageTypeId;
             Content = content;
             Originator = originator;
@@ -65,11 +66,6 @@ namespace Abc.Zebus.Transport
             return new OriginatorInfo(peerId, peerEndPoint, MessageContext.CurrentMachineName, MessageContext.GetInitiatorUserName());
         }
 
-        internal static TransportMessage Infrastructure(MessageTypeId messageTypeId, PeerId peerId, string senderEndPoint)
-        {
-            return new TransportMessage(messageTypeId, new MemoryStream(), peerId, senderEndPoint, MessageId.NextId());
-        }
-
         public byte[] GetContentBytes()
         {
             if (Content == null)
@@ -82,6 +78,20 @@ namespace Abc.Zebus.Transport
             Content.Position = position;
 
             return buffer;
+        }
+
+        internal TransportMessage WithPersistentPeerIds(List<PeerId> peerIds)
+        {
+            return new TransportMessage
+            {
+                Id = Id,
+                MessageTypeId = MessageTypeId,
+                Content = Content,
+                Originator = Originator,
+                Environment = Environment,
+                WasPersisted = WasPersisted,
+                PersistentPeerIds = peerIds,
+            };
         }
     }
 }

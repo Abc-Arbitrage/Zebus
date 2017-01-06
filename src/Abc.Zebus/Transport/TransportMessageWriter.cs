@@ -25,7 +25,8 @@ namespace Abc.Zebus.Transport
             if (transportMessage.Environment != null)
             {
                 output.WriteRawTag(5 << 3 | 2);
-                output.WriteString(transportMessage.Environment);
+                var environmentLength = GetUtf8ByteCount(transportMessage.Environment);
+                output.WriteString(transportMessage.Environment, environmentLength);
             }
 
             if (transportMessage.WasPersisted != null)
@@ -49,7 +50,7 @@ namespace Abc.Zebus.Transport
 
                 output.WriteTag(7 << 3 | 2);
 
-                var peerIdStringLength = CodedOutputStream.Utf8Encoding.GetByteCount(peerIdString);
+                var peerIdStringLength = GetUtf8ByteCount(peerIdString);
                 var peerIdLength = 1 + CodedOutputStream.ComputeStringSize(peerIdStringLength);
 
                 output.WriteLength(peerIdLength);
@@ -76,7 +77,7 @@ namespace Abc.Zebus.Transport
             }
             else
             {
-                var fullNameLength = CodedOutputStream.Utf8Encoding.GetByteCount(messageTypeId.FullName);
+                var fullNameLength = GetUtf8ByteCount(messageTypeId.FullName);
                 var size = 1 + CodedOutputStream.ComputeStringSize(fullNameLength);
                 output.WriteLength(size);
                 output.WriteRawTag(1 << 3 | 2);
@@ -100,7 +101,7 @@ namespace Abc.Zebus.Transport
             }
             else
             {
-                senderIdStringLength = CodedOutputStream.Utf8Encoding.GetByteCount(senderIdString);
+                senderIdStringLength = GetUtf8ByteCount(senderIdString);
                 senderIdLength = 1 + CodedOutputStream.ComputeStringSize(senderIdStringLength);
                 size += 1 + GetMessageSizeWithLength(senderIdLength);
             }
@@ -113,7 +114,7 @@ namespace Abc.Zebus.Transport
             }
             else
             {
-                senderEndPointLength = CodedOutputStream.Utf8Encoding.GetByteCount(originatorInfo.SenderEndPoint);
+                senderEndPointLength = GetUtf8ByteCount(originatorInfo.SenderEndPoint);
                 size += 1 + CodedOutputStream.ComputeStringSize(senderEndPointLength);
             }
 
@@ -125,7 +126,7 @@ namespace Abc.Zebus.Transport
             }
             else
             {
-                senderMachineNameLength = CodedOutputStream.Utf8Encoding.GetByteCount(originatorInfo.SenderMachineName);
+                senderMachineNameLength = GetUtf8ByteCount(originatorInfo.SenderMachineName);
                 size += 1 + CodedOutputStream.ComputeStringSize(senderMachineNameLength);
             }
 
@@ -137,7 +138,7 @@ namespace Abc.Zebus.Transport
             }
             else
             {
-                initiatorUserNameLength = CodedOutputStream.Utf8Encoding.GetByteCount(originatorInfo.InitiatorUserName);
+                initiatorUserNameLength = GetUtf8ByteCount(originatorInfo.InitiatorUserName);
                 size += 1 + CodedOutputStream.ComputeStringSize(initiatorUserNameLength);
             }
 
@@ -172,6 +173,19 @@ namespace Abc.Zebus.Transport
         private static int GetMessageSizeWithLength(int size)
         {
             return size + CodedOutputStream.ComputeLengthSize(size);
+        }
+
+        private static unsafe int GetUtf8ByteCount(string s)
+        {
+            fixed (char* c = s)
+            {
+                for (var index = 0; index < s.Length; index++)
+                {
+                    if (c[index] >= 128)
+                        return CodedOutputStream.Utf8Encoding.GetByteCount(c, s.Length);
+                }
+            }
+            return s.Length;
         }
     }
 }
