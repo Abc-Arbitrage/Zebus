@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Annotations;
 using ProtoBuf;
@@ -32,6 +33,9 @@ namespace Abc.Zebus.Transport
 
         [ProtoMember(6, IsRequired = false)]
         public bool? WasPersisted { get; internal set; }
+
+        [ProtoMember(7, IsRequired = false)]
+        internal List<PeerId> PersistentPeerIds { get; set; }
 
         public TransportMessage(MessageTypeId messageTypeId, Stream content, Peer sender)
             : this(messageTypeId, content, sender.Id, sender.EndPoint, MessageId.NextId())

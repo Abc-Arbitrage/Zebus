@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing.Extensions;
@@ -50,6 +51,26 @@ namespace Abc.Zebus.Tests.Transport
             deserialized.Originator.InitiatorUserName.ShouldEqual(transportMessage.Originator.InitiatorUserName);
             deserialized.Environment.ShouldEqual(transportMessage.Environment);
             deserialized.WasPersisted.ShouldEqual(true);
+        }
+
+        [Test]
+        public void should_serialize_transport_message_with_persistent_peer_ids_and_read_from_protobuf()
+        {
+            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            transportMessage.PersistentPeerIds = new List<PeerId>
+            {
+                new PeerId("Abc.Testing.A"),
+                new PeerId("Abc.Testing.B"),
+            };
+
+            var stream = new CodedOutputStream();
+            stream.WriteTransportMessage(transportMessage);
+            stream.WritePersistentPeerIds(transportMessage);
+
+            var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            deserialized.Id.ShouldEqual(transportMessage.Id);
+            deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
+            deserialized.PersistentPeerIds.ShouldBeEquivalentTo(transportMessage.PersistentPeerIds);
         }
 
         [Test]

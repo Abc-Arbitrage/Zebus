@@ -6,40 +6,64 @@ namespace Abc.Zebus.Transport
     {
         internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage)
         {
-            output.WriteRawTag(10);
+            output.WriteRawTag(1 << 3 | 2);
             Write(output, transportMessage.Id);
 
-            output.WriteRawTag(18);
+            output.WriteRawTag(2 << 3 | 2);
             Write(output, transportMessage.MessageTypeId);
 
             if (transportMessage.Content != null && transportMessage.Content.Length > 0)
             {
-                output.WriteRawTag(26);
+                output.WriteRawTag(3 << 3 | 2);
                 output.WriteLength((int)transportMessage.Content.Length);
                 output.WriteRawStream(transportMessage.Content);
             }
 
-            output.WriteRawTag(34);
+            output.WriteRawTag(4 << 3 | 2);
             Write(output, transportMessage.Originator);
 
             if (transportMessage.Environment != null)
             {
-                output.WriteRawTag(42);
+                output.WriteRawTag(5 << 3 | 2);
                 output.WriteString(transportMessage.Environment);
             }
 
             if (transportMessage.WasPersisted != null)
             {
-                output.WriteRawTag(48);
+                output.WriteRawTag(6 << 3 | 0);
                 output.WriteBool(transportMessage.WasPersisted.Value);
             }
+        }
+
+        internal static void WritePersistentPeerIds(this CodedOutputStream output, TransportMessage transportMessage)
+        {
+            var peerIds = transportMessage.PersistentPeerIds;
+            if (peerIds == null)
+                return;
+
+            for (var index = 0; index < peerIds.Count; index++)
+            {
+                var peerIdString = peerIds[index].ToString();
+                if (peerIdString == null)
+                    continue;
+
+                output.WriteTag(7 << 3 | 2);
+
+                var peerIdStringLength = CodedOutputStream.Utf8Encoding.GetByteCount(peerIdString);
+                var peerIdLength = 1 + CodedOutputStream.ComputeStringSize(peerIdStringLength);
+
+                output.WriteLength(peerIdLength);
+                output.WriteRawTag(1 << 3 | 2);
+                output.WriteString(peerIdString, peerIdStringLength);
+            }
+
         }
 
         private static void Write(CodedOutputStream output, MessageId messageId)
         {
             var size = 1 + GetMessageSizeWithLength(CodedOutputStream.GuidSize);
             output.WriteLength(size);
-            output.WriteRawTag(10);
+            output.WriteRawTag(1 << 3 | 2);
 
             output.WriteGuid(messageId.Value);
         }
@@ -55,7 +79,7 @@ namespace Abc.Zebus.Transport
                 var fullNameLength = CodedOutputStream.Utf8Encoding.GetByteCount(messageTypeId.FullName);
                 var size = 1 + CodedOutputStream.ComputeStringSize(fullNameLength);
                 output.WriteLength(size);
-                output.WriteRawTag(10);
+                output.WriteRawTag(1 << 3 | 2);
                 output.WriteString(messageTypeId.FullName, fullNameLength);
             }
         }
@@ -119,28 +143,28 @@ namespace Abc.Zebus.Transport
 
             output.WriteLength(size);
 
-            output.WriteRawTag(10);
+            output.WriteRawTag(1 << 3 | 2);
             output.WriteLength(senderIdLength);
 
             if (senderIdString != null)
             {
-                output.WriteRawTag(10);
+                output.WriteRawTag(1 << 3 | 2);
                 output.WriteString(senderIdString, senderIdStringLength);
             }
 
             if (originatorInfo.SenderEndPoint != null)
             {
-                output.WriteRawTag(18);
+                output.WriteRawTag(2 << 3 | 2);
                 output.WriteString(originatorInfo.SenderEndPoint, senderEndPointLength);
             }
             if (originatorInfo.SenderMachineName != null)
             {
-                output.WriteRawTag(26);
+                output.WriteRawTag(3 << 3 | 2);
                 output.WriteString(originatorInfo.SenderMachineName, senderMachineNameLength);
             }
             if (originatorInfo.InitiatorUserName != null)
             {
-                output.WriteRawTag(42);
+                output.WriteRawTag(5 << 3 | 2);
                 output.WriteString(originatorInfo.InitiatorUserName, initiatorUserNameLength);
             }
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Abc.Zebus.Serialization.Protobuf;
 using ProtoBuf;
@@ -34,6 +35,9 @@ namespace Abc.Zebus.Transport
                         break;
                     case 6:
                         transportMessage.WasPersisted = input.ReadBool();
+                        break;
+                    case 7:
+                        transportMessage.PersistentPeerIds = ReadPeerIds(input, transportMessage.PersistentPeerIds);
                         break;
                     default:
                         SkipUnknown(input, wireType);
@@ -129,6 +133,17 @@ namespace Abc.Zebus.Transport
             }
 
             return value;
+        }
+
+        private static List<PeerId> ReadPeerIds(CodedInputStream input, List<PeerId> peerIds)
+        {
+            if (peerIds == null)
+                peerIds = new List<PeerId>();
+
+            var value = ReadSingleField(input, x => x.ReadString());
+            peerIds.Add(new PeerId(value));
+
+            return peerIds;
         }
 
         private static void SkipUnknown(CodedInputStream input, WireType wireType)
