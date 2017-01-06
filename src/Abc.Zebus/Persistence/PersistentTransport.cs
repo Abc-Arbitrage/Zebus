@@ -158,7 +158,7 @@ namespace Abc.Zebus.Persistence
 
         public void Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context)
         {
-            if (context.PersistedPeerIds.Any())
+            if (context.PersistentPeerIds.Count != 0)
                 throw new ArgumentException("Send invoked with non-empty send context", nameof(context));
 
             var isMessagePersistent = _messageSendingStrategy.IsMessagePersistent(message);
@@ -166,10 +166,10 @@ namespace Abc.Zebus.Persistence
 
             _innerTransport.Send(message, targetPeers, context);
             
-            if (context.PersistedPeerIds.Count == 0)
+            if (context.PersistentPeerIds.Count == 0)
                 return;
             
-            var persistMessageCommand = new PersistMessageCommand(message, context.PersistedPeerIds);
+            var persistMessageCommand = new PersistMessageCommand(message, context.PersistentPeerIds);
             EnqueueOrSendToPersistenceService(persistMessageCommand);
         }
 
@@ -182,7 +182,7 @@ namespace Abc.Zebus.Persistence
             {
                 var peer = peerList[index];
                 if (isMessagePersistent && _peerDirectory.IsPersistent(peer.Id))
-                    context.PersistedPeerIds.Add(peer.Id);
+                    context.PersistentPeerIds.Add(peer.Id);
 
                 hasDownPeer |= !peer.IsUp;
             }

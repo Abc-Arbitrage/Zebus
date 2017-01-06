@@ -340,7 +340,14 @@ namespace Abc.Zebus.Transport
 
             foreach (var socketAction in _outboundSocketActions.GetConsumingEnumerable())
             {
-                RunOutboundSocketAction(socketAction, outputStream);
+                if (socketAction.IsDisconnect)
+                {
+                    DisconnectPeers(socketAction.Targets.Select(x => x.Id));
+                }
+                else
+                {
+                    SendToPeers(socketAction.Message, socketAction.Targets, socketAction.Context, outputStream);
+                }
             }
 
             GracefullyDisconnectOutboundSockets(outputStream);
@@ -348,16 +355,27 @@ namespace Abc.Zebus.Transport
             _logger.InfoFormat("OutboundProc terminated");
         }
 
-        private void RunOutboundSocketAction(OutboundSocketAction socketAction, CodedOutputStream outputStream)
+        private void SendToPeers(TransportMessage transportMessage, List<Peer> peers, SendContext context, CodedOutputStream outputStream)
         {
-            if (socketAction.IsDisconnect)
+            Serialize(outputStream, transportMessage);
+
+            foreach (var target in peers)
             {
-                DisconnectPeers(socketAction.PeerIds);
-            }
-            else
-            {
-                SerializeAndSendTransportMessage(outputStream, socketAction.Message, socketAction.GetPersistentPeer().ToList(), true);
-                SerializeAndSendTransportMessage(outputStream, socketAction.Message, socketAction.GetTransientPeers().ToList(), false);
+                var isPersistent = context.IsPersistent(target.Id);
+                outputStream.SetWasPersisted(isPersistent);
+
+                var outboundSocket = GetConnectedOutboundSocket(target, transportMessage);
+                if (!outboundSocket.IsConnected)
+                    continue;
+
+                try
+                {
+                    outboundSocket.Send(outputStream.Buffer, outputStream.Position, transportMessage);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error($"Failed to send message, PeerId: {target.Id}, EndPoint: {target.EndPoint}, Exception: {ex}");
+                }
             }
         }
 
@@ -370,30 +388,6 @@ namespace Abc.Zebus.Transport
                     continue;
 
                 outboundSocket.Disconnect();
-            }
-        }
-
-        private void SerializeAndSendTransportMessage(CodedOutputStream outputStream, TransportMessage transportMessage, List<Peer> peers, bool wasPersisted)
-        {
-            if (!peers.Any())
-                return;
-
-            Serialize(outputStream, transportMessage, wasPersisted);
-
-            foreach (var peer in peers)
-            {
-                var outboundSocket = GetConnectedOutboundSocket(peer, transportMessage);
-                if (!outboundSocket.IsConnected)
-                    continue;
-
-                try
-                {
-                    outboundSocket.Send(outputStream.Buffer, outputStream.Position, transportMessage);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error($"Failed to send message, PeerId: {peer.Id}, EndPoint: {peer.EndPoint}, Exception: {ex}");
-                }
             }
         }
 
@@ -436,8 +430,8 @@ namespace Abc.Zebus.Transport
             {
                 _logger.InfoFormat("Sending EndOfStream to {0}", outboundSocket.EndPoint);
 
-                var endOfStreamMessage = new TransportMessage(MessageTypeId.EndOfStream, new MemoryStream(), PeerId, InboundEndPoint);
-                Serialize(outputStream, endOfStreamMessage, false);
+                var endOfStreamMessage = new TransportMessage(MessageTypeId.EndOfStream, new MemoryStream(), PeerId, InboundEndPoint) { WasPersisted = false };
+                Serialize(outputStream, endOfStreamMessage);
                 outboundSocket.Send(outputStream.Buffer, outputStream.Position, endOfStreamMessage);
             }
         }
@@ -460,14 +454,10 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        private void Serialize(CodedOutputStream outputStream, TransportMessage transportMessage, bool wasPersisted)
+        private void Serialize(CodedOutputStream outputStream, TransportMessage transportMessage)
         {
-            outputStream.Position = 0;
-
-            transportMessage.Environment = _environment;
-            transportMessage.WasPersisted = wasPersisted;
-
-            outputStream.WriteTransportMessage(transportMessage);
+            outputStream.Reset();
+            outputStream.WriteTransportMessage(transportMessage, _environment);
         }
 
         private void SafeAdd<T>(BlockingCollection<T> collection, T item)
@@ -485,48 +475,28 @@ namespace Abc.Zebus.Transport
         private struct OutboundSocketAction
         {
             private static readonly TransportMessage _disconnectMessage = new TransportMessage(null, null, new PeerId(), null);
-            private readonly IEnumerable<Peer> _targets;
-            private readonly SendContext _context;
-
-            public readonly TransportMessage Message;
 
             private OutboundSocketAction(TransportMessage message, IEnumerable<Peer> targets, SendContext context)
             {
                 Message = message;
-                _targets = targets;
-                _context = context;
+                Targets = targets as List<Peer> ?? targets.ToList();
+                Context = context;
             }
 
             public bool IsDisconnect => Message == _disconnectMessage;
-
-            public IEnumerable<PeerId> PeerIds
-            {
-                get { return _targets.Select(x => x.Id); }
-            }
-
-            public IEnumerable<Peer> GetTransientPeers()
-            {
-                foreach (var target in _targets)
-                {
-                    if (!_context.PersistedPeerIds.Contains(target.Id))
-                        yield return target;
-                }
-            }
-
-            public IEnumerable<Peer> GetPersistentPeer()
-            {
-                foreach (var target in _targets)
-                {
-                    if (_context.PersistedPeerIds.Contains(target.Id))
-                        yield return target;
-                }
-            }
+            public TransportMessage Message { get; }
+            public List<Peer> Targets { get; }
+            public SendContext Context { get; }
 
             public static OutboundSocketAction Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context)
-                => new OutboundSocketAction(message, peers, context);
+            {
+                return new OutboundSocketAction(message, peers, context);
+            }
 
             public static OutboundSocketAction Disconnect(PeerId peerId)
-                => new OutboundSocketAction(_disconnectMessage, new[] { new Peer(peerId, null) }, null);
+            {
+                return new OutboundSocketAction(_disconnectMessage, new List<Peer> { new Peer(peerId, null) }, null);
+            }
         }
 
         private class PendingDisconnect

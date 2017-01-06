@@ -4,7 +4,7 @@ namespace Abc.Zebus.Transport
 {
     internal static class TransportMessageWriter
     {
-        internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage)
+        internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage, string environment = null)
         {
             output.WriteRawTag(1 << 3 | 2);
             Write(output, transportMessage.Id);
@@ -22,18 +22,24 @@ namespace Abc.Zebus.Transport
             output.WriteRawTag(4 << 3 | 2);
             Write(output, transportMessage.Originator);
 
-            if (transportMessage.Environment != null)
+            var transportMessageEnvironment = transportMessage.Environment ?? environment;
+            if (transportMessageEnvironment != null)
             {
                 output.WriteRawTag(5 << 3 | 2);
-                var environmentLength = GetUtf8ByteCount(transportMessage.Environment);
-                output.WriteString(transportMessage.Environment, environmentLength);
+                var environmentLength = GetUtf8ByteCount(transportMessageEnvironment);
+                output.WriteString(transportMessageEnvironment, environmentLength);
             }
 
             if (transportMessage.WasPersisted != null)
-            {
-                output.WriteRawTag(6 << 3 | 0);
-                output.WriteBool(transportMessage.WasPersisted.Value);
-            }
+                WriteWasPersisted(output, transportMessage.WasPersisted.Value);
+        }
+
+        internal static void SetWasPersisted(this CodedOutputStream output, bool wasPersisted)
+        {
+            if (output.TryWriteBoolAtSavedPosition(wasPersisted))
+                return;
+
+            WriteWasPersisted(output, wasPersisted);
         }
 
         internal static void WritePersistentPeerIds(this CodedOutputStream output, TransportMessage transportMessage)
@@ -186,6 +192,13 @@ namespace Abc.Zebus.Transport
                 }
             }
             return s.Length;
+        }
+
+        private static void WriteWasPersisted(CodedOutputStream output, bool value)
+        {
+            output.WriteRawTag(6 << 3 | 0);
+            output.SavePosition();
+            output.WriteBool(value);
         }
     }
 }

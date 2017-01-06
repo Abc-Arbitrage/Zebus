@@ -66,6 +66,7 @@ namespace Abc.Zebus.Serialization.Protobuf
 
         private byte[] buffer;
         private int position;
+        private int? savedPosition;
 
         #region Construction
         public CodedOutputStream() : this(new byte[DefaultBufferSize])
@@ -90,7 +91,26 @@ namespace Abc.Zebus.Serialization.Protobuf
         public int Position
         {
             get { return position; }
-            set { position = value; }
+        }
+
+        public void Reset()
+        {
+            position = 0;
+            savedPosition = null;
+        }
+
+        public void SavePosition()
+        {
+            savedPosition = position;
+        }
+
+        public bool TryWriteBoolAtSavedPosition(bool value)
+        {
+            if (savedPosition == null)
+                return false;
+
+            buffer[savedPosition.Value] = value ? (byte)1 : (byte)0;
+            return true;
         }
 
         #region Writing of values (not including tags)

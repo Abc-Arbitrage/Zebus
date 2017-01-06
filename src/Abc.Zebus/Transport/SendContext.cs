@@ -4,6 +4,17 @@ namespace Abc.Zebus.Transport
 {
     public class SendContext
     {
-        public readonly List<PeerId> PersistedPeerIds = new List<PeerId>();
+        public List<PeerId> PersistentPeerIds { get; } = new List<PeerId>();
+        public Peer PersistencePeer { get; set; }
+
+        public bool IsPersistent(PeerId peerId)
+        {
+            for (var index = 0; index < PersistentPeerIds.Count; index++)
+            {
+                if (PersistentPeerIds[index] == peerId)
+                    return true;
+            }
+            return false;
+        }
     }
 }

@@ -37,7 +37,7 @@ namespace Abc.Zebus.Testing.Transport
         {
             Targets.Add(peer);
             if (wasPersistent)
-                Context.PersistedPeerIds.Add(peer.Id);
+                Context.PersistentPeerIds.Add(peer.Id);
 
             return this;
         }
