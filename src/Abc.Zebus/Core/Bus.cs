@@ -162,7 +162,7 @@ namespace Abc.Zebus.Core
             if (shouldBeHandledLocally)
                 HandleLocalMessage(message, null);
 
-            var targetPeers = localDispatchEnabled ? peersHandlingMessage.Where(x => x.Id != PeerId).ToList() : peersHandlingMessage;
+            var targetPeers = shouldBeHandledLocally ? peersHandlingMessage.Where(x => x.Id != PeerId).ToList() : peersHandlingMessage;
             SendTransportMessage(null, message, targetPeers, true, shouldBeHandledLocally);
         }
 
@@ -504,7 +504,7 @@ namespace Abc.Zebus.Core
 
         private void SendTransportMessage(MessageId? messageId, IMessage message, Peer peer, bool logEnabled)
         {
-            SendTransportMessage(messageId, message, new[] { peer }, logEnabled);
+            SendTransportMessage(messageId, message, new List<Peer>(1) { peer }, logEnabled);
         }
 
         private void SendTransportMessage(MessageId? messageId, IMessage message, IList<Peer> peers, bool logEnabled, bool locallyHandled = false)

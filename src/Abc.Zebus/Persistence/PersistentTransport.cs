@@ -157,23 +157,44 @@ namespace Abc.Zebus.Persistence
                 throw new ArgumentException("Send invoked with non-empty send context", nameof(context));
 
             var isMessagePersistent = _messageSendingStrategy.IsMessagePersistent(message);
-            var peerList = (peers as IList<Peer>) ?? peers.ToList();
-            var upPeers = (peerList.Count == 1 && peerList[0].IsUp) ? peerList : peerList.Where(peer => peer.IsUp).ToList();
+            var targetPeers = LoadTargetPeersAndUpdateContext(peers, isMessagePersistent, context);
 
-            context.PersistedPeerIds.AddRange(upPeers.Where(peer => isMessagePersistent && _peerDirectory.IsPersistent(peer.Id)).Select(x => x.Id));
-
-            _innerTransport.Send(message, upPeers, context);
+            _innerTransport.Send(message, targetPeers, context);
             
-            if (!isMessagePersistent)
-                return;
-
-            var persistentPeerIds = peerList.Where(p => _peerDirectory.IsPersistent(p.Id)).Select(x => x.Id).ToArray();
-
-            if (!persistentPeerIds.Any())
+            if (context.PersistedPeerIds.Count == 0)
                 return;
             
-            var persistMessageCommand = new PersistMessageCommand(message, persistentPeerIds);
+            var persistMessageCommand = new PersistMessageCommand(message, context.PersistedPeerIds.ToArray());
             EnqueueOrSendToPersistenceService(persistMessageCommand);
+        }
+
+        private List<Peer> LoadTargetPeersAndUpdateContext(IEnumerable<Peer> peers, bool isMessagePersistent, SendContext context)
+        {
+            var peerList = peers as List<Peer> ?? peers.ToList();
+            var hasDownPeer = false;
+
+            for (int index = 0; index < peerList.Count; index++)
+            {
+                var peer = peerList[index];
+                if (isMessagePersistent && _peerDirectory.IsPersistent(peer.Id))
+                    context.PersistedPeerIds.Add(peer.Id);
+
+                hasDownPeer |= !peer.IsUp;
+            }
+
+            if (!hasDownPeer)
+                return peerList;
+
+            var targetPeers = new List<Peer>();
+
+            for (int index = 0; index < peerList.Count; index++)
+            {
+                var peer = peerList[index];
+                if (peer.IsUp)
+                    targetPeers.Add(peer);
+            }
+
+            return targetPeers;
         }
 
         private void SetPhase(Phase phase)
