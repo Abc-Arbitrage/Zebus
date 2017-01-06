@@ -7,6 +7,7 @@ using Abc.Zebus.Dispatch;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Measurements;
+using Abc.Zebus.Util;
 using NUnit.Framework;
 using ProtoBuf;
 
@@ -40,7 +41,7 @@ namespace Abc.Zebus.Tests.Core
                 task.Wait();
             }
 
-            Console.WriteLine(PerfCommandHandler.LastValue);
+            Console.WriteLine(PerfHandler.LastValue);
 
             receiver.Stop();
             sender.Stop();
@@ -68,11 +69,38 @@ namespace Abc.Zebus.Tests.Core
                 }
 
                 var spinWait = new SpinWait();
-                while (PerfEventHandler.LastValue != messageCount)
+                while (PerfHandler.LastValue != messageCount)
                     spinWait.SpinOnce();
             }
 
-            Console.WriteLine(PerfEventHandler.LastValue);
+            Console.WriteLine(PerfHandler.LastValue);
+
+            receiver.Stop();
+            sender.Stop();
+        }
+
+        [Test]
+        public void MeasureEventThroughputWithPersistence()
+        {
+            const int messageCount = 1000 * 1000;
+
+            var receiver = CreateAndStartReceiver(true);
+            var sender = CreateAndStartSender();
+
+            using (Measure.Throughput(messageCount))
+            {
+                for (var i = 1; i <= messageCount; ++i)
+                {
+                    sender.Publish(new PersistentPerfEvent(i));
+                    Thread.SpinWait(1 << 4);
+                }
+
+                var spinWait = new SpinWait();
+                while (PerfHandler.LastValue != messageCount)
+                    spinWait.SpinOnce();
+            }
+
+            Console.WriteLine(PerfHandler.LastValue);
 
             receiver.Stop();
             sender.Stop();
@@ -96,11 +124,11 @@ namespace Abc.Zebus.Tests.Core
                 }
 
                 var spinWait = new SpinWait();
-                while (PerfEventHandler.CallCount != messageCount * receiverCount)
+                while (PerfHandler.CallCount != messageCount * receiverCount)
                     spinWait.SpinOnce();
             }
 
-            Console.WriteLine(PerfEventHandler.LastValue);
+            Console.WriteLine(PerfHandler.LastValue);
 
             receivers.ForEach(x =>
             {
@@ -119,7 +147,7 @@ namespace Abc.Zebus.Tests.Core
             // 23/09/2014 - PC CAO: 275k/s
 
             var bus = new BusFactory()
-                .WithHandlers(typeof(PerfCommandHandler), typeof(PerfEventHandler))
+                .WithHandlers(typeof(PerfHandler))
                 .CreateAndStartInMemoryBus();
 
             using (DispatchQueue.SetCurrentDispatchQueueName(DispatchQueueNameScanner.DefaultQueueName))
@@ -135,17 +163,35 @@ namespace Abc.Zebus.Tests.Core
         {
             return new BusFactory()
                 .WithPeerId("Abc.Zebus.Perf.Sender.*")
-                .WithConfiguration(_directoryEndPoint, "Dev")
+                .WithConfiguration(new BusConfiguration(false, _directoryEndPoint), "Dev")
                 .CreateAndStartBus();
         }
 
-        public static IBus CreateAndStartReceiver()
+        public static IBus CreateAndStartReceiver(bool isPersistent = false)
         {
             return new BusFactory()
                 .WithPeerId("Abc.Zebus.Perf.Receiver.*")
-                .WithConfiguration(_directoryEndPoint, "Dev")
-                .WithHandlers(typeof(PerfCommandHandler), typeof(PerfEventHandler))
+                .WithConfiguration(new BusConfiguration(isPersistent, _directoryEndPoint), "Dev")
+                .WithHandlers(typeof(PerfHandler))
                 .CreateAndStartBus();
+        }
+
+        private class BusConfiguration : IBusConfiguration
+        {
+            public BusConfiguration(bool isPersistent, string directoryServiceEndPoint)
+            {
+                DirectoryServiceEndPoints = new[] { directoryServiceEndPoint };
+                RegistrationTimeout = 10.Second();
+                IsPersistent = isPersistent;
+            }
+
+            public string[] DirectoryServiceEndPoints { get; }
+            public TimeSpan RegistrationTimeout { get; }
+            public TimeSpan StartReplayTimeout => 30.Seconds();
+            public bool IsPersistent { get; }
+            public bool IsDirectoryPickedRandomly => false;
+            public bool IsErrorPublicationEnabled => false;
+            public int MessagesBatchSize => 200;
         }
 
         [ProtoContract]
@@ -172,25 +218,38 @@ namespace Abc.Zebus.Tests.Core
             }
         }
 
-        public class PerfCommandHandler : IMessageHandler<PerfCommand>
+        [ProtoContract]
+        public class PersistentPerfEvent : IEvent
         {
-            public static int LastValue;
+            [ProtoMember(1, IsRequired = true)]
+            public readonly int Value;
 
-            public void Handle(PerfCommand message)
+            public PersistentPerfEvent(int value)
             {
-                LastValue = message.Value;
+                Value = value;
             }
         }
 
-        public class PerfEventHandler : IMessageHandler<PerfEvent>
+        public class PerfHandler : IMessageHandler<PerfCommand>, IMessageHandler<PerfEvent>, IMessageHandler<PersistentPerfEvent>
         {
             public static int LastValue;
             public static int CallCount;
 
+            public void Handle(PerfCommand message)
+            {
+                LastValue = message.Value;
+                Interlocked.Increment(ref CallCount);
+            }
+
             public void Handle(PerfEvent message)
             {
                 LastValue = message.Value;
+                Interlocked.Increment(ref CallCount);
+            }
 
+            public void Handle(PersistentPerfEvent message)
+            {
+                LastValue = message.Value;
                 Interlocked.Increment(ref CallCount);
             }
         }

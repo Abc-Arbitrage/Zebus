@@ -53,7 +53,7 @@ namespace Abc.Zebus.Tests
         private static void RunLocalDispatch()
         {
             var bus = new BusFactory()
-               .WithHandlers(typeof(BusPerformanceTests.PerfCommandHandler), typeof(BusPerformanceTests.PerfEventHandler))
+               .WithHandlers(typeof(BusPerformanceTests.PerfHandler))
                .CreateAndStartInMemoryBus();
 
             Console.WriteLine("Press any key to start");
