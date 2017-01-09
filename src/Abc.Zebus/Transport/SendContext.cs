@@ -7,7 +7,7 @@ namespace Abc.Zebus.Transport
         public List<PeerId> PersistentPeerIds { get; } = new List<PeerId>();
         public Peer PersistencePeer { get; set; }
 
-        public bool IsPersistent(PeerId peerId)
+        public bool WasPersisted(PeerId peerId)
         {
             for (var index = 0; index < PersistentPeerIds.Count; index++)
             {

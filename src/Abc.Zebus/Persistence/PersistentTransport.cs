@@ -16,6 +16,8 @@ namespace Abc.Zebus.Persistence
     public partial class PersistentTransport : IPersistentTransport
     {
         private static readonly List<MessageTypeId> _replayMessageTypeIds = new List<MessageTypeId> { MessageReplayed.TypeId, ReplayPhaseEnded.TypeId, SafetyPhaseEnded.TypeId };
+        private static readonly MessageBinding _bindingForPersistence = MessageBinding.Default<PersistMessageCommand>();
+        private static readonly List<Peer> _emptyPeerList = new List<Peer>();
 
         private readonly ILog _logger = LogManager.GetLogger(typeof(PersistentTransport));
         private readonly ConcurrentDictionary<MessageId, bool> _receivedMessagesIds = new ConcurrentDictionary<MessageId, bool>();
@@ -86,34 +88,41 @@ namespace Abc.Zebus.Persistence
 
         private void ReplayMessagesWaitingForPersistence()
         {
-            var persistencePeers = _peerDirectory.GetPeersHandlingMessage(MessageBinding.Default<PersistMessageCommand>());
+            var persistencePeers = GetPersistencePeers();
 
             _logger.InfoFormat("Sending {0} enqueued messages to the persistence", _messagesWaitingForPersistence.Count);
 
             TransportMessage messageToSend;
             while (_messagesWaitingForPersistence.TryTake(out messageToSend))
             {
-                SendToPersistenceService(messageToSend, persistencePeers);
+                _innerTransport.Send(messageToSend, persistencePeers, new SendContext());
             }
         }
 
         private void EnqueueOrSendToPersistenceService(IMessage message)
         {
             var transportMessage = _serializer.ToTransportMessage(message, PeerId, InboundEndPoint);
+            var peers = GetPersistencePeers();
 
-            var peers = _peerDirectory.GetPeersHandlingMessage(message);
-            if (_persistenceIsDown || peers.Count == 0)
-            {
-                _logger.Info("Enqueing in temp persistence buffer: " + message);
-                _messagesWaitingForPersistence.Add(transportMessage);
+            if (peers.Count == 0)
+                Enqueue(transportMessage);
+            else
+                SendToPersistenceService(transportMessage, peers);
+        }
 
-                if (!_persistenceIsDown)
-                    ReplayMessagesWaitingForPersistence();
+        private void Enqueue(IMessage message)
+        {
+            var transportMessage = _serializer.ToTransportMessage(message, PeerId, InboundEndPoint);
+            Enqueue(transportMessage);
+        }
 
-                return;
-            }
+        private void Enqueue(TransportMessage transportMessage)
+        {
+            _logger.InfoFormat("Enqueing in temp persistence buffer: {0}", transportMessage.Id);
+            _messagesWaitingForPersistence.Add(transportMessage);
 
-            SendToPersistenceService(transportMessage, peers);
+            if (!_persistenceIsDown)
+                ReplayMessagesWaitingForPersistence();
         }
 
         public void Configure(PeerId peerId, string environment)
@@ -164,13 +173,18 @@ namespace Abc.Zebus.Persistence
             var isMessagePersistent = _messageSendingStrategy.IsMessagePersistent(message);
             var targetPeers = LoadTargetPeersAndUpdateContext(peers, isMessagePersistent, context);
 
+            var mustBeSendToPersistence = context.PersistentPeerIds.Count != 0;
+            context.PersistencePeer = mustBeSendToPersistence ? GetPersistencePeers().FirstOrDefault() : null;
+
             _innerTransport.Send(message, targetPeers, context);
-            
-            if (context.PersistentPeerIds.Count == 0)
-                return;
-            
-            var persistMessageCommand = new PersistMessageCommand(message, context.PersistentPeerIds);
-            EnqueueOrSendToPersistenceService(persistMessageCommand);
+
+            if (mustBeSendToPersistence && context.PersistencePeer == null)
+                Enqueue(new PersistMessageCommand(message, context.PersistentPeerIds));
+        }
+
+        private IList<Peer> GetPersistencePeers()
+        {
+            return _persistenceIsDown ? _emptyPeerList : _peerDirectory.GetPeersHandlingMessage(_bindingForPersistence);
         }
 
         private List<Peer> LoadTargetPeersAndUpdateContext(IEnumerable<Peer> peers, bool isMessagePersistent, SendContext context)

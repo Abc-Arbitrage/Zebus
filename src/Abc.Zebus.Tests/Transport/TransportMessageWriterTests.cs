@@ -65,7 +65,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var stream = new CodedOutputStream();
             stream.WriteTransportMessage(transportMessage);
-            stream.WritePersistentPeerIds(transportMessage);
+            stream.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
 
             var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
             deserialized.Id.ShouldEqual(transportMessage.Id);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Transport;
 
@@ -39,6 +40,18 @@ namespace Abc.Zebus.Testing.Transport
             if (wasPersistent)
                 Context.PersistentPeerIds.Add(peer.Id);
 
+            return this;
+        }
+
+        public TransportMessageSent ToPersistence(Peer persistencePeer)
+        {
+            Context.PersistencePeer = persistencePeer;
+            return this;
+        }
+
+        public TransportMessageSent AddPersistentPeer(Peer peer)
+        {
+            Context.PersistentPeerIds.Add(peer.Id);
             return this;
         }
     }

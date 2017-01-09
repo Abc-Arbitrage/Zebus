@@ -27,9 +27,9 @@ namespace Abc.Zebus.Testing
             return new TransportMessage(message.TypeId(), content, sender) { WasPersisted = wasPersisted };
         }
 
-        public static TransportMessage WithPersistentPeerIds(this TransportMessage transportMessage, params PeerId[] peerIds)
+        public static TransportMessage ToPersistTransportMessage(this TransportMessage transportMessage, params PeerId[] peerIds)
         {
-            return transportMessage.WithPersistentPeerIds(peerIds.ToList());
+            return transportMessage.ToPersistTransportMessage(peerIds.ToList());
         }
 
         public static IMessage ToMessage(this TransportMessage transportMessage)

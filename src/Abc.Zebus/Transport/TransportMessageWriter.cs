@@ -1,10 +1,11 @@
-﻿using Abc.Zebus.Serialization.Protobuf;
+﻿using System.Collections.Generic;
+using Abc.Zebus.Serialization.Protobuf;
 
 namespace Abc.Zebus.Transport
 {
     internal static class TransportMessageWriter
     {
-        internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage, string environment = null)
+        internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage, string environmentOverride = null)
         {
             output.WriteRawTag(1 << 3 | 2);
             Write(output, transportMessage.Id);
@@ -22,12 +23,12 @@ namespace Abc.Zebus.Transport
             output.WriteRawTag(4 << 3 | 2);
             Write(output, transportMessage.Originator);
 
-            var transportMessageEnvironment = transportMessage.Environment ?? environment;
-            if (transportMessageEnvironment != null)
+            var environment = environmentOverride ?? transportMessage.Environment;
+            if (environment != null)
             {
                 output.WriteRawTag(5 << 3 | 2);
-                var environmentLength = GetUtf8ByteCount(transportMessageEnvironment);
-                output.WriteString(transportMessageEnvironment, environmentLength);
+                var environmentLength = GetUtf8ByteCount(environment);
+                output.WriteString(environment, environmentLength);
             }
 
             if (transportMessage.WasPersisted != null)
@@ -42,9 +43,9 @@ namespace Abc.Zebus.Transport
             WriteWasPersisted(output, wasPersisted);
         }
 
-        internal static void WritePersistentPeerIds(this CodedOutputStream output, TransportMessage transportMessage)
+        internal static void WritePersistentPeerIds(this CodedOutputStream output, TransportMessage transportMessage, List<PeerId> persistentPeerIdOverride)
         {
-            var peerIds = transportMessage.PersistentPeerIds;
+            var peerIds = persistentPeerIdOverride ?? transportMessage.PersistentPeerIds;
             if (peerIds == null)
                 return;
 

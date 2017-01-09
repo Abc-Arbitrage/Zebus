@@ -16,7 +16,7 @@ namespace Abc.Zebus.Serialization
 
         public static IMessage ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage)
         {
-            if (transportMessage.PersistentPeerIds != null && transportMessage.PersistentPeerIds.Count != 0)
+            if (transportMessage.IsPersistTransportMessage)
                 return ToPersistMessageCommand(transportMessage);
 
             return serializer.Deserialize(transportMessage.MessageTypeId, transportMessage.Content);
@@ -25,7 +25,7 @@ namespace Abc.Zebus.Serialization
         private static TransportMessage ToTransportMessage(PersistMessageCommand persistMessageCommand)
         {
             var targetMessage = persistMessageCommand.TransportMessage;
-            return targetMessage.WithPersistentPeerIds(persistMessageCommand.Targets);
+            return targetMessage.ToPersistTransportMessage(persistMessageCommand.Targets);
         }
 
         private static IMessage ToPersistMessageCommand(TransportMessage transportMessage)

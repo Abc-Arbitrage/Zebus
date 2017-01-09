@@ -36,7 +36,10 @@ namespace Abc.Zebus.Transport
         public bool? WasPersisted { get; internal set; }
 
         [ProtoMember(7, IsRequired = false)]
-        internal List<PeerId> PersistentPeerIds { get; set; }
+        public List<PeerId> PersistentPeerIds { get; set; }
+
+        [JsonIgnore]
+        public bool IsPersistTransportMessage => PersistentPeerIds != null && PersistentPeerIds.Count != 0;
 
         public TransportMessage(MessageTypeId messageTypeId, Stream content, Peer sender)
             : this(messageTypeId, content, sender.Id, sender.EndPoint)
@@ -80,7 +83,7 @@ namespace Abc.Zebus.Transport
             return buffer;
         }
 
-        internal TransportMessage WithPersistentPeerIds(List<PeerId> peerIds)
+        internal TransportMessage ToPersistTransportMessage(List<PeerId> peerIds)
         {
             return new TransportMessage
             {

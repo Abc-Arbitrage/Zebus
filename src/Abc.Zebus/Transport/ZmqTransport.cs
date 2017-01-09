@@ -346,7 +346,7 @@ namespace Abc.Zebus.Transport
                 }
                 else
                 {
-                    SendToPeers(socketAction.Message, socketAction.Targets, socketAction.Context, outputStream);
+                    WriteTransportMessageAndSendToPeers(socketAction.Message, socketAction.Targets, socketAction.Context, outputStream);
                 }
             }
 
@@ -355,27 +355,45 @@ namespace Abc.Zebus.Transport
             _logger.InfoFormat("OutboundProc terminated");
         }
 
-        private void SendToPeers(TransportMessage transportMessage, List<Peer> peers, SendContext context, CodedOutputStream outputStream)
+        private void WriteTransportMessageAndSendToPeers(TransportMessage transportMessage, List<Peer> peers, SendContext context, CodedOutputStream outputStream)
         {
-            Serialize(outputStream, transportMessage);
+            outputStream.Reset();
+            outputStream.WriteTransportMessage(transportMessage, _environment);
+
+            if (context.PersistencePeer == null && transportMessage.IsPersistTransportMessage)
+            {
+                outputStream.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
+            }
 
             foreach (var target in peers)
             {
-                var isPersistent = context.IsPersistent(target.Id);
+                var isPersistent = context.WasPersisted(target.Id);
                 outputStream.SetWasPersisted(isPersistent);
 
-                var outboundSocket = GetConnectedOutboundSocket(target, transportMessage);
-                if (!outboundSocket.IsConnected)
-                    continue;
+                SendToPeer(transportMessage, outputStream, target);
+            }
 
-                try
-                {
-                    outboundSocket.Send(outputStream.Buffer, outputStream.Position, transportMessage);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error($"Failed to send message, PeerId: {target.Id}, EndPoint: {target.EndPoint}, Exception: {ex}");
-                }
+            if (context.PersistencePeer != null)
+            {
+                outputStream.WritePersistentPeerIds(transportMessage, context.PersistentPeerIds);
+
+                SendToPeer(transportMessage, outputStream, context.PersistencePeer);
+            }
+        }
+
+        private void SendToPeer(TransportMessage transportMessage, CodedOutputStream outputStream, Peer target)
+        {
+            var outboundSocket = GetConnectedOutboundSocket(target, transportMessage);
+            if (!outboundSocket.IsConnected)
+                return;
+
+            try
+            {
+                outboundSocket.Send(outputStream.Buffer, outputStream.Position, transportMessage);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to send message, PeerId: {target.Id}, EndPoint: {target.EndPoint}, Exception: {ex}");
             }
         }
 
@@ -431,7 +449,8 @@ namespace Abc.Zebus.Transport
                 _logger.InfoFormat("Sending EndOfStream to {0}", outboundSocket.EndPoint);
 
                 var endOfStreamMessage = new TransportMessage(MessageTypeId.EndOfStream, new MemoryStream(), PeerId, InboundEndPoint) { WasPersisted = false };
-                Serialize(outputStream, endOfStreamMessage);
+                outputStream.Reset();
+                outputStream.WriteTransportMessage(endOfStreamMessage, _environment);
                 outboundSocket.Send(outputStream.Buffer, outputStream.Position, endOfStreamMessage);
             }
         }
@@ -452,12 +471,6 @@ namespace Abc.Zebus.Transport
 
                 SafeAdd(_outboundSocketActions, OutboundSocketAction.Disconnect(pendingDisconnect.PeerId));
             }
-        }
-
-        private void Serialize(CodedOutputStream outputStream, TransportMessage transportMessage)
-        {
-            outputStream.Reset();
-            outputStream.WriteTransportMessage(transportMessage, _environment);
         }
 
         private void SafeAdd<T>(BlockingCollection<T> collection, T item)
