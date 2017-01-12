@@ -14,7 +14,7 @@ using System.Threading;
 
 namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 {
-    [TestFixture]
+    [TestFixture, NUnit.Framework.Ignore("should only be run inside ABC infra")]
     public partial class CqlPeerRepositoryTests : CqlTestFixture<DirectoryDataContext, ICassandraConfiguration>
     {
         private CqlPeerRepository _repository;

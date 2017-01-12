@@ -89,9 +89,6 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="..\SharedVersionInfo.cs">
-      <Link>Properties\SharedVersionInfo.cs</Link>
-    </Compile>
     <Compile Include="Configuration\ConfigurationTests.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerDetectorEntryTests.cs" />
     <Compile Include="DeadPeerDetection\DeadPeerDetectorTests.cs" />
