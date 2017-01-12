@@ -40,7 +40,7 @@ Task("UpdateBuildVersionNumber").Does(() =>
     
     Information("Running under AppVeyor");
     var gitVersion = GitVersion();
-    var version = VersionObject.version + "-" + gitVersion.Sha;
+    var version = VersionObject.informational_version + "-" + gitVersion.Sha;
     Information("Updating AppVeyor build version to " + version);
     AppVeyor.UpdateBuildVersion(version);
 });
