@@ -2,16 +2,14 @@
 <package >
 	<metadata>
 		<id>Zebus.Directory.Standalone</id>
-		<version>$version$</version>
 		<title>Zebus.Directory.Standalone</title>
-		<authors>$author$</authors>
-		<owners>$author$</owners>
+		<authors>ABC arbitrage</authors>
     <licenseUrl>https://github.com/Abc-Arbitrage/Zebus.Directory/blob/master/LICENSE.md</licenseUrl>
     <projectUrl>https://github.com/Abc-Arbitrage/Zebus.Directory</projectUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<description>$description$</description>
+		<description>Standalone version of the Directory service used by Zebus</description>
 		<releaseNotes></releaseNotes>
-		<copyright>$copyright$</copyright>
+		<copyright>Copyright © ABC arbitrage 2017</copyright>
 		<tags></tags>
     <dependencies>
       <dependency id="Zebus" version="[1.5.1-beta2,2.0)" />
@@ -19,13 +17,13 @@
     </dependencies>
 	</metadata>
 	<files>
-		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.exe" target="tools" />
-		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.exe.config" target="tools" />
-		<file src="src\Abc.Zebus.Directory\bin\$configuration$\*.dll" target="tools" />
-		<file src="src\Abc.Zebus.Directory\bin\$configuration$\log4net.config" target="tools" />
+		<file src="Abc.Zebus.Directory.exe" target="tools" />
+		<file src="Abc.Zebus.Directory.exe.config" target="tools" />
+		<file src="*.dll" target="tools" />
+		<file src="log4net.config" target="tools" />
 		
-		<file src="src\dummy.txt" target="lib\net45\" />
+		<file src=".\..\..\..\src\dummy.txt" target="lib\net45\" />
     
-		<file src="build\nuget\tools\Zebus.Directory\readme.txt" target="" />
+		<file src=".\..\..\..\build\nuget\tools\Zebus.Directory\readme.txt" target="" />
 	</files>
 </package>

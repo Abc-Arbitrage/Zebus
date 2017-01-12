@@ -2,16 +2,14 @@
 <package >
 	<metadata>
 		<id>Zebus.Directory</id>
-		<version>$version$</version>
 		<title>Zebus.Directory</title>
-		<authors>$author$</authors>
-		<owners>$author$</owners>
+		<authors>ABC arbitrage</authors>
     <licenseUrl>https://github.com/Abc-Arbitrage/Zebus.Directory/blob/master/LICENSE.md</licenseUrl>
     <projectUrl>https://github.com/Abc-Arbitrage/Zebus.Directory</projectUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<description>$description$</description>
+		<description>The Directory service used by Zebus</description>
 		<releaseNotes></releaseNotes>
-		<copyright>$copyright$</copyright>
+		<copyright>Copyright © ABC arbitrage 2017</copyright>
 		<tags></tags>
     <dependencies>
       <dependency id="Zebus" version="[1.5.1-beta2,2.0)" />
@@ -19,9 +17,9 @@
     </dependencies>
 	</metadata>
 	<files>
-		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.dll" target="lib\net45\" />
-		<file src="src\Abc.Zebus.Directory\bin\$configuration$\Abc.Zebus.Directory.pdb" target="lib\net45\" />
+		<file src="Abc.Zebus.Directory.dll" target="lib\net45\" />
+		<file src="Abc.Zebus.Directory.pdb" target="lib\net45\" />
     
-    <file src="src\Abc.Zebus.Directory\**\*.cs" target="src" />
+    <file src=".\..\..\..\src\Abc.Zebus.Directory\**\*.cs" target="src" />
 	</files>
 </package>
