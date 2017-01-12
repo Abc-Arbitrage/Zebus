@@ -17,6 +17,7 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Persistence.CQL.Tests
 {
+    [Ignore("We need a cassandra node for this")]
     public class CqlStorageTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
         private CqlStorage _storage;

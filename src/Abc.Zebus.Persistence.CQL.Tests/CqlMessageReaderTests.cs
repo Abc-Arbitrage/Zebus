@@ -11,6 +11,7 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Persistence.CQL.Tests
 {
+    [Ignore("We need a cassandra node for this")]
     public class CqlMessageReaderTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
         private readonly Serializer _serializer = new Serializer();

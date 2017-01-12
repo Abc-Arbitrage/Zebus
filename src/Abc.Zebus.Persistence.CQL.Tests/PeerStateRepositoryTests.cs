@@ -10,6 +10,7 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Persistence.CQL.Tests
 {
+    [Ignore("We need a cassandra node for this")]
     public class PeerStateRepositoryTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
         private TestBus _bus;

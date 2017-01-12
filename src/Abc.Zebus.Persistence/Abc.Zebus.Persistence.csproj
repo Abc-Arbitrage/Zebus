@@ -84,9 +84,6 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="..\SharedVersionInfo.cs">
-      <Link>Properties\SharedVersionInfo.cs</Link>
-    </Compile>
     <Compile Include="Initialization\PersistenceRegistry.cs" />
     <Compile Include="Reporter\IReporter.cs" />
     <Compile Include="Matching\InMemoryMessageMatcher.cs" />
