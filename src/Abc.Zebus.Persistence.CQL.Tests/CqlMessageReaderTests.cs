@@ -11,10 +11,23 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Persistence.CQL.Tests
 {
-    [Ignore("We need a cassandra node for this")]
     public class CqlMessageReaderTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
         private readonly Serializer _serializer = new Serializer();
+
+        public override void CreateSchema()
+        {
+            IgnoreOnAppVeyor();
+            base.CreateSchema();
+        }
+
+        private void IgnoreOnAppVeyor()
+        {
+            var env = Environment.GetEnvironmentVariable("APPVEYOR");
+            bool isUnderAppVeyor;
+            if (!string.IsNullOrEmpty(env) && bool.TryParse(env, out isUnderAppVeyor) && isUnderAppVeyor)
+                Assert.Ignore("We need a cassandra node for this");
+        }
 
         [Test]
         public void should_read_non_acked_messages_since_oldest()

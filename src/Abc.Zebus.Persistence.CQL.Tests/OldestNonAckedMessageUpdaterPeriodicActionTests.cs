@@ -14,12 +14,25 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Persistence.CQL.Tests
 {
-    [Ignore("We need a cassandra node for this")]
     public class OldestNonAckedMessageUpdaterPeriodicActionTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
         private FakePeerStateRepository _peerStateRepo;
         private TestBus _testBus;
         private OldestNonAckedMessageUpdaterPeriodicAction _oldestMessageUpdater;
+
+        public override void CreateSchema()
+        {
+            IgnoreOnAppVeyor();
+            base.CreateSchema();
+        }
+
+        private void IgnoreOnAppVeyor()
+        {
+            var env = Environment.GetEnvironmentVariable("APPVEYOR");
+            bool isUnderAppVeyor;
+            if (!string.IsNullOrEmpty(env) && bool.TryParse(env, out isUnderAppVeyor) && isUnderAppVeyor)
+                Assert.Ignore("We need a cassandra node for this");
+        }
 
         [SetUp]
         public void SetUp()

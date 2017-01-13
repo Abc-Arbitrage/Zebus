@@ -32,7 +32,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests.Cql
         public Mock<TConfig> ConfigurationMock { get; private set; }
         
         [TestFixtureSetUp]
-        public void CreateSchema()
+        public virtual void CreateSchema()
         {
             Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
             Diagnostics.CassandraStackTraceIncluded = true;
