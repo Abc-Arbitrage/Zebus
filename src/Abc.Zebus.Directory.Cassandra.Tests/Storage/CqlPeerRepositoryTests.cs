@@ -14,12 +14,26 @@ using System.Threading;
 
 namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 {
-    [TestFixture, NUnit.Framework.Ignore("should only be run inside ABC infra")]
+    [TestFixture]
     public partial class CqlPeerRepositoryTests : CqlTestFixture<DirectoryDataContext, ICassandraConfiguration>
     {
         private CqlPeerRepository _repository;
         private Peer _peer1;
         private Peer _peer2;
+
+        public override void CreateSchema()
+        {
+            IgnoreOnAppVeyor();
+            base.CreateSchema();
+        }
+
+        private void IgnoreOnAppVeyor()
+        {
+            var env = Environment.GetEnvironmentVariable("APPVEYOR");
+            bool isUnderAppVeyor;
+            if (!string.IsNullOrEmpty(env) && bool.TryParse(env, out isUnderAppVeyor) && isUnderAppVeyor)
+                Assert.Ignore("We need a cassandra node for this");
+        }
 
         protected override string Hosts { get { return "cassandra-test-host"; } }
 

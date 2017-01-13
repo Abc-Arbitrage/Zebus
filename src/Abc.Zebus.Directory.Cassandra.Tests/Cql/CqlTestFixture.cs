@@ -31,7 +31,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         protected abstract string LocalDataCenter { get; }
 
         [TestFixtureSetUp]
-        public void CreateSchema()
+        public virtual void CreateSchema()
         {
             Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
             Diagnostics.CassandraStackTraceIncluded = true;
