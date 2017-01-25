@@ -87,6 +87,9 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\SharedVersionInfo.cs">
+      <Link>Properties\SharedVersionInfo.cs</Link>
+    </Compile>
     <Compile Include="Data\CassandraPeerState.cs" />
     <Compile Include="ICqlPersistenceConfiguration.cs" />
     <Compile Include="IPeerStateRepository.cs" />
