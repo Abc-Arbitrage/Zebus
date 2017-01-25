@@ -1,13 +1,5 @@
-version: 1.2.{build}
-os: Visual Studio 2015
-before_build:
-- cmd: nuget restore src/Abc.Zebus.sln
-build:
-  verbosity: minimal
-test:
-  assemblies: Abc.Zebus.Tests.dll
-  categories:
-    except:
-    - ManualOnly
-cache:
-  - src\packages -> **\packages.config 
+image: Visual Studio 2015
+build: off
+test_script:
+- ps: build\build.ps1 -Script build\build.cake -Target Test
+deploy: off

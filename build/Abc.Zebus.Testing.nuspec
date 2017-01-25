@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Zebus.Testing</id>
+    <title>Zebus.Testing</title>
+    <authors>ABC arbitrage</authors>
+    <licenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/Abc-Arbitrage/Zebus</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Test tools for Zebus</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright © ABC arbitrage 2017</copyright>
+    <tags></tags>
+    <dependencies>
+      <dependency id="Zebus" version="$version$" />
+      <dependency id="AutoFixture" version="3.36.8" />
+      <dependency id="CompareNETObjects" version="3.03.0.0" />
+      <dependency id="Moq" version="4.2.1507.0118" />
+      <dependency id="Newtonsoft.Json" version="7.0.1" />
+      <dependency id="NUnit" version="2.6.4" />
+      <dependency id="structuremap" version="3.1.6.186" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Abc.Zebus.Testing.pdb" target="lib\net45\" />
+    <file src="Abc.Zebus.Testing.dll" target="lib\net45\" />
+
+    <file src=".\..\..\src\Abc.Zebus.Testing\**\*.cs" target="src" />
+  </files>
+</package>
