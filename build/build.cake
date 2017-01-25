@@ -1,6 +1,6 @@
+#l "scripts/utilities.cake"
 #tool nuget:?package=NUnit.Runners.Net4&version=2.6.4
-#tool "nuget:?package=GitVersion.CommandLine"
-#addin "Cake.Yaml"
+#addin "Cake.FileHelpers"
 
 //////////////////////////////////////////////////////////////////////
 // ARGUMENTS
@@ -9,9 +9,8 @@
 var target = Argument("target", "Default");
 var paths = new {
     solution = MakeAbsolute(File("./../src/Abc.Zebus.Directory.sln")).FullPath,
-    directoryProject = MakeAbsolute(File("./../src/Abc.Zebus.Directory/Abc.Zebus.Directory.csproj")).FullPath,
-    version = MakeAbsolute(File("./../version.yml")).FullPath,
-    assemblyInfo = MakeAbsolute(File("./../src/SharedAssemblyInfo.cs")).FullPath,
+    directoryProject = MakeAbsolute(File("./../src/Abc.Zebus.Directory/Abc.Zebus.Directory.csproj")).FullPath,    version = MakeAbsolute(File("./../version.yml")).FullPath,
+    assemblyInfo = MakeAbsolute(File("./../src/SharedVersionInfo.cs")).FullPath,
     output = new {
         build = MakeAbsolute(Directory("./../output/build/standard")).FullPath,
         build_standalone = MakeAbsolute(Directory("./../output/build/standalone")).FullPath,
@@ -24,53 +23,35 @@ var paths = new {
     }
 };
 
-var VersionObject = DeserializeYaml<VersionObjectType>(System.IO.File.ReadAllText(paths.version));
+ReadContext(paths.version);
 
 //////////////////////////////////////////////////////////////////////
 // TASKS
 //////////////////////////////////////////////////////////////////////
 
-Task("UpdateBuildVersionNumber").Does(() =>
-{
-    if(!AppVeyor.IsRunningOnAppVeyor)
-    {
-        Information("Not running under AppVeyor");
-        return;
-    }
-    
-    Information("Running under AppVeyor");
-    var gitVersion = GitVersion();
-    var version = VersionObject.informational_version + "-" + gitVersion.Sha;
-    Information("Updating AppVeyor build version to " + version);
-    AppVeyor.UpdateBuildVersion(version);
-});
+Task("UpdateBuildVersionNumber").Does(() => UpdateAppVeyorBuildVersionNumber());
 Task("Clean").Does(() =>
 {
     CleanDirectory(paths.output.build);
+    CleanDirectory(paths.output.build_standalone);
     CleanDirectory(paths.output.nuget);
 });
 Task("Restore-NuGet-Packages").Does(() => NuGetRestore(paths.solution));
-Task("Create-AssemblyInfo").Does(() =>
-{
+Task("Create-AssemblyInfo").Does(()=>{
     CreateAssemblyInfo(paths.assemblyInfo, new AssemblyInfoSettings {
-            Product = "Zebus.Directory",
-            Description = "The Directory service used by Zebus - https://github.com/Abc-Arbitrage/Zebus.Directory",
-            Copyright = "Copyright © ABC arbitrage 2017",
-            Company = "ABC arbitrage",
-            Version = VersionObject.version,
-            FileVersion = VersionObject.version,
-            InformationalVersion = VersionObject.informational_version
+        Version = VersionContext.AssemblyVersion,
+        FileVersion = VersionContext.AssemblyVersion,
+        InformationalVersion = VersionContext.NugetVersion + " Commit: " + VersionContext.Git.Sha
     });
 });
 Task("MSBuild").Does(() => MSBuild(paths.solution, settings => settings.SetConfiguration("Release")
                                                                         .SetPlatformTarget(PlatformTarget.MSIL)
                                                                         .WithProperty("OutDir", paths.output.build)
                                                                         .WithProperty("OverrideOutputType", "Library")));
-
 Task("MSBuild-Standalone").Does(() => MSBuild(paths.directoryProject, settings => settings.SetConfiguration("Release")
                                                                         .SetPlatformTarget(PlatformTarget.MSIL)
                                                                         .WithProperty("OutDir", paths.output.build_standalone)));
-
+Task("Clean-AssemblyInfo").Does(() => FileWriteText(paths.assemblyInfo, string.Empty));
 Task("Run-Unit-Tests").Does(() =>
 {
     NUnit(paths.output.build + "/*.Tests.exe", new NUnitSettings { Framework = "4.6.1", NoResults = true });
@@ -79,7 +60,7 @@ Task("Run-Unit-Tests").Does(() =>
 Task("Nuget-Pack").Does(() => 
 {
     var settings = new NuGetPackSettings {
-        Version = VersionObject.informational_version,
+        Version = VersionContext.NugetVersion,
         BasePath = paths.output.build,
         OutputDirectory = paths.output.nuget,
         Symbols = true
@@ -87,7 +68,7 @@ Task("Nuget-Pack").Does(() =>
 
     NuGetPack(paths.nuspec.directory, settings);
     NuGetPack(paths.nuspec.standalone, new NuGetPackSettings {
-        Version = VersionObject.informational_version,
+        Version = VersionContext.NugetVersion,
         BasePath = paths.output.build_standalone,
         OutputDirectory = paths.output.nuget,
         Symbols = true
@@ -101,11 +82,12 @@ Task("Nuget-Pack").Does(() =>
 
 Task("Build")
     .IsDependentOn("UpdateBuildVersionNumber")
-    .IsDependentOn("Create-AssemblyInfo")
     .IsDependentOn("Clean")
     .IsDependentOn("Restore-NuGet-Packages")
+    .IsDependentOn("Create-AssemblyInfo")
     .IsDependentOn("MSBuild")
-    .IsDependentOn("MSBuild-Standalone");
+    .IsDependentOn("MSBuild-Standalone")
+    .IsDependentOn("Clean-AssemblyInfo");
 
 Task("Test")
     .IsDependentOn("Build")
@@ -118,7 +100,7 @@ Task("Nuget")
         Information("   Nuget package is now ready at location: {0}.", paths.output.nuget);
         Warning("   Please remember to create and push a tag based on the currently built version.");
         Information("   You can do so by copying/pasting the following commands:");
-        Information("       git tag v{0}", VersionObject.informational_version);
+        Information("       git tag v{0}", VersionContext.NugetVersion);
         Information("       git push origin --tags");
     });
 
@@ -127,9 +109,3 @@ Task("Nuget")
 //////////////////////////////////////////////////////////////////////
 
 RunTarget(target);
-
-private class VersionObjectType
-{
-    public string version { get; set; }
-    public string informational_version { get; set; }
-}
