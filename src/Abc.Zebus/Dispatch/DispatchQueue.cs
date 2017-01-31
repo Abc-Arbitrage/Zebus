@@ -150,7 +150,7 @@ namespace Abc.Zebus.Dispatch
         {
             var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { dispatch.Message }, dispatch.Context);
 
-            var invocationTask = invocation.RunAsync();
+            var invocationTask = Task.Run(invocation.RunAsync);
             invocationTask.ContinueWith(task => dispatch.SetHandled(invocation.Invoker, GetException(task)), TaskContinuationOptions.ExecuteSynchronously);
         }
 

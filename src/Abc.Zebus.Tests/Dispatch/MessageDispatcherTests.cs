@@ -252,6 +252,22 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
+        public void should_catch_async_exceptions_thrown_synchronously()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var command = new AsyncFailingCommand(new InvalidOperationException(":'("))
+            {
+                ThrowSynchronously = true
+            };
+
+            var result = DispatchAndWaitForCompletion(command);
+
+            var error = result.Errors.ExpectedSingle();
+            error.ShouldEqual(command.Exception);
+        }
+
+        [Test]
         public void should_have_only_one_failing_handler()
         {
             _messageDispatcher.LoadMessageHandlerInvokers();

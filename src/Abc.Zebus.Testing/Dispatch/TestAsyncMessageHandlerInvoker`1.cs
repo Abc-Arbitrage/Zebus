@@ -2,12 +2,15 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Testing.Dispatch
 {
-    public class TestAsyncMessageHandlerInvoker<TMessage> : MessageHandlerInvoker where TMessage : class, IMessage
+    public class TestAsyncMessageHandlerInvoker<TMessage> : MessageHandlerInvoker
+        where TMessage : class, IMessage
     {
-        public TestAsyncMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true) : base(typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
+        public TestAsyncMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true)
+            : base(typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
         {
         }
 
@@ -16,17 +19,24 @@ namespace Abc.Zebus.Testing.Dispatch
 
         public override Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
         {
-            return Task.Run(() =>
+            Invoked = true;
+
+            using (invocation.SetupForInvocation())
             {
-                Invoked = true;
-                using (invocation.SetupForInvocation())
+                foreach (var message in invocation.Messages.OfType<IExecutableMessage>())
                 {
-                    foreach (var message in invocation.Messages.OfType<IExecutableMessage>())
+                    try
                     {
                         message.Execute(invocation);
                     }
+                    catch (Exception ex)
+                    {
+                        return TaskUtil.FromError(ex);
+                    }
                 }
-            });
+            }
+
+            return TaskUtil.Completed;
         }
 
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)

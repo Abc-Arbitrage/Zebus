@@ -144,7 +144,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 otherMessageTask.IsCompleted.ShouldBeFalse();
             }
         }
-        
+
         [Test, Repeat(5)]
         public void should_batch_messages()
         {
@@ -207,6 +207,29 @@ namespace Abc.Zebus.Tests.Dispatch
             dispatch1.Result.Errors.ShouldNotBeEmpty();
             dispatch2.Wait(500.Milliseconds()).ShouldBeTrue();
             dispatch2.Result.Errors.ShouldNotBeEmpty();
+        }
+
+        [Test, Timeout(5000)]
+        public void should_run_async_without_blocking_dispatcher_thread()
+        {
+            var firstMessage = new ExecutableEvent { IsBlocking = true };
+            var secondMessage = new ExecutableEvent { Callback = _ => firstMessage.Unblock() };
+
+            var invoker = new TestAsyncMessageHandlerInvoker<ExecutableEvent>();
+
+            var firstCompletion = new TaskCompletionSource<DispatchResult>();
+            var secondCompletion = new TaskCompletionSource<DispatchResult>();
+
+            var firstDispatch = new MessageDispatch(MessageContext.CreateTest(), firstMessage, (d, r) => firstCompletion.SetResult(r));
+            firstDispatch.SetHandlerCount(1);
+
+            var secondDispatch = new MessageDispatch(MessageContext.CreateTest(), secondMessage, (d, r) => secondCompletion.SetResult(r));
+            secondDispatch.SetHandlerCount(1);
+
+            _dispatchQueue.RunAsync(firstDispatch, invoker);
+            _dispatchQueue.RunAsync(secondDispatch, invoker);
+
+            Task.WhenAll(firstCompletion.Task, secondCompletion.Task).Wait(2000.Milliseconds()).ShouldBeTrue();
         }
 
         private static void Throw()
