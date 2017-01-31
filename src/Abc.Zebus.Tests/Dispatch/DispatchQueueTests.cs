@@ -212,8 +212,17 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test, Timeout(5000)]
         public void should_run_async_without_blocking_dispatcher_thread()
         {
-            var firstMessage = new ExecutableEvent { IsBlocking = true };
-            var secondMessage = new ExecutableEvent { Callback = _ => firstMessage.Unblock() };
+            var tcs = new TaskCompletionSource<object>();
+
+            var firstMessage = new AsyncExecutableEvent { Callback = async _ => await tcs.Task.ConfigureAwait(false) };
+            var secondMessage = new AsyncExecutableEvent
+            {
+                Callback = _ =>
+                {
+                    tcs.SetResult(null);
+                    return TaskUtil.Completed;
+                }
+            };
 
             var invoker = new TestAsyncMessageHandlerInvoker<ExecutableEvent>();
 
@@ -226,10 +235,14 @@ namespace Abc.Zebus.Tests.Dispatch
             var secondDispatch = new MessageDispatch(MessageContext.CreateTest(), secondMessage, (d, r) => secondCompletion.SetResult(r));
             secondDispatch.SetHandlerCount(1);
 
-            _dispatchQueue.RunAsync(firstDispatch, invoker);
-            _dispatchQueue.RunAsync(secondDispatch, invoker);
+            _dispatchQueue.Start();
+            _dispatchQueue.RunOrEnqueue(firstDispatch, invoker);
+            _dispatchQueue.RunOrEnqueue(secondDispatch, invoker);
 
             Task.WhenAll(firstCompletion.Task, secondCompletion.Task).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            firstMessage.DispatchQueueName.ShouldEqual(_dispatchQueue.Name);
+            secondMessage.DispatchQueueName.ShouldEqual(_dispatchQueue.Name);
         }
 
         private static void Throw()

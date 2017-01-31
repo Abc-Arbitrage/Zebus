@@ -22,7 +22,7 @@ namespace Abc.Zebus.Dispatch
         private Func<Type, bool> _handlerFilter;
         private Func<Type, bool> _messageFilter;
         private volatile bool _isRunning;
-        
+
         public MessageDispatcher(IMessageHandlerInvokerLoader[] invokerLoaders, IDispatchQueueFactory dispatchQueueFactory)
         {
             _invokerLoaders = invokerLoaders;
@@ -173,10 +173,10 @@ namespace Abc.Zebus.Dispatch
 
         private DispatchQueue CreateAndStartDispatchQueue(string queueName)
         {
-            var taskScheduler = _dispatchQueueFactory.Create(queueName);
-            taskScheduler.Start();
+            var dispatchQueue = _dispatchQueueFactory.Create(queueName);
+            dispatchQueue.Start();
 
-            return taskScheduler;
+            return dispatchQueue;
         }
 
         private TypeSource CreateTypeSource()
@@ -195,19 +195,6 @@ namespace Abc.Zebus.Dispatch
         private void Dispatch(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
             var dispatchQueue = _dispatchQueues.GetOrAdd(invoker.DispatchQueueName, CreateAndStartDispatchQueue);
-
-            if (invoker.Mode == MessageHandlerInvokerMode.Asynchronous)
-            {
-                dispatchQueue.RunAsync(dispatch, invoker);
-                return;
-            }
-
-            if (dispatch.ShouldRunSynchronously)
-            {
-                dispatchQueue.Run(dispatch, invoker);
-                return;
-            }
-
             dispatchQueue.RunOrEnqueue(dispatch, invoker);
         }
     }

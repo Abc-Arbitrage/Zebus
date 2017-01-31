@@ -109,6 +109,7 @@
     <Compile Include="Dispatch\DispatchMessages\AsyncCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommand.cs" />
     <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommandHandler.cs" />
+    <Compile Include="Dispatch\DispatchMessages\AsyncExecutableEvent.cs" />
     <Compile Include="Dispatch\DispatchMessages\ExecutableEvent.cs" />
     <Compile Include="Dispatch\DispatchMessages\ExecutableEventHandler.cs" />
     <Compile Include="Dispatch\DispatchMessages\CapturingTaskSchedulerAsyncCommandHandler.cs" />

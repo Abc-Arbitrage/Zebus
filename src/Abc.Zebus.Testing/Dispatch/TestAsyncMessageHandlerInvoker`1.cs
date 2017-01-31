@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
-using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Testing.Dispatch
 {
@@ -17,26 +15,21 @@ namespace Abc.Zebus.Testing.Dispatch
         public bool Invoked { get; private set; }
         public override MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Asynchronous;
 
-        public override Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
+        public override async Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
         {
             Invoked = true;
 
             using (invocation.SetupForInvocation())
             {
-                foreach (var message in invocation.Messages.OfType<IExecutableMessage>())
+                foreach (var message in invocation.Messages)
                 {
-                    try
-                    {
-                        message.Execute(invocation);
-                    }
-                    catch (Exception ex)
-                    {
-                        return TaskUtil.FromError(ex);
-                    }
+                    (message as IExecutableMessage)?.Execute(invocation);
+
+                    var asyncTask = (message as IAsyncExecutableMessage)?.ExecuteAsync(invocation);
+                    if (asyncTask != null)
+                        await asyncTask.ConfigureAwait(false);
                 }
             }
-
-            return TaskUtil.Completed;
         }
 
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
