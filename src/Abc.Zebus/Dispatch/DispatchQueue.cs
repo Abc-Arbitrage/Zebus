@@ -24,6 +24,8 @@ namespace Abc.Zebus.Dispatch
 
         public string Name { get; }
 
+        private bool IsCurrentDispatchQueue => _currentDispatchQueueName == Name;
+
         public DispatchQueue(IPipeManager pipeManager, int batchSize, string name)
         {
             _pipeManager = pipeManager;
@@ -43,6 +45,11 @@ namespace Abc.Zebus.Dispatch
         public void Enqueue(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
             _queue.Add(new Entry(dispatch, invoker));
+        }
+
+        internal void Enqueue(Action action)
+        {
+            _queue.Add(new Entry(action));
         }
 
         public void Start()
@@ -80,6 +87,7 @@ namespace Abc.Zebus.Dispatch
             try
             {
                 _logger.InfoFormat("{0} processing started", Name);
+                SynchronizationContext.SetSynchronizationContext(new DispatchQueueSynchronizationContext(this));
 
                 var batch = new Batch(_batchSize);
 
@@ -98,10 +106,21 @@ namespace Abc.Zebus.Dispatch
 
         private void ProcessEntries(List<Entry> entries, Batch batch)
         {
-            batch.Add(entries.First());
-
-            foreach (var entry in entries.Skip(1))
+            foreach (var entry in entries)
             {
+                if (entry.Action != null)
+                {
+                    RunBatch(batch);
+                    RunAction(entry.Action);
+                    continue;
+                }
+
+                if (batch.Messages.Count == 0)
+                {
+                    batch.Add(entry);
+                    continue;
+                }
+
                 if (!entry.Invoker.CanMergeWith(batch.FirstEntry.Invoker))
                     RunBatch(batch);
 
@@ -109,6 +128,18 @@ namespace Abc.Zebus.Dispatch
             }
 
             RunBatch(batch);
+        }
+
+        private void RunAction(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
+            }
         }
 
         private void RunSingle(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
@@ -130,25 +161,28 @@ namespace Abc.Zebus.Dispatch
                 return;
             }
 
+            if (batch.Messages.Count == 0)
+                return;
+
             try
             {
-                var invocation = _pipeManager.BuildPipeInvocation(batch.FirstEntry.Invoker, batch.Messages, batch.FirstEntry.Dispatch.Context);
-
-                switch (invocation.Invoker.Mode)
+                switch (batch.FirstEntry.Invoker.Mode)
                 {
                     case MessageHandlerInvokerMode.Synchronous:
+                    {
+                        var invocation = _pipeManager.BuildPipeInvocation(batch.FirstEntry.Invoker, batch.Messages, batch.FirstEntry.Dispatch.Context);
                         invocation.Run();
                         batch.SetHandled(null);
                         break;
+                    }
 
                     case MessageHandlerInvokerMode.Asynchronous:
-                        if (batch.Messages.Count > 1)
-                            throw new InvalidOperationException("Cannot batch asynchronous messages");
-
-                        var entry = batch.FirstEntry;
-                        invocation.RunAsync()
-                                  .ContinueWith(task => entry.Dispatch.SetHandled(entry.Invoker, GetException(task)), TaskContinuationOptions.ExecuteSynchronously);
+                    {
+                        var asyncBatch = batch.Clone();
+                        var invocation = _pipeManager.BuildPipeInvocation(asyncBatch.FirstEntry.Invoker, asyncBatch.Messages, asyncBatch.FirstEntry.Dispatch.Context);
+                        invocation.RunAsync().ContinueWith(task => asyncBatch.SetHandled(GetException(task)), TaskContinuationOptions.ExecuteSynchronously);
                         break;
+                    }
 
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -156,6 +190,7 @@ namespace Abc.Zebus.Dispatch
             }
             catch (Exception ex)
             {
+                _logger.Error(ex);
                 batch.SetHandled(ex);
             }
             finally
@@ -183,7 +218,7 @@ namespace Abc.Zebus.Dispatch
 
         public void RunOrEnqueue(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
-            if (dispatch.ShouldRunSynchronously || _currentDispatchQueueName == Name)
+            if (dispatch.ShouldRunSynchronously || IsCurrentDispatchQueue)
                 RunSingle(dispatch, invoker);
             else
                 Enqueue(dispatch, invoker);
@@ -209,10 +244,19 @@ namespace Abc.Zebus.Dispatch
             {
                 Dispatch = dispatch;
                 Invoker = invoker;
+                Action = null;
+            }
+
+            public Entry(Action action)
+            {
+                Dispatch = null;
+                Invoker = null;
+                Action = action;
             }
 
             public readonly MessageDispatch Dispatch;
             public readonly IMessageHandlerInvoker Invoker;
+            public readonly Action Action;
         }
 
         private class Batch
@@ -237,15 +281,36 @@ namespace Abc.Zebus.Dispatch
             public void SetHandled(Exception error)
             {
                 foreach (var entry in Entries)
-                {
                     entry.Dispatch.SetHandled(entry.Invoker, error);
-                }
             }
 
             public void Clear()
             {
                 Entries.Clear();
                 Messages.Clear();
+            }
+
+            public Batch Clone()
+            {
+                var clone = new Batch(Math.Max(Entries.Count, Messages.Count));
+                clone.Entries.AddRange(Entries);
+                clone.Messages.AddRange(Messages);
+                return clone;
+            }
+        }
+
+        private class DispatchQueueSynchronizationContext : SynchronizationContext
+        {
+            private readonly DispatchQueue _dispatchQueue;
+
+            public DispatchQueueSynchronizationContext(DispatchQueue dispatchQueue)
+            {
+                _dispatchQueue = dispatchQueue;
+            }
+
+            public override void Post(SendOrPostCallback d, object state)
+            {
+                _dispatchQueue.Enqueue(() => d(state));
             }
         }
     }
