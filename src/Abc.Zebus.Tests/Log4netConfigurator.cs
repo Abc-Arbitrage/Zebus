@@ -15,7 +15,7 @@ namespace Abc.Zebus.Tests
         public void Setup()
         {
             var configurationFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config");
-            //XmlConfigurator.Configure(new FileInfo(configurationFile));
+            XmlConfigurator.Configure(new FileInfo(configurationFile));
         }
 
         [UsedImplicitly]
