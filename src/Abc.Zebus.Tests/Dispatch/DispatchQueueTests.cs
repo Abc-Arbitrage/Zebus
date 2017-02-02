@@ -270,7 +270,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 }
             });
 
-            _dispatchQueue.Enqueue(() => { tcs.SetResult(null); });
+            EnqueueInvocation(new ExecutableEvent { Callback = x => tcs.SetResult(null) });
 
             Task.WhenAll(firstTask, secondTask).Wait(2000.Milliseconds()).ShouldBeTrue();
 
@@ -306,7 +306,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 }
             });
 
-            _dispatchQueue.Enqueue(() => tcs.SetResult(null));
+            EnqueueInvocation(new ExecutableEvent { Callback = x => tcs.SetResult(null) });
 
             Task.WhenAll(firstTask, secondTask).Wait(2000.Milliseconds()).ShouldBeTrue();
 

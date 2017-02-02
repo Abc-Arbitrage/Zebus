@@ -47,7 +47,7 @@ namespace Abc.Zebus.Dispatch
             _queue.Add(new Entry(dispatch, invoker));
         }
 
-        internal void Enqueue(Action action)
+        private void Enqueue(Action action)
         {
             _queue.Add(new Entry(action));
         }
@@ -108,23 +108,13 @@ namespace Abc.Zebus.Dispatch
         {
             foreach (var entry in entries)
             {
+                if (!batch.CanAdd(entry))
+                    RunBatch(batch);
+
                 if (entry.Action != null)
-                {
-                    RunBatch(batch);
                     RunAction(entry.Action);
-                    continue;
-                }
-
-                if (batch.Messages.Count == 0)
-                {
+                else
                     batch.Add(entry);
-                    continue;
-                }
-
-                if (!entry.Invoker.CanMergeWith(batch.FirstEntry.Invoker))
-                    RunBatch(batch);
-
-                batch.Add(entry);
             }
 
             RunBatch(batch);
@@ -155,17 +145,14 @@ namespace Abc.Zebus.Dispatch
 
         private void RunBatch(Batch batch)
         {
-            if (!_isRunning)
-            {
-                batch.Clear();
-                return;
-            }
-
-            if (batch.Messages.Count == 0)
+            if (batch.IsEmpty)
                 return;
 
             try
             {
+                if (!_isRunning)
+                    return;
+
                 switch (batch.FirstEntry.Invoker.Mode)
                 {
                     case MessageHandlerInvokerMode.Synchronous:
@@ -271,6 +258,7 @@ namespace Abc.Zebus.Dispatch
             }
 
             public Entry FirstEntry => Entries[0];
+            public bool IsEmpty => Entries.Count == 0;
 
             public void Add(Entry entry)
             {
@@ -292,10 +280,21 @@ namespace Abc.Zebus.Dispatch
 
             public Batch Clone()
             {
-                var clone = new Batch(Math.Max(Entries.Count, Messages.Count));
+                var clone = new Batch(Entries.Count);
                 clone.Entries.AddRange(Entries);
                 clone.Messages.AddRange(Messages);
                 return clone;
+            }
+
+            public bool CanAdd(Entry entry)
+            {
+                if (entry.Action != null)
+                    return false;
+
+                if (IsEmpty)
+                    return true;
+
+                return entry.Invoker.CanMergeWith(FirstEntry.Invoker);
             }
         }
 
