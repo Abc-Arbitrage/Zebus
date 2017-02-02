@@ -144,6 +144,7 @@
     </Compile>
     <Compile Include="Routing\BindingKeyPredicateBuilderTests.cs" />
     <Compile Include="Routing\BindingKeyTests.cs" />
+    <Compile Include="Scan\MessageHandlerInvokerLoaderTests.cs" />
     <Compile Include="Scan\StaticAsyncMessageHandlerInvokerLoaderTests.cs" />
     <Compile Include="Scan\SyncMessageHandlerInvokerLoaderTests.cs" />
     <Compile Include="Dispatch\DispatchMessages\SyncCommandHandlerWithQueueName1.cs" />
