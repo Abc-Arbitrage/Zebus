@@ -118,7 +118,7 @@ namespace Abc.Zebus.Dispatch
 
             _isRunning = false;
 
-            var stopTasks = _dispatchQueues.Values.Select(scheduler => Task.Factory.StartNew(scheduler.Stop)).ToArray();
+            var stopTasks = _dispatchQueues.Values.Select(dispatchQueue => Task.Factory.StartNew(dispatchQueue.Stop)).ToArray();
             Task.WaitAll(stopTasks);
         }
 

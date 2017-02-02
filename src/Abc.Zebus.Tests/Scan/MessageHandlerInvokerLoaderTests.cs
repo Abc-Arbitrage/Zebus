@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Testing;
-using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 
@@ -24,11 +23,10 @@ namespace Abc.Zebus.Tests.Scan
 
             var message = new TestMessage();
             bus.Publish(message);
-            bus.Stop();
 
-            message.HandledSync.ShouldBeTrue();
-            message.HandledAsync.ShouldBeTrue();
-            message.HandledBatched.ShouldBeTrue();
+            Wait.Until(() => message.HandledSync, 2.Seconds());
+            Wait.Until(() => message.HandledAsync, 2.Seconds());
+            Wait.Until(() => message.HandledBatched, 2.Seconds());
         }
 
         public class TestMessage : IEvent
