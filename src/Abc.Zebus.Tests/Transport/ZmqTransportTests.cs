@@ -141,6 +141,60 @@ namespace Abc.Zebus.Tests.Transport
             transport1ReceivedMessage.WasPersisted.ShouldEqual(false);
         }
 
+        [Test]
+        public void should_send_message_to_peer_and_persistence()
+        {
+            // standard case: the message is forwarded to the persistence through SendContext.PersistencePeer
+
+            var senderTransport = CreateAndStartZmqTransport();
+
+            var receiverMessages = new ConcurrentBag<TransportMessage>();
+            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receiverMessages.Add);
+            var receiverPeer = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+
+            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
+            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+
+            var message = new FakeCommand(999).ToTransportMessage();
+            senderTransport.Send(message, new[] { receiverPeer }, new SendContext { PersistentPeerIds = { receiverPeer.Id }, PersistencePeer = persistencePeer });
+
+            Wait.Until(() => receiverMessages.Count == 1, 500.Milliseconds());
+            var messageFromReceiver = receiverMessages.ExpectedSingle();
+            messageFromReceiver.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted");
+            messageFromReceiver.Environment.ShouldEqual("Test");
+            messageFromReceiver.WasPersisted.ShouldEqual(true);
+
+            Wait.Until(() => persistenceMessages.Count == 1, 500.Milliseconds());
+            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted", "PersistentPeerIds", "IsPersistTransportMessage");
+            messageFromPersistence.Environment.ShouldEqual("Test");
+            messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeer.Id });
+        }
+
+        [Test]
+        public void should_send_persist_transport_message_to_persistence()
+        {
+            // edge case: the message is directly forwarded to the persistence
+
+            var senderTransport = CreateAndStartZmqTransport();
+
+            var receiverPeerId = new PeerId("Abc.Receiver.123");
+
+            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
+            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+
+            var message = new FakeCommand(999).ToTransportMessage().ToPersistTransportMessage(receiverPeerId);
+            senderTransport.Send(message, new[] { persistencePeer });
+
+            Wait.Until(() => persistenceMessages.Count == 1, 500.Milliseconds());
+            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted");
+            messageFromPersistence.Environment.ShouldEqual("Test");
+            messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeerId });
+        }
+
         [Test, Timeout(5000)]
         public void should_write_WasPersisted_when_requested()
         {
