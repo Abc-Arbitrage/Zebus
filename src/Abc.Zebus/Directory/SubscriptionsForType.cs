@@ -42,7 +42,7 @@ namespace Abc.Zebus.Directory
             => BindingKeys?.Select(bindingKey => new Subscription(MessageTypeId, bindingKey)).ToArray() ?? new Subscription[0];
 
         public bool Equals(SubscriptionsForType other)
-            => Equals(MessageTypeId, other.MessageTypeId) && BindingKeys.SequenceEqual(other.BindingKeys);
+            => other != null && Equals(MessageTypeId, other.MessageTypeId) && BindingKeys.SequenceEqual(other.BindingKeys);
 
         public override bool Equals(object obj)
         {
@@ -59,7 +59,7 @@ namespace Abc.Zebus.Directory
         {
             unchecked
             {
-                return ((MessageTypeId?.GetHashCode() ?? 0) * 397) ^ (BindingKeys?.GetHashCode() ?? 0);
+                return (MessageTypeId.GetHashCode() * 397) ^ (BindingKeys?.GetHashCode() ?? 0);
             }
         }
     }

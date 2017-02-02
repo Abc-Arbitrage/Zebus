@@ -185,6 +185,7 @@
     <Compile Include="Dispatch\DispatchMessages\ScanCommandHandler2.cs" />
     <Compile Include="SerializationTests.cs" />
     <Compile Include="Directory\PeerSubscriptionTreeTests.cs" />
+    <Compile Include="Serialization\MessageSerializerTests.cs" />
     <Compile Include="Serialization\TestMessageSerializer.cs" />
     <Compile Include="SubscriptionTests.cs" />
     <Compile Include="SubscriptionTests.Legacy.cs" />

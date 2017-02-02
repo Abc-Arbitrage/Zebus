@@ -44,6 +44,7 @@ namespace Abc.Zebus.Tests.Persistence
             configuration.Setup(x => x.StartReplayTimeout).Returns(TimeSpan.FromMinutes(60));
 
             PeerDirectory = new Mock<IPeerDirectory>();
+            PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(MessageBinding.Default<PersistMessageCommand>())).Returns(new[] { PersistencePeer });
             PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(It.IsAny<StartMessageReplayCommand>())).Returns(new[] { PersistencePeer });
             PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(It.IsAny<PersistMessageCommand>())).Returns(new[] { PersistencePeer });
             PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(It.IsAny<MessageHandled>())).Returns(new[] { PersistencePeer });

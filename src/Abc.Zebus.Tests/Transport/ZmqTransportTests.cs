@@ -126,11 +126,73 @@ namespace Abc.Zebus.Tests.Transport
             transport1.Send(message1, new[] { transport2Peer });
 
             Wait.Until(() => transport2ReceivedMessages.Count == 1, 500.Milliseconds());
+            var transport2ReceivedMessage = transport2ReceivedMessages.ExpectedSingle();
+            transport2ReceivedMessage.ShouldHaveSamePropertiesAs(message1, "Environment", "WasPersisted");
+            transport2ReceivedMessage.Environment.ShouldEqual("Test");
+            transport2ReceivedMessage.WasPersisted.ShouldEqual(false);
 
             var message2 = new FakeCommand(2).ToTransportMessage();
             transport2.Send(message2, new[] { transport1Peer });
 
             Wait.Until(() => transport1ReceivedMessages.Count == 1, 500.Milliseconds());
+            var transport1ReceivedMessage = transport1ReceivedMessages.ExpectedSingle();
+            transport1ReceivedMessage.ShouldHaveSamePropertiesAs(message2, "Environment", "WasPersisted");
+            transport1ReceivedMessage.Environment.ShouldEqual("Test");
+            transport1ReceivedMessage.WasPersisted.ShouldEqual(false);
+        }
+
+        [Test]
+        public void should_send_message_to_peer_and_persistence()
+        {
+            // standard case: the message is forwarded to the persistence through SendContext.PersistencePeer
+
+            var senderTransport = CreateAndStartZmqTransport();
+
+            var receiverMessages = new ConcurrentBag<TransportMessage>();
+            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receiverMessages.Add);
+            var receiverPeer = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+
+            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
+            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+
+            var message = new FakeCommand(999).ToTransportMessage();
+            senderTransport.Send(message, new[] { receiverPeer }, new SendContext { PersistentPeerIds = { receiverPeer.Id }, PersistencePeer = persistencePeer });
+
+            Wait.Until(() => receiverMessages.Count == 1, 500.Milliseconds());
+            var messageFromReceiver = receiverMessages.ExpectedSingle();
+            messageFromReceiver.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted");
+            messageFromReceiver.Environment.ShouldEqual("Test");
+            messageFromReceiver.WasPersisted.ShouldEqual(true);
+
+            Wait.Until(() => persistenceMessages.Count == 1, 500.Milliseconds());
+            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted", "PersistentPeerIds", "IsPersistTransportMessage");
+            messageFromPersistence.Environment.ShouldEqual("Test");
+            messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeer.Id });
+        }
+
+        [Test]
+        public void should_send_persist_transport_message_to_persistence()
+        {
+            // edge case: the message is directly forwarded to the persistence
+
+            var senderTransport = CreateAndStartZmqTransport();
+
+            var receiverPeerId = new PeerId("Abc.Receiver.123");
+
+            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
+            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+
+            var message = new FakeCommand(999).ToTransportMessage().ToPersistTransportMessage(receiverPeerId);
+            senderTransport.Send(message, new[] { persistencePeer });
+
+            Wait.Until(() => persistenceMessages.Count == 1, 500.Milliseconds());
+            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted");
+            messageFromPersistence.Environment.ShouldEqual("Test");
+            messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeerId });
         }
 
         [Test, Timeout(5000)]
@@ -144,7 +206,7 @@ namespace Abc.Zebus.Tests.Transport
             var message = new FakeCommand(1).ToTransportMessage();
             var otherMessage = new FakeCommand(2).ToTransportMessage();
 
-            sender.Send(message, new[] { receivingPeer }, new SendContext { PersistedPeerIds = { receivingPeer.Id } });
+            sender.Send(message, new[] { receivingPeer }, new SendContext { PersistentPeerIds = { receivingPeer.Id } });
             sender.Send(otherMessage, new[] { receivingPeer }, new SendContext());
 
             Wait.Until(() => receivedMessages.Count >= 2, 500.Milliseconds());
@@ -166,7 +228,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var message = new FakeCommand(1).ToTransportMessage();
 
-            sender.Send(message, new[] { receivingPeer1, receivingPeer2 }, new SendContext { PersistedPeerIds = { receivingPeer1.Id } });
+            sender.Send(message, new[] { receivingPeer1, receivingPeer2 }, new SendContext { PersistentPeerIds = { receivingPeer1.Id } });
 
             Wait.Until(() => receivedMessages.Count >= 2, 500.Milliseconds());
             receivedMessages.ShouldContain(x => x.Id == message.Id && x.WasPersisted == true);
@@ -368,19 +430,19 @@ namespace Abc.Zebus.Tests.Transport
             var messageBytes = new byte[5000];
             new Random().NextBytes(messageBytes);
 
-            var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(messageBytes), new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
+            var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(messageBytes), new PeerId("X"), senderTransport.InboundEndPoint);
             senderTransport.Send(bigMessage, new[] { receiver });
 
             Wait.Until(() => receviedMessages.Count == 1, 150.Milliseconds());
 
-            receviedMessages[0].ShouldHaveSamePropertiesAs(bigMessage);
+            receviedMessages[0].ShouldHaveSamePropertiesAs(bigMessage, "Environment", "WasPersisted");
 
-            var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(new byte[1]), new PeerId("X"), senderTransport.InboundEndPoint, MessageId.NextId());
+            var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(new byte[1]), new PeerId("X"), senderTransport.InboundEndPoint);
             senderTransport.Send(smallMessage, new[] { receiver });
 
             Wait.Until(() => receviedMessages.Count == 2, 150.Milliseconds());
 
-            receviedMessages[1].ShouldHaveSamePropertiesAs(smallMessage);
+            receviedMessages[1].ShouldHaveSamePropertiesAs(smallMessage, "Environment", "WasPersisted");
         }
 
         [Test]

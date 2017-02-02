@@ -81,7 +81,7 @@ namespace Abc.Zebus.Testing.Transport
         public void Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context)
         {
             var peerList = peers.ToList();
-            if (peerList.Any())
+            if (peerList.Any() || context.PersistencePeer != null)
                 _messages.Add(new TransportMessageSent(message, peerList, context));
 
             var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.Content);
@@ -96,7 +96,7 @@ namespace Abc.Zebus.Testing.Transport
 
         public TransportMessage CreateInfrastructureTransportMessage(MessageTypeId messageTypeId)
         {
-            return new TransportMessage(messageTypeId, new MemoryStream(), PeerId, InboundEndPoint, MessageId.NextId());
+            return new TransportMessage(messageTypeId, new MemoryStream(), PeerId, InboundEndPoint);
         }
 
         public void RaiseMessageReceived(TransportMessage transportMessage)

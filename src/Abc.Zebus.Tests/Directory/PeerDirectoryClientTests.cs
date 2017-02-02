@@ -441,7 +441,7 @@ namespace Abc.Zebus.Tests.Directory
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.0"), x =>
             {
-                Thread.Sleep(1.Second());
+                Thread.Sleep(500.Milliseconds());
                 return new RegisterPeerResponse(new PeerDescriptor[0]);
             });
             _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x =>
@@ -807,8 +807,10 @@ namespace Abc.Zebus.Tests.Directory
                 return new RegisterPeerResponse(new[] { peerDescriptor });
             });
 
+            var taskStarted = new ManualResetEvent(false);
             var task = Task.Run(() =>
             {
+                taskStarted.Set();
                 for (var i = 0; i < 10000; i++)
                 {
                     _directory.Handle(peerStarted);
@@ -816,11 +818,11 @@ namespace Abc.Zebus.Tests.Directory
                 }
             });
 
-            Wait.Until(() => task.Status == TaskStatus.Running || task.Status == TaskStatus.RanToCompletion, 1.Second());
+            taskStarted.WaitOne(500.Milliseconds()).ShouldBeTrue("Task should be started");
 
            _directory.Register(_bus, _self, otherPeerDescriptor.Subscriptions );
 
-            task.Wait(1.Second());
+            task.Wait(1.Second()).ShouldBeTrue();
         }
 
         private class OtherFakeEvent1 : IEvent

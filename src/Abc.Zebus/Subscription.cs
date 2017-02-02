@@ -98,7 +98,7 @@ namespace Abc.Zebus
             {
                 // ReSharper disable NonReadonlyMemberInGetHashCode
                 if (_computedHashCode == 0)
-                    _computedHashCode = ((MessageTypeId?.GetHashCode() ?? 0) * 397) ^ BindingKey.GetHashCode();
+                    _computedHashCode = (MessageTypeId.GetHashCode() * 397) ^ BindingKey.GetHashCode();
 
                 return _computedHashCode;
                 // ReSharper restore NonReadonlyMemberInGetHashCode
@@ -202,10 +202,10 @@ namespace Abc.Zebus
 
         private static void AddFieldValueFromUnaryExpression<T>(Dictionary<string, string> fieldValues, UnaryExpression unaryExpression)
         {
-            if(unaryExpression.Type != typeof(bool))
+            if (unaryExpression.Type != typeof(bool))
                 throw CreateArgumentException(unaryExpression);
 
-            if(unaryExpression.NodeType != ExpressionType.Not)
+            if (unaryExpression.NodeType != ExpressionType.Not)
                 throw CreateArgumentException(unaryExpression);
 
             var currentFieldValue = false;
@@ -254,11 +254,11 @@ namespace Abc.Zebus
 
             var memberName = memberExpression.Member.Name;
             var memberValue = Expression.Lambda(memberValueExpression).Compile().DynamicInvoke();
+            if (memberValue == null)
+                return;
 
             var valueAsText = memberExpression.Type.IsEnum ? Enum.GetName(memberExpression.Type, memberValue) : memberValue.ToString();
-
-            if (memberValue != null)
-                fieldValues.Add(memberName, valueAsText);
+            fieldValues.Add(memberName, valueAsText);
         }
 
         private static bool TryGetMessageMemberExpression<TMessage>(Expression expression, out MemberExpression memberExpression)

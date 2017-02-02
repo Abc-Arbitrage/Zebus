@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using ProtoBuf;
 
 namespace Abc.Zebus
 {
     [ProtoContract]
-    public class MessageTypeId : IEquatable<MessageTypeId>
+    public struct MessageTypeId : IEquatable<MessageTypeId>
     {
         public static readonly MessageTypeId EndOfStream = new MessageTypeId("Abc.Zebus.Transport.EndOfStream");
         public static readonly MessageTypeId EndOfStreamAck = new MessageTypeId("Abc.Zebus.Transport.EndOfStreamAck");
@@ -23,10 +24,6 @@ namespace Abc.Zebus
             _descriptor = MessageUtil.GetMessageTypeDescriptor(fullName);
         }
 
-        private MessageTypeId()
-        {
-        }
-
         [ProtoMember(1, IsRequired = true)]
         public string FullName
         {
@@ -35,10 +32,8 @@ namespace Abc.Zebus
         }
 
         public Type GetMessageType() => _descriptor?.MessageType;
-
-        public bool IsInfrastructure() => _descriptor != null ? _descriptor.IsInfrastructure : false;
-
-        public bool IsPersistent() => _descriptor != null ? _descriptor.IsPersistent : true;
+        public bool IsInfrastructure() => _descriptor?.IsInfrastructure ?? false;
+        public bool IsPersistent() => _descriptor?.IsPersistent ?? true;
 
         public override string ToString()
         {
@@ -46,23 +41,13 @@ namespace Abc.Zebus
             return lastDotIndex != -1 ? FullName.Substring(lastDotIndex + 1) : FullName;
         }
 
-        public bool Equals(MessageTypeId other)
-        {
-            return other != null && _descriptor == other._descriptor;
-        }
+        public bool Equals(MessageTypeId other) => _descriptor == other._descriptor;
+        public override bool Equals(object obj) => obj is MessageTypeId && Equals((MessageTypeId)obj);
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as MessageTypeId);
-        }
-
-        public override int GetHashCode()
-        {
-            return _descriptor != null ? _descriptor.GetHashCode() : 0;
-        }
+        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
+        public override int GetHashCode() => _descriptor?.GetHashCode() ?? 0;
 
         public static bool operator ==(MessageTypeId left, MessageTypeId right) => Equals(left, right);
-
         public static bool operator !=(MessageTypeId left, MessageTypeId right) => !Equals(left, right);
     }
 }

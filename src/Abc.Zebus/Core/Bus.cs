@@ -205,13 +205,12 @@ namespace Abc.Zebus.Core
             }
             else
             {
-                var messageId = MessageId.NextId();
-                var transportMessage = ToTransportMessage(message, messageId);
+                var transportMessage = ToTransportMessage(message);
 
                 if (!peer.IsResponding && !_messageSendingStrategy.IsMessagePersistent(transportMessage) && !message.TypeId().IsInfrastructure())
                     throw new InvalidOperationException($"Unable to send this transient message {BusMessageLogger.ToString(message)} while peer {peer.Id} is not responding.");
 
-                _messageIdToTaskCompletionSources.TryAdd(messageId, taskCompletionSource);
+                _messageIdToTaskCompletionSources.TryAdd(transportMessage.Id, taskCompletionSource);
 
                 var peers = new[] { peer };
                 LogMessageSend(message, transportMessage, peers);
@@ -437,7 +436,7 @@ namespace Abc.Zebus.Core
                 return;
 
             if (failingTransportMessage == null)
-                failingTransportMessage = ToTransportMessage(dispatch.Message, MessageId.NextId());
+                failingTransportMessage = ToTransportMessage(dispatch.Message);
 
             string jsonMessage;
             try
@@ -454,7 +453,7 @@ namespace Abc.Zebus.Core
             var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName).ToArray());
             var peers = _directory.GetPeersHandlingMessage(messageProcessingFailed);
 
-            SendTransportMessage(ToTransportMessage(messageProcessingFailed, MessageId.NextId()), peers);
+            SendTransportMessage(ToTransportMessage(messageProcessingFailed), peers);
         }
 
         private void HandleMessageExecutionCompleted(TransportMessage transportMessage)
@@ -474,7 +473,7 @@ namespace Abc.Zebus.Core
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out taskCompletionSource))
                 return;
 
-            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId, new MemoryStream(message.Payload), transportMessage) : null;
+            var response = message.PayloadTypeId != default(MessageTypeId) ? ToMessage(message.PayloadTypeId, new MemoryStream(message.Payload), transportMessage) : null;
             var commandResult = new CommandResult(message.ErrorCode, message.ResponseMessage, response);
 
             Task.Run(() => taskCompletionSource.SetResult(commandResult));
@@ -520,7 +519,10 @@ namespace Abc.Zebus.Core
                 return;
             }
 
-            var transportMessage = ToTransportMessage(message, messageId ?? MessageId.NextId());
+            var transportMessage = ToTransportMessage(message);
+
+            if (messageId != null)
+                transportMessage.Id = messageId.Value;
 
             if (logEnabled)
                 LogMessageSend(message, transportMessage, peers);
@@ -543,9 +545,9 @@ namespace Abc.Zebus.Core
             _transport.AckMessage(transportMessage);
         }
 
-        protected TransportMessage ToTransportMessage(IMessage message, MessageId messageId)
+        protected TransportMessage ToTransportMessage(IMessage message)
         {
-            return _serializer.ToTransportMessage(message, messageId, PeerId, EndPoint);
+            return _serializer.ToTransportMessage(message, PeerId, EndPoint);
         }
 
         private IMessage ToMessage(TransportMessage transportMessage)

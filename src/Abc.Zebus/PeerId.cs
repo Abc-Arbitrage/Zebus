@@ -25,7 +25,7 @@ namespace Abc.Zebus
         public static bool operator ==(PeerId left, PeerId right) => left.Equals(right);
         public static bool operator !=(PeerId left, PeerId right) => !left.Equals(right);
 
-        public override string ToString() => _value;
+        public override string ToString() => _value ?? string.Empty;
 
         public bool IsInstanceOf(string serviceName)
             => StringComparer.OrdinalIgnoreCase.Equals(_value.Qualifier(), serviceName);

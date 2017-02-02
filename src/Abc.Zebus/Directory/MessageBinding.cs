@@ -40,7 +40,7 @@ namespace Abc.Zebus.Directory
         {
             unchecked
             {
-                return ((MessageTypeId?.GetHashCode() ?? 0) * 397) ^ RoutingKey.GetHashCode();
+                return (MessageTypeId.GetHashCode() * 397) ^ RoutingKey.GetHashCode();
             }
         }
     }

@@ -120,13 +120,13 @@ namespace Abc.Zebus.Tests.Core
                         _transport.RaiseMessageReceived(commandCompleted.ToTransportMessage());
                     });
 
-                    var getThreadIdTask = GetThreadIfAfterAwaitingCommandResult(task);
+                    var getThreadIdTask = GetThreadIdAfterAwaitingCommandResult(task);
 
                     getThreadIdTask.Result.ShouldNotEqual(backgroundThreadId);
                 }
             }
 
-            private async Task<int> GetThreadIfAfterAwaitingCommandResult(Task<CommandResult> task)
+            private async Task<int> GetThreadIdAfterAwaitingCommandResult(Task<CommandResult> task)
             {
                 await task;
                 return Thread.CurrentThread.ManagedThreadId;

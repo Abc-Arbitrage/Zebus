@@ -27,6 +27,11 @@ namespace Abc.Zebus.Testing
             return new TransportMessage(message.TypeId(), content, sender) { WasPersisted = wasPersisted };
         }
 
+        public static TransportMessage ToPersistTransportMessage(this TransportMessage transportMessage, params PeerId[] peerIds)
+        {
+            return transportMessage.ToPersistTransportMessage(peerIds.ToList());
+        }
+
         public static IMessage ToMessage(this TransportMessage transportMessage)
         {
             var serializer = new MessageSerializer();

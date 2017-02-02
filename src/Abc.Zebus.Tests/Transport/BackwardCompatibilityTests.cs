@@ -16,7 +16,7 @@ namespace Abc.Zebus.Tests.Transport
             var content = new MemoryStream(new byte[] { 1, 2, 3 });
             var originatorInfo = new OriginatorInfo(new PeerId("peer"), "endpoint", "MACHINEXXX", "username");
             var messageId = new MessageId(Guid.Parse("ce0ac850-a9c5-e511-932e-d8e94a2d2418"));
-            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo, messageId);
+            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId };
 
             var stream = GetTransportMessageStream_1_4_1();
             var codedInputStream = new CodedInputStream(stream.GetBuffer(), 0, (int)stream.Length);
@@ -31,7 +31,7 @@ namespace Abc.Zebus.Tests.Transport
             var content = new MemoryStream(new byte[] { 1, 2, 3 });
             var originatorInfo = new OriginatorInfo(new PeerId("peer"), "endpoint", "MACHINEXXX", "username");
             var messageId = new MessageId(Guid.Parse("ce0ac850-a9c5-e511-932e-d8e94a2d2418"));
-            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo, messageId) { WasPersisted = false };
+            var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId, WasPersisted = false };
 
             var stream = GetTransportMessageStream_1_4_1();
             var codedInputStream = new CodedInputStream(stream.GetBuffer(), 0, (int)stream.Length);

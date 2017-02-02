@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing.Extensions;
@@ -53,6 +54,26 @@ namespace Abc.Zebus.Tests.Transport
         }
 
         [Test]
+        public void should_serialize_transport_message_with_persistent_peer_ids_and_read_from_protobuf()
+        {
+            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            transportMessage.PersistentPeerIds = new List<PeerId>
+            {
+                new PeerId("Abc.Testing.A"),
+                new PeerId("Abc.Testing.B"),
+            };
+
+            var stream = new CodedOutputStream();
+            stream.WriteTransportMessage(transportMessage);
+            stream.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
+
+            var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            deserialized.Id.ShouldEqual(transportMessage.Id);
+            deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
+            deserialized.PersistentPeerIds.ShouldBeEquivalentTo(transportMessage.PersistentPeerIds);
+        }
+
+        [Test]
         public void should_serialize_transport_message_with_empty_strings()
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
@@ -71,6 +92,25 @@ namespace Abc.Zebus.Tests.Transport
             deserializedTransportMessage1.WasPersisted.ShouldEqual(true);
         }
 
+        [TestCase(null, true)]
+        [TestCase(null, false)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        public void should_serialize_transport_message_and_set_WasPersisted(bool? previousWasPersistedValue, bool newWasPersistedValue)
+        {
+            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            transportMessage.WasPersisted = previousWasPersistedValue;
+
+            var stream = new CodedOutputStream();
+            stream.WriteTransportMessage(transportMessage);
+            stream.SetWasPersisted(newWasPersistedValue);
+
+            var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            deserializedTransportMessage1.Id.ShouldEqual(transportMessage.Id);
+            deserializedTransportMessage1.Environment.ShouldEqual(transportMessage.Environment);
+            deserializedTransportMessage1.WasPersisted.ShouldEqual(newWasPersistedValue);
+        }
+
         [Test]
         public void should_serialize_transport_message_twice()
         {
@@ -82,7 +122,7 @@ namespace Abc.Zebus.Tests.Transport
             var deserialized1 = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(stream.Buffer, 0, stream.Position));
             deserialized1.WasPersisted.ShouldEqual(true);
 
-            stream.Position = 0;
+            stream.Reset();
             transportMessage.WasPersisted = false;
             stream.WriteTransportMessage(transportMessage);
 
@@ -103,7 +143,7 @@ namespace Abc.Zebus.Tests.Transport
             {
                 for (var i = 0; i < count; i++)
                 {
-                    stream.Position = 0;
+                    stream.Reset();
                     stream.WriteTransportMessage(transportMessage);
                 }
             }
