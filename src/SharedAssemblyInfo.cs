@@ -1,12 +1,6 @@
 ﻿using System.Reflection;
 
+[assembly: AssemblyDescription("The Directory service used by Zebus - https://github.com/Abc-Arbitrage/Zebus.Directory")]
+[assembly: AssemblyCompany("ABC arbitrage")]
 [assembly: AssemblyProduct("Zebus.Directory")]
-[assembly: AssemblyDescription("The Directory service used by Zebus")]
-[assembly: AssemblyCompany("ABC Arbitrage Asset Management")]
-[assembly: AssemblyCopyright("Copyright © ABC Arbitrage Asset Management 2015")]
-
-#if DEBUG
-[assembly: AssemblyConfiguration("Debug")]
-#else
-[assembly: AssemblyConfiguration("Release")]
-#endif
+[assembly: AssemblyCopyright("Copyright © ABC arbitrage 2017")]
