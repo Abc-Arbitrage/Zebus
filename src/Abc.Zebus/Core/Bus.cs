@@ -374,12 +374,15 @@ namespace Abc.Zebus.Core
 
         private void OnTransportMessageReceived(TransportMessage transportMessage)
         {
-            if (!transportMessage.MessageTypeId.IsInfrastructure())
-                HandleRemoteMessage(transportMessage);
-            else if (transportMessage.MessageTypeId == MessageExecutionCompleted.TypeId)
+            if (transportMessage.MessageTypeId == MessageExecutionCompleted.TypeId)
+            {
                 HandleMessageExecutionCompleted(transportMessage);
+            }
             else
-                HandleRemoteMessage(transportMessage, true);
+            {
+                var executeSynchronously = transportMessage.MessageTypeId.IsInfrastructure();
+                HandleRemoteMessage(transportMessage, executeSynchronously);
+            }
         }
 
         public MessageDispatch CreateMessageDispatch(TransportMessage transportMessage)

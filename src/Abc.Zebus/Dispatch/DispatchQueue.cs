@@ -18,16 +18,19 @@ namespace Abc.Zebus.Dispatch
         private readonly ILog _logger = LogManager.GetLogger(typeof(DispatchQueue));
         private readonly IPipeManager _pipeManager;
         private readonly int _batchSize;
-        private readonly string _name;
         private FlushableBlockingCollection<Entry> _queue = new FlushableBlockingCollection<Entry>();
         private Thread _thread;
         private volatile bool _isRunning;
+
+        public string Name { get; }
+
+        private bool IsCurrentDispatchQueue => _currentDispatchQueueName == Name;
 
         public DispatchQueue(IPipeManager pipeManager, int batchSize, string name)
         {
             _pipeManager = pipeManager;
             _batchSize = batchSize;
-            _name = name;
+            Name = name;
         }
 
         public bool IsRunning => _isRunning;
@@ -44,6 +47,11 @@ namespace Abc.Zebus.Dispatch
             _queue.Add(new Entry(dispatch, invoker));
         }
 
+        private void Enqueue(Action action)
+        {
+            _queue.Add(new Entry(action));
+        }
+
         public void Start()
         {
             if (_isRunning)
@@ -53,7 +61,7 @@ namespace Abc.Zebus.Dispatch
             _thread = new Thread(ThreadProc)
             {
                 IsBackground = true,
-                Name = $"{_name}.DispatchThread",
+                Name = $"{Name}.DispatchThread",
             };
 
             _thread.Start();
@@ -67,7 +75,7 @@ namespace Abc.Zebus.Dispatch
             _isRunning = false;
 
             _queue.CompleteAdding();
-            
+
             _thread.Join();
 
             _queue = new FlushableBlockingCollection<Entry>();
@@ -75,10 +83,11 @@ namespace Abc.Zebus.Dispatch
 
         private void ThreadProc()
         {
-            _currentDispatchQueueName = _name;
+            _currentDispatchQueueName = Name;
             try
             {
-                _logger.Info(_name + " processing started");
+                _logger.InfoFormat("{0} processing started", Name);
+                SynchronizationContext.SetSynchronizationContext(new DispatchQueueSynchronizationContext(this));
 
                 var batch = new Batch(_batchSize);
 
@@ -87,7 +96,7 @@ namespace Abc.Zebus.Dispatch
                     ProcessEntries(entries, batch);
                 }
 
-                _logger.Info(_name + " processing stopped");
+                _logger.InfoFormat("{0} processing stopped", Name);
             }
             finally
             {
@@ -97,61 +106,84 @@ namespace Abc.Zebus.Dispatch
 
         private void ProcessEntries(List<Entry> entries, Batch batch)
         {
-            batch.Add(entries.First());
-
-            foreach (var entry in entries.Skip(1))
+            foreach (var entry in entries)
             {
-                if (!entry.Invoker.CanMergeWith(batch.FirstEntry.Invoker))
+                if (!batch.CanAdd(entry))
                     RunBatch(batch);
 
-                batch.Add(entry);
+                if (entry.Action != null)
+                    RunAction(entry.Action);
+                else
+                    batch.Add(entry);
             }
+
+            RunBatch(batch);
+        }
+
+        private void RunAction(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
+            }
+        }
+
+        private void RunSingle(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
+        {
+            if (!_isRunning)
+                return;
+
+            var batch = new Batch(1);
+            batch.Add(new Entry(dispatch, invoker));
 
             RunBatch(batch);
         }
 
         private void RunBatch(Batch batch)
         {
-            if (!_isRunning)
-            {
-                batch.Clear();
-                return;
-            }
-            var exception = Run(batch.FirstEntry.Invoker, batch.FirstEntry.Dispatch.Context, batch.Messages);
-            batch.SetHandled(exception);
-            batch.Clear();
-        }
-
-        public void Run(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
-        {
-            if (!_isRunning)
+            if (batch.IsEmpty)
                 return;
 
-            var exception = Run(invoker, dispatch.Context, new List<IMessage> { dispatch.Message });
-            dispatch.SetHandled(invoker, exception);
-        }
-
-        private Exception Run(IMessageHandlerInvoker invoker, MessageContext context, List<IMessage> messages)
-        {
             try
             {
-                var invocation = _pipeManager.BuildPipeInvocation(invoker, messages, context);
-                invocation.Run();
+                if (!_isRunning)
+                    return;
 
-                return null;
+                switch (batch.FirstEntry.Invoker.Mode)
+                {
+                    case MessageHandlerInvokerMode.Synchronous:
+                    {
+                        var invocation = _pipeManager.BuildPipeInvocation(batch.FirstEntry.Invoker, batch.Messages, batch.FirstEntry.Dispatch.Context);
+                        invocation.Run();
+                        batch.SetHandled(null);
+                        break;
+                    }
+
+                    case MessageHandlerInvokerMode.Asynchronous:
+                    {
+                        var asyncBatch = batch.Clone();
+                        var invocation = _pipeManager.BuildPipeInvocation(asyncBatch.FirstEntry.Invoker, asyncBatch.Messages, asyncBatch.FirstEntry.Dispatch.Context);
+                        invocation.RunAsync().ContinueWith(task => asyncBatch.SetHandled(GetException(task)), TaskContinuationOptions.ExecuteSynchronously);
+                        break;
+                    }
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
             catch (Exception ex)
             {
-                return ex;
+                _logger.Error(ex);
+                batch.SetHandled(ex);
             }
-        }
-
-        public void RunAsync(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
-        {
-            var invocation = _pipeManager.BuildPipeInvocation(invoker, new List<IMessage> { dispatch.Message }, dispatch.Context);
-
-            var invocationTask = invocation.RunAsync();
-            invocationTask.ContinueWith(task => dispatch.SetHandled(invocation.Invoker, GetException(task)), TaskContinuationOptions.ExecuteSynchronously);
+            finally
+            {
+                batch.Clear();
+            }
         }
 
         private Exception GetException(Task task)
@@ -173,8 +205,8 @@ namespace Abc.Zebus.Dispatch
 
         public void RunOrEnqueue(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
-            if (_currentDispatchQueueName == _name)
-                Run(dispatch, invoker);
+            if (dispatch.ShouldRunSynchronously || IsCurrentDispatchQueue)
+                RunSingle(dispatch, invoker);
             else
                 Enqueue(dispatch, invoker);
         }
@@ -199,10 +231,19 @@ namespace Abc.Zebus.Dispatch
             {
                 Dispatch = dispatch;
                 Invoker = invoker;
+                Action = null;
             }
 
-            public MessageDispatch Dispatch;
-            public IMessageHandlerInvoker Invoker;
+            public Entry(Action action)
+            {
+                Dispatch = null;
+                Invoker = null;
+                Action = action;
+            }
+
+            public readonly MessageDispatch Dispatch;
+            public readonly IMessageHandlerInvoker Invoker;
+            public readonly Action Action;
         }
 
         private class Batch
@@ -217,6 +258,7 @@ namespace Abc.Zebus.Dispatch
             }
 
             public Entry FirstEntry => Entries[0];
+            public bool IsEmpty => Entries.Count == 0;
 
             public void Add(Entry entry)
             {
@@ -227,15 +269,47 @@ namespace Abc.Zebus.Dispatch
             public void SetHandled(Exception error)
             {
                 foreach (var entry in Entries)
-                {
                     entry.Dispatch.SetHandled(entry.Invoker, error);
-                }
             }
 
             public void Clear()
             {
                 Entries.Clear();
                 Messages.Clear();
+            }
+
+            public Batch Clone()
+            {
+                var clone = new Batch(Entries.Count);
+                clone.Entries.AddRange(Entries);
+                clone.Messages.AddRange(Messages);
+                return clone;
+            }
+
+            public bool CanAdd(Entry entry)
+            {
+                if (entry.Action != null)
+                    return false;
+
+                if (IsEmpty)
+                    return true;
+
+                return entry.Invoker.CanMergeWith(FirstEntry.Invoker);
+            }
+        }
+
+        private class DispatchQueueSynchronizationContext : SynchronizationContext
+        {
+            private readonly DispatchQueue _dispatchQueue;
+
+            public DispatchQueueSynchronizationContext(DispatchQueue dispatchQueue)
+            {
+                _dispatchQueue = dispatchQueue;
+            }
+
+            public override void Post(SendOrPostCallback d, object state)
+            {
+                _dispatchQueue.Enqueue(() => d(state));
             }
         }
     }

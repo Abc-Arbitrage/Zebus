@@ -1,32 +1,35 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
 
 namespace Abc.Zebus.Testing.Dispatch
 {
-    public class TestAsyncMessageHandlerInvoker<TMessage> : MessageHandlerInvoker where TMessage : class, IMessage
+    public class TestAsyncMessageHandlerInvoker<TMessage> : MessageHandlerInvoker
+        where TMessage : class, IMessage
     {
-        public TestAsyncMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true) : base(typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
+        public TestAsyncMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true)
+            : base(typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
         {
         }
 
         public bool Invoked { get; private set; }
         public override MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Asynchronous;
 
-        public override Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
+        public override async Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
         {
-            return Task.Run(() =>
+            Invoked = true;
+
+            using (invocation.SetupForInvocation())
             {
-                Invoked = true;
-                using (invocation.SetupForInvocation())
+                foreach (var message in invocation.Messages)
                 {
-                    foreach (var message in invocation.Messages.OfType<IExecutableMessage>())
-                    {
-                        message.Execute(invocation);
-                    }
+                    (message as IExecutableMessage)?.Execute(invocation);
+
+                    var asyncTask = (message as IAsyncExecutableMessage)?.ExecuteAsync(invocation);
+                    if (asyncTask != null)
+                        await asyncTask.ConfigureAwait(false);
                 }
-            });
+            }
         }
 
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)

@@ -144,7 +144,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 otherMessageTask.IsCompleted.ShouldBeFalse();
             }
         }
-        
+
         [Test, Repeat(5)]
         public void should_batch_messages()
         {
@@ -209,6 +209,164 @@ namespace Abc.Zebus.Tests.Dispatch
             dispatch2.Result.Errors.ShouldNotBeEmpty();
         }
 
+        [Test, Timeout(5000)]
+        public void should_run_async_without_blocking_dispatcher_thread()
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            var firstMessage = new AsyncExecutableEvent
+            {
+                Callback = async _ => await tcs.Task.ConfigureAwait(true)
+            };
+
+            var secondMessage = new AsyncExecutableEvent
+            {
+                Callback = _ =>
+                {
+                    tcs.SetResult(null);
+                    return TaskUtil.Completed;
+                }
+            };
+
+            _dispatchQueue.Start();
+            var firstTask = EnqueueAsyncInvocation(firstMessage);
+            var secondTask = EnqueueAsyncInvocation(secondMessage);
+
+            Task.WhenAll(firstTask, secondTask).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            firstMessage.DispatchQueueName.ShouldEqual(_dispatchQueue.Name);
+            secondMessage.DispatchQueueName.ShouldEqual(_dispatchQueue.Name);
+        }
+
+        [Test, Timeout(5000)]
+        public void should_enqueue_async_continuations_on_dispatch_queue_when_requested()
+        {
+            _dispatchQueue.Start();
+
+            var tcs = new TaskCompletionSource<object>();
+
+            string firstMessageDispatchQueueBeforeAwait = null;
+            string firstMessageDispatchQueueAfterAwait = null;
+            string secondMessageDispatchQueueBeforeAwait = null;
+            string secondMessageDispatchQueueAfterAwait = null;
+
+            var firstTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    firstMessageDispatchQueueBeforeAwait = DispatchQueue.GetCurrentDispatchQueueName();
+                    await tcs.Task.ConfigureAwait(true);
+                    firstMessageDispatchQueueAfterAwait = DispatchQueue.GetCurrentDispatchQueueName();
+                }
+            });
+
+            var secondTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    secondMessageDispatchQueueBeforeAwait = DispatchQueue.GetCurrentDispatchQueueName();
+                    await tcs.Task.ConfigureAwait(false);
+                    secondMessageDispatchQueueAfterAwait = DispatchQueue.GetCurrentDispatchQueueName();
+                }
+            });
+
+            EnqueueInvocation(new ExecutableEvent { Callback = x => tcs.SetResult(null) });
+
+            Task.WhenAll(firstTask, secondTask).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            Volatile.Read(ref firstMessageDispatchQueueBeforeAwait).ShouldEqual(_dispatchQueue.Name);
+            Volatile.Read(ref secondMessageDispatchQueueBeforeAwait).ShouldEqual(_dispatchQueue.Name);
+
+            Volatile.Read(ref firstMessageDispatchQueueAfterAwait).ShouldEqual(_dispatchQueue.Name);
+            Volatile.Read(ref secondMessageDispatchQueueAfterAwait).ShouldBeNull();
+        }
+
+        [Test, Timeout(5000)]
+        public void should_propagate_async_exceptions_from_continuations()
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            _dispatchQueue.Start();
+
+            var firstTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    await tcs.Task.ConfigureAwait(true);
+                    throw new InvalidOperationException("First");
+                }
+            });
+
+            var secondTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    await tcs.Task.ConfigureAwait(false);
+                    throw new InvalidOperationException("Second");
+                }
+            });
+
+            EnqueueInvocation(new ExecutableEvent { Callback = x => tcs.SetResult(null) });
+
+            Task.WhenAll(firstTask, secondTask).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            firstTask.Result.Errors.Count.ShouldEqual(1);
+            secondTask.Result.Errors.Count.ShouldEqual(1);
+        }
+
+        [Test, Timeout(5000)]
+        public void should_internleave_sync_and_async_messages_properly()
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            _dispatchQueue.Start();
+
+            var sequence = new List<int>();
+            Action<int> addSequence = i =>
+            {
+                lock (sequence)
+                {
+                    sequence.Add(i);
+                }
+            };
+
+            var firstTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    addSequence(1);
+                    await tcs.Task.ConfigureAwait(true);
+                    addSequence(4);
+                }
+            });
+
+            var secondTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    addSequence(2);
+                    await tcs.Task.ConfigureAwait(true);
+                    addSequence(5);
+                }
+            });
+
+            var thirdTask = EnqueueInvocation(new ExecutableEvent
+            {
+                Callback = _ =>
+                {
+                    addSequence(3);
+                    Task.Run(() => tcs.SetResult(null));
+                }
+            });
+
+            Task.WhenAll(firstTask, secondTask, thirdTask).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            lock (sequence)
+            {
+                sequence.ShouldEqual(Enumerable.Range(1, 5));
+            }
+        }
+
         private static void Throw()
         {
             throw new Exception("Test");
@@ -222,6 +380,20 @@ namespace Abc.Zebus.Tests.Dispatch
             dispatch.SetHandlerCount(1);
 
             var invoker = new TestMessageHandlerInvoker<ExecutableEvent>();
+
+            _dispatchQueue.Enqueue(dispatch, invoker);
+
+            return tcs.Task;
+        }
+
+        private Task<DispatchResult> EnqueueAsyncInvocation(AsyncExecutableEvent message)
+        {
+            var tcs = new TaskCompletionSource<DispatchResult>();
+
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, (d, r) => tcs.SetResult(r));
+            dispatch.SetHandlerCount(1);
+
+            var invoker = new TestAsyncMessageHandlerInvoker<AsyncExecutableEvent>();
 
             _dispatchQueue.Enqueue(dispatch, invoker);
 

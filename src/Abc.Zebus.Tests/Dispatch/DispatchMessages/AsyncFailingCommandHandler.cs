@@ -6,10 +6,10 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
     {
         public Task Handle(AsyncFailingCommand message)
         {
-            return Task.Factory.StartNew(() =>
-                {
-                    throw message.Exception;
-                });
+            if (message.ThrowSynchronously)
+                throw message.Exception;
+
+            return Task.Factory.StartNew(() => { throw message.Exception; });
         }
     }
 }

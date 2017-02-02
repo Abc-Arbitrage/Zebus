@@ -81,6 +81,7 @@
     <Compile Include="Comparison\MessageComparer.cs" />
     <Compile Include="CurrentThreadTaskScheduler.cs" />
     <Compile Include="Directory\TestPeerDirectory.cs" />
+    <Compile Include="Dispatch\IAsyncExecutableMessage.cs" />
     <Compile Include="Dispatch\IExecutableMessage.cs" />
     <Compile Include="Dispatch\TestBatchedMessageHandlerInvoker`1.cs" />
     <Compile Include="Dispatch\TestMessageHandlerInvoker`1.cs" />
