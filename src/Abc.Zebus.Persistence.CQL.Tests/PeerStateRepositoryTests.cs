@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
@@ -14,6 +15,20 @@ namespace Abc.Zebus.Persistence.CQL.Tests
     {
         private TestBus _bus;
         private PeerStateRepository _peerStateRepository;
+
+        public override void CreateSchema()
+        {
+            IgnoreOnAppVeyor();
+            base.CreateSchema();
+        }
+
+        private void IgnoreOnAppVeyor()
+        {
+            var env = Environment.GetEnvironmentVariable("APPVEYOR");
+            bool isUnderAppVeyor;
+            if (!string.IsNullOrEmpty(env) && bool.TryParse(env, out isUnderAppVeyor) && isUnderAppVeyor)
+                Assert.Ignore("We need a cassandra node for this");
+        }
 
         [SetUp]
         public void SetUp()

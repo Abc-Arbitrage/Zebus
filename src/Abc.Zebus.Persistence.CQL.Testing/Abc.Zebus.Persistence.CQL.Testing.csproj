@@ -71,6 +71,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\SharedVersionInfo.cs">
+      <Link>Properties\SharedVersionInfo.cs</Link>
+    </Compile>
     <Compile Include="CassandraConfigurationMock.cs" />
     <Compile Include="FakePeerStateRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

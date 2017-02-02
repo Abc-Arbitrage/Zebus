@@ -1,12 +1,7 @@
 ﻿using System.Reflection;
 
+[assembly: AssemblyDescription("The Persistence service used by Zebus - https://github.com/Abc-Arbitrage/Zebus.Persistence")]
+[assembly: AssemblyCompany("ABC arbitrage")]
 [assembly: AssemblyProduct("Zebus.Persistence")]
-[assembly: AssemblyDescription("The Persistence service used by Zebus")]
-[assembly: AssemblyCompany("ABC Arbitrage Asset Management")]
-[assembly: AssemblyCopyright("Copyright © ABC Arbitrage Asset Management 2016")]
+[assembly: AssemblyCopyright("Copyright © ABC arbitrage 2017")]
 
-#if DEBUG
-[assembly: AssemblyConfiguration("Debug")]
-#else
-[assembly: AssemblyConfiguration("Release")]
-#endif

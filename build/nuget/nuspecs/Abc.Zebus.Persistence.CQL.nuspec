@@ -2,16 +2,14 @@
 <package >
 	<metadata>
 		<id>Zebus.Persistence.CQL</id>
-		<version>$version$</version>
 		<title>Zebus.Persistence.CQL</title>
-		<authors>$author$</authors>
-		<owners>$author$</owners>
+		<authors>ABC arbitrage</authors>
 		<licenseUrl>https://github.com/Abc-Arbitrage/Zebus.Persistence/blob/master/LICENSE.md</licenseUrl>
 		<projectUrl>https://github.com/Abc-Arbitrage/Zebus.Persistence</projectUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<description>An implementation of the Persistence backed out by Cassandra</description>
 		<releaseNotes></releaseNotes>
-		<copyright>$copyright$</copyright>
+		<copyright>Copyright © ABC arbitrage 2017</copyright>
 		<tags></tags>
     <dependencies>
       <dependency id="Zebus" version="[1.5.0,2.0)" />
@@ -26,9 +24,9 @@
     </dependencies>
 	</metadata>
 	<files>
-		<file src="src\Abc.Zebus.Persistence.CQL\bin\$configuration$\Abc.Zebus.Persistence.CQL.dll" target="lib\net45\" />
-		<file src="src\Abc.Zebus.Persistence.CQL\bin\$configuration$\Abc.Zebus.Persistence.CQL.pdb" target="lib\net45\" />
+		<file src="Abc.Zebus.Persistence.CQL.dll" target="lib\net45\" />
+		<file src="Abc.Zebus.Persistence.CQL.pdb" target="lib\net45\" />
     
-		<file src="src\Abc.Zebus.Persistence.CQL\**\*.cs" target="src" />
+		<file src=".\..\..\src\Abc.Zebus.Persistence.CQL\**\*.cs" target="src" />
 	</files>
 </package>

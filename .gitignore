@@ -35,3 +35,4 @@ lib/packages/**
 *.ncrunchsolution
 tools/cake/tools/Cake/*
 tools/cake/tools/nuget.exe
+build/tools/*
