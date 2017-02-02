@@ -12,15 +12,13 @@ namespace Abc.Zebus.Tests.Util
         [Test]
         public void should_be_equal_to_datetime_when_not_set_or_paused()
         {
-            GC.KeepAlive(SystemDateTime.UtcNow);
-
             var dateTimeUtcNow = DateTime.UtcNow;
             var sysDateTimeUtcNow = SystemDateTime.UtcNow;
-            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(2.Milliseconds());
+            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(5.Milliseconds());
 
             var dateTimeNow = DateTime.Now;
             var sysDateTimeNow = SystemDateTime.Now;
-            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(2.Milliseconds());
+            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(5.Milliseconds());
         }
 
         [Test]

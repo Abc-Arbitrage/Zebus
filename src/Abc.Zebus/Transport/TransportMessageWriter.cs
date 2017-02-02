@@ -52,10 +52,10 @@ namespace Abc.Zebus.Transport
             for (var index = 0; index < peerIds.Count; index++)
             {
                 var peerIdString = peerIds[index].ToString();
-                if (peerIdString == null)
+                if (string.IsNullOrEmpty(peerIdString))
                     continue;
 
-                output.WriteTag(7 << 3 | 2);
+                output.WriteRawTag(7 << 3 | 2);
 
                 var peerIdStringLength = GetUtf8ByteCount(peerIdString);
                 var peerIdLength = 1 + CodedOutputStream.ComputeStringSize(peerIdStringLength);
@@ -64,7 +64,6 @@ namespace Abc.Zebus.Transport
                 output.WriteRawTag(1 << 3 | 2);
                 output.WriteString(peerIdString, peerIdStringLength);
             }
-
         }
 
         private static void Write(CodedOutputStream output, MessageId messageId)
@@ -100,7 +99,7 @@ namespace Abc.Zebus.Transport
             var senderIdString = originatorInfo.SenderId.ToString();
             int senderIdLength;
             int senderIdStringLength;
-            if (senderIdString == null)
+            if (string.IsNullOrEmpty(senderIdString))
             {
                 senderIdStringLength = 0;
                 senderIdLength = 0;
@@ -154,7 +153,7 @@ namespace Abc.Zebus.Transport
             output.WriteRawTag(1 << 3 | 2);
             output.WriteLength(senderIdLength);
 
-            if (senderIdString != null)
+            if (!string.IsNullOrEmpty(senderIdString))
             {
                 output.WriteRawTag(1 << 3 | 2);
                 output.WriteString(senderIdString, senderIdStringLength);

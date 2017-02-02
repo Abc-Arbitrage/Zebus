@@ -47,7 +47,7 @@ namespace Abc.Zebus.Transport
         }
 
         public TransportMessage(MessageTypeId messageTypeId, Stream content, PeerId senderId, string senderEndPoint)
-            : this (messageTypeId, content, CreateOriginator(senderId, senderEndPoint))
+            : this(messageTypeId, content, CreateOriginator(senderId, senderEndPoint))
         {
         }
 
@@ -83,18 +83,18 @@ namespace Abc.Zebus.Transport
             return buffer;
         }
 
-        internal TransportMessage ToPersistTransportMessage(List<PeerId> peerIds)
+        internal TransportMessage ToPersistTransportMessage(List<PeerId> peerIds) => CloneWithPeerIds(peerIds);
+        internal TransportMessage UnpackPersistTransportMessage() => CloneWithPeerIds(null);
+
+        private TransportMessage CloneWithPeerIds(List<PeerId> peerIds) => new TransportMessage
         {
-            return new TransportMessage
-            {
-                Id = Id,
-                MessageTypeId = MessageTypeId,
-                Content = Content,
-                Originator = Originator,
-                Environment = Environment,
-                WasPersisted = WasPersisted,
-                PersistentPeerIds = peerIds,
-            };
-        }
+            Id = Id,
+            MessageTypeId = MessageTypeId,
+            Content = Content,
+            Originator = Originator,
+            Environment = Environment,
+            WasPersisted = WasPersisted,
+            PersistentPeerIds = peerIds,
+        };
     }
 }

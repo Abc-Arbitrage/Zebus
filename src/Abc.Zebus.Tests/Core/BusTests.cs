@@ -8,13 +8,12 @@ using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Serialization;
-using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Core
 {
-    [TestFixture]
+    [TestFixture, Timeout(20000)]
     public abstract partial class BusTests
     {
         private const string _environment = "Test";

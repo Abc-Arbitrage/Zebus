@@ -23,23 +23,9 @@ namespace Abc.Zebus.Serialization
         }
 
         private static TransportMessage ToTransportMessage(PersistMessageCommand persistMessageCommand)
-        {
-            var targetMessage = persistMessageCommand.TransportMessage;
-            return targetMessage.ToPersistTransportMessage(persistMessageCommand.Targets);
-        }
+            => persistMessageCommand.TransportMessage.ToPersistTransportMessage(persistMessageCommand.Targets);
 
         private static IMessage ToPersistMessageCommand(TransportMessage transportMessage)
-        {
-            var targetTransportMessage = new TransportMessage
-            {
-                Id = transportMessage.Id,
-                MessageTypeId = transportMessage.MessageTypeId,
-                Content = transportMessage.Content,
-                Originator = transportMessage.Originator,
-                Environment = transportMessage.Environment,
-                WasPersisted = transportMessage.WasPersisted,
-            };
-            return new PersistMessageCommand(targetTransportMessage, transportMessage.PersistentPeerIds);
-        }
+            => new PersistMessageCommand(transportMessage.UnpackPersistTransportMessage(), transportMessage.PersistentPeerIds);
     }
 }
