@@ -119,6 +119,7 @@
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
     <Compile Include="MessageTypeDescriptor.cs" />
     <Compile Include="Monitoring\IProvideQueueLength.cs" />
+    <Compile Include="Scan\BatchedMessageHandlerInvokerLoader.cs" />
     <Compile Include="Serialization\Protobuf\ByteArray.cs" />
     <Compile Include="Serialization\Protobuf\CodedInputStream.cs" />
     <Compile Include="Serialization\Protobuf\CodedOutputStream.ComputeSize.cs" />

@@ -33,8 +33,9 @@ namespace Abc.Zebus.Initialization
             ForSingletonOf<PeerDirectoryClient>().Use<PeerDirectoryClient>();
             Forward<PeerDirectoryClient, IPeerDirectory>();
 
-            For<IMessageHandlerInvokerLoader>().Add(ctx => ctx.GetInstance<SyncMessageHandlerInvokerLoader>());
+            For<IMessageHandlerInvokerLoader>().Add<SyncMessageHandlerInvokerLoader>();
             For<IMessageHandlerInvokerLoader>().Add<AsyncMessageHandlerInvokerLoader>();
+            For<IMessageHandlerInvokerLoader>().Add<BatchedMessageHandlerInvokerLoader>();
 
             ForSingletonOf<IMessageSendingStrategy>().Use<DefaultMessageSendingStrategy>();
             ForSingletonOf<IStoppingStrategy>().Use<DefaultStoppingStrategy>();
