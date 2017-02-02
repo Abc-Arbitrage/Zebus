@@ -487,7 +487,7 @@ namespace Abc.Zebus.Transport
 
         private struct OutboundSocketAction
         {
-            private static readonly TransportMessage _disconnectMessage = new TransportMessage(null, null, new PeerId(), null);
+            private static readonly TransportMessage _disconnectMessage = new TransportMessage(default(MessageTypeId), null, new PeerId(), null);
 
             private OutboundSocketAction(TransportMessage message, IEnumerable<Peer> targets, SendContext context)
             {

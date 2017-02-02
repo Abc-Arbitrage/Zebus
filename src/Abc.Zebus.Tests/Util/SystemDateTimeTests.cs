@@ -12,6 +12,8 @@ namespace Abc.Zebus.Tests.Util
         [Test]
         public void should_be_equal_to_datetime_when_not_set_or_paused()
         {
+            GC.KeepAlive(SystemDateTime.UtcNow);
+
             var dateTimeUtcNow = DateTime.UtcNow;
             var sysDateTimeUtcNow = SystemDateTime.UtcNow;
             sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(2.Milliseconds());

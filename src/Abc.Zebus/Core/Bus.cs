@@ -470,7 +470,7 @@ namespace Abc.Zebus.Core
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out taskCompletionSource))
                 return;
 
-            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId, new MemoryStream(message.Payload), transportMessage) : null;
+            var response = message.PayloadTypeId != default(MessageTypeId) ? ToMessage(message.PayloadTypeId, new MemoryStream(message.Payload), transportMessage) : null;
             var commandResult = new CommandResult(message.ErrorCode, message.ResponseMessage, response);
 
             Task.Run(() => taskCompletionSource.SetResult(commandResult));
