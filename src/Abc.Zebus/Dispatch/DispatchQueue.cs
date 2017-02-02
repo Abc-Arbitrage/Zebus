@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch.Pipes;
@@ -21,6 +20,7 @@ namespace Abc.Zebus.Dispatch
         private FlushableBlockingCollection<Entry> _queue = new FlushableBlockingCollection<Entry>();
         private Thread _thread;
         private volatile bool _isRunning;
+        private int _asyncInvocationsCount;
 
         public string Name { get; }
 
@@ -74,6 +74,9 @@ namespace Abc.Zebus.Dispatch
 
             _isRunning = false;
 
+            while (Volatile.Read(ref _asyncInvocationsCount) > 0)
+                Thread.Sleep(1);
+
             _queue.CompleteAdding();
 
             _thread.Join();
@@ -91,7 +94,7 @@ namespace Abc.Zebus.Dispatch
 
                 var batch = new Batch(_batchSize);
 
-                foreach (var entries in _queue.GetConsumingEnumerable(_batchSize).TakeWhile(x => _isRunning))
+                foreach (var entries in _queue.GetConsumingEnumerable(_batchSize))
                 {
                     ProcessEntries(entries, batch);
                 }
@@ -167,7 +170,8 @@ namespace Abc.Zebus.Dispatch
                     {
                         var asyncBatch = batch.Clone();
                         var invocation = _pipeManager.BuildPipeInvocation(asyncBatch.FirstEntry.Invoker, asyncBatch.Messages, asyncBatch.FirstEntry.Dispatch.Context);
-                        invocation.RunAsync().ContinueWith(task => asyncBatch.SetHandled(GetException(task)), TaskContinuationOptions.ExecuteSynchronously);
+                        Interlocked.Increment(ref _asyncInvocationsCount);
+                        invocation.RunAsync().ContinueWith(task => OnAsyncBatchCompleted(task, asyncBatch), TaskContinuationOptions.ExecuteSynchronously);
                         break;
                     }
 
@@ -186,15 +190,25 @@ namespace Abc.Zebus.Dispatch
             }
         }
 
-        private Exception GetException(Task task)
+        private void OnAsyncBatchCompleted(Task task, Batch asyncBatch)
         {
-            if (!task.IsFaulted)
-                return null;
+            try
+            {
+                var exception = task.IsFaulted
+                    ? task.Exception != null
+                        ? task.Exception.InnerException
+                        : new Exception("Task failed")
+                    : null;
 
-            var exception = task.Exception != null ? task.Exception.InnerException : new Exception("Task failed");
-            _logger.Error(exception);
+                if (exception != null)
+                    _logger.Error(exception);
 
-            return exception;
+                asyncBatch.SetHandled(exception);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _asyncInvocationsCount);
+            }
         }
 
         public virtual int Purge()

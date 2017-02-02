@@ -79,6 +79,57 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_finish_async_invocations_before_stopping(bool captureContext)
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            var message = new AsyncExecutableEvent { Callback = async _ => await tcs.Task.ConfigureAwait(captureContext) };
+
+            _dispatchQueue.Start();
+            var invocation = EnqueueAsyncInvocation(message);
+
+            message.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
+
+            var stopTask = Task.Run(() => _dispatchQueue.Stop());
+            Thread.Sleep(100);
+            stopTask.IsCompleted.ShouldBeFalse();
+
+            Task.Run(() => tcs.SetResult(null));
+            invocation.Wait(500.Milliseconds()).ShouldBeTrue();
+            stopTask.Wait(500.Milliseconds()).ShouldBeTrue();
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void should_not_accept_invocations_after_stop_while_completing_async_invocations(bool captureContext)
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            var message = new AsyncExecutableEvent { Callback = async _ => await tcs.Task.ConfigureAwait(captureContext) };
+
+            _dispatchQueue.Start();
+            EnqueueAsyncInvocation(message);
+
+            message.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
+
+            var stopTask = Task.Run(() => _dispatchQueue.Stop());
+            Thread.Sleep(100);
+            stopTask.IsCompleted.ShouldBeFalse();
+
+            var afterStopMessage = new ExecutableEvent();
+            EnqueueInvocation(afterStopMessage);
+            Thread.Sleep(100);
+
+            Task.Run(() => tcs.SetResult(null));
+            stopTask.Wait(500.Milliseconds()).ShouldBeTrue();
+
+            afterStopMessage.HandleStarted.IsSet.ShouldBeFalse();
+        }
+
+        [Test]
         public void should_purge()
         {
             _dispatchQueue.Start();
