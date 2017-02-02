@@ -3,7 +3,7 @@
 namespace Abc.Zebus
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public class InfrastructureAttribute : Attribute
+    public sealed class InfrastructureAttribute : Attribute
     {
     }
 }

@@ -3,10 +3,12 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus
 {
+    [Serializable]
     public class DomainException : Exception
     {
         public int ErrorCode { get; private set; }
@@ -45,6 +47,11 @@ namespace Abc.Zebus
         public DomainException(Expression<Func<int>> errorCodeExpression, params object[] values)
             : this(errorCodeExpression.Compile()(), ReadDescriptionFromAttribute(errorCodeExpression), values)
 
+        {
+        }
+
+        protected DomainException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
 

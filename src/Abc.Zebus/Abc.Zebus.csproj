@@ -112,10 +112,9 @@
     <Compile Include="Hosting\HostInitializer.cs" />
     <Compile Include="Hosting\HostInitializerHelper.cs" />
     <Compile Include="Hosting\PeriodicActionHostInitializer.cs" />
-    <Compile Include="IBatchMessageHandler.cs" />
+    <Compile Include="IBatchedMessageHandler.cs" />
     <Compile Include="ICommandHandler`1.cs" />
     <Compile Include="IMessageHandler`1.cs" />
-    <Compile Include="IMultiEventHandler.cs" />
     <Compile Include="Lotus\ReplayMessageCommand.cs" />
     <Compile Include="Lotus\ReplayMessageHandler.cs" />
     <Compile Include="MessageTypeDescriptor.cs" />
@@ -193,7 +192,7 @@
     <Compile Include="ICommandHandler.cs" />
     <Compile Include="EventSourcing\IDomainEvent.cs" />
     <Compile Include="IEvent.cs" />
-    <Compile Include="IExtendedMessageHandler.cs" />
+    <Compile Include="ICustomInvokerMessageHandler.cs" />
     <Compile Include="EventSourcing\IExtraTypesProvider.cs" />
     <Compile Include="IMessage.cs" />
     <Compile Include="IMessageHandler.cs" />

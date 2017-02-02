@@ -32,7 +32,7 @@ namespace Abc.Zebus.Scan
                 var subscriptionMode = MessageHandlerInvoker.GetExplicitSubscriptionMode(handlerType);
                 var interfaces = handlerType.GetInterfaces();
 
-                var excludedMessageTypes = interfaces.Where(IsExtendedMessageHandlerInterface)
+                var excludedMessageTypes = interfaces.Where(IsCustomInvokerMessageHandlerInterface)
                                                      .Select(handleInterface => handleInterface.GetGenericArguments()[0])
                                                      .ToHashSet();
 
@@ -52,9 +52,9 @@ namespace Abc.Zebus.Scan
 
         protected abstract IMessageHandlerInvoker BuildMessageHandlerInvoker(Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup);
 
-        private bool IsExtendedMessageHandlerInterface(Type interfaceType)
+        private static bool IsCustomInvokerMessageHandlerInterface(Type interfaceType)
         {
-            return interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IExtendedMessageHandler<>) && !interfaceType.GetGenericArguments()[0].IsGenericParameter;
+            return interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(ICustomInvokerMessageHandler<>) && !interfaceType.GetGenericArguments()[0].IsGenericParameter;
         }
 
         private bool IsMessageHandlerInterface(Type interfaceType)

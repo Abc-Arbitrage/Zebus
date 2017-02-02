@@ -5,7 +5,8 @@ namespace Abc.Zebus
     /// <summary>
     /// Specifies the subscription mode of the target message handler.
     /// </summary>
-    public class SubscriptionModeAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Class)]
+    public sealed class SubscriptionModeAttribute : Attribute
     {
         public SubscriptionModeAttribute(SubscriptionMode subscriptionMode)
         {

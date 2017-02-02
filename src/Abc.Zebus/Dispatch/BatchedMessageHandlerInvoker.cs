@@ -47,7 +47,7 @@ namespace Abc.Zebus.Dispatch
         private static Action<object, List<IMessage>> GenerateHandleAction(Type handlerType, Type messageType)
         {
             var handleMethod = GetHandleMethodOrThrow(handlerType, messageType);
-            ThrowsIfAsyncVoid(handlerType, handleMethod);
+            ThrowIfAsyncVoid(handlerType, handleMethod);
 
             var handler = Expression.Parameter(typeof(object), "handler");
             var messages = Expression.Parameter(typeof(List<IMessage>), "messages");
@@ -69,15 +69,6 @@ namespace Abc.Zebus.Dispatch
                 throw new InvalidProgramException(string.Format("The given type {0} is not an IBatchedMessageHandler<{1}>", handlerType.Name, messageType.Name));
 
             return handleMethod;
-        }
-
-        private static void ThrowsIfAsyncVoid(Type handlerType, MethodInfo handleMethod)
-        {
-            if (handleMethod.ReturnType == typeof(void) && handleMethod.GetAttribute<AsyncStateMachineAttribute>(true) != null)
-            {
-                var error = string.Format("The message handler {0} has an async void Handle method. If you think there are valid use cases for this, please discuss it with the dev team", handlerType);
-                throw new InvalidProgramException(error);
-            }
         }
     }
 }

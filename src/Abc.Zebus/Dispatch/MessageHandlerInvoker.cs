@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
+using Abc.Zebus.Util.Extensions;
 using StructureMap;
 using StructureMap.Pipeline;
 
@@ -114,6 +117,12 @@ namespace Abc.Zebus.Dispatch
             inst.Dependencies.Add<IBus>(new LambdaInstance<IBus>("Dispatch IBus", () => _dispatchBus));
             inst.Dependencies.Add<MessageContext>(new LambdaInstance<MessageContext>("Dispatch MessageContext", () => _dispatchBus.MessageContext));
             return inst;
+        }
+
+        internal static void ThrowIfAsyncVoid(Type handlerType, MethodInfo handleMethod)
+        {
+            if (handleMethod.ReturnType == typeof(void) && handleMethod.GetAttribute<AsyncStateMachineAttribute>(true) != null)
+                throw new InvalidProgramException($"The message handler {handlerType} has an async void Handle method. If you think there are valid use cases for this, please discuss it with the dev team");
         }
     }
 }

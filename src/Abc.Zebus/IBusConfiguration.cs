@@ -41,7 +41,7 @@ namespace Abc.Zebus
         bool IsErrorPublicationEnabled { get; }
 
         /// <summary>
-        /// Maximum batch size for <see cref="IBatchMessageHandler{T}"/>.
+        /// Maximum batch size for <see cref="IBatchedMessageHandler{T}"/>.
         /// </summary>
         int MessagesBatchSize { get; }
     }

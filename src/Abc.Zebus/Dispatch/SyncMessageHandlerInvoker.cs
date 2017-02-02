@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using Abc.Zebus.Util.Extensions;
 using StructureMap;
 
 namespace Abc.Zebus.Dispatch
@@ -41,7 +39,7 @@ namespace Abc.Zebus.Dispatch
         public static Action<object, IMessage> GenerateHandleAction(Type handlerType, Type messageType)
         {
             var handleMethod = GetHandleMethodOrThrow(handlerType, messageType);
-            ThrowsIfAsyncVoid(handlerType, handleMethod);
+            ThrowIfAsyncVoid(handlerType, handleMethod);
 
             var o = Expression.Parameter(typeof(object), "o");
             var m = Expression.Parameter(typeof(IMessage), "m");
@@ -58,15 +56,6 @@ namespace Abc.Zebus.Dispatch
                 throw new InvalidProgramException($"The given type {handlerType.Name} is not an IMessageHandler<{messageType.Name}>");
 
             return handleMethod;
-        }
-
-        private static void ThrowsIfAsyncVoid(Type handlerType, MethodInfo handleMethod)
-        {
-            if (handleMethod.ReturnType == typeof(void) && handleMethod.GetAttribute<AsyncStateMachineAttribute>(true) != null)
-            {
-                var error = $"The message handler {handlerType} has an async void Handle method. If you think there are valid use cases for this, please discuss it with the dev team";
-                throw new InvalidProgramException(error);
-            }
         }
     }
 }

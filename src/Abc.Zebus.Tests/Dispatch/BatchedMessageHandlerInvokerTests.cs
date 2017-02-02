@@ -37,11 +37,11 @@ namespace Abc.Zebus.Tests.Dispatch
             public override string ToString() => Id.ToString();
         }
 
-        private class Handler : IBatchMessageHandler<Message>
+        private class Handler : IBatchedMessageHandler<Message>
         {
             public readonly List<Message> Messages = new List<Message>();
 
-            public void Handle(List<Message> messages)
+            public void Handle(IList<Message> messages)
             {
                 Messages.AddRange(messages);
             }

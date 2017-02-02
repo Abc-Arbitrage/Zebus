@@ -20,9 +20,9 @@ namespace Abc.Zebus
             Response = response;
         }
 
-        public int ErrorCode { get; private set; }
-        public string ResponseMessage { get; private set; }
-        public object Response { get; private set; }
+        public int ErrorCode { get; }
+        public string ResponseMessage { get; }
+        public object Response { get; }
 
         public bool IsSuccess => ErrorCode == 0;
 
