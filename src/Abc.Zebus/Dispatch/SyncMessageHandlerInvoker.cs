@@ -36,7 +36,7 @@ namespace Abc.Zebus.Dispatch
             return CreateHandler(_container, messageContext);
         }
 
-        public static Action<object, IMessage> GenerateHandleAction(Type handlerType, Type messageType)
+        private static Action<object, IMessage> GenerateHandleAction(Type handlerType, Type messageType)
         {
             var handleMethod = GetHandleMethodOrThrow(handlerType, messageType);
             ThrowIfAsyncVoid(handlerType, handleMethod);
@@ -51,9 +51,9 @@ namespace Abc.Zebus.Dispatch
 
         private static MethodInfo GetHandleMethodOrThrow(Type handlerType, Type messageType)
         {
-            var handleMethod = handlerType.GetMethod("Handle", new[] { messageType });
+            var handleMethod = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.Handle), new[] { messageType });
             if (handleMethod == null)
-                throw new InvalidProgramException($"The given type {handlerType.Name} is not an IMessageHandler<{messageType.Name}>");
+                throw new InvalidProgramException($"The given type {handlerType.Name} is not an {nameof(IMessageHandler<IEvent>)}<{messageType.Name}>");
 
             return handleMethod;
         }

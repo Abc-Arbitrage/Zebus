@@ -5,7 +5,7 @@ namespace Abc.Zebus.Dispatch
 {
     public interface IMessageHandlerInvocation
     {
-        List<IMessage> Messages { get; }
+        IList<IMessage> Messages { get; }
         MessageContext Context { get; }
 
         IDisposable SetupForInvocation();

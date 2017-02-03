@@ -12,7 +12,7 @@ namespace Abc.Zebus.Dispatch.Pipes
         private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(PipeInvocation), "Abc.Zebus.Dispatch");
         private readonly List<Action<object>> _handlerMutations = new List<Action<object>>();
         private readonly IMessageHandlerInvoker _invoker;
-        private readonly List<IMessage> _messages;
+        private readonly IList<IMessage> _messages;
         private readonly MessageContext _messageContext;
         private readonly IList<IPipe> _pipes;
 
@@ -28,7 +28,7 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         public IMessageHandlerInvoker Invoker => _invoker;
 
-        public List<IMessage> Messages => _messages;
+        public IList<IMessage> Messages => _messages;
 
         public MessageContext Context => _messageContext;
 

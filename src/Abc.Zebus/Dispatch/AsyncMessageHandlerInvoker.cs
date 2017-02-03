@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using Abc.Zebus.Util;
 using StructureMap;
@@ -27,7 +28,7 @@ namespace Abc.Zebus.Dispatch
 
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
         {
-            throw new NotSupportedException("InvokeMessageHandler is not supported in Asynchronous mode");
+            throw new NotSupportedException($"{nameof(InvokeMessageHandler)} is not supported in Asynchronous mode");
         }
 
         public override Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
@@ -48,7 +49,7 @@ namespace Abc.Zebus.Dispatch
 
         private static Func<object, IMessage, Task> GenerateHandleAction(Type handlerType, Type messageType)
         {
-            var methodInfo = handlerType.GetMethod("Handle", new[] { messageType });
+            var methodInfo = GetHandleMethodOrThrow(handlerType, messageType);
 
             var o = Expression.Parameter(typeof(object), "o");
             var m = Expression.Parameter(typeof(IMessage), "m");
@@ -56,6 +57,15 @@ namespace Abc.Zebus.Dispatch
             var lambda = Expression.Lambda(typeof(Func<object, IMessage, Task>), body, o, m);
 
             return (Func<object, IMessage, Task>)lambda.Compile();
+        }
+
+        private static MethodInfo GetHandleMethodOrThrow(Type handlerType, Type messageType)
+        {
+            var handleMethod = handlerType.GetMethod(nameof(IAsyncMessageHandler<IMessage>.Handle), new[] { messageType });
+            if (handleMethod == null || handleMethod.ReturnType != typeof(Task))
+                throw new InvalidProgramException($"The given type {handlerType.Name} is not an {nameof(IAsyncMessageHandler<IEvent>)}<{messageType.Name}>");
+
+            return handleMethod;
         }
     }
 }
