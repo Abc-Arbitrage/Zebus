@@ -29,6 +29,25 @@ namespace Abc.Zebus.Tests.Scan
             Wait.Until(() => message.HandledBatched, 2.Seconds());
         }
 
+        [Test]
+        public void should_support_explicit_interface_implementations()
+        {
+            var bus = new BusFactory()
+                .WithHandlers(
+                    typeof(SyncMessageHandler),
+                    typeof(AsyncMessageHandler),
+                    typeof(BatchedMessageHandler)
+                )
+                .CreateAndStartInMemoryBus();
+
+            var message = new TestExplicitImplMessage();
+            bus.Publish(message);
+
+            Wait.Until(() => message.HandledSync, 2.Seconds());
+            Wait.Until(() => message.HandledAsync, 2.Seconds());
+            Wait.Until(() => message.HandledBatched, 2.Seconds());
+        }
+
         public class TestMessage : IEvent
         {
             public bool HandledSync { get; set; }
@@ -36,26 +55,53 @@ namespace Abc.Zebus.Tests.Scan
             public bool HandledBatched { get; set; }
         }
 
-        public class SyncMessageHandler : IMessageHandler<TestMessage>
+        public class TestExplicitImplMessage : IEvent
+        {
+            public bool HandledSync { get; set; }
+            public bool HandledAsync { get; set; }
+            public bool HandledBatched { get; set; }
+        }
+
+        public class SyncMessageHandler : IMessageHandler<TestMessage>,
+                                          IMessageHandler<TestExplicitImplMessage>
         {
             public void Handle(TestMessage message)
             {
                 message.HandledSync = true;
             }
+
+            void IMessageHandler<TestExplicitImplMessage>.Handle(TestExplicitImplMessage message)
+            {
+                message.HandledSync = true;
+            }
         }
 
-        public class AsyncMessageHandler : IAsyncMessageHandler<TestMessage>
+        public class AsyncMessageHandler : IAsyncMessageHandler<TestMessage>,
+                                           IAsyncMessageHandler<TestExplicitImplMessage>
         {
             public Task Handle(TestMessage message)
             {
                 message.HandledAsync = true;
                 return TaskUtil.Completed;
             }
+
+            Task IAsyncMessageHandler<TestExplicitImplMessage>.Handle(TestExplicitImplMessage message)
+            {
+                message.HandledAsync = true;
+                return TaskUtil.Completed;
+            }
         }
 
-        public class BatchedMessageHandler : IBatchedMessageHandler<TestMessage>
+        public class BatchedMessageHandler : IBatchedMessageHandler<TestMessage>,
+                                             IBatchedMessageHandler<TestExplicitImplMessage>
         {
             public void Handle(IList<TestMessage> messages)
+            {
+                foreach (var message in messages)
+                    message.HandledBatched = true;
+            }
+
+            void IBatchedMessageHandler<TestExplicitImplMessage>.Handle(IList<TestExplicitImplMessage> messages)
             {
                 foreach (var message in messages)
                     message.HandledBatched = true;

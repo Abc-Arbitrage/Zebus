@@ -51,11 +51,18 @@ namespace Abc.Zebus.Dispatch
 
         private static MethodInfo GetHandleMethodOrThrow(Type handlerType, Type messageType)
         {
-            var handleMethod = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.Handle), new[] { messageType });
-            if (handleMethod == null)
-                throw new InvalidProgramException($"The given type {handlerType.Name} is not an {nameof(IMessageHandler<IEvent>)}<{messageType.Name}>");
-
-            return handleMethod;
+            try
+            {
+                var interfaceType = typeof(IMessageHandler<>).MakeGenericType(messageType);
+                var interfaceMethod = interfaceType.GetMethod(nameof(IMessageHandler<IMessage>.Handle), new[] { messageType });
+                var interfaceMap = handlerType.GetInterfaceMap(interfaceType);
+                var handleIndex = Array.IndexOf(interfaceMap.InterfaceMethods, interfaceMethod);
+                return interfaceMap.TargetMethods[handleIndex];
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ArgumentException($"The given handler type ({handlerType.Name}) is not an {nameof(IMessageHandler<IMessage>)}<{messageType.Name}>", ex);
+            }
         }
     }
 }
