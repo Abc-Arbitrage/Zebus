@@ -214,7 +214,7 @@ namespace Abc.Zebus.Persistence
 
         private TransportMessage ToTransportMessage(IMessage message, bool wasPersisted = false)
         {
-            return new TransportMessage(message.TypeId(), _serializer.SerializeToBytes(message), _self) {  WasPersisted = wasPersisted };
+            return new TransportMessage(message.TypeId(), _serializer.Serialize(message), _self) {  WasPersisted = wasPersisted };
         }
 
         public void Handle(MessageHandled messageHandled)

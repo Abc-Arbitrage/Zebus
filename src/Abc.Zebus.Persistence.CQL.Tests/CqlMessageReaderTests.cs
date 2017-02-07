@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
@@ -66,7 +67,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             return x =>
             {
                 x.IsAcked = false;
-                x.TransportMessage = _serializer.SerializeToBytes(transportMessage);
+                x.TransportMessage = _serializer.Serialize(transportMessage).ToArray();
             };
         }
 
@@ -74,7 +75,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         {
             var bytes = new byte[128];
             new Random().NextBytes(bytes);
-            return new TransportMessage(new MessageTypeId("Fake"), bytes, new Peer(peerId, string.Empty));
+            return new TransportMessage(new MessageTypeId("Fake"), new MemoryStream(bytes), new Peer(peerId, string.Empty));
         }
 
         private CqlMessageReader CreateReader(PeerId peerId, DateTime oldestNonAckedMessage)

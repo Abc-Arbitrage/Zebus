@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
@@ -295,15 +296,15 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                 _peerStateRepository[secondPeer].NonAckedMessageCount.ShouldEqual(100);
 
                 var readerForFirstPeer = (CqlMessageReader)_storage.CreateMessageReader(firstPeer);
-                readerForFirstPeer.DeserializeTransportMessage = x => new FakeTransportMessage(null, x, null);
+                readerForFirstPeer.DeserializeTransportMessage = x => new FakeTransportMessage(new MessageTypeId(), x, null);
                 readerForFirstPeer.GetUnackedMessages().SequenceEqual(Enumerable.Range(1, 100)
-                                                                                .Select(i => new FakeTransportMessage(null, BitConverter.GetBytes(i), null)).ToList()).ShouldBeTrue();
+                                                                                .Select(i => new FakeTransportMessage(new MessageTypeId(), BitConverter.GetBytes(i), null)).ToList()).ShouldBeTrue();
 
                 var readerForSecondPeer = (CqlMessageReader)_storage.CreateMessageReader(secondPeer);
-                readerForSecondPeer.DeserializeTransportMessage = x => new FakeTransportMessage(null, x, null);
+                readerForSecondPeer.DeserializeTransportMessage = x => new FakeTransportMessage(new MessageTypeId(), x, null);
                 readerForSecondPeer.GetUnackedMessages()
                       .ShouldBeEquivalentTo(Enumerable.Range(1, 100)
-                                                      .Select(i => new FakeTransportMessage(null, BitConverter.GetBytes(i), null)), true);
+                                                      .Select(i => new FakeTransportMessage(new MessageTypeId(), BitConverter.GetBytes(i), null)), true);
             }
         }
 
@@ -346,20 +347,43 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             public int TestId { get; set; }
 
-            public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer sender) : base(new MessageTypeId("fake"), new byte[0], new Peer(new PeerId("fake"), "fake"))
+            public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer sender)
+                : base(new MessageTypeId("fake"), Stream.Null, new Peer(new PeerId("fake"), "fake"))
             {
                 TestId = BitConverter.ToInt32(messageBytes, 0);
             }
 
-            public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, PeerId senderId, string senderEndPoint, MessageId messageId) : base(messageTypeId, messageBytes, senderId, senderEndPoint, messageId)
+            public FakeTransportMessage(MessageTypeId messageTypeId, Stream content, PeerId senderId, string senderEndPoint)
+                : base(messageTypeId, content, senderId, senderEndPoint)
             {
                 throw new NotImplementedException();
             }
 
-            public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, MessageId messageId) : base(messageTypeId, messageBytes, originator, messageId)
+            public FakeTransportMessage(MessageTypeId messageTypeId, Stream content, OriginatorInfo originator)
+                : base(messageTypeId, content, originator)
             {
                 throw new NotImplementedException();
             }
+
+            internal FakeTransportMessage()
+            {
+                throw new NotImplementedException();
+            }
+
+            //public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer sender) : base(new MessageTypeId("fake"), Stream.Null, new Peer(new PeerId("fake"), "fake"))
+            //{
+            //    TestId = BitConverter.ToInt32(messageBytes, 0);
+            //}
+
+            //public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, PeerId senderId, string senderEndPoint, MessageId messageId) : base(messageTypeId, new MemoryStream( messageBytes), senderId, senderEndPoint, messageId)
+            //{
+            //    throw new NotImplementedException();
+            //}
+
+            //public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, MessageId messageId) : base(messageTypeId, messageBytes, originator, messageId)
+            //{
+            //    throw new NotImplementedException();
+            //}
         }
 
     }
