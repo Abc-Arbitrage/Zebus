@@ -26,7 +26,7 @@ namespace Abc.Zebus.Persistence.Handlers
             if (message.Targets == null)
                 return;
 
-            var messageBytes = _serializer.SerializeToBytes(message.TransportMessage);
+            var messageBytes = _serializer.Serialize(message.TransportMessage.GetContentBytes());
             foreach (var target in message.Targets)
             {
                 if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(target.ToString()))
