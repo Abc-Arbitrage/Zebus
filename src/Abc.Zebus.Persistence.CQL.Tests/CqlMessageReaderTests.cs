@@ -6,6 +6,7 @@ using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Serialization;
+using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
@@ -59,7 +60,10 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             var nonAckedMessages = reader.GetUnackedMessages().ToList();
             nonAckedMessages.Count.ShouldEqual(3);
-            nonAckedMessages.ShouldBeEquivalentTo(transportMessages, true);
+            for (var i = 0; i < nonAckedMessages.Count; i++)
+            {
+                nonAckedMessages[i].DeepCompare(transportMessages[i]).ShouldBeTrue();
+            }
         }
 
         private Action<PersistentMessage> UpdatePersistentMessageWithNonAckedTransportMessage(TransportMessage transportMessage)
