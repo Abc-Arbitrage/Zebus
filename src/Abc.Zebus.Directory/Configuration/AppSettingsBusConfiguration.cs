@@ -11,6 +11,7 @@ namespace Abc.Zebus.Directory.Configuration
             StartReplayTimeout = AppSettings.Get("Bus.Persistence.StartReplayTimeout", 30.Seconds());
             IsDirectoryPickedRandomly = AppSettings.Get("Bus.Directory.PickRandom", true);
             IsErrorPublicationEnabled = AppSettings.Get("Bus.IsErrorPublicationEnabled", true);
+            MessagesBatchSize = AppSettings.Get("Bus.MessagesBatchSize", 100);
         }
 
         public string[] DirectoryServiceEndPoints { get { return new string[0]; } }
@@ -20,5 +21,6 @@ namespace Abc.Zebus.Directory.Configuration
         public TimeSpan StartReplayTimeout { get; private set; }
         public bool IsDirectoryPickedRandomly { get; private set; }
         public bool IsErrorPublicationEnabled { get; private set; }
+        public int MessagesBatchSize { get; private set; }
     }
 }
