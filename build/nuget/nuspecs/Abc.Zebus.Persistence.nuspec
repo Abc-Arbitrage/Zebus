@@ -13,7 +13,7 @@
 		<copyright>Copyright © ABC arbitrage 2017</copyright>
 		<tags></tags>
     <dependencies>
-      <dependency id="Zebus" version="[1.5.0,2.0)" />
+      <dependency id="Zebus" version="[2.0,3.0)" />
       <dependency id="log4net" version="2.0.3" />
       <dependency id="Newtonsoft.Json" version="7.0.1" />
       <dependency id="protobuf-net" version="2.0.0.668" />
