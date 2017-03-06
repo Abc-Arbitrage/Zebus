@@ -34,5 +34,7 @@ namespace Abc.Zebus.Persistence.Storage
         void Start();
 
         void Stop();
+
+        int PersistenceQueueSize { get; }
     }
 }
