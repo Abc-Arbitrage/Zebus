@@ -9,5 +9,6 @@ namespace Abc.Zebus.Persistence.Reporter
 
         void AddStorageReport(int messageCount, int batchSizeInBytes, int fattestMessageSizeInBytes, string fattestMessageTypeId);
         IList<StorageReport> TakeAndResetStorageReports();
+
     }
 }

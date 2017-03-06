@@ -13,9 +13,11 @@ namespace Abc.Zebus.Persistence.CQL.Util
         private static readonly ILog _log = LogManager.GetLogger(typeof(ParallelPersistor));
 
         private readonly ISession _session;
+        private readonly Action<Exception> _errorReportingAction;
         private readonly BufferBlock<PendingInsert> _insertionQueue;
         private readonly Task[] _workerTasks;
-        private readonly SemaphoreSlim _queriesInFlightSemaphore;
+        private readonly SemaphoreSlim _queriesWaitingInLineSemaphore;
+        private readonly int _maximumQueueSize;
         private bool _stopped;
 
         private class PendingInsert
@@ -24,16 +26,23 @@ namespace Abc.Zebus.Persistence.CQL.Util
             public TaskCompletionSource<RowSet> Completion { get; set; }
         }
 
-        public ParallelPersistor(ISession session, int asyncWorkersCount, int maximumInFlightStatements)
+        public ParallelPersistor(ISession session, int asyncWorkersCount, Action<Exception> errorReportingAction = null)
         {
             _session = session;
+            _errorReportingAction = errorReportingAction;
             _workerTasks = new Task[asyncWorkersCount];
-            _queriesInFlightSemaphore = new SemaphoreSlim(maximumInFlightStatements);
+            _maximumQueueSize = asyncWorkersCount * 100;
+            _queriesWaitingInLineSemaphore = new SemaphoreSlim(_maximumQueueSize);
             _insertionQueue = new BufferBlock<PendingInsert>();
         }
-        
+
+        public int QueueSize => _maximumQueueSize - _queriesWaitingInLineSemaphore.CurrentCount;
+
+        public int WorkersCount => _workerTasks.Length;
+
         public Task Insert(IStatement statement)
         {
+            _queriesWaitingInLineSemaphore.Wait();
             var taskCompletionSource = new TaskCompletionSource<RowSet>();
             _insertionQueue.Post(new PendingInsert { Statement = statement, Completion = taskCompletionSource });
             return taskCompletionSource.Task;
@@ -43,37 +52,40 @@ namespace Abc.Zebus.Persistence.CQL.Util
         {
             for (var i = 0; i < _workerTasks.Length; ++i)
             {
-                _workerTasks[i] = Task.Factory.StartNew(async () =>
-                {
-                    while(true)
-                    {
-                        PendingInsert pendingInsert = null;
-                        try
-                        {
-                            pendingInsert = await _insertionQueue.ReceiveAsync();
-                            await _queriesInFlightSemaphore.WaitAsync();
-                            var rowSet = await _session.ExecuteAsync(pendingInsert.Statement);
-
-                            pendingInsert.Completion.SetResult(rowSet);
-                        }
-                        catch (InvalidOperationException) // thrown by BufferBlock when stopping
-                        {
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex);
-                            pendingInsert?.Completion.SetException(ex);
-                        }
-                        finally
-                        {
-                            _queriesInFlightSemaphore.Release();
-                        }
-                    }
-                }, TaskCreationOptions.LongRunning).Unwrap();
+                _workerTasks[i] = WorkerLoopAsync();
             }
         }
-        
+
+        private async Task WorkerLoopAsync()
+        {
+            while (true)
+            {
+                PendingInsert pendingInsert = null;
+                try
+                {
+                    pendingInsert = await _insertionQueue.ReceiveAsync().ConfigureAwait(false);
+                    var rowSet = await _session.ExecuteAsync(pendingInsert.Statement).ConfigureAwait(false);
+
+                    pendingInsert.Completion.SetResult(rowSet);
+                }
+                catch (InvalidOperationException) // thrown by BufferBlock when stopping
+                {
+                    _log.Info("Received stop signal");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex);
+                    pendingInsert?.Completion.SetException(ex);
+                    _errorReportingAction?.Invoke(ex);
+                }
+                finally
+                {
+                    _queriesWaitingInLineSemaphore.Release();
+                }
+            }
+        }
+
         public void Stop()
         {
             _log.Info($"Stopping {nameof(ParallelPersistor)}");

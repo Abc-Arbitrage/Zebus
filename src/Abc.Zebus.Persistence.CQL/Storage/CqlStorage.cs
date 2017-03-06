@@ -34,10 +34,13 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             _reporter = reporter;
 
             _preparedStatement = dataContext.Session.Prepare(dataContext.PersistentMessages.Insert(new PersistentMessage()).SetTTL(0).SetTimestamp(default(DateTimeOffset)).ToString());
-            _parallelPersistor = new ParallelPersistor(dataContext.Session, 64, 4 * 64);
+            _parallelPersistor = new ParallelPersistor(dataContext.Session, 64,
+                ex => _log.Warn("Exception caught while trying to persist message", ex));
         }
 
         public static TimeSpan PersistentMessagesTimeToLive => 30.Days();
+
+        public int PersistenceQueueSize => _parallelPersistor.QueueSize;
 
         public void Start()
         {
