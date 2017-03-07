@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.Messages;
-using Abc.Zebus.Persistence.Util;
 
 namespace Abc.Zebus.Persistence.CQL.Testing
 {
@@ -35,7 +34,8 @@ namespace Abc.Zebus.Persistence.CQL.Testing
 
         public PeerState GetPeerStateFor(PeerId peerId)
         {
-            return _peerStatesByPeerId.GetValueOrDefault(peerId);
+            PeerState peerState;
+            return _peerStatesByPeerId.TryGetValue(peerId, out peerState) ? peerState : null;
         }
 
         public PeerState this[PeerId peerId] => _peerStatesByPeerId[peerId];
@@ -52,25 +52,31 @@ namespace Abc.Zebus.Persistence.CQL.Testing
 
         public void UpdateNonAckMessageCount(PeerId peerId, int delta)
         {
-            _peerStatesByPeerId.GetValueOrAdd(peerId, p => new PeerState(p)).UpdateNonAckedMessageCount(delta);
+            PeerState peerState;
+            if (!_peerStatesByPeerId.TryGetValue(peerId, out peerState))
+            {
+                peerState = new PeerState(peerId);
+                _peerStatesByPeerId.Add(peerId, peerState);
+            }
+            peerState.UpdateNonAckedMessageCount(delta);
         }
 
         public Task Purge(PeerId peerId)
         {
-            var state = _peerStatesByPeerId.GetValueOrDefault(peerId);
+            var state = GetPeerStateFor(peerId);
             if (state != null)
             {
                 state.Purge();
                 _peerStatesByPeerId.Remove(peerId);
             }
 
-            return null;
+            return Task.FromResult(0);
         }
 
         public Task Save()
         {
             HasBeenSaved = true;
-            return Task.FromResult(false);
+            return Task.FromResult(0);
         }
     }
 }

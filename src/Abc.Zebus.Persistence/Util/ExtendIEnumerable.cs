@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Abc.Zebus.Persistence.Util
 {
-    public static class ExtendIEnumerable
+    internal static class ExtendIEnumerable
     {
         private static IEnumerable<IReadOnlyCollection<T>> InnerPartition<T>(this IEnumerable<T> @this, int partitionSize)
         {

@@ -86,9 +86,10 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
                 insertTasks.Add(insertTask);
                 var countDelta = matcherEntry.IsAck ? -1 : 1;
+                countByPeer[matcherEntry.PeerId] = countDelta + countByPeer.GetValueOrDefault(matcherEntry.PeerId);
+
                 if (shouldInvestigatePeer)
                     _log.Info($"Count delta computed for peer {matcherEntry.PeerId}, will increment: {countDelta}");
-                countByPeer.AddOrUpdate(matcherEntry.PeerId,  x => countDelta, (peerId, count) => count + countDelta);
             }
 
             foreach (var countForPeer in countByPeer)
