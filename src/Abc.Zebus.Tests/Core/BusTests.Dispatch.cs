@@ -152,6 +152,17 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
+            public void should_create_message_dispatch_for_empty_message()
+            {
+                var command = new EmptyCommand();
+                var transportMessage = command.ToTransportMessage();
+                transportMessage.Content = null;
+                var dispatch = _bus.CreateMessageDispatch(transportMessage);
+
+                dispatch.Message.ShouldEqualDeeply(command);
+            }
+
+            [Test]
             public void should_not_send_acknowledgement_when_message_handled()
             {
                 var command = new FakeCommand(123);

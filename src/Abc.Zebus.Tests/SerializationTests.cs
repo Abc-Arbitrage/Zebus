@@ -3,10 +3,12 @@ using System.IO;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using ProtoBuf;
+using Serializer = Abc.Zebus.Serialization.Serializer;
 
 namespace Abc.Zebus.Tests
 {
@@ -26,6 +28,14 @@ namespace Abc.Zebus.Tests
             };
 
             MessageSerializationTester.CheckSerializationForTypesInSameAssemblyAs<IBus>(prebuildObjectTypes);
+        }
+
+        [Test]
+        public void should_deserialize_message_with_null_content()
+        {
+            var serializer = new Serializer();
+            var message = serializer.Deserialize(typeof(EmptyCommand), null) as EmptyCommand;
+            message.ShouldNotBeNull();
         }
 
         [Test]

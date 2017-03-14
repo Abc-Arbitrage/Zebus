@@ -136,6 +136,7 @@
     <Compile Include="Lotus\CustomProcessingFailedTests.cs" />
     <Compile Include="Lotus\ReplayMessageHandlerTests.cs" />
     <Compile Include="MessageContextTests.cs" />
+    <Compile Include="Messages\EmptyCommand.cs" />
     <Compile Include="Messages\FakeCommandWithTimestamp.cs" />
     <Compile Include="Messages\FakeInfrastructureTransientCommand.cs" />
     <Compile Include="Messages\FakeRoutableCommandWithBoolean.cs" />

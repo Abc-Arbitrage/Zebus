@@ -35,13 +35,14 @@ namespace Abc.Zebus.Serialization
             if (messageType == null)
                 return null;
 
-            stream.Position = 0; // Reset position
-
             object obj = null;
             if (!HasParameterLessConstructor(messageType) && messageType != typeof(string))
                 obj = FormatterServices.GetUninitializedObject(messageType);
 
-            return RuntimeTypeModel.Default.Deserialize(stream, obj, messageType);
+            if (stream != null)
+                stream.Position = 0; // Reset position
+
+            return RuntimeTypeModel.Default.Deserialize(stream ?? Stream.Null, obj, messageType);
         }
 
         private bool HasParameterLessConstructor(Type messageType)

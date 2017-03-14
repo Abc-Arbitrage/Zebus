@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Serialization.Protobuf;
+using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
-using ProtoBuf;
+using Serializer = ProtoBuf.Serializer;
 
 namespace Abc.Zebus.Tests.Transport
 {
@@ -30,6 +32,28 @@ namespace Abc.Zebus.Tests.Transport
             deserialized.Originator.ShouldEqualDeeply(transportMessage.Originator);
             deserialized.Environment.ShouldEqual(transportMessage.Environment);
             deserialized.WasPersisted.ShouldEqual(transportMessage.WasPersisted);
+        }
+
+        [Test]
+        public void should_read_empty_message()
+        {
+            var transportMessage = new EmptyCommand().ToTransportMessage();
+
+            var outputStream = new CodedOutputStream();
+            outputStream.WriteTransportMessage(transportMessage);
+
+            var inputStream = new CodedInputStream(outputStream.Buffer, 0, outputStream.Position);
+            var deserialized = inputStream.ReadTransportMessage();
+
+            deserialized.Id.ShouldEqual(transportMessage.Id);
+            deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
+            deserialized.Content.ShouldBeNull();
+            deserialized.Originator.ShouldEqualDeeply(transportMessage.Originator);
+            deserialized.Environment.ShouldEqual(transportMessage.Environment);
+            deserialized.WasPersisted.ShouldEqual(transportMessage.WasPersisted);
+
+            var deserializedMessage = deserialized.ToMessage() as EmptyCommand;
+            deserializedMessage.ShouldNotBeNull();
         }
 
         [Test]
