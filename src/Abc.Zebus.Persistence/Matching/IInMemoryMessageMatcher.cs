@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.IO;
+using System.Threading;
 
 namespace Abc.Zebus.Persistence.Matching
 {
@@ -10,7 +11,7 @@ namespace Abc.Zebus.Persistence.Matching
         void Start();
         void Stop();
 
-        void EnqueueMessage(PeerId peerId, MessageId messageId, MessageTypeId messageTypeId, byte[] bytes);
+        void EnqueueMessage(PeerId peerId, MessageId messageId, MessageTypeId messageTypeId, byte[] transportMessageBytes);
         void EnqueueAck(PeerId peerId, MessageId messageId);
         void EnqueueWaitHandle(EventWaitHandle waitHandle);
     }

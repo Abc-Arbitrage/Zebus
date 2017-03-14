@@ -14,11 +14,13 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using Moq;
 using NUnit.Framework;
+using ProtoBuf;
 
 namespace Abc.Zebus.Persistence.CQL.Tests
 {
     public class CqlStorageTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
+        private readonly Serialization.Serializer _serializer = new Serialization.Serializer();
         private CqlStorage _storage;
         private FakePeerStateRepository _peerStateRepository;
         private Mock<IPersistenceConfiguration> _configurationMock;
@@ -277,33 +279,32 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             var secondPeer = new PeerId("Abc.Testing.OtherTarget");
             _peerStateRepository.Add(new PeerState(firstPeer, 0, SystemDateTime.UtcNow.Date.Ticks));
             _peerStateRepository.Add(new PeerState(secondPeer, 0, SystemDateTime.UtcNow.Date.Ticks));
+
+            using (MessageId.PauseIdGeneration())
             using (SystemDateTime.PauseTime())
             {
-                var messages = Enumerable.Range(1, 100)
-                                         .SelectMany(i =>
-                                         {
-                                             MessageId.PauseIdGenerationAtDate(SystemDateTime.UtcNow.Date.AddSeconds(i * 10));
-                                             return new[]
-                                             {
-                                                 MatcherEntry.Message(firstPeer, MessageId.NextId(), new MessageTypeId("Abc.Message"), BitConverter.GetBytes(i)),
-                                                 MatcherEntry.Message(secondPeer, MessageId.NextId(), new MessageTypeId("Abc.Message"), BitConverter.GetBytes(i))
-                                             };
-                                         }).ToList();
+                var expectedTransportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
+                var messages = expectedTransportMessages.SelectMany(x =>
+                                                        {
+                                                            var transportMessageBytes = _serializer.Serialize(x).ToArray();
+                                                            return new[]
+                                                            {
+                                                                MatcherEntry.Message(firstPeer, x.Id, x.MessageTypeId, transportMessageBytes),
+                                                                MatcherEntry.Message(secondPeer, x.Id, x.MessageTypeId, transportMessageBytes),
+                                                            };
+                                                        })
+                                                        .ToList();
+
                 _storage.Write(messages).Wait();
 
                 _peerStateRepository[firstPeer].NonAckedMessageCount.ShouldEqual(100);
                 _peerStateRepository[secondPeer].NonAckedMessageCount.ShouldEqual(100);
 
                 var readerForFirstPeer = (CqlMessageReader)_storage.CreateMessageReader(firstPeer);
-                readerForFirstPeer.DeserializeTransportMessage = x => new FakeTransportMessage(null, x, null);
-                readerForFirstPeer.GetUnackedMessages().SequenceEqual(Enumerable.Range(1, 100)
-                                                                                .Select(i => new FakeTransportMessage(null, BitConverter.GetBytes(i), null)).ToList()).ShouldBeTrue();
+                readerForFirstPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
 
                 var readerForSecondPeer = (CqlMessageReader)_storage.CreateMessageReader(secondPeer);
-                readerForSecondPeer.DeserializeTransportMessage = x => new FakeTransportMessage(null, x, null);
-                readerForSecondPeer.GetUnackedMessages()
-                      .ShouldBeEquivalentTo(Enumerable.Range(1, 100)
-                                                      .Select(i => new FakeTransportMessage(null, BitConverter.GetBytes(i), null)), true);
+                readerForSecondPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
             }
         }
 
@@ -320,47 +321,23 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             _reporterMock.Verify(r => r.AddStorageReport(2, 7, 4, "Abc.Message.Fat"));
         }
-        
-        private class FakeTransportMessage : TransportMessage
+
+        private static TransportMessage CreateTestTransportMessage(int i)
         {
-            protected bool Equals(FakeTransportMessage other)
-            {
-                return TestId == other.TestId;
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (ReferenceEquals(null, obj))
-                    return false;
-                if (ReferenceEquals(this, obj))
-                    return true;
-                if (obj.GetType() != this.GetType())
-                    return false;
-                return Equals((FakeTransportMessage)obj);
-            }
-
-            public override int GetHashCode()
-            {
-                return TestId;
-            }
-
-            public int TestId { get; set; }
-
-            public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, Peer sender) : base(new MessageTypeId("fake"), new byte[0], new Peer(new PeerId("fake"), "fake"))
-            {
-                TestId = BitConverter.ToInt32(messageBytes, 0);
-            }
-
-            public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, PeerId senderId, string senderEndPoint, MessageId messageId) : base(messageTypeId, messageBytes, senderId, senderEndPoint, messageId)
-            {
-                throw new NotImplementedException();
-            }
-
-            public FakeTransportMessage(MessageTypeId messageTypeId, byte[] messageBytes, OriginatorInfo originator, MessageId messageId) : base(messageTypeId, messageBytes, originator, messageId)
-            {
-                throw new NotImplementedException();
-            }
+            MessageId.PauseIdGenerationAtDate(SystemDateTime.UtcNow.Date.AddSeconds(i * 10));
+            return new Message1(i).ToTransportMessage();
         }
 
+        [ProtoContract]
+        private class Message1 : IEvent
+        {
+            [ProtoMember(1, IsRequired = true)]
+            public int Id { get; private set; }
+
+            public Message1(int id)
+            {
+                Id = id;
+            }
+        }
     }
 }

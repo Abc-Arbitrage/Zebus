@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
@@ -65,9 +66,7 @@ namespace Abc.Zebus.Persistence.Transport
             if (transportMessage.MessageTypeId == MessageTypeId.PersistenceStoppingAck)
             {
                 _logger.InfoFormat("Received PersistenceStoppingAck from {0}", transportMessage.Originator.SenderId);
-                if (_ackCountdown != null)
-                    _ackCountdown.Signal();
-
+                _ackCountdown?.Signal();
                 return;
             }
 
@@ -92,7 +91,7 @@ namespace Abc.Zebus.Persistence.Transport
             var targets = _peerDirectory.GetPeerDescriptors().Select(desc => desc.Peer).Where(peer => peer.Id != _transport.PeerId).ToList();
             _ackCountdown = new CountdownEvent(targets.Count);
 
-            _transport.Send(new TransportMessage(MessageTypeId.PersistenceStopping, new byte[0], PeerId, InboundEndPoint, MessageId.NextId()), targets, new SendContext());
+            _transport.Send(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), PeerId, InboundEndPoint), targets, new SendContext());
 
             _logger.InfoFormat("Waiting for {0} persistence stopping acknowledgments within the next {1} seconds", targets.Count, _configuration.QueuingTransportStopTimeout.TotalSeconds);
             var success = _ackCountdown.Wait(_configuration.QueuingTransportStopTimeout);
@@ -118,11 +117,6 @@ namespace Abc.Zebus.Persistence.Transport
 
         public void AckMessage(TransportMessage transportMessage)
         {
-        }
-
-        public TransportMessage CreateInfrastructureTransportMessage(MessageTypeId messageTypeId)
-        {
-            throw new NotSupportedException();
         }
     }
 }

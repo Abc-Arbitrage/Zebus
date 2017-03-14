@@ -52,14 +52,14 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Abc.Zebus, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Abc.Zebus, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.1.5.0\lib\net45\Abc.Zebus.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.2.0.0\lib\net45\Abc.Zebus.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Abc.Zebus.Testing, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Abc.Zebus.Testing, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.Testing.1.5.0\lib\net45\Abc.Zebus.Testing.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.Testing.2.0.0\lib\net45\Abc.Zebus.Testing.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="KellermanSoftware.Compare-NET-Objects, Version=3.3.0.0, Culture=neutral, PublicKeyToken=d970ace04cc85217, processorArchitecture=MSIL">
@@ -71,6 +71,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\packages\Moq.4.2.1507.0118\lib\net40\Moq.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\lib\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

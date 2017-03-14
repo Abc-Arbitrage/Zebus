@@ -1,10 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Serialization;
+using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
@@ -58,7 +60,10 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             var nonAckedMessages = reader.GetUnackedMessages().ToList();
             nonAckedMessages.Count.ShouldEqual(3);
-            nonAckedMessages.ShouldBeEquivalentTo(transportMessages, true);
+            for (var i = 0; i < nonAckedMessages.Count; i++)
+            {
+                nonAckedMessages[i].DeepCompare(transportMessages[i]).ShouldBeTrue();
+            }
         }
 
         private Action<PersistentMessage> UpdatePersistentMessageWithNonAckedTransportMessage(TransportMessage transportMessage)
@@ -66,7 +71,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             return x =>
             {
                 x.IsAcked = false;
-                x.TransportMessage = _serializer.SerializeToBytes(transportMessage);
+                x.TransportMessage = _serializer.Serialize(transportMessage).ToArray();
             };
         }
 
@@ -74,7 +79,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         {
             var bytes = new byte[128];
             new Random().NextBytes(bytes);
-            return new TransportMessage(new MessageTypeId("Fake"), bytes, new Peer(peerId, string.Empty));
+            return new TransportMessage(new MessageTypeId("Fake"), new MemoryStream(bytes), new Peer(peerId, string.Empty));
         }
 
         private CqlMessageReader CreateReader(PeerId peerId, DateTime oldestNonAckedMessage)

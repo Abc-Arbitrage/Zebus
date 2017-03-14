@@ -4,7 +4,6 @@ using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Storage;
-using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Cassandra;
 using Cassandra.Data.Linq;
@@ -16,7 +15,6 @@ namespace Abc.Zebus.Persistence.CQL.Storage
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(CqlMessageReader));
 
-        private readonly Serializer _serializer = new Serializer();
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly PeerState _peerState;
         private readonly PreparedStatement _preparedStatement;
@@ -31,10 +29,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                                                       && x.UniqueTimestampInTicks >= 0)
                                                                           .Select(x => new { x.IsAcked, x.TransportMessage })
                                                                           .ToString());
-            DeserializeTransportMessage = b => _serializer.Deserialize<TransportMessage>(b);
         }
-
-        public Func<byte[], TransportMessage> DeserializeTransportMessage { get; set; } 
 
         public IEnumerable<TransportMessage> GetUnackedMessages()
         {
@@ -60,13 +55,13 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         private IEnumerable<TransportMessage> GetNonAckedMessagesInBucket(long oldestNonAckedMessageTimestampInTicks, long bucketId)
         {
             return _dataContext.Session.Execute(_preparedStatement.Bind(_peerState.PeerId.ToString(), bucketId, oldestNonAckedMessageTimestampInTicks).SetPageSize(10 * 1000))
-                               .Where(x => !x.GetValue<bool>(nameof(PersistentMessage.IsAcked)))
+                               .Where(x => !x.GetValue<bool>("IsAcked"))
                                .Select(CreatePersistentMessageFromRow);
         }
 
-        private TransportMessage CreatePersistentMessageFromRow(Row row)
+        private static TransportMessage CreatePersistentMessageFromRow(Row row)
         {
-            return DeserializeTransportMessage(row.GetValue<byte[]>(nameof(PersistentMessage.TransportMessage)));
+            return TransportMessageDeserializer.Deserialize(row.GetValue<byte[]>("TransportMessage"));
         }
 
         public void Dispose()

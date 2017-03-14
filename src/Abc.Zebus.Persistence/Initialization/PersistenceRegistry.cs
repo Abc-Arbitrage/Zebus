@@ -1,4 +1,5 @@
-﻿using Abc.Zebus.Persistence.Reporter;
+﻿using Abc.Zebus.Persistence.Handlers;
+using Abc.Zebus.Persistence.Reporter;
 using StructureMap.Configuration.DSL;
 
 namespace Abc.Zebus.Persistence.Initialization
@@ -8,6 +9,7 @@ namespace Abc.Zebus.Persistence.Initialization
         public PersistenceRegistry()
         {
             ForSingletonOf<IReporter>().UseIfNone<NoopReporter>();
+            ForSingletonOf<PersistMessageCommandHandler>().Use<PersistMessageCommandHandler>();
         }
     }
 }
