@@ -113,6 +113,8 @@
     <Compile Include="PersistenceStoppingStrategy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Storage\StorageTimeoutException.cs" />
+    <Compile Include="Storage\TransportMessageDeserializer.cs" />
+    <Compile Include="Storage\TransportMessageSerializer.cs" />
     <Compile Include="Transport\QueueingTransport.cs" />
     <Compile Include="Util\BackgroundThread.cs" />
     <Compile Include="Util\ConcurrentSet.cs" />

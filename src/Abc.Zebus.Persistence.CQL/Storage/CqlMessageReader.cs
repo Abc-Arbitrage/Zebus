@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Storage;
-using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Cassandra;
 using Cassandra.Data.Linq;
@@ -17,7 +15,6 @@ namespace Abc.Zebus.Persistence.CQL.Storage
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(CqlMessageReader));
 
-        private readonly Serializer _serializer = new Serializer();
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly PeerState _peerState;
         private readonly PreparedStatement _preparedStatement;
@@ -33,7 +30,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                                           .Select(x => new { x.IsAcked, x.TransportMessage })
                                                                           .ToString());
 
-            DeserializeTransportMessage = b => (TransportMessage)_serializer.Deserialize(typeof(TransportMessage), new MemoryStream(b));
+            DeserializeTransportMessage = TransportMessageDeserializer.Deserialize;
         }
 
         public Func<byte[], TransportMessage> DeserializeTransportMessage { get; set; } 

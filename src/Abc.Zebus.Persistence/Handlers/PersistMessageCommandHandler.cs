@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using Abc.Zebus.Persistence.Matching;
-using Abc.Zebus.Serialization;
+using Abc.Zebus.Persistence.Storage;
 using log4net;
 
 namespace Abc.Zebus.Persistence.Handlers
@@ -9,7 +9,7 @@ namespace Abc.Zebus.Persistence.Handlers
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(PersistMessageCommandHandler));
 
-        private readonly Serializer _serializer = new Serializer();
+        private readonly TransportMessageSerializer _serializer = new TransportMessageSerializer();
         private readonly IMessageReplayerRepository _messageReplayerRepository;
         private readonly IInMemoryMessageMatcher _inMemoryMessageMatcher;
         private readonly IPersistenceConfiguration _configuration;
@@ -26,16 +26,16 @@ namespace Abc.Zebus.Persistence.Handlers
             if (message.Targets == null)
                 return;
 
-            var transportMessageStream = _serializer.Serialize(message.TransportMessage);
+            var transportMessage = message.TransportMessage;
+            var transportMessageBytes = _serializer.Serialize(transportMessage);
             foreach (var target in message.Targets)
             {
                 if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(target.ToString()))
-                    _log.Info($"Message received for peer {target}. MessageId: {message.TransportMessage.Id}. MessageType: {message.TransportMessage.MessageTypeId}");
+                    _log.Info($"Message received for peer {target}. MessageId: {transportMessage.Id}. MessageType: {transportMessage.MessageTypeId}");
 
-                _messageReplayerRepository.GetActiveMessageReplayer(target)?.AddLiveMessage(message.TransportMessage);
-                _inMemoryMessageMatcher.EnqueueMessage(target, message.TransportMessage.Id, message.TransportMessage.MessageTypeId, transportMessageStream.ToArray());
+                _messageReplayerRepository.GetActiveMessageReplayer(target)?.AddLiveMessage(transportMessage);
+                _inMemoryMessageMatcher.EnqueueMessage(target, transportMessage.Id, transportMessage.MessageTypeId, transportMessageBytes);
             }
-
         }
     }
 }
