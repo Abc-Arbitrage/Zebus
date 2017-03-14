@@ -12,7 +12,7 @@
 		<copyright>Copyright © ABC arbitrage 2017</copyright>
 		<tags></tags>
     <dependencies>
-      <dependency id="Zebus" version="[1.5.1,2.0)" />
+      <dependency id="Zebus" version="[2.0,3.0)" />
       <dependency id="Zebus.Directory" version="$version$" />
       <dependency id="CassandraCSharpDriver" version="[3.0.8,3.1)" />
     </dependencies>
