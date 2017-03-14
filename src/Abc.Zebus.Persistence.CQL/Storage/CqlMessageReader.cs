@@ -29,11 +29,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                                                       && x.UniqueTimestampInTicks >= 0)
                                                                           .Select(x => new { x.IsAcked, x.TransportMessage })
                                                                           .ToString());
-
-            DeserializeTransportMessage = TransportMessageDeserializer.Deserialize;
         }
-
-        public Func<byte[], TransportMessage> DeserializeTransportMessage { get; set; } 
 
         public IEnumerable<TransportMessage> GetUnackedMessages()
         {
@@ -63,9 +59,9 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                .Select(CreatePersistentMessageFromRow);
         }
 
-        private TransportMessage CreatePersistentMessageFromRow(Row row)
+        private static TransportMessage CreatePersistentMessageFromRow(Row row)
         {
-            return DeserializeTransportMessage(row.GetValue<byte[]>("TransportMessage"));
+            return TransportMessageDeserializer.Deserialize(row.GetValue<byte[]>("TransportMessage"));
         }
 
         public void Dispose()
