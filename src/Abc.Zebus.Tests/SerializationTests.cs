@@ -34,7 +34,7 @@ namespace Abc.Zebus.Tests
         public void should_deserialize_message_with_null_content()
         {
             var serializer = new Serializer();
-            var message = serializer.Deserialize(typeof(EmptyCommand), null) as EmptyCommand;
+            var message = serializer.Deserialize(typeof(EmptyCommand), Stream.Null) as EmptyCommand;
             message.ShouldNotBeNull();
         }
 

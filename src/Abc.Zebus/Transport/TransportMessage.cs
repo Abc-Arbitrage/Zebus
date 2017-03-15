@@ -20,7 +20,10 @@ namespace Abc.Zebus.Transport
         private byte[] ContentBytes
         {
             get { return GetContentBytes(); }
-            set { Content = new MemoryStream(value); }
+            set
+            {
+                Content = new MemoryStream(value, 0, value.Length, false, true);
+            }
         }
 
         [ProtoIgnore, JsonIgnore]

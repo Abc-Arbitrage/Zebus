@@ -47,7 +47,7 @@ namespace Abc.Zebus.Tests.Transport
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
             deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
-            deserialized.Content.ShouldBeNull();
+            deserialized.Content.ShouldEqual(Stream.Null);
             deserialized.Originator.ShouldEqualDeeply(transportMessage.Originator);
             deserialized.Environment.ShouldEqual(transportMessage.Environment);
             deserialized.WasPersisted.ShouldEqual(transportMessage.WasPersisted);

@@ -44,6 +44,8 @@ namespace Abc.Zebus.Transport
                         break;
                 }
             }
+            if (transportMessage.Content == null)
+                transportMessage.Content = Stream.Null;
 
             return transportMessage;
         }
@@ -107,7 +109,10 @@ namespace Abc.Zebus.Transport
         private static Stream ReadStream(CodedInputStream input)
         {
             var length = input.ReadLength();
-            return new MemoryStream(input.ReadRawBytes(length));
+            var content = input.ReadRawBytes(length);
+
+            // publiclyVisible set to true to be able to call .GetBuffer() on this MemoryStream later, used in PersistenceService for example
+            return new MemoryStream(content, 0, content.Length, false, publiclyVisible: true); 
         }
 
         private static T ReadSingleField<T>(CodedInputStream input, Func<CodedInputStream, T> read)

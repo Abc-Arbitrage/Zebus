@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
@@ -26,6 +27,20 @@ namespace Abc.Zebus.Tests.Core
                 SetupDispatch(command, _ => invokerCalled = true);
 
                 var transportMessageReceived = command.ToTransportMessage(_peerUp);
+                _transport.RaiseMessageReceived(transportMessageReceived);
+
+                invokerCalled.ShouldBeTrue();
+            }
+
+            [Test]
+            public void should_dispatch_received_empty_message()
+            {
+                var command = new EmptyCommand();
+                var invokerCalled = false;
+                SetupDispatch(command, _ => invokerCalled = true);
+
+                var transportMessageReceived = command.ToTransportMessage(_peerUp);
+                transportMessageReceived.Content = Stream.Null;
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 invokerCalled.ShouldBeTrue();
@@ -156,7 +171,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 var command = new EmptyCommand();
                 var transportMessage = command.ToTransportMessage();
-                transportMessage.Content = null;
+                transportMessage.Content = Stream.Null;
                 var dispatch = _bus.CreateMessageDispatch(transportMessage);
 
                 dispatch.Message.ShouldEqualDeeply(command);
