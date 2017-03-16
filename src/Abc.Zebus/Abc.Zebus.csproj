@@ -251,7 +251,6 @@
     <Compile Include="Util\Extensions\ExtendType.cs" />
     <Compile Include="Util\TimeSpanCreation.cs" />
     <Compile Include="Util\Buffer.cs" />
-    <Compile Include="Util\MutableMemoryStream.cs" />
     <Compile Include="Util\PathUtil.cs" />
     <Compile Include="Util\SystemDateTime.cs" />
     <Compile Include="Util\TcpUtil.cs" />
