@@ -566,23 +566,18 @@ namespace Abc.Zebus.Serialization.Protobuf
             var length = (int)stream.Length;
             EnsureCapacity(length);
 
+            stream.Position = 0;
+
             var memoryStream = stream as MemoryStream;
             if (memoryStream != null)
-            {
-                ByteArray.Copy(memoryStream.GetBuffer(), 0, buffer, position, length);
-                position += length;
-            }
+                position += memoryStream.Read(buffer, position, length);
             else
-            {
                 WriteRawStreamSlow(stream);
-            }
         }
 
         private void WriteRawStreamSlow(Stream stream)
         {
             const int blockSize = 4096;
-
-            stream.Position = 0;
 
             while (true)
             {

@@ -10,7 +10,7 @@ namespace Abc.Zebus.Transport
     {
         internal static TransportMessage ReadTransportMessage(this CodedInputStream input)
         {
-            var transportMessage = new TransportMessage();
+            var transportMessage = new TransportMessage { Content = Stream.Null };
 
             uint number;
             WireType wireType;
@@ -44,8 +44,6 @@ namespace Abc.Zebus.Transport
                         break;
                 }
             }
-            if (transportMessage.Content == null)
-                transportMessage.Content = Stream.Null;
 
             return transportMessage;
         }
@@ -109,10 +107,7 @@ namespace Abc.Zebus.Transport
         private static Stream ReadStream(CodedInputStream input)
         {
             var length = input.ReadLength();
-            var content = input.ReadRawBytes(length);
-
-            // publiclyVisible set to true to be able to call .GetBuffer() on this MemoryStream later, used in PersistenceService for example
-            return new MemoryStream(content, 0, content.Length, false, publiclyVisible: true); 
+            return new MemoryStream(input.ReadRawBytes(length));
         }
 
         private static T ReadSingleField<T>(CodedInputStream input, Func<CodedInputStream, T> read)
