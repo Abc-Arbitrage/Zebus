@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Persistence;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
@@ -164,6 +166,20 @@ namespace Abc.Zebus.Tests.Core
                 var dispatch = _bus.CreateMessageDispatch(command.ToTransportMessage());
 
                 dispatch.Message.ShouldEqualDeeply(command);
+            }
+
+            [Test]
+            public void should_create_custom_message_dispatch_for_PersistMessageCommand()
+            {
+                var command = new FakeCommand(123);
+                var transportMessage = command.ToTransportMessage();
+                transportMessage.PersistentPeerIds = new List<PeerId> { new PeerId("Abc.SomePersistentPeer.0") };
+                var dispatch = _bus.CreateMessageDispatch(transportMessage);
+
+                var persistCommand = dispatch.Message as PersistMessageCommand;
+                persistCommand.ShouldNotBeNull();
+                persistCommand.Targets.ShouldBeEquivalentTo(transportMessage.PersistentPeerIds);
+                persistCommand.TransportMessage.ShouldHaveSamePropertiesAs(transportMessage, "IsPersistTransportMessage", "PersistentPeerIds");
             }
 
             [Test]
