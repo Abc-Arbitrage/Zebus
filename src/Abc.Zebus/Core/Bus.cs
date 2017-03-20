@@ -559,7 +559,7 @@ namespace Abc.Zebus.Core
         {
             try
             {
-                return _serializer.ToMessage(transportMessage);
+                return _serializer.ToMessage(transportMessage, messageTypeId, messageStream);
             }
             catch (Exception exception)
             {

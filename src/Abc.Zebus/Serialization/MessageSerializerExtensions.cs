@@ -1,4 +1,5 @@
-﻿using Abc.Zebus.Persistence;
+﻿using System.IO;
+using Abc.Zebus.Persistence;
 using Abc.Zebus.Transport;
 
 namespace Abc.Zebus.Serialization
@@ -16,10 +17,15 @@ namespace Abc.Zebus.Serialization
 
         public static IMessage ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage)
         {
+            return ToMessage(serializer, transportMessage, transportMessage.MessageTypeId, transportMessage.Content);
+        }
+
+        public static IMessage ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage, MessageTypeId messageTypeId, Stream content)
+        {
             if (transportMessage.IsPersistTransportMessage)
                 return ToPersistMessageCommand(transportMessage);
 
-            return serializer.Deserialize(transportMessage.MessageTypeId, transportMessage.Content);
+            return serializer.Deserialize(messageTypeId, content);
         }
 
         private static TransportMessage ToTransportMessage(PersistMessageCommand persistMessageCommand)
