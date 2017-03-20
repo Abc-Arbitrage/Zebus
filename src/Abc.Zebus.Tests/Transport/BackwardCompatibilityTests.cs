@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Tests.Transport.V1_5_0;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
 
@@ -39,6 +41,30 @@ namespace Abc.Zebus.Tests.Transport
             var message = codedInputStream.ReadTransportMessage();
             message.ShouldHaveSamePropertiesAs(expectedMessage, "WasPersisted");
             message.WasPersisted.ShouldBeNull();
+        }
+
+        [Test]
+        public void should_serialize_empty_messages_like_1_5_0()
+        {
+            var oldTransportMessage = new TransportMessage_1_5_0
+            {
+                Id = new MessageId(Guid.NewGuid()),
+                Originator = new OriginatorInfo_1_5_0(),
+                Content = new byte[0],
+            };
+            var oldOutput = new MemoryStream();
+            ProtoBuf.Serializer.Serialize(oldOutput, oldTransportMessage);
+
+            var newTransportMessage = new TransportMessage()
+            {
+                Id = oldTransportMessage.Id,
+                Originator = new OriginatorInfo(),
+                Content = new MemoryStream(),
+            };
+            var newOutput = new CodedOutputStream();
+            newOutput.WriteTransportMessage(newTransportMessage);
+
+            newOutput.ToArray().SequenceEqual(oldOutput.ToArray()).ShouldBeTrue();
         }
 
         private MemoryStream GetTransportMessageStream_1_4_1()

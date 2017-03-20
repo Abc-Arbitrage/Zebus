@@ -28,7 +28,7 @@ namespace Abc.Zebus.Transport
         }
 
         [UsedImplicitly]
-        private OriginatorInfo()
+        internal OriginatorInfo()
         {
         }
 

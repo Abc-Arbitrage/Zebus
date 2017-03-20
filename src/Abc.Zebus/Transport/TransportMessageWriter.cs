@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using Abc.Zebus.Serialization.Protobuf;
 
 namespace Abc.Zebus.Transport
 {
     internal static class TransportMessageWriter
     {
+        private static readonly MemoryStream _emptyStream = new MemoryStream(new byte[0]);
+
         internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage, string environmentOverride = null)
         {
             output.WriteRawTag(1 << 3 | 2);
@@ -13,12 +17,10 @@ namespace Abc.Zebus.Transport
             output.WriteRawTag(2 << 3 | 2);
             Write(output, transportMessage.MessageTypeId);
 
-            if (transportMessage.Content != null && transportMessage.Content.Length > 0)
-            {
-                output.WriteRawTag(3 << 3 | 2);
-                output.WriteLength((int)transportMessage.Content.Length);
-                output.WriteRawStream(transportMessage.Content);
-            }
+            var transportMessageContent = transportMessage.Content ?? _emptyStream;
+            output.WriteRawTag(3 << 3 | 2);
+            output.WriteLength((int)transportMessageContent.Length);
+            output.WriteRawStream(transportMessageContent);
 
             output.WriteRawTag(4 << 3 | 2);
             Write(output, transportMessage.Originator);

@@ -99,6 +99,13 @@ namespace Abc.Zebus.Serialization.Protobuf
             savedPosition = null;
         }
 
+        public byte[] ToArray()
+        {
+            var buffer = new byte[position];
+            ByteArray.Copy(Buffer, 0, buffer, 0, position);
+            return buffer;
+        }
+
         public void SavePosition()
         {
             savedPosition = position;
