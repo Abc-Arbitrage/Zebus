@@ -52,9 +52,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Abc.Zebus, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Abc.Zebus, Version=2.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.2.0.0\lib\net45\Abc.Zebus.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.2.0.1\lib\net45\Abc.Zebus.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
