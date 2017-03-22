@@ -20,7 +20,7 @@ namespace Abc.Zebus.Core
         public int ErrorCode { get; private set; }
 
         [ProtoMember(3, IsRequired = false)]
-        public MessageTypeId PayloadTypeId { get; private set; }
+        public MessageTypeId? PayloadTypeId { get; private set; }
 
         [ProtoMember(4, IsRequired = false)]
         public byte[] Payload { get; private set; }
