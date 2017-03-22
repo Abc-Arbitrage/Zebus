@@ -35,14 +35,14 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Abc.Zebus, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Abc.Zebus">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.2.0.2\lib\net45\Abc.Zebus.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.2.0.3\lib\net45\Abc.Zebus.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Abc.Zebus.Testing, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Abc.Zebus.Testing">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.Testing.2.0.2\lib\net45\Abc.Zebus.Testing.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.Testing.2.0.3\lib\net45\Abc.Zebus.Testing.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Cassandra, Version=3.0.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
