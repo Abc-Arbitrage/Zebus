@@ -11,10 +11,10 @@ namespace Abc.Zebus.Transport
     public class TransportMessage
     {
         [ProtoMember(1, IsRequired = true)]
-        public MessageId Id { get; internal set; }
+        public MessageId Id { get; set; }
 
         [ProtoMember(2, IsRequired = true)]
-        public MessageTypeId MessageTypeId { get; internal set; }
+        public MessageTypeId MessageTypeId { get; set; }
 
         [ProtoMember(3, IsRequired = true)]
         private byte[] ContentBytes
@@ -27,16 +27,16 @@ namespace Abc.Zebus.Transport
         }
 
         [ProtoIgnore, JsonIgnore]
-        public Stream Content { get; internal set; }
+        public Stream Content { get; set; }
 
         [ProtoMember(4, IsRequired = true)]
-        public OriginatorInfo Originator { get; internal set; }
+        public OriginatorInfo Originator { get; set; }
 
         [ProtoMember(5, IsRequired = false)]
-        public string Environment { get; internal set; }
+        public string Environment { get; set; }
 
         [ProtoMember(6, IsRequired = false)]
-        public bool? WasPersisted { get; internal set; }
+        public bool? WasPersisted { get; set; }
 
         [ProtoMember(7, IsRequired = false)]
         public List<PeerId> PersistentPeerIds { get; set; }
