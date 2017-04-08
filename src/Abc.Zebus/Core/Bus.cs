@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
+using Abc.Zebus.Persistence;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
@@ -419,7 +420,8 @@ namespace Abc.Zebus.Core
             {
                 SendMessageProcessingFailedIfNeeded(dispatch, dispatchResult, transportMessage);
 
-                if (dispatch.Message is ICommand)
+                var messageType = dispatch.Message.GetType();
+                if (typeof(ICommand).IsAssignableFrom(messageType) && !typeof(PersistMessageCommand).IsAssignableFrom(messageType))
                 {
                     var messageExecutionCompleted = MessageExecutionCompleted.Create(dispatch.Context, dispatchResult, _serializer);
                     var shouldLogMessageExecutionCompleted = _messageLogger.IsInfoEnabled(dispatch.Message);

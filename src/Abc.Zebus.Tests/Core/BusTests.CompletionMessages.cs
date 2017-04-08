@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
+using Abc.Zebus.Persistence;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
@@ -42,6 +44,21 @@ namespace Abc.Zebus.Tests.Core
 
                     var messageExecutionCompleted = new MessageExecutionCompleted(transportMessageReceived.Id, 0, null).ToTransportMessage(_self);
                     _transport.ExpectExactly(new TransportMessageSent(messageExecutionCompleted, _peerUp));
+                }
+            }
+
+            [Test]
+            public void should_not_send_completion_when_message_is_PersistMessageCommand()
+            {
+                using (MessageId.PauseIdGeneration())
+                {
+                    var cmd = new PersistMessageCommand(new FakeCommand(123).ToTransportMessage(), new List<PeerId> {new PeerId("Peer.Id")});
+                    SetupDispatch(cmd);
+
+                    var transportMessageReceived = cmd.ToTransportMessage(_peerUp);
+                    _transport.RaiseMessageReceived(transportMessageReceived);
+
+                    _transport.Messages.ShouldNotContain(x => x.TransportMessage.MessageTypeId == MessageExecutionCompleted.TypeId);
                 }
             }
 
