@@ -420,8 +420,7 @@ namespace Abc.Zebus.Core
             {
                 SendMessageProcessingFailedIfNeeded(dispatch, dispatchResult, transportMessage);
 
-                var messageType = dispatch.Message.GetType();
-                if (typeof(ICommand).IsAssignableFrom(messageType) && !typeof(PersistMessageCommand).IsAssignableFrom(messageType))
+                if (dispatch.Message is ICommand && !(dispatch.Message is PersistMessageCommand))
                 {
                     var messageExecutionCompleted = MessageExecutionCompleted.Create(dispatch.Context, dispatchResult, _serializer);
                     var shouldLogMessageExecutionCompleted = _messageLogger.IsInfoEnabled(dispatch.Message);
