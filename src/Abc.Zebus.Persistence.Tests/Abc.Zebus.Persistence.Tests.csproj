@@ -54,12 +54,12 @@
   <ItemGroup>
     <Reference Include="Abc.Zebus">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.2.0.3\lib\net45\Abc.Zebus.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.2.0.4\lib\net45\Abc.Zebus.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Abc.Zebus.Testing">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.Testing.2.0.3\lib\net45\Abc.Zebus.Testing.dll</HintPath>
+      <HintPath>..\..\lib\packages\Zebus.Testing.2.0.4\lib\net45\Abc.Zebus.Testing.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="KellermanSoftware.Compare-NET-Objects, Version=3.3.0.0, Culture=neutral, PublicKeyToken=d970ace04cc85217, processorArchitecture=MSIL">
