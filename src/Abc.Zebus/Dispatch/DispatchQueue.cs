@@ -136,6 +136,10 @@ namespace Abc.Zebus.Dispatch
             {
                 _logger.Error(ex);
             }
+            finally
+            {
+                LocalDispatch.Reset();
+            }
         }
 
         private void RunSingle(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
@@ -192,6 +196,7 @@ namespace Abc.Zebus.Dispatch
             finally
             {
                 batch.Clear();
+                LocalDispatch.Reset();
             }
         }
 

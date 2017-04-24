@@ -445,6 +445,55 @@ namespace Abc.Zebus.Tests.Dispatch
             }
         }
 
+        [Test]
+        public void should_reset_local_dispatch_status()
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            _dispatchQueue.Start();
+
+            var firstTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    LocalDispatch.Enabled.ShouldBeTrue();
+
+                    using (LocalDispatch.Disable())
+                    {
+                        // An await inside a LocalDispatch.Disable() context is broken
+                        // => don't let this mess up other invocations
+                        await tcs.Task.ConfigureAwait(true);
+                    }
+                }
+            });
+
+            var secondTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    LocalDispatch.Enabled.ShouldBeTrue();
+                    await tcs.Task.ConfigureAwait(true);
+                    LocalDispatch.Enabled.ShouldBeTrue();
+                }
+            });
+
+            var thirdTask = EnqueueInvocation(new ExecutableEvent
+            {
+                Callback = x =>
+                {
+                    LocalDispatch.Enabled.ShouldBeTrue();
+                    Task.Run(() => tcs.SetResult(null));
+                }
+            });
+
+            var allTasks = new[] { firstTask, secondTask, thirdTask };
+
+            Task.WhenAll(allTasks).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            foreach (var task in allTasks)
+                task.Result.Errors.ShouldBeEmpty();
+        }
+
         private static void Throw()
         {
             throw new Exception("Test");

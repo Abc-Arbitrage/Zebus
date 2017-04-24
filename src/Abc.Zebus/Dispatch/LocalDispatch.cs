@@ -17,5 +17,7 @@ namespace Abc.Zebus.Dispatch
 
             return new DisposableAction(() => _localDispatchDisabled = currentValue);
         }
+
+        internal static void Reset() => _localDispatchDisabled = false;
     }
 }
