@@ -305,8 +305,10 @@ namespace Abc.Zebus.Tests.Dispatch
             {
                 Callback = async _ =>
                 {
+                    SynchronizationContext.Current.ShouldEqual(_dispatchQueue.SynchronizationContext);
                     firstMessageDispatchQueueBeforeAwait = DispatchQueue.GetCurrentDispatchQueueName();
                     await tcs.Task.ConfigureAwait(true);
+                    SynchronizationContext.Current.ShouldEqual(_dispatchQueue.SynchronizationContext);
                     firstMessageDispatchQueueAfterAwait = DispatchQueue.GetCurrentDispatchQueueName();
                 }
             });
@@ -315,15 +317,29 @@ namespace Abc.Zebus.Tests.Dispatch
             {
                 Callback = async _ =>
                 {
+                    SynchronizationContext.Current.ShouldEqual(_dispatchQueue.SynchronizationContext);
                     secondMessageDispatchQueueBeforeAwait = DispatchQueue.GetCurrentDispatchQueueName();
                     await tcs.Task.ConfigureAwait(false);
+                    SynchronizationContext.Current.ShouldBeNull();
                     secondMessageDispatchQueueAfterAwait = DispatchQueue.GetCurrentDispatchQueueName();
                 }
             });
 
-            EnqueueInvocation(new ExecutableEvent { Callback = x => tcs.SetResult(null) });
+            var triggerTask = EnqueueInvocation(new ExecutableEvent
+            {
+                Callback = x =>
+                {
+                    SynchronizationContext.Current.ShouldBeNull();
+                    Task.Run(() => tcs.SetResult(null));
+                }
+            });
 
-            Task.WhenAll(firstTask, secondTask).Wait(2000.Milliseconds()).ShouldBeTrue();
+            var allTasks = new[] { firstTask, secondTask, triggerTask };
+
+            Task.WhenAll(allTasks).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            foreach (var task in allTasks)
+                task.Result.Errors.ShouldBeEmpty();
 
             Volatile.Read(ref firstMessageDispatchQueueBeforeAwait).ShouldEqual(_dispatchQueue.Name);
             Volatile.Read(ref secondMessageDispatchQueueBeforeAwait).ShouldEqual(_dispatchQueue.Name);
@@ -357,7 +373,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 }
             });
 
-            EnqueueInvocation(new ExecutableEvent { Callback = x => tcs.SetResult(null) });
+            EnqueueInvocation(new ExecutableEvent { Callback = x => Task.Run(() => tcs.SetResult(null)) });
 
             Task.WhenAll(firstTask, secondTask).Wait(2000.Milliseconds()).ShouldBeTrue();
 
@@ -373,21 +389,16 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
 
             var sequence = new List<int>();
-            Action<int> addSequence = i =>
-            {
-                lock (sequence)
-                {
-                    sequence.Add(i);
-                }
-            };
 
             var firstTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
             {
                 Callback = async _ =>
                 {
-                    addSequence(1);
+                    AddSequence(1);
+                    SynchronizationContext.Current.ShouldEqual(_dispatchQueue.SynchronizationContext);
                     await tcs.Task.ConfigureAwait(true);
-                    addSequence(4);
+                    AddSequence(4);
+                    SynchronizationContext.Current.ShouldEqual(_dispatchQueue.SynchronizationContext);
                 }
             });
 
@@ -395,9 +406,11 @@ namespace Abc.Zebus.Tests.Dispatch
             {
                 Callback = async _ =>
                 {
-                    addSequence(2);
+                    AddSequence(2);
+                    SynchronizationContext.Current.ShouldEqual(_dispatchQueue.SynchronizationContext);
                     await tcs.Task.ConfigureAwait(true);
-                    addSequence(5);
+                    AddSequence(5);
+                    SynchronizationContext.Current.ShouldEqual(_dispatchQueue.SynchronizationContext);
                 }
             });
 
@@ -405,16 +418,30 @@ namespace Abc.Zebus.Tests.Dispatch
             {
                 Callback = _ =>
                 {
-                    addSequence(3);
+                    AddSequence(3);
+                    SynchronizationContext.Current.ShouldBeNull();
                     Task.Run(() => tcs.SetResult(null));
                 }
             });
 
-            Task.WhenAll(firstTask, secondTask, thirdTask).Wait(2000.Milliseconds()).ShouldBeTrue();
+            var allTasks = new[] { firstTask, secondTask, thirdTask };
+
+            Task.WhenAll(allTasks).Wait(2000.Milliseconds()).ShouldBeTrue();
+
+            foreach (var task in allTasks)
+                task.Result.Errors.ShouldBeEmpty();
 
             lock (sequence)
             {
                 sequence.ShouldEqual(Enumerable.Range(1, 5));
+            }
+
+            void AddSequence(int i)
+            {
+                lock (sequence)
+                {
+                    sequence.Add(i);
+                }
             }
         }
 

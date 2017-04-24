@@ -26,11 +26,15 @@ namespace Abc.Zebus.Dispatch
 
         private bool IsCurrentDispatchQueue => _currentDispatchQueueName == Name;
 
+        internal SynchronizationContext SynchronizationContext { get; }
+
         public DispatchQueue(IPipeManager pipeManager, int batchSize, string name)
         {
             _pipeManager = pipeManager;
             _batchSize = batchSize;
             Name = name;
+
+            SynchronizationContext = new DispatchQueueSynchronizationContext(this);
         }
 
         public bool IsRunning => _isRunning;
@@ -90,8 +94,6 @@ namespace Abc.Zebus.Dispatch
             try
             {
                 _logger.InfoFormat("{0} processing started", Name);
-                SynchronizationContext.SetSynchronizationContext(new DispatchQueueSynchronizationContext(this));
-
                 var batch = new Batch(_batchSize);
 
                 foreach (var entries in _queue.GetConsumingEnumerable(_batchSize))
@@ -127,6 +129,7 @@ namespace Abc.Zebus.Dispatch
         {
             try
             {
+                SynchronizationContext.SetSynchronizationContext(SynchronizationContext);
                 action();
             }
             catch (Exception ex)
@@ -160,6 +163,7 @@ namespace Abc.Zebus.Dispatch
                 {
                     case MessageHandlerInvokerMode.Synchronous:
                     {
+                        SynchronizationContext.SetSynchronizationContext(null);
                         var invocation = _pipeManager.BuildPipeInvocation(batch.FirstEntry.Invoker, batch.Messages, batch.FirstEntry.Dispatch.Context);
                         invocation.Run();
                         batch.SetHandled(null);
@@ -168,6 +172,7 @@ namespace Abc.Zebus.Dispatch
 
                     case MessageHandlerInvokerMode.Asynchronous:
                     {
+                        SynchronizationContext.SetSynchronizationContext(SynchronizationContext);
                         var asyncBatch = batch.Clone();
                         var invocation = _pipeManager.BuildPipeInvocation(asyncBatch.FirstEntry.Invoker, asyncBatch.Messages, asyncBatch.FirstEntry.Dispatch.Context);
                         Interlocked.Increment(ref _asyncInvocationsCount);
