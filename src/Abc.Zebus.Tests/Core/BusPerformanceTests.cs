@@ -28,23 +28,21 @@ namespace Abc.Zebus.Tests.Core
             // 02/10/2013 - PC VAN: 27k/s
             const int messageCount = 300000;
 
-            var receiver = CreateAndStartReceiver();
-            var sender = CreateAndStartSender();
-
-            using (Measure.Throughput(messageCount))
+            using (CreateAndStartReceiver())
+            using (var sender = CreateAndStartSender())
             {
-                Task task = null;
-                for (var i = 1; i <= messageCount; ++i)
+                using (Measure.Throughput(messageCount))
                 {
-                    task = sender.Send(new PerfCommand(i));
+                    Task task = null;
+                    for (var i = 1; i <= messageCount; ++i)
+                    {
+                        task = sender.Send(new PerfCommand(i));
+                    }
+                    task.Wait();
                 }
-                task.Wait();
+
+                Console.WriteLine(PerfHandler.LastValue);
             }
-
-            Console.WriteLine(PerfHandler.LastValue);
-
-            receiver.Stop();
-            sender.Stop();
         }
 
         [Test]
@@ -57,26 +55,24 @@ namespace Abc.Zebus.Tests.Core
 
             const int messageCount = 1000 * 1000;
 
-            var receiver = CreateAndStartReceiver();
-            var sender = CreateAndStartSender();
-
-            using (Measure.Throughput(messageCount))
+            using (CreateAndStartReceiver())
+            using (var sender = CreateAndStartSender())
             {
-                for (var i = 1; i <= messageCount; ++i)
+                using (Measure.Throughput(messageCount))
                 {
-                    sender.Publish(new PerfEvent(i));
-                    Thread.SpinWait(1 << 4);
+                    for (var i = 1; i <= messageCount; ++i)
+                    {
+                        sender.Publish(new PerfEvent(i));
+                        Thread.SpinWait(1 << 4);
+                    }
+
+                    var spinWait = new SpinWait();
+                    while (PerfHandler.LastValue != messageCount)
+                        spinWait.SpinOnce();
                 }
 
-                var spinWait = new SpinWait();
-                while (PerfHandler.LastValue != messageCount)
-                    spinWait.SpinOnce();
+                Console.WriteLine(PerfHandler.LastValue);
             }
-
-            Console.WriteLine(PerfHandler.LastValue);
-
-            receiver.Stop();
-            sender.Stop();
         }
 
         [Test]
@@ -84,26 +80,24 @@ namespace Abc.Zebus.Tests.Core
         {
             const int messageCount = 1000 * 1000;
 
-            var receiver = CreateAndStartReceiver(true);
-            var sender = CreateAndStartSender();
-
-            using (Measure.Throughput(messageCount))
+            using (CreateAndStartReceiver(true))
+            using (var sender = CreateAndStartSender())
             {
-                for (var i = 1; i <= messageCount; ++i)
+                using (Measure.Throughput(messageCount))
                 {
-                    sender.Publish(new PersistentPerfEvent(i));
-                    Thread.SpinWait(1 << 4);
+                    for (var i = 1; i <= messageCount; ++i)
+                    {
+                        sender.Publish(new PersistentPerfEvent(i));
+                        Thread.SpinWait(1 << 4);
+                    }
+
+                    var spinWait = new SpinWait();
+                    while (PerfHandler.LastValue != messageCount)
+                        spinWait.SpinOnce();
                 }
 
-                var spinWait = new SpinWait();
-                while (PerfHandler.LastValue != messageCount)
-                    spinWait.SpinOnce();
+                Console.WriteLine(PerfHandler.LastValue);
             }
-
-            Console.WriteLine(PerfHandler.LastValue);
-
-            receiver.Stop();
-            sender.Stop();
         }
 
         [TestCase(100000, 10)]
@@ -112,31 +106,34 @@ namespace Abc.Zebus.Tests.Core
             // 10/12/2013 CAO: 8754/s
 
             var receivers = Enumerable.Repeat(0, receiverCount).Select(_ => CreateAndStartReceiver()).ToList();
-            var sender = CreateAndStartSender();
-
-            Console.WriteLine("MessageCount: {0}, ReceiverCount: {1}", messageCount, receiverCount);
-
-            using (Measure.Throughput(messageCount))
+            using (var sender = CreateAndStartSender())
             {
-                for (var i = 1; i <= messageCount; ++i)
+                Console.WriteLine("MessageCount: {0}, ReceiverCount: {1}", messageCount, receiverCount);
+                try
                 {
-                    sender.Publish(new PerfEvent(i));
+                    using (Measure.Throughput(messageCount))
+                    {
+                        for (var i = 1; i <= messageCount; ++i)
+                        {
+                            sender.Publish(new PerfEvent(i));
+                        }
+
+                        var spinWait = new SpinWait();
+                        while (PerfHandler.CallCount != messageCount * receiverCount)
+                            spinWait.SpinOnce();
+                    }
+
+                    Console.WriteLine(PerfHandler.LastValue);
                 }
-
-                var spinWait = new SpinWait();
-                while (PerfHandler.CallCount != messageCount * receiverCount)
-                    spinWait.SpinOnce();
+                finally
+                {
+                    receivers.ForEach(x =>
+                    {
+                        x.Stop();
+                        Console.WriteLine("Receiver stopped " + x.PeerId);
+                    });
+                }
             }
-
-            Console.WriteLine(PerfHandler.LastValue);
-
-            receivers.ForEach(x =>
-            {
-                x.Stop();
-                Console.WriteLine("Receiver stopped " + x.PeerId);
-            });
-
-            sender.Stop();
             Console.WriteLine("Sender stopped");
         }
 
@@ -150,13 +147,12 @@ namespace Abc.Zebus.Tests.Core
                 .WithHandlers(typeof(PerfHandler))
                 .CreateAndStartInMemoryBus();
 
+            using (bus)
             using (DispatchQueue.SetCurrentDispatchQueueName(DispatchQueueNameScanner.DefaultQueueName))
             using (MessageContext.SetCurrent(MessageContext.CreateTest()))
             {
                 Measure.Execution(500000, () => bus.Send(new PerfCommand(42)));
             }
-
-            bus.Stop();
         }
 
         public static IBus CreateAndStartSender()
