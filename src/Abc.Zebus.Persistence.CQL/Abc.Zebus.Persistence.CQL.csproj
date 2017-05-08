@@ -32,10 +32,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Abc.Zebus">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.2.0.4\lib\net45\Abc.Zebus.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Abc.Zebus, Version=2.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\lib\packages\Zebus.2.0.5\lib\net45\Abc.Zebus.dll</HintPath>
     </Reference>
     <Reference Include="Cassandra, Version=3.0.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

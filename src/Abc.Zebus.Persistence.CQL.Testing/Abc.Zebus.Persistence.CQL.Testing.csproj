@@ -31,10 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Abc.Zebus">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Zebus.2.0.4\lib\net45\Abc.Zebus.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Abc.Zebus, Version=2.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\lib\packages\Zebus.2.0.5\lib\net45\Abc.Zebus.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
       <HintPath>..\..\lib\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
