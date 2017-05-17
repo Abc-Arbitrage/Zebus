@@ -1,6 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Abc.Zebus
 {
-    public interface IMessageHandler<T> : IMessageHandler where T : class
+    [SuppressMessage("ReSharper", "TypeParameterCanBeVariant")]
+    public interface IMessageHandler<T> : IMessageHandler
+        where T : class, IMessage
     {
         void Handle(T message);
     }
