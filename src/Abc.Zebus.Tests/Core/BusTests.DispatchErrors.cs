@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using Abc.Zebus.Lotus;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
@@ -108,6 +110,32 @@ namespace Abc.Zebus.Tests.Core
                     var commandJson = JsonConvert.SerializeObject(command);
                     var expectedTransportMessage = new MessageProcessingFailed(command.ToTransportMessage(_self), commandJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
                     _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
+                }
+            }
+
+            [Test]
+            public void should_send_a_CustomProcessingFailed_on_error_with_local_processing_and_unserializable_message()
+            {
+                SetupPeersHandlingMessage<CustomProcessingFailed>(_peerUp);
+
+                _bus.Start();
+
+                using (SystemDateTime.PauseTime())
+                using (MessageId.PauseIdGeneration())
+                {
+                    SetupPeersHandlingMessage<FakeCommand>(_self);
+
+                    var command = new FakeCommand(123);
+                    SetupDispatch(command, error: new Exception("Dispatch exception"));
+
+                    _messageSerializer.AddSerializationExceptionFor(command.TypeId(), exceptionMessage: "Serialization exception");
+
+                    _bus.Send(command);
+
+                    var error = _transport.MessagesSent.OfType<CustomProcessingFailed>().ExpectedSingle();
+                    error.ExceptionMessage.ShouldContain("Dispatch exception");
+                    error.ExceptionMessage.ShouldContain("Serialization exception");
+                    error.ExceptionMessage.ShouldContain(command.GetType().FullName);
                 }
             }
 

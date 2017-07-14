@@ -418,7 +418,7 @@ namespace Abc.Zebus.Core
         {
             return (dispatch, dispatchResult) =>
             {
-                SendMessageProcessingFailedIfNeeded(dispatch, dispatchResult, transportMessage);
+                HandleDispatchErrors(dispatch, dispatchResult, transportMessage);
 
                 if (dispatch.Message is ICommand && !(dispatch.Message is PersistMessageCommand))
                 {
@@ -431,13 +431,24 @@ namespace Abc.Zebus.Core
             };
         }
 
-        private void SendMessageProcessingFailedIfNeeded(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage failingTransportMessage = null)
+        private void HandleDispatchErrors(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage failingTransportMessage = null)
         {
             if (!_configuration.IsErrorPublicationEnabled || !IsRunning || dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is DomainException))
                 return;
 
-            if (failingTransportMessage == null)
-                failingTransportMessage = ToTransportMessage(dispatch.Message);
+            var errorMessages = dispatchResult.Errors.Select(error => error.ToString());
+            var errorMessage = string.Join(System.Environment.NewLine + System.Environment.NewLine, errorMessages);
+
+            try
+            {
+                if (failingTransportMessage == null)
+                    failingTransportMessage = ToTransportMessage(dispatch.Message);
+            }
+            catch (Exception ex)
+            {
+                HandleDispatchErrorsForUnserializableMessage(dispatch.Message, ex, errorMessage);
+                return;
+            }
 
             string jsonMessage;
             try
@@ -448,13 +459,22 @@ namespace Abc.Zebus.Core
             {
                 jsonMessage = $"Unable to serialize message :{System.Environment.NewLine}{ex}";
             }
-
-            var errorMessages = dispatchResult.Errors.Select(error => error.ToString());
-            var errorMessage = string.Join(System.Environment.NewLine + System.Environment.NewLine, errorMessages);
+            
             var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName).ToArray());
-            var peers = _directory.GetPeersHandlingMessage(messageProcessingFailed);
+            Publish(messageProcessingFailed);
+        }
 
-            SendTransportMessage(ToTransportMessage(messageProcessingFailed), peers);
+        private void HandleDispatchErrorsForUnserializableMessage(IMessage message, Exception serializationException, string dispatchErrorMessage)
+        {
+            var messageTypeName = message.GetType().FullName;
+            _logger.Error($"Unable to serialize message {messageTypeName}. Error: {serializationException}");
+
+            if (!_configuration.IsErrorPublicationEnabled || !IsRunning)
+                return;
+
+            var errorMessage = $"Unable to handle local message\r\nMessage is not serializable\r\nMessageType: {messageTypeName}\r\nDispatch error: {dispatchErrorMessage}\r\nSerialization error: {serializationException}";
+            var processingFailed = new CustomProcessingFailed(GetType().FullName, errorMessage, SystemDateTime.UtcNow);
+            Publish(processingFailed);
         }
 
         private void HandleMessageExecutionCompleted(TransportMessage transportMessage)
@@ -494,7 +514,7 @@ namespace Abc.Zebus.Core
         {
             return (dispatch, dispatchResult) =>
             {
-                SendMessageProcessingFailedIfNeeded(dispatch, dispatchResult);
+                HandleDispatchErrors(dispatch, dispatchResult);
 
                 if (taskCompletionSource == null)
                     return;
