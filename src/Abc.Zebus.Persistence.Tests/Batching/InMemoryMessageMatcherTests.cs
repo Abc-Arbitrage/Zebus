@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Abc.Zebus.Lotus;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Storage;
@@ -227,8 +228,8 @@ namespace Abc.Zebus.Persistence.Tests.Batching
         {
             _matcher.Start();
 
-            var storageSignal = new ManualResetEvent(false);
-            _storeBatchFunc = x => storageSignal.WaitOne();
+            var storageCompleted = new TaskCompletionSource<int>();
+            _storageMock.Setup(x => x.Write(It.IsAny<IList<MatcherEntry>>())).Returns<IList<MatcherEntry>>(items => storageCompleted.Task);
 
             _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("X"), new byte[0]);
 
@@ -237,7 +238,7 @@ namespace Abc.Zebus.Persistence.Tests.Batching
 
             waitHandle.WaitOne(100.Milliseconds()).ShouldBeFalse();
 
-            storageSignal.Set();
+            storageCompleted.TrySetResult(0);
 
             waitHandle.WaitOne(100.Milliseconds()).ShouldBeTrue();
         }

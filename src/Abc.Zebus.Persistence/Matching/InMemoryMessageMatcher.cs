@@ -134,8 +134,8 @@ namespace Abc.Zebus.Persistence.Matching
             var entriesToInsert = batch.Where(x => !x.IsEventWaitHandle).ToList();
 
             if (entriesToInsert.Any())
-                _storage.Write(entriesToInsert);
-            
+                _storage.Write(entriesToInsert).Wait(30.Seconds());
+
             foreach (var entry in batch.Where(x => x.IsEventWaitHandle))
             {
                 entry.WaitHandle.Set();
