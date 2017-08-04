@@ -94,15 +94,9 @@ namespace Abc.Zebus.Persistence.Matching
 
         private void PersistAndClearBatch(List<MatcherEntry> batch)
         {
-            var shouldClearBatch = true;
             try
             {
                 PersistBatch(batch);
-            }
-            catch (StorageTimeoutException ex)
-            {
-                _bus.Publish(new CustomProcessingFailed(GetType().FullName, ex.ToString(), SystemDateTime.UtcNow));
-                shouldClearBatch = false;
             }
             catch (Exception ex)
             {
@@ -111,8 +105,7 @@ namespace Abc.Zebus.Persistence.Matching
             }
             finally
             {
-                if (shouldClearBatch)
-                    batch.Clear();
+                batch.Clear();
             }
         }
 

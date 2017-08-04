@@ -7,7 +7,6 @@ namespace Abc.Zebus.Persistence.Storage
     /// <summary>
     /// All interactions with the underlying storage have to go through this class.
     /// This interface (and <see cref="IMessageReader"/>) are required to be implemented to support a new storage type.
-    /// Any timeout from the underlying storage should be signaled using a <see cref="StorageTimeoutException"/>, so that
     /// higher layers can apply their retry policy
     /// </summary>
     public interface IStorage

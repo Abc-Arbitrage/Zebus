@@ -169,22 +169,6 @@ namespace Abc.Zebus.Persistence.Tests.Batching
         }
 
         [Test]
-        public void should_send_a_custom_error_if_pesistence_fails()
-        {
-            using (SystemDateTime.PauseTime())
-            {
-                ThrowTimeOutOnPersist();
-
-                _matcher.Start();
-                EnqueueMessageToPersist();
-                _matcher.Stop();
-
-                var errors = _bus.Events.OfType<CustomProcessingFailed>();
-                errors.Count().ShouldEqual(1);
-            }
-        }
-
-        [Test]
         public void should_clear_pending_entries_on_purge()
         {
             _batchSize = 1;
@@ -211,29 +195,6 @@ namespace Abc.Zebus.Persistence.Tests.Batching
 
             persistedBatches.Count.ShouldEqual(2);
             purgedCount.ShouldEqual(3);
-        }
-
-        [Test]
-        public void should_persist_failed_messages_later_on_TimedOutException()
-        {
-            using (SystemDateTime.PauseTime())
-            {
-                var persistedBatches = new List<List<MatcherEntry>>();
-                ThrowTimeOutOnPersist();
-                _batchSize = 5;
-
-                _matcher.Start();
-                EnqueueAndWaitForErrorCount(1);
-                EnqueueAndWaitForErrorCount(2);
-                CapturePersistedBatches(persistedBatches);
-                EnqueueMessageToPersist();
-                _matcher.Stop();
-
-                var errors = _bus.Events.OfType<CustomProcessingFailed>();
-                errors.Count().ShouldEqual(2);
-                persistedBatches.Count.ShouldEqual(1);
-                persistedBatches.Single().Count.ShouldEqual(3);
-            }
         }
 
         [Test]
@@ -320,11 +281,6 @@ namespace Abc.Zebus.Persistence.Tests.Batching
                     MatcherEntry.EventWaitHandle(waitHandle)
                 }));
             }
-        }
-
-        private void ThrowTimeOutOnPersist()
-        {
-            _storeBatchFunc = msgs => { throw new StorageTimeoutException(); };
         }
 
         private void EnqueueAndWaitForErrorCount(int errorCountToReach)

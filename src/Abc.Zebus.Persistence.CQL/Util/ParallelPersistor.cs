@@ -20,12 +20,6 @@ namespace Abc.Zebus.Persistence.CQL.Util
         private readonly int _maximumQueueSize;
         private bool _stopped;
 
-        private class PendingInsert
-        {
-            public IStatement Statement { get; set; }
-            public TaskCompletionSource<RowSet> Completion { get; set; }
-        }
-
         public ParallelPersistor(ISession session, int asyncWorkersCount, Action<Exception> errorReportingAction = null)
         {
             _session = session;
@@ -45,6 +39,7 @@ namespace Abc.Zebus.Persistence.CQL.Util
             _queriesWaitingInLineSemaphore.Wait();
             var taskCompletionSource = new TaskCompletionSource<RowSet>();
             _insertionQueue.Post(new PendingInsert { Statement = statement, Completion = taskCompletionSource });
+
             return taskCompletionSource.Task;
         }
 
@@ -117,6 +112,12 @@ namespace Abc.Zebus.Persistence.CQL.Util
 
             _stopped = true;
             Stop();
+        }
+
+        private class PendingInsert
+        {
+            public IStatement Statement { get; set; }
+            public TaskCompletionSource<RowSet> Completion { get; set; }
         }
     }
 }

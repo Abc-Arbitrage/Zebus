@@ -111,7 +111,6 @@
     <Compile Include="MessageReplayerRepository.cs" />
     <Compile Include="PersistenceStoppingStrategy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Storage\StorageTimeoutException.cs" />
     <Compile Include="Storage\TransportMessageDeserializer.cs" />
     <Compile Include="Storage\TransportMessageSerializer.cs" />
     <Compile Include="Transport\QueueingTransport.cs" />
