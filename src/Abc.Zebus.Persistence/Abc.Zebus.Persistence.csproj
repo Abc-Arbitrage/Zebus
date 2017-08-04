@@ -86,6 +86,7 @@
       <Link>Properties\SharedVersionInfo.cs</Link>
     </Compile>
     <Compile Include="Initialization\PersistenceRegistry.cs" />
+    <Compile Include="Matching\MatcherEntryType.cs" />
     <Compile Include="Reporter\IReporter.cs" />
     <Compile Include="Matching\InMemoryMessageMatcher.cs" />
     <Compile Include="Matching\MatcherEntry.cs" />

@@ -246,76 +246,6 @@ namespace Abc.Zebus.Persistence.Tests.Batching
         }
 
         [Test]
-        public void should_persist_messages_one_by_one_on_unknown_error()
-        {
-            using (SystemDateTime.PauseTime())
-            {
-                var persistedBatches = new List<List<MatcherEntry>>();
-
-                _storeBatchFunc = msgs =>
-                {
-                    if (msgs.Count > 1)
-                        throw new InvalidOperationException();
-
-                    persistedBatches.Add(msgs.ToList());
-                };
-
-                _batchSize = 5;
-
-                EnqueueMessageToPersist();
-                EnqueueMessageToPersist();
-                EnqueueMessageToPersist();
-
-                _matcher.Start();
-                _matcher.Stop();
-
-                var errors = _bus.Events.OfType<CustomProcessingFailed>();
-                errors.Count().ShouldEqual(1);
-                persistedBatches.Count.ShouldEqual(3);
-                persistedBatches.Count(batch => batch.Count == 1).ShouldEqual(3);
-            }
-        }
-
-        [Test]
-        public void resume_normal_operations_after_one_by_one_persist()
-        {
-            using (SystemDateTime.PauseTime())
-            {
-                _batchSize = 5;
-                var persistedBatches = new List<List<MatcherEntry>>();
-                
-                ThrowUnknownExceptionOnFirstPersist(persistedBatches);
-                EnqueueMessageToPersist();
-                EnqueueMessageToPersist();
-                EnqueueMessageToPersist();
-                _matcher.Start();
-                // Since the first persist will fail, the messages will be persisted one by one
-                Wait.Until(() => persistedBatches.Count == 3, 2);
-                
-                // We block the persister and wait for it to be in the persist method to simulate a long persistence
-                var batcherShouldResumePersistence = new ManualResetEvent(false);
-                var batcherIsWaitingForSignalInThePersistenceLoop = WaitForSignalThenCapturePersistedBatches(batcherShouldResumePersistence, persistedBatches);
-                EnqueueMessageToPersist();
-                batcherIsWaitingForSignalInThePersistenceLoop.WaitOne();
-
-                // Now that the persister is simulating a long persistence, we enqueue 4 messages
-                EnqueueMessageToPersist();
-                EnqueueMessageToPersist();
-                EnqueueMessageToPersist();
-                EnqueueMessageToPersist();
-                batcherShouldResumePersistence.Set();
-                // The persister should now persist 4 messages in a batch
-                _matcher.Stop();
-
-                var errors = _bus.Events.OfType<CustomProcessingFailed>();
-                errors.Count().ShouldEqual(1);
-                persistedBatches.Count.ShouldEqual(5);
-                persistedBatches.Count(batch => batch.Count == 1).ShouldEqual(4);
-                persistedBatches.Count(batch => batch.Count == 4).ShouldEqual(1);
-            }
-        }
-
-        [Test]
         public void should_set_signals_instantaneously_when_queue_is_empty()
         {
             _matcher.Start();
@@ -426,30 +356,6 @@ namespace Abc.Zebus.Persistence.Tests.Batching
                 persistedBatches.Add(msgs.ToList());
             };
             return batcherIsInPersistenceMethod;
-        }
-
-        private void ThrowUnknownExceptionOnFirstPersist(List<List<MatcherEntry>> persistedBatches)
-        {
-            var hasThrown = new BoolByRef(false);
-            _storeBatchFunc = msgs =>
-            {
-                if (!hasThrown.Value)
-                {
-                    hasThrown.Value = true;
-                    throw new InvalidOperationException();
-                }
-                persistedBatches.Add(msgs.ToList());
-            };
-        }
-
-        private class BoolByRef
-        {
-            public BoolByRef(bool value)
-            {
-                Value = value;
-            }
-
-            public bool Value { get; set; }
         }
     }
 }

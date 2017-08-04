@@ -68,7 +68,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             {
                 var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
                 if (shouldInvestigatePeer)
-                    _log.Info($"Storage requested for peer {matcherEntry.PeerId}, IsAck: {matcherEntry.IsAck}, Message Id: {matcherEntry.MessageId}"); 
+                    _log.Info($"Storage requested for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}"); 
 
                 var messageDateTime = matcherEntry.MessageId.GetDateTime();
                 var rowTimestamp = matcherEntry.IsAck ? messageDateTime.AddTicks(10) : messageDateTime;
@@ -82,7 +82,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                                                ToUnixMicroSeconds(rowTimestamp)));
 
                 if (shouldInvestigatePeer)
-                    insertTask = insertTask.ContinueWith(t => _log.Info($"Storage done for peer {matcherEntry.PeerId}, IsAck: {matcherEntry.IsAck}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}"));
+                    insertTask = insertTask.ContinueWith(t => _log.Info($"Storage done for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}"));
 
                 insertTasks.Add(insertTask);
                 var countDelta = matcherEntry.IsAck ? -1 : 1;

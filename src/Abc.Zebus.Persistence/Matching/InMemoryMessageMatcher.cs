@@ -15,7 +15,7 @@ namespace Abc.Zebus.Persistence.Matching
     {
         private readonly ILog _logger = LogManager.GetLogger(typeof(InMemoryMessageMatcher));
         private readonly BlockingCollection<MatcherEntry> _persistenceQueue = new BlockingCollection<MatcherEntry>();
-        private readonly ConcurrentSet<MessageKey> _acksMessageKeys = new ConcurrentSet<MessageKey>();
+        private readonly ConcurrentSet<MessageKey> _ackMessageKeys = new ConcurrentSet<MessageKey>();
         private readonly IPersistenceConfiguration _persistenceConfiguration;
         private readonly IStorage _storage;
         private readonly IBus _bus;
@@ -47,101 +47,91 @@ namespace Abc.Zebus.Persistence.Matching
             var signal = (ManualResetEventSlim)state;
             signal.Set();
 
-            var delay = _persistenceConfiguration.PersisterDelay;
             var batch = new List<MatcherEntry>();
 
             foreach (var entry in _persistenceQueue.GetConsumingEnumerable())
             {
-                if (entry.IsEventWaitHandle)
+                var currentEntry = entry;
+                while (currentEntry != null)
                 {
-                    entry.WaitHandle.Set();
-                    continue;
+                    WaitForDelay(currentEntry);
+                    LoadBatch(batch, ref currentEntry);
+                    PersistAndClearBatch(batch);
                 }
-
-                WaitForDelay(entry, delay);
-
-                PairUpOrAddToBatch(batch, entry);
-                LoadAndPersistBatch(batch);
             }
         }
 
-        private static void WaitForDelay(MatcherEntry entry, TimeSpan? delay)
+        private void WaitForDelay(MatcherEntry entry)
         {
-            if (delay == null)
-                return;
-
-            var timestampUtc = SystemDateTime.UtcNow;
-            while (timestampUtc - entry.TimestampUtc < delay.Value)
+            while (!entry.CanBeProcessed(_persistenceConfiguration.PersisterDelay.GetValueOrDefault()))
             {
                 Thread.Sleep(100);
-                timestampUtc = SystemDateTime.UtcNow;
             }
         }
 
         private void PairUpOrAddToBatch(List<MatcherEntry> batch, MatcherEntry entry)
         {
-            if (entry.IsAck)
+            switch (entry.Type)
             {
-                var isAlreadyPairedUp = !_acksMessageKeys.Remove(new MessageKey(entry.PeerId, entry.MessageId));
-                if (isAlreadyPairedUp)
-                    return;
-            }
-            else
-            {
-                var isPairUpSuccessfull = _acksMessageKeys.Remove(new MessageKey(entry.PeerId, entry.MessageId));
-                if (isPairUpSuccessfull)
-                {
-                    InMemoryAckCount++;
-                    return;
-                }
+                case MatcherEntryType.Message:
+                    var isPairUpSuccessfull = _ackMessageKeys.Remove(new MessageKey(entry.PeerId, entry.MessageId));
+                    if (isPairUpSuccessfull)
+                    {
+                        InMemoryAckCount++;
+                        return;
+                    }
+                    break;
+
+                case MatcherEntryType.Ack:
+                    var isAlreadyPairedUp = !_ackMessageKeys.Remove(new MessageKey(entry.PeerId, entry.MessageId));
+                    if (isAlreadyPairedUp)
+                        return;
+                    break;
             }
 
             batch.Add(entry);
         }
 
-        private void LoadAndPersistBatch(List<MatcherEntry> batch)
+        private void PersistAndClearBatch(List<MatcherEntry> batch)
         {
+            var shouldClearBatch = true;
             try
             {
-                LoadBatch(batch);
                 PersistBatch(batch);
-
-                batch.Clear();
             }
             catch (StorageTimeoutException ex)
             {
                 _bus.Publish(new CustomProcessingFailed(GetType().FullName, ex.ToString(), SystemDateTime.UtcNow));
+                shouldClearBatch = false;
             }
             catch (Exception ex)
             {
-                _logger.Error("Unexpected error happened, trying to persist messages one by one");
+                _logger.Error("Unexpected error happened", ex);
                 _bus.Publish(new CustomProcessingFailed(GetType().FullName, ex.ToString(), SystemDateTime.UtcNow));
-                PersistMessagesOneByOne(batch);
-                batch.Clear();
+            }
+            finally
+            {
+                if (shouldClearBatch)
+                    batch.Clear();
             }
         }
 
-        private void LoadBatch(List<MatcherEntry> batch)
+        private void LoadBatch(List<MatcherEntry> batch, ref MatcherEntry currentEntry)
         {
-            MatcherEntry entry;
-            while (batch.Count < _persistenceConfiguration.PersisterBatchSize && _persistenceQueue.TryTake(out entry))
+            PairUpOrAddToBatch(batch, currentEntry);
+            currentEntry = null;
+
+            var configuration = _persistenceConfiguration;
+
+            while (batch.Count < configuration.PersisterBatchSize && _persistenceQueue.TryTake(out var entry))
             {
+                if (!entry.CanBeProcessed(configuration.PersisterDelay.GetValueOrDefault()))
+                {
+                    currentEntry = entry;
+                    return;
+                }
+
                 PairUpOrAddToBatch(batch, entry);
-            }
-        }
-
-        private void PersistMessagesOneByOne(IEnumerable<MatcherEntry> batch)
-        {
-            foreach (var entry in batch)
-            {
-                try
-                {
-                    PersistBatch(new List<MatcherEntry> { entry });
-                }
-                catch
-                {
-                    _logger.Fatal("A message of type [" + entry.MessageTypeName + "] failed to be persisted in one by one mode");
-                }
             }
         }
 
@@ -149,8 +139,9 @@ namespace Abc.Zebus.Persistence.Matching
         internal void PersistBatch(List<MatcherEntry> batch)
         {
             var entriesToInsert = batch.Where(x => !x.IsEventWaitHandle).ToList();
-            
-            _storage.Write(entriesToInsert);
+
+            if (entriesToInsert.Any())
+                _storage.Write(entriesToInsert);
             
             foreach (var entry in batch.Where(x => x.IsEventWaitHandle))
             {
@@ -182,7 +173,7 @@ namespace Abc.Zebus.Persistence.Matching
 
         public void EnqueueAck(PeerId peerId, MessageId messageId)
         {
-            _acksMessageKeys.Add(new MessageKey(peerId, messageId));
+            _ackMessageKeys.Add(new MessageKey(peerId, messageId));
 
             var entry = MatcherEntry.Ack(peerId, messageId);
             _persistenceQueue.Add(entry);
