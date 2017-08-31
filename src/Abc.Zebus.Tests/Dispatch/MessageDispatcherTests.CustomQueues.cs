@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages;
@@ -166,6 +167,78 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.Stop();
             Assert.Throws<InvalidOperationException>(() => Dispatch(new DispatchCommand()));
+        }
+
+        [Test]
+        public void should_handle_local_dispatch_when_stopping()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var handler1 = new SyncCommandHandlerWithQueueName1
+            {
+                WaitForSignal = true
+            };
+
+            var handler2 = new SyncCommandHandlerWithQueueName2
+            {
+                WaitForSignal = false
+            };
+
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler1);
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName2))).Returns(handler2);
+
+            Dispatch(new DispatchCommand());
+
+            Wait.Until(() => handler1.HandleStarted, 150.Milliseconds());
+            var stopTask = Task.Run(() => _messageDispatcher.Stop());
+
+            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 150.Milliseconds());
+            Wait.Until(() => handler2.HandleStopped, 150.Milliseconds());
+
+            handler1.WaitForSignal = false;
+            handler2.HandleStopped = false;
+
+            Dispatch(new DispatchCommand(), true);
+
+            Wait.Until(() => handler2.HandleStopped, 150.Milliseconds());
+            handler1.CalledSignal.Set();
+
+            stopTask.Wait(150.Milliseconds()).ShouldBeTrue();
+        }
+
+        [Test]
+        public void should_not_accept_remote_dispatch_when_stopping()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var handler1 = new SyncCommandHandlerWithQueueName1
+            {
+                WaitForSignal = true
+            };
+
+            var handler2 = new SyncCommandHandlerWithQueueName2
+            {
+                WaitForSignal = false
+            };
+
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler1);
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName2))).Returns(handler2);
+
+            Dispatch(new DispatchCommand());
+
+            Wait.Until(() => handler1.HandleStarted, 150.Milliseconds());
+            var stopTask = Task.Run(() => _messageDispatcher.Stop());
+
+            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 150.Milliseconds());
+            Wait.Until(() => handler2.HandleStopped, 150.Milliseconds());
+
+            handler1.WaitForSignal = false;
+            handler2.HandleStopped = false;
+
+            Assert.Throws<InvalidOperationException>(() => Dispatch(new DispatchCommand()));
+
+            handler1.CalledSignal.Set();
+            stopTask.Wait(150.Milliseconds()).ShouldBeTrue();
         }
 
         [Test, Repeat(5)]

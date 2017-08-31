@@ -10,6 +10,8 @@ namespace Abc.Zebus.Util.Collections
         private readonly ManualResetEventSlim _addSignal = new ManualResetEventSlim();
         private volatile ConcurrentQueue<T> _queue = new ConcurrentQueue<T>();
         private volatile bool _isAddingCompleted;
+        private ManualResetEventSlim _isEmptySignal;
+        private int _hasChangedSinceLastWaitForEmpty;
 
         public int Count => _queue.Count;
 
@@ -24,6 +26,7 @@ namespace Abc.Zebus.Util.Collections
             if (_isAddingCompleted)
                 throw new InvalidOperationException("Adding completed");
 
+            _hasChangedSinceLastWaitForEmpty = 1;
             _queue.Enqueue(item);
             _addSignal.Set();
         }
@@ -33,22 +36,24 @@ namespace Abc.Zebus.Util.Collections
             var items = new List<T>(maxSize);
             while (!IsAddingCompletedAndEmpty)
             {
-                T item;
-                if (_queue.TryDequeue(out item))
+                if (_queue.TryDequeue(out var item))
                 {
+                    _hasChangedSinceLastWaitForEmpty = 1;
+
                     items.Clear();
                     items.Add(item);
+
                     while (items.Count < maxSize && _queue.TryDequeue(out item))
-                    {
                         items.Add(item);
-                    }
+
                     yield return items;
                 }
                 else
                 {
+                    _isEmptySignal?.Set();
+
                     // a longer wait timeout decreases CPU usage and improves latency
                     // but the guy who wrote this code is not comfortable with long timeouts in waits or sleeps
-
                     if (_addSignal.Wait(200))
                         _addSignal.Reset();
                 }
@@ -73,6 +78,24 @@ namespace Abc.Zebus.Util.Collections
             _addSignal.Set();
 
             return items;
+        }
+
+        public bool WaitUntilIsEmpty()
+        {
+            var signal = _isEmptySignal;
+
+            if (signal == null)
+            {
+                signal = new ManualResetEventSlim();
+                var prevSignal = Interlocked.CompareExchange(ref _isEmptySignal, signal, null);
+                signal = prevSignal ?? signal;
+            }
+
+            signal.Reset();
+            _addSignal.Set();
+            signal.Wait();
+
+            return Interlocked.Exchange(ref _hasChangedSinceLastWaitForEmpty, 0) != 0;
         }
     }
 }

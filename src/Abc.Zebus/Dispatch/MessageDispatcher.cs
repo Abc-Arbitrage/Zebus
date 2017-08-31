@@ -21,7 +21,9 @@ namespace Abc.Zebus.Dispatch
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _handlerFilter;
         private Func<Type, bool> _messageFilter;
-        private volatile bool _isRunning;
+        private MessageDispatcherStatus _status;
+
+        internal MessageDispatcherStatus Status => _status;
 
         public MessageDispatcher(IMessageHandlerInvokerLoader[] invokerLoaders, IDispatchQueueFactory dispatchQueueFactory)
         {
@@ -93,8 +95,17 @@ namespace Abc.Zebus.Dispatch
 
         private void Dispatch(MessageDispatch dispatch, List<IMessageHandlerInvoker> invokers)
         {
-            if (!_isRunning)
-                throw new InvalidOperationException("MessageDispatcher is stopped");
+            switch (_status)
+            {
+                case MessageDispatcherStatus.Stopped:
+                    throw new InvalidOperationException("MessageDispatcher is stopped");
+
+                case MessageDispatcherStatus.Stopping:
+                    if (dispatch.IsLocal)
+                        break;
+
+                    throw new InvalidOperationException("MessageDispatcher is stopping");
+            }
 
             if (invokers.Count == 0)
             {
@@ -113,10 +124,14 @@ namespace Abc.Zebus.Dispatch
 
         public void Stop()
         {
-            if (!_isRunning)
+            if (_status != MessageDispatcherStatus.Started)
                 return;
 
-            _isRunning = false;
+            _status = MessageDispatcherStatus.Stopping;
+
+            WaitUntilAllMessagesAreProcessed();
+
+            _status = MessageDispatcherStatus.Stopped;
 
             var stopTasks = _dispatchQueues.Values.Select(dispatchQueue => Task.Factory.StartNew(dispatchQueue.Stop)).ToArray();
             Task.WaitAll(stopTasks);
@@ -124,15 +139,34 @@ namespace Abc.Zebus.Dispatch
 
         public void Start()
         {
-            if (_isRunning)
-                return;
+            switch (_status)
+            {
+                case MessageDispatcherStatus.Started:
+                    return;
 
-            _isRunning = true;
+                case MessageDispatcherStatus.Stopping:
+                    throw new InvalidOperationException("MessageDispatcher is stopping");
+            }
+
+            _status = MessageDispatcherStatus.Started;
 
             foreach (var dispatchQueue in _dispatchQueues.Values)
             {
                 dispatchQueue.Start();
             }
+        }
+
+        private void WaitUntilAllMessagesAreProcessed()
+        {
+            bool continueWait;
+
+            do
+            {
+                continueWait = false;
+
+                foreach (var dispatchQueue in _dispatchQueues.Values)
+                    continueWait = dispatchQueue.WaitUntilAllMessagesAreProcessed() || continueWait;
+            } while (continueWait);
         }
 
         public void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker)
@@ -197,5 +231,12 @@ namespace Abc.Zebus.Dispatch
             var dispatchQueue = _dispatchQueues.GetOrAdd(invoker.DispatchQueueName, CreateAndStartDispatchQueue);
             dispatchQueue.RunOrEnqueue(dispatch, invoker);
         }
+    }
+
+    internal enum MessageDispatcherStatus
+    {
+        Stopped,
+        Stopping,
+        Started
     }
 }

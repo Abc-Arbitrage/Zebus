@@ -377,11 +377,15 @@ namespace Abc.Zebus.Tests.Dispatch
             DispatchAndWaitForCompletion(new ExecutableEvent { Callback = x => Dispatch(message) });
         }
 
-        private Task<DispatchResult> Dispatch(IMessage message)
+        private Task<DispatchResult> Dispatch(IMessage message, bool isLocal = false)
         {
             var taskCompletionSource = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, (x, r) => taskCompletionSource.SetResult(r));
+            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, (x, r) => taskCompletionSource.SetResult(r))
+            {
+                IsLocal = isLocal
+            };
+
             _messageDispatcher.Dispatch(dispatch);
 
             return taskCompletionSource.Task;

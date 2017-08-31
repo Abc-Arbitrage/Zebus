@@ -505,7 +505,10 @@ namespace Abc.Zebus.Core
             _messageLogger.DebugFormat("RECV local: {0}", message);
 
             var context = MessageContext.CreateOverride(PeerId, EndPoint);
-            var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource));
+            var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource))
+            {
+                IsLocal = true
+            };
 
             _messageDispatcher.Dispatch(dispatch);
         }

@@ -78,7 +78,7 @@ namespace Abc.Zebus.Dispatch
 
             _isRunning = false;
 
-            while (Volatile.Read(ref _asyncInvocationsCount) > 0)
+            while (WaitUntilAllMessagesAreProcessed())
                 Thread.Sleep(1);
 
             _queue.CompleteAdding();
@@ -225,6 +225,37 @@ namespace Abc.Zebus.Dispatch
         {
             var flushedEntries = _queue.Flush();
             return flushedEntries.Count;
+        }
+
+        /// <summary>
+        /// Waits until the dispatch queue is empty and no messages are currently being processed
+        /// </summary>
+        /// <returns>
+        /// true if the dispatch queue has processed messages since the last call to this function
+        /// </returns>
+        public bool WaitUntilAllMessagesAreProcessed()
+        {
+            bool continueWait, hasChanged = false;
+
+            do
+            {
+                continueWait = false;
+
+                while (Volatile.Read(ref _asyncInvocationsCount) > 0)
+                {
+                    continueWait = true;
+                    hasChanged = true;
+                    Thread.Sleep(1);
+                }
+
+                if (_queue.WaitUntilIsEmpty())
+                {
+                    continueWait = true;
+                    hasChanged = true;
+                }
+            } while (continueWait);
+
+            return hasChanged;
         }
 
         public void RunOrEnqueue(MessageDispatch dispatch, IMessageHandlerInvoker invoker)

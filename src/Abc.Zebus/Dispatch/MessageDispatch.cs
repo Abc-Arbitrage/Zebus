@@ -20,9 +20,10 @@ namespace Abc.Zebus.Dispatch
             Message = message;
         }
 
-        public bool ShouldRunSynchronously { get; private set; }
-        public MessageContext Context { get; private set; }
-        public IMessage Message { get; private set; }
+        public bool IsLocal { get; set; }
+        public bool ShouldRunSynchronously { get; }
+        public MessageContext Context { get; }
+        public IMessage Message { get; }
 
         public void SetIgnored()
         {
