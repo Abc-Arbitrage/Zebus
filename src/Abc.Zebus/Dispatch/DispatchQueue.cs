@@ -21,6 +21,7 @@ namespace Abc.Zebus.Dispatch
         private Thread _thread;
         private volatile bool _isRunning;
         private int _asyncInvocationsCount;
+        private int _hasCompletedAsyncInvocationsSinceLastWait;
 
         public string Name { get; }
 
@@ -217,6 +218,7 @@ namespace Abc.Zebus.Dispatch
             }
             finally
             {
+                _hasCompletedAsyncInvocationsSinceLastWait = 1;
                 Interlocked.Decrement(ref _asyncInvocationsCount);
             }
         }
@@ -244,15 +246,17 @@ namespace Abc.Zebus.Dispatch
                 while (Volatile.Read(ref _asyncInvocationsCount) > 0)
                 {
                     continueWait = true;
-                    hasChanged = true;
                     Thread.Sleep(1);
                 }
 
-                if (_queue.WaitUntilIsEmpty())
-                {
+                if (Interlocked.Exchange(ref _hasCompletedAsyncInvocationsSinceLastWait, 0) != 0)
                     continueWait = true;
+
+                if (_queue.WaitUntilIsEmpty())
+                    continueWait = true;
+
+                if (continueWait)
                     hasChanged = true;
-                }
             } while (continueWait);
 
             return hasChanged;
