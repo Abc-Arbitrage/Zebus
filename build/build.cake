@@ -1,6 +1,6 @@
 #l "scripts/utilities.cake"
 #tool nuget:?package=NUnit.Runners.Net4&version=2.6.4
-#addin "Cake.FileHelpers"
+
 //////////////////////////////////////////////////////////////////////
 // ARGUMENTS
 //////////////////////////////////////////////////////////////////////
@@ -34,6 +34,8 @@ Task("Clean").Does(() =>
 });
 Task("Restore-NuGet-Packages").Does(() => NuGetRestore(paths.solution));
 Task("Create-AssemblyInfo").Does(()=>{
+    Information("Assembly Version: {0}", VersionContext.AssemblyVersion);
+    Information("   NuGet Version: {0}", VersionContext.NugetVersion);
     CreateAssemblyInfo(paths.assemblyInfo, new AssemblyInfoSettings {
         Version = VersionContext.AssemblyVersion,
         FileVersion = VersionContext.AssemblyVersion,
@@ -43,7 +45,7 @@ Task("Create-AssemblyInfo").Does(()=>{
 Task("MSBuild").Does(() => MSBuild(paths.solution, settings => settings.SetConfiguration("Release")
                                                 .SetPlatformTarget(PlatformTarget.MSIL)
                                                 .WithProperty("OutDir", paths.output.build)));
-Task("Clean-AssemblyInfo").Does(() => FileWriteText(paths.assemblyInfo, string.Empty));
+Task("Clean-AssemblyInfo").Does(() => System.IO.File.WriteAllText(paths.assemblyInfo, string.Empty));
 Task("Run-Unit-Tests").Does(() =>
 {
     NUnit(paths.output.build + "/*.Tests.exe", new NUnitSettings { Framework = "4.6.1", NoResults = true });
