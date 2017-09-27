@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
                 var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 _bus.Start();
                 _bus.Subscribe(Subscription.Any<FakeCommand>());
@@ -41,7 +41,7 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: true);
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
                 var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 _bus.Start();
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
@@ -56,7 +56,7 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "firstRoutingValue")));
                 var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
                 _bus.Start();
 
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "secondRoutingValue")));
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
 
                 var directorySubscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), directorySubscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
 
                 _bus.Start();
 
@@ -92,8 +92,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
 
-
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), new List<SubscriptionsForType>());
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), new List<SubscriptionsForType>());
 
                 _bus.Start();
 
@@ -116,7 +115,7 @@ namespace Abc.Zebus.Tests.Core
                 subscriptions.Add(Subscription.ByExample(x => new FakeRoutableCommand(2, "name")));
                 var subscription = _bus.Subscribe(subscriptions.ToArray());
                 var directorySubscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), directorySubscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
 
                 subscription.Dispose();
 
@@ -130,7 +129,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
                 var subscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
                 var directorySubscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), directorySubscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
 
                 subscription.Dispose();
 
@@ -144,7 +143,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
                 var subscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
                 var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 subscription.Dispose();
 
@@ -160,7 +159,7 @@ namespace Abc.Zebus.Tests.Core
                 var firstSubscription = _bus.Subscribe<FakeCommand>(cmd => { });
                 var secondSubscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "plop")));
                 var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptions(bus, items), subscriptions);
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 firstSubscription.Dispose();
 
@@ -175,8 +174,9 @@ namespace Abc.Zebus.Tests.Core
 
                 var lastDirectorySubscriptions = new List<SubscriptionsForType>();
 
-                _directoryMock.Setup(x => x.UpdateSubscriptions(_bus, It.IsAny<IEnumerable<SubscriptionsForType>>()))
-                              .Callback<IBus, IEnumerable<SubscriptionsForType>>((bus, sub) => lastDirectorySubscriptions = sub.ToList());
+                _directoryMock.Setup(x => x.UpdateSubscriptionsAsync(_bus, It.IsAny<IEnumerable<SubscriptionsForType>>()))
+                              .Callback<IBus, IEnumerable<SubscriptionsForType>>((bus, sub) => lastDirectorySubscriptions = sub.ToList())
+                              .Returns(Task.CompletedTask);
 
                 _bus.Start();
 
@@ -198,8 +198,9 @@ namespace Abc.Zebus.Tests.Core
 
                 var subscriptions = new List<Subscription>();
 
-                _directoryMock.Setup(x => x.Register(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
-                              .Callback<IBus, Peer, IEnumerable<Subscription>>((x, y, items) => subscriptions.AddRange(items));
+                _directoryMock.Setup(x => x.RegisterAsync(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
+                              .Callback<IBus, Peer, IEnumerable<Subscription>>((x, y, items) => subscriptions.AddRange(items))
+                              .Returns(Task.CompletedTask);
 
                 _bus.Start();
 
@@ -216,8 +217,9 @@ namespace Abc.Zebus.Tests.Core
 
                 var subscriptions = new List<Subscription>();
 
-                _directoryMock.Setup(x => x.Register(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
-                              .Callback<IBus, Peer, IEnumerable<Subscription>>((x, y, items) => subscriptions.AddRange(items));
+                _directoryMock.Setup(x => x.RegisterAsync(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
+                              .Callback<IBus, Peer, IEnumerable<Subscription>>((x, y, items) => subscriptions.AddRange(items))
+                              .Returns(Task.CompletedTask);
 
                 _bus.Start();
 
@@ -311,8 +313,10 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
 
                 var subscriptions = new List<Subscription>();
-                _directoryMock.Setup(dir => dir.Register(It.IsAny<IBus>(), It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
-                              .Callback((IBus Bus, Peer peer, IEnumerable<Subscription> subs) => subscriptions = subs.ToList());
+                _directoryMock.Setup(dir => dir.RegisterAsync(It.IsAny<IBus>(), It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
+                              .Callback((IBus bus, Peer peer, IEnumerable<Subscription> subs) => subscriptions = subs.ToList())
+                              .Returns(Task.CompletedTask);
+
                 _bus.Start();
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
 
@@ -372,12 +376,12 @@ namespace Abc.Zebus.Tests.Core
 
             private void CaptureHighestVersionOnUpdate(ConcurrentQueue<int> highestSubscriptionVersionOnEachUpdate)
             {
-                _directoryMock.Setup(dir => dir.UpdateSubscriptions(It.IsAny<IBus>(), It.IsAny<IEnumerable<SubscriptionsForType>>())).Callback(
+                _directoryMock.Setup(dir => dir.UpdateSubscriptionsAsync(It.IsAny<IBus>(), It.IsAny<IEnumerable<SubscriptionsForType>>())).Callback(
                     (IBus bus, IEnumerable<SubscriptionsForType> subs) =>
                     {
                         var highestSubscriptionVersionNumber = subs.SelectMany(x => x.BindingKeys).Select(x => int.Parse(x.GetPart(0))).OrderBy(x => x).Last();
                         highestSubscriptionVersionOnEachUpdate.Enqueue(highestSubscriptionVersionNumber);
-                    });
+                    }).Returns(Task.CompletedTask);
             }
         }
     }

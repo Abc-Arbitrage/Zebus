@@ -91,7 +91,7 @@ namespace Abc.Zebus.Core
 
                 _logger.DebugFormat("Registering on directory...");
                 var self = new Peer(PeerId, EndPoint);
-                _directory.Register(this, self, GetSubscriptions());
+                _directory.RegisterAsync(this, self, GetSubscriptions()).Wait();
                 registered = true;
 
                 _transport.OnRegistered();
@@ -141,7 +141,7 @@ namespace Abc.Zebus.Core
         private void InternalStop(bool unregister)
         {
             if (unregister)
-                _directory.Unregister(this);
+                _directory.UnregisterAsync(this).Wait();
 
             _stoppingStrategy.Stop(_transport, _messageDispatcher);
 
@@ -343,7 +343,7 @@ namespace Abc.Zebus.Core
             foreach (var updatedMessageId in updatedTypes)
                 subscriptionUpdates.Add(subscriptionsByTypes.GetValueOrDefault(updatedMessageId, new SubscriptionsForType(updatedMessageId)));
 
-            _directory.UpdateSubscriptions(this, subscriptionUpdates);
+            _directory.UpdateSubscriptionsAsync(this, subscriptionUpdates).Wait();
         }
 
         public void Reply(int errorCode) => Reply(errorCode, null);

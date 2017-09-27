@@ -248,6 +248,7 @@
     <Compile Include="Util\Extensions\ExtendEnum.cs" />
     <Compile Include="Util\Extensions\ExtendIEnumerable.cs" />
     <Compile Include="Util\Extensions\ExtendString.cs" />
+    <Compile Include="Util\Extensions\ExtendTask.cs" />
     <Compile Include="Util\Extensions\ExtendType.cs" />
     <Compile Include="Util\TimeSpanCreation.cs" />
     <Compile Include="Util\Buffer.cs" />
