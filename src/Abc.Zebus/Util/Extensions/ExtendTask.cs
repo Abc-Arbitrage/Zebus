@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,6 +35,19 @@ namespace Abc.Zebus.Util.Extensions
             }
 
             return await task.ConfigureAwait(false);
+        }
+
+        public static T WaitSync<T>(this Task<T> task)
+        {
+            try
+            {
+                return task.Result;
+            }
+            catch (AggregateException ex)
+            {
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw;
+            }
         }
     }
 }

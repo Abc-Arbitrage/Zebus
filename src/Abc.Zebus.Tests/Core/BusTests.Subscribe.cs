@@ -229,26 +229,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void should_subscribe_with_handler()
-            {
-                _bus.Start();
-
-                var invokers = new List<IMessageHandlerInvoker>();
-                _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<DynamicMessageHandlerInvoker<FakeEvent>>())).Callback((IMessageHandlerInvoker i) => invokers.Add(i));
-
-                _bus.Subscribe((FakeEvent e) => { });
-
-                var invoker = invokers.ExpectedSingle();
-                invoker.Mode.ShouldEqual(MessageHandlerInvokerMode.Synchronous);
-                invoker.DispatchQueueName.ShouldEqual(DispatchQueueNameScanner.DefaultQueueName);
-                invoker.MessageHandlerType.ShouldNotBeNull();
-                invoker.MessageType.ShouldEqual(typeof(FakeEvent));
-                invoker.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeEvent)));
-                invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
-            }
-
-            [Test]
-            public void should_subscribe_with_untype_handler()
+            public void should_subscribe_with_dynamic_handler()
             {
                 _bus.Start();
 
@@ -268,7 +249,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void should_subscribe_to_single_subscription_with_untype_handler()
+            public void should_subscribe_to_single_subscription_with_dynamic_handler()
             {
                 _bus.Start();
 
@@ -292,10 +273,10 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
 
                 var invokers = new List<IMessageHandlerInvoker>();
-                _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<DynamicMessageHandlerInvoker<FakeEvent>>()))
+                _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<DynamicMessageHandlerInvoker>()))
                                       .Callback((IMessageHandlerInvoker i) => invokers.Add(i));
 
-                _messageDispatcherMock.Setup(x => x.RemoveInvoker(It.IsAny<DynamicMessageHandlerInvoker<FakeEvent>>()))
+                _messageDispatcherMock.Setup(x => x.RemoveInvoker(It.IsAny<DynamicMessageHandlerInvoker>()))
                                       .Callback((IMessageHandlerInvoker i) => invokers.Remove(i));
 
                 var subscription = _bus.Subscribe((FakeEvent e) => { });
@@ -362,12 +343,15 @@ namespace Abc.Zebus.Tests.Core
             private void SendParallelSubscriptionUpdates(int threadCount, int subscriptionCountPerThread)
             {
                 var subscriptionVersion = 0;
-                var subscribertasks = Enumerable.Range(0, threadCount).Select(ite => Task.Factory.StartNew(() =>
+                var subscribertasks = Enumerable.Range(0, threadCount).Select(ite => Task.Run(async () =>
                 {
                     for (var i = 0; i < subscriptionCountPerThread; ++i)
                     {
                         var currentVersion = Interlocked.Increment(ref subscriptionVersion);
-                        _bus.Subscribe(new[] { new Subscription(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey(currentVersion.ToString(), string.Empty)) }, SubscriptionOptions.ThereIsNoHandlerButIKnowWhatIAmDoing);
+                        await _bus.SubscribeAsync(new SubscriptionRequest(new[] { new Subscription(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey(currentVersion.ToString(), string.Empty)) })
+                        {
+                            ThereIsNoHandlerButIKnowWhatIAmDoing = true
+                        }).ConfigureAwait(false);
                     }
                 })).ToArray();
 

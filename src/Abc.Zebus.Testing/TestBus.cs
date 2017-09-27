@@ -107,53 +107,28 @@ namespace Abc.Zebus.Testing
             return HandlerExecutor.Execute(message, handler);
         }
 
-        public IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default)
+        public Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
         {
-            lock (_subscriptions)
-            {
-                _subscriptions.Add(subscription);
-            }
+            var subscriptions = request.Subscriptions.ToList();
 
-            return new DisposableAction(() =>
-            {
-                lock (_subscriptions)
-                {
-                    _subscriptions.Remove(subscription);
-                }
-            });
-        }
-
-        public IDisposable Subscribe(Subscription[] subscriptions, SubscriptionOptions options = SubscriptionOptions.Default)
-        {
             lock (_subscriptions)
             {
                 _subscriptions.AddRange(subscriptions);
             }
 
-            return new DisposableAction(() =>
+            return Task.FromResult<IDisposable>(new DisposableAction(() =>
             {
                 lock (_subscriptions)
                 {
                     _subscriptions.RemoveRange(subscriptions);
                 }
-            });
+            }));
         }
 
-        public IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage
+        public Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
         {
-            var handlerKey = new HandlerKey(typeof(T), default(PeerId));
+            var subscriptions = request.Subscriptions.ToList();
 
-            _handlers[handlerKey] = x =>
-            {
-                handler((T)x);
-                return null;
-            };
-
-            return new DisposableAction(() => _handlers.Remove(handlerKey));
-        }
-
-        public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
-        {
             lock (_subscriptions)
             {
                 _subscriptions.AddRange(subscriptions);
@@ -169,38 +144,15 @@ namespace Abc.Zebus.Testing
                 };
             }
 
-            return new DisposableAction(() =>
+            return Task.FromResult<IDisposable>(new DisposableAction(() =>
             {
-                _handlers.RemoveRange(handlerKeys);
                 lock (_subscriptions)
                 {
                     _subscriptions.RemoveRange(subscriptions);
                 }
-            });
-        }
 
-        public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
-        {
-            lock (_subscriptions)
-            {
-                _subscriptions.Add(subscription);
-            }
-
-            var handlerKey = new HandlerKey(subscription.MessageTypeId.GetMessageType(), default(PeerId));
-            _handlers[handlerKey] = x =>
-            {
-                handler(x);
-                return null;
-            };
-
-            return new DisposableAction(() =>
-            {
-                _handlers.Remove(handlerKey);
-                lock (_subscriptions)
-                {
-                    _subscriptions.Remove(subscription);
-                }
-            });
+                _handlers.RemoveRange(handlerKeys);
+            }));
         }
 
         public void Reply(int errorCode)
@@ -242,22 +194,26 @@ namespace Abc.Zebus.Testing
             Stopped();
         }
 
-        public void AddHandler<TMessage>(Func<TMessage, object> handler) where TMessage : IMessage
+        public void AddHandler<TMessage>(Func<TMessage, object> handler)
+            where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => handler((TMessage)x);
         }
 
-        public void AddSuccessfulHandler<TMessage>() where TMessage : IMessage
+        public void AddSuccessfulHandler<TMessage>()
+            where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => true;
         }
 
-        public void AddHandlerForPeer<TMessage>(PeerId peerId, Func<TMessage, object> handler) where TMessage : IMessage
+        public void AddHandlerForPeer<TMessage>(PeerId peerId, Func<TMessage, object> handler)
+            where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), peerId)] = x => handler((TMessage)x);
         }
 
-        public void AddHandlerForPeer<TMessage>(PeerId peerId, Action<TMessage> handler) where TMessage : IMessage
+        public void AddHandlerForPeer<TMessage>(PeerId peerId, Action<TMessage> handler)
+            where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), peerId)] = x =>
             {
@@ -266,7 +222,8 @@ namespace Abc.Zebus.Testing
             };
         }
 
-        public void AddHandler<TMessage>(Action<TMessage> handler) where TMessage : IMessage
+        public void AddHandler<TMessage>(Action<TMessage> handler)
+            where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x =>
             {
@@ -275,12 +232,14 @@ namespace Abc.Zebus.Testing
             };
         }
 
-        public void AddHandlerThatThrowsDomainException<TMessage>(DomainException ex) where TMessage : IMessage
+        public void AddHandlerThatThrowsDomainException<TMessage>(DomainException ex)
+            where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex; };
         }
 
-        public void AddHandlerThatThrows<TMessage>(Exception ex = null) where TMessage : IMessage
+        public void AddHandlerThatThrows<TMessage>(Exception ex = null)
+            where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex ?? new Exception(); };
         }
@@ -289,7 +248,6 @@ namespace Abc.Zebus.Testing
         {
             _messageComparer.CheckExpectations(Messages, expectedMessages, false);
         }
-
 
         public void Expect(params IMessage[] expectedMessages)
         {
@@ -343,7 +301,7 @@ namespace Abc.Zebus.Testing
                 {
                     taskCompletionSource.SetResult(new CommandResult(1, null, null));
                 }
-             
+
                 return taskCompletionSource.Task;
             }
         }
@@ -381,15 +339,14 @@ namespace Abc.Zebus.Testing
 
         private class HandlerKey : Tuple<Type, PeerId>
         {
-            public HandlerKey(Type type, PeerId peerId) : base(type, peerId)
+            public HandlerKey(Type type, PeerId peerId)
+                : base(type, peerId)
             {
             }
         }
 
         public IDisposable InjectSubscription(Subscription subscription)
-        {
-            return Subscribe(subscription);
-        }
+            => this.Subscribe(subscription);
 
         public void Dispose()
         {

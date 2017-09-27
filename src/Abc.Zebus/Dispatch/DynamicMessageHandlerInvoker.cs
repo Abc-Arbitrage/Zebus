@@ -17,11 +17,11 @@ namespace Abc.Zebus.Dispatch
             _predicates = bindingKeys.Select(x => predicateBuilder.GetPredicate(messageType, x)).ToList();
         }
 
-        class DummyHandler : IMessageHandler<IMessage>
+        private class DummyHandler : IMessageHandler<IMessage>
         {
             public void Handle(IMessage message)
             {
-                throw new NotImplementedException("This handler is only used to provide the base class with a valid implementation of IMessageHandler and is never actually used");
+                throw new NotSupportedException("This handler is only used to provide the base class with a valid implementation of IMessageHandler and is never actually used");
             }
         }
 
@@ -29,13 +29,12 @@ namespace Abc.Zebus.Dispatch
         {
             using (invocation.SetupForInvocation())
             {
-                _handler(invocation.Messages[0]);
+                foreach (var message in invocation.Messages)
+                    _handler(message);
             }
         }
 
         public override bool ShouldHandle(IMessage message)
-        {
-            return _predicates.Any(predicate => predicate(message));
-        }
+            => _predicates.Any(predicate => predicate(message));
     }
 }

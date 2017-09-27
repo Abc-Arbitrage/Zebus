@@ -83,7 +83,6 @@
     <Compile Include="Directory\MarkPeerAsRespondingCommand.cs" />
     <Compile Include="Dispatch\DispatchQueue.cs" />
     <Compile Include="Dispatch\DynamicMessageHandlerInvoker.cs" />
-    <Compile Include="Dispatch\EventHandlerInvoker`1.cs" />
     <Compile Include="Core\IStoppingStrategy.cs" />
     <Compile Include="Core\RoundRobinPeerSelector.cs" />
     <Compile Include="Directory\DecommissionPeerCommand.cs" />
@@ -208,6 +207,7 @@
     <Compile Include="Serialization\Protobuf\WireFormat.cs" />
     <Compile Include="SubscriptionMode.cs" />
     <Compile Include="SubscriptionModeAttribute.cs" />
+    <Compile Include="SubscriptionRequest.cs" />
     <Compile Include="TransientAttribute.cs" />
     <Compile Include="Subscription.cs" />
     <Compile Include="Serialization\IMessageSerializer.cs" />
@@ -216,7 +216,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialization\MessageSerializerExtensions.cs" />
     <Compile Include="Routing\BindingKey.cs" />
-    <Compile Include="SubscriptionOptions.cs" />
     <Compile Include="Timeout\RequestTimeoutCommand.cs" />
     <Compile Include="Timeout\Timeout.cs" />
     <Compile Include="Timeout\TimeoutCommand.cs" />

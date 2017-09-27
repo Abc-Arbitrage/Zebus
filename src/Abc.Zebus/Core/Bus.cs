@@ -12,6 +12,7 @@ using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
+using Abc.Zebus.Util.Annotations;
 using Abc.Zebus.Util.Extensions;
 using log4net;
 using Newtonsoft.Json;
@@ -221,75 +222,49 @@ namespace Abc.Zebus.Core
             return taskCompletionSource.Task;
         }
 
-        public IDisposable Subscribe(Subscription[] subscriptions, SubscriptionOptions options = SubscriptionOptions.Default)
+        public async Task<IDisposable> SubscribeAsync([NotNull] SubscriptionRequest request)
         {
-            var shouldHaveHanlderInvoker = (options & SubscriptionOptions.ThereIsNoHandlerButIKnowWhatIAmDoing) == 0;
-            if (shouldHaveHanlderInvoker)
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var subscriptions = request.Subscriptions.ToList();
+
+            if (!request.ThereIsNoHandlerButIKnowWhatIAmDoing)
                 EnsureMessageHandlerInvokerExists(subscriptions);
 
-            AddSubscriptions(subscriptions);
+            await AddSubscriptionsAsync(subscriptions).ConfigureAwait(false);
 
-            return new DisposableAction(() => RemoveSubscriptions(subscriptions));
+            return new DisposableAction(() => RemoveSubscriptionsAsync(subscriptions).Wait());
         }
 
-        public IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default)
+        public async Task<IDisposable> SubscribeAsync([NotNull] SubscriptionRequest request, [NotNull] Action<IMessage> handler)
         {
-            var subscriptions = new[] { subscription };
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (handler == null)
+                throw new ArgumentNullException(nameof(handler));
 
-            var shouldHaveHanlderInvoker = (options & SubscriptionOptions.ThereIsNoHandlerButIKnowWhatIAmDoing) == 0;
-            if (shouldHaveHanlderInvoker)
-                EnsureMessageHandlerInvokerExists(subscriptions);
+            var subscriptions = request.Subscriptions.ToList();
 
-            AddSubscriptions(subscriptions);
-
-            return new DisposableAction(() => RemoveSubscriptions(subscriptions));
-        }
-
-        public IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage
-        {
-            var eventHandlerInvoker = new DynamicMessageHandlerInvoker<T>(handler);
-            var subscription = new Subscription(eventHandlerInvoker.MessageTypeId);
-
-            _messageDispatcher.AddInvoker(eventHandlerInvoker);
-
-            AddSubscriptions(subscription);
-
-            return new DisposableAction(() =>
-            {
-                RemoveSubscriptions(subscription);
-                _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
-            });
-        }
-
-        public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
-        {
             var eventHandlerInvokers = subscriptions.GroupBy(x => x.MessageTypeId)
                                                     .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList(), _predicateBuilder))
                                                     .ToList();
 
             foreach (var eventHandlerInvoker in eventHandlerInvokers)
-            {
                 _messageDispatcher.AddInvoker(eventHandlerInvoker);
-            }
 
-            AddSubscriptions(subscriptions);
+            await AddSubscriptionsAsync(subscriptions).ConfigureAwait(false);
 
             return new DisposableAction(() =>
             {
-                RemoveSubscriptions(subscriptions);
+                RemoveSubscriptionsAsync(subscriptions).Wait();
+
                 foreach (var eventHandlerInvoker in eventHandlerInvokers)
-                {
                     _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
-                }
             });
         }
 
-        public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
-        {
-            return Subscribe(new[] { subscription }, handler);
-        }
-
-        private void EnsureMessageHandlerInvokerExists(Subscription[] subscriptions)
+        private void EnsureMessageHandlerInvokerExists(IEnumerable<Subscription> subscriptions)
         {
             foreach (var subscription in subscriptions)
             {
@@ -298,7 +273,7 @@ namespace Abc.Zebus.Core
             }
         }
 
-        private void AddSubscriptions(params Subscription[] subscriptions)
+        private async Task AddSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
 
@@ -311,10 +286,10 @@ namespace Abc.Zebus.Core
                 }
             }
 
-            OnSubscriptionsUpdatedForTypes(updatedTypes);
+            await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
         }
 
-        private void RemoveSubscriptions(params Subscription[] subscriptions)
+        private async Task RemoveSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
 
@@ -331,10 +306,10 @@ namespace Abc.Zebus.Core
                 }
             }
 
-            OnSubscriptionsUpdatedForTypes(updatedTypes);
+            await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
         }
 
-        private void OnSubscriptionsUpdatedForTypes(HashSet<MessageTypeId> updatedTypes)
+        private async Task UpdateDirectorySubscriptionsAsync(HashSet<MessageTypeId> updatedTypes)
         {
             var subscriptions = GetSubscriptions().Where(sub => updatedTypes.Contains(sub.MessageTypeId));
             var subscriptionsByTypes = SubscriptionsForType.CreateDictionary(subscriptions);
@@ -343,7 +318,7 @@ namespace Abc.Zebus.Core
             foreach (var updatedMessageId in updatedTypes)
                 subscriptionUpdates.Add(subscriptionsByTypes.GetValueOrDefault(updatedMessageId, new SubscriptionsForType(updatedMessageId)));
 
-            _directory.UpdateSubscriptionsAsync(this, subscriptionUpdates).Wait();
+            await _directory.UpdateSubscriptionsAsync(this, subscriptionUpdates).ConfigureAwait(false);
         }
 
         public void Reply(int errorCode) => Reply(errorCode, null);
@@ -459,7 +434,7 @@ namespace Abc.Zebus.Core
             {
                 jsonMessage = $"Unable to serialize message :{System.Environment.NewLine}{ex}";
             }
-            
+
             var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName).ToArray());
             Publish(messageProcessingFailed);
         }
