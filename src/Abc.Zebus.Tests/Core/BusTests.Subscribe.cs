@@ -7,10 +7,12 @@ using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
+using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.UnitTesting;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 
@@ -118,6 +120,7 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
 
                 subscription.Dispose();
+                Wait.Until(() => directorySubscriptions.Count > 0, 2.Seconds());
 
                 directorySubscriptions.ExpectedSingle().ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>()));
             }
@@ -132,6 +135,7 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
 
                 subscription.Dispose();
+                Wait.Until(() => directorySubscriptions.Count > 0, 2.Seconds());
 
                 directorySubscriptions.ExpectedSingle().ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), BindingKey.Empty));
             }
@@ -146,6 +150,7 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 subscription.Dispose();
+                Wait.Until(() => subscriptions.Count > 0, 2.Seconds());
 
                 subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>()));
             }
@@ -162,6 +167,7 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 firstSubscription.Dispose();
+                Wait.Until(() => subscriptions.Count > 0, 2.Seconds());
 
                 subscriptions.ExpectedSingle();
                 subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeCommand>()));
@@ -184,9 +190,12 @@ namespace Abc.Zebus.Tests.Core
                 var subscription2 = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "toto")));
 
                 subscription1.Dispose();
+                Wait.Until(() => lastDirectorySubscriptions.Count > 0, 2.Seconds());
                 lastDirectorySubscriptions.ExpectedSingle().BindingKeys.ShouldBeEquivalentTo(new[] { new BindingKey("1", "toto", "*") });
 
+                lastDirectorySubscriptions.Clear();
                 subscription2.Dispose();
+                Wait.Until(() => lastDirectorySubscriptions.Count > 0, 2.Seconds());
                 lastDirectorySubscriptions.ExpectedSingle().BindingKeys.ShouldBeEmpty();
             }
 

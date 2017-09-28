@@ -34,6 +34,7 @@ namespace Abc.Zebus.Core
         private readonly IStoppingStrategy _stoppingStrategy;
         private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private readonly IBusConfiguration _configuration;
+        private Task _unsubscribeTask = TaskUtil.Completed;
 
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
         {
@@ -111,11 +112,15 @@ namespace Abc.Zebus.Core
         {
             _logger.DebugFormat("Performing auto subscribe...");
 
-            var autoSubscribeInvokers = _messageDispatcher.GetMessageHanlerInvokers().Where(x => x.ShouldBeSubscribedOnStartup);
-            foreach (var invoker in autoSubscribeInvokers)
+            var autoSubscribeInvokers = _messageDispatcher.GetMessageHanlerInvokers().Where(x => x.ShouldBeSubscribedOnStartup).ToList();
+
+            lock (_subscriptions)
             {
-                var subscription = new Subscription(invoker.MessageTypeId);
-                _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                foreach (var invoker in autoSubscribeInvokers)
+                {
+                    var subscription = new Subscription(invoker.MessageTypeId);
+                    _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                }
             }
         }
 
@@ -148,7 +153,11 @@ namespace Abc.Zebus.Core
 
             IsRunning = false;
 
-            _subscriptions.Clear();
+            lock (_subscriptions)
+            {
+                _subscriptions.Clear();
+            }
+
             _messageIdToTaskCompletionSources.Clear();
         }
 
@@ -234,7 +243,7 @@ namespace Abc.Zebus.Core
 
             await AddSubscriptionsAsync(subscriptions).ConfigureAwait(false);
 
-            return new DisposableAction(() => RemoveSubscriptionsAsync(subscriptions).Wait());
+            return new DisposableAction(() => RemoveSubscriptions(subscriptions));
         }
 
         public async Task<IDisposable> SubscribeAsync([NotNull] SubscriptionRequest request, [NotNull] Action<IMessage> handler)
@@ -257,10 +266,10 @@ namespace Abc.Zebus.Core
 
             return new DisposableAction(() =>
             {
-                RemoveSubscriptionsAsync(subscriptions).Wait();
-
                 foreach (var eventHandlerInvoker in eventHandlerInvokers)
                     _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
+
+                RemoveSubscriptions(subscriptions);
             });
         }
 
@@ -286,10 +295,13 @@ namespace Abc.Zebus.Core
                 }
             }
 
+            // Wait until all unsubscriptions are completed to prevent race conditions
+            await Task.WhenAny(_unsubscribeTask).ConfigureAwait(false);
+
             await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
         }
 
-        private async Task RemoveSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
+        private void RemoveSubscriptions(IEnumerable<Subscription> subscriptions)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
 
@@ -304,9 +316,9 @@ namespace Abc.Zebus.Core
                     else
                         _subscriptions[subscription] = subscriptionCount - 1;
                 }
-            }
 
-            await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
+                _unsubscribeTask = _unsubscribeTask.ContinueWith(_ => UpdateDirectorySubscriptionsAsync(updatedTypes)).Unwrap();
+            }
         }
 
         private async Task UpdateDirectorySubscriptionsAsync(HashSet<MessageTypeId> updatedTypes)
