@@ -15,6 +15,7 @@ namespace Abc.Zebus.Transport
     public class ZmqTransport : ITransport
     {
         private readonly IZmqTransportConfiguration _configuration;
+        private readonly IZmqOutboundSocketErrorHandler _errorHandler;
         private readonly ZmqEndPoint _configuredInboundEndPoint;
         private ILog _logger = LogManager.GetLogger(typeof(ZmqTransport));
         private ConcurrentDictionary<PeerId, ZmqOutboundSocket> _outboundSockets;
@@ -57,9 +58,10 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions)
+        public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
         {
             _configuration = configuration;
+            _errorHandler = errorHandler;
             _configuredInboundEndPoint = new ZmqEndPoint(configuration.InboundEndPoint);
             SocketOptions = socketOptions;
         }
@@ -414,7 +416,7 @@ namespace Abc.Zebus.Transport
             ZmqOutboundSocket outboundSocket;
             if (!_outboundSockets.TryGetValue(peer.Id, out outboundSocket))
             {
-                outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, SocketOptions);
+                outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, SocketOptions, _errorHandler);
                 outboundSocket.ConnectFor(transportMessage);
 
                 _outboundSockets.TryAdd(peer.Id, outboundSocket);

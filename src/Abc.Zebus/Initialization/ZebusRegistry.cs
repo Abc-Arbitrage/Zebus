@@ -41,6 +41,8 @@ namespace Abc.Zebus.Initialization
             ForSingletonOf<IStoppingStrategy>().Use<DefaultStoppingStrategy>();
 
             ForSingletonOf<IBindingKeyPredicateBuilder>().Use<BindingKeyPredicateBuilder>();
+
+            ForSingletonOf<IZmqOutboundSocketErrorHandler>().Use<DefaultZmqOutboundSocketErrorHandler>();
         }
     }
 }

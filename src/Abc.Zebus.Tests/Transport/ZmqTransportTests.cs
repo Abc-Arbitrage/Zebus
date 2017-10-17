@@ -51,7 +51,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
             configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(100.Milliseconds());
-            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions());
+            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
 
             Assert.That(transport.Stop, Throws.Nothing);
         }
@@ -557,7 +557,7 @@ namespace Abc.Zebus.Tests.Transport
             if (peerId == null)
                 peerId = "Abc.Testing." + _transports.Count;
 
-            var transport = transportFactory == null ? new ZmqTransport(configurationMock.Object, new ZmqSocketOptions()) : transportFactory(configurationMock.Object);
+            var transport = transportFactory == null ? new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler()) : transportFactory(configurationMock.Object);
             transport.SetLogId(_transports.Count);
 
             transport.SocketOptions.SendTimeout = 10.Milliseconds();
@@ -597,7 +597,7 @@ namespace Abc.Zebus.Tests.Transport
             }
 
 
-            public CapturingIsListeningTimeZmqTransport(IZmqTransportConfiguration configuration, Stopwatch stopwatch) : base(configuration, new ZmqSocketOptions())
+            public CapturingIsListeningTimeZmqTransport(IZmqTransportConfiguration configuration, Stopwatch stopwatch) : base(configuration, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler())
             {
                 _stopwatch = stopwatch;
                 IsListeningSwitchTimestamp = TimeSpan.MaxValue;
