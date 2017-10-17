@@ -221,8 +221,10 @@
     <Compile Include="Timeout\Timeout.cs" />
     <Compile Include="Timeout\TimeoutCommand.cs" />
     <Compile Include="Persistence\IPersistentTransport.cs" />
+    <Compile Include="Transport\DefaultZmqOutboundSocketErrorHandler.cs" />
     <Compile Include="Transport\ITransport.cs" />
     <Compile Include="Peer.cs" />
+    <Compile Include="Transport\IZmqOutboundSocketErrorHandler.cs" />
     <Compile Include="Transport\IZmqTransportConfiguration.cs" />
     <Compile Include="Transport\SendContext.cs" />
     <Compile Include="Transport\TransportMessageReader.cs" />

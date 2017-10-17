@@ -61,7 +61,7 @@ namespace Abc.Zebus.Tests.Transport
         private ZmqTransport CreateAndStartZmqTransport(string peerId, Action<TransportMessage> onMessageReceived = null)
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
-            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions());
+            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
             transport.Configure(new PeerId(peerId), "test");
             transport.SocketOptions.SendTimeout = 5.Seconds();
 
