@@ -14,11 +14,11 @@ namespace Abc.Zebus.Tests.Util
         {
             var dateTimeUtcNow = DateTime.UtcNow;
             var sysDateTimeUtcNow = SystemDateTime.UtcNow;
-            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(2.Milliseconds());
+            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(10.Milliseconds());
 
             var dateTimeNow = DateTime.Now;
             var sysDateTimeNow = SystemDateTime.Now;
-            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(2.Milliseconds());
+            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(10.Milliseconds());
         }
 
         [Test]
