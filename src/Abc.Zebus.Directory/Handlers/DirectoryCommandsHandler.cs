@@ -39,7 +39,7 @@ namespace Abc.Zebus.Directory.Handlers
         public void Handle(RegisterPeerCommand message)
         {
             if (_blacklistedMachines.Contains(Context.Originator.SenderMachineName))
-                throw new InvalidOperationException("Peer " + Context.Originator.SenderMachineName + " is not allowed to register on this directory");
+                throw new InvalidOperationException($"Peer {Context.SenderId} on host {Context.Originator.SenderMachineName} is not allowed to register on this directory");
 
             if (!message.Peer.TimestampUtc.HasValue)
                 throw new InvalidOperationException("The TimestampUtc must be provided when registering");
