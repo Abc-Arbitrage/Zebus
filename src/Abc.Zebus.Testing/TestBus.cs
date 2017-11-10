@@ -82,6 +82,8 @@ namespace Abc.Zebus.Testing
             {
                 _events.Add(message);
             }
+            var handler = _handlers.GetValueOrDefault(new HandlerKey(message.GetType(), default(PeerId)));
+            handler?.Invoke(message);
         }
 
         public Task<CommandResult> Send(ICommand message)

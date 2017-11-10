@@ -191,6 +191,7 @@
     <Compile Include="SubscriptionTests.cs" />
     <Compile Include="SubscriptionTests.Legacy.cs" />
     <Compile Include="TestDataBuilder.cs" />
+    <Compile Include="Testing\TestBusTests.cs" />
     <Compile Include="Transport\BackwardCompatibilityTests.cs" />
     <Compile Include="Transport\V1_5_0\OriginatorInfo_1_5_0.cs" />
     <Compile Include="Transport\TransportMessageReaderTests.cs" />
