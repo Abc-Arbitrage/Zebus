@@ -38,9 +38,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="clrzmq">
-      <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
-    </Reference>
     <Reference Include="KellermanSoftware.Compare-NET-Objects">
       <HintPath>..\..\lib\packages\CompareNETObjects.3.03.0.0\lib\net45\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
       <Private>True</Private>
@@ -80,6 +77,9 @@
     <Reference Include="VersionedLibrary_2">
       <HintPath>.\VersionedLibrary_2.dll</HintPath>
       <Aliases>senderVersion</Aliases>
+    </Reference>
+    <Reference Include="ZeroMQ">
+      <HintPath>..\..\lib\zmq\ZeroMQ.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -137,7 +137,6 @@
     <Compile Include="Lotus\ReplayMessageHandlerTests.cs" />
     <Compile Include="MessageContextTests.cs" />
     <Compile Include="Messages\EmptyCommand.cs" />
-    <Compile Include="Messages\FakeCommandWithTimestamp.cs" />
     <Compile Include="Messages\FakeInfrastructureTransientCommand.cs" />
     <Compile Include="Messages\FakeRoutableCommandWithBoolean.cs" />
     <Compile Include="Messages\FakeRoutableCommandWithEnum.cs">

@@ -49,7 +49,7 @@ namespace Abc.Zebus.Transport
         /// that was used for another environment. If we were to share a port between two environments, clients from the
         /// second environment might try to send us messages that we would have to discard
         /// </remarks>>
-        public void SelectRandomPort(PeerId peerId, string environment)
+        public void SelectRandomPort(string environment)
         {
             _logger.InfoFormat("Selecting random port for {0}", environment);
 
