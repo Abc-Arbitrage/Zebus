@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using Abc.Zebus.Util.GenZero;
+using Abc.Zebus.Util;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Testing.Extensions

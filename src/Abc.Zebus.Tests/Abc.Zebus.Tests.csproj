@@ -1,16 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{7BF5AC28-91DB-40EF-8CB7-024E518FA799}</ProjectGuid>
+    <TargetFramework>net45</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Abc.Zebus.Tests</RootNamespace>
-    <AssemblyName>Abc.Zebus.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,223 +26,33 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj" />
+    <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CompareNETObjects" Version="3.03.0.0" />
+    <PackageReference Include="log4net" Version="2.0.3" />
+    <PackageReference Include="Moq" Version="4.2.1507.0118" />
+    <PackageReference Include="Newtonsoft.Json" Version="7.0.1" />
+    <PackageReference Include="NUnit" Version="2.6.4" />
+    <PackageReference Include="protobuf-net" Version="2.0.0.668" />
+    <PackageReference Include="structuremap" Version="3.1.6.186" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="clrzmq">
       <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
     </Reference>
-    <Reference Include="KellermanSoftware.Compare-NET-Objects">
-      <HintPath>..\..\lib\packages\CompareNETObjects.3.03.0.0\lib\net45\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="log4net">
-      <HintPath>..\..\lib\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Moq">
-      <HintPath>..\..\lib\packages\Moq.4.2.1507.0118\lib\net40\Moq.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\lib\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\..\lib\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="StructureMap">
-      <HintPath>..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="StructureMap.Net4">
-      <HintPath>..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.Net4.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml" />
     <Reference Include="VersionedLibrary_2">
       <HintPath>.\VersionedLibrary_2.dll</HintPath>
       <Aliases>senderVersion</Aliases>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandResultTests.cs" />
-    <Compile Include="Comparison\ComparisonExtensionsTests.cs" />
-    <Compile Include="Core\BusFactoryTests.cs" />
-    <Compile Include="Core\BusInMemoryTests.cs" />
-    <Compile Include="Core\BusManualTests.cs" />
-    <Compile Include="Core\BusPerformanceTests.cs" />
-    <Compile Include="Core\BusTests.cs" />
-    <Compile Include="Core\BusTests.Send.cs" />
-    <Compile Include="Core\BusTests.CompletionMessages.cs" />
-    <Compile Include="Core\BusTests.DispatchErrors.cs" />
-    <Compile Include="Core\BusTests.Reply.cs" />
-    <Compile Include="Core\BusTests.Dispatch.cs" />
-    <Compile Include="Core\BusTests.Publish.cs" />
-    <Compile Include="Core\BusTests.Subscribe.cs" />
-    <Compile Include="Core\BusTests.DeserializationErrors.cs" />
-    <Compile Include="Core\BusTests.Core.cs" />
-    <Compile Include="Core\MessageContextAwareBusTests.cs" />
-    <Compile Include="Core\RoundRobinPeerSelectorTests.cs" />
-    <Compile Include="Directory\PeerDirectoryClientTests.Performance.cs" />
-    <Compile Include="Directory\PeerSubscriptionList.cs" />
-    <Compile Include="Directory\PeerSubscriptionTreeTests.Performance.cs" />
-    <Compile Include="Dispatch\AsyncMessageHandlerInvokerTests.cs" />
-    <Compile Include="Dispatch\BatchedMessageHandlerInvokerTests.cs" />
-    <Compile Include="Dispatch\DispatchMessages\AsyncCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\AsyncDoNotStartTaskCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\AsyncExecutableEvent.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ExecutableEvent.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ExecutableEventHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\CapturingTaskSchedulerAsyncCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\CapturingTaskSchedulerSyncCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ForwardCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ForwardCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchQueueTests.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ManualCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ManualCommandHandler.cs" />
-    <Compile Include="Dispatch\DynamicMessageHandlerInvokerTests.cs" />
-    <Compile Include="Dispatch\MessageDispatcherTests.CustomQueues.cs" />
-    <Compile Include="Dispatch\DispatchMessages\Namespace1\UseOtherQueue.cs" />
-    <Compile Include="Dispatch\DispatchMessages\Namespace1\Namespace2\SyncCommandHandlerWithOtherQueueName.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ReplyCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ReplyCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\RoutableCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\RoutableCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\SyncCommandHandlerWithQueueName2.cs" />
-    <Compile Include="Dispatch\Pipes\AsyncPipeInvocationTests.cs" />
-    <Compile Include="DomainExceptionTests.cs" />
-    <Compile Include="Hosting\HostInitializerHelperTests.cs" />
-    <Compile Include="Hosting\PeriodicActionHostInitializerTests.cs" />
-    <Compile Include="Initialization\ZebusRegistryTests.cs" />
-    <Compile Include="Lotus\CustomProcessingFailedTests.cs" />
-    <Compile Include="Lotus\ReplayMessageHandlerTests.cs" />
-    <Compile Include="MessageContextTests.cs" />
-    <Compile Include="Messages\EmptyCommand.cs" />
-    <Compile Include="Messages\FakeCommandWithTimestamp.cs" />
-    <Compile Include="Messages\FakeInfrastructureTransientCommand.cs" />
-    <Compile Include="Messages\FakeRoutableCommandWithBoolean.cs" />
-    <Compile Include="Messages\FakeRoutableCommandWithEnum.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Routing\BindingKeyPredicateBuilderTests.cs" />
-    <Compile Include="Routing\BindingKeyTests.cs" />
-    <Compile Include="Scan\MessageHandlerInvokerLoaderTests.cs" />
-    <Compile Include="Scan\StaticAsyncMessageHandlerInvokerLoaderTests.cs" />
-    <Compile Include="Scan\SyncMessageHandlerInvokerLoaderTests.cs" />
-    <Compile Include="Dispatch\DispatchMessages\SyncCommandHandlerWithQueueName1.cs" />
-    <Compile Include="Messages\FakeCommandResult.cs" />
-    <Compile Include="Directory\PeerDescriptorTests.cs" />
-    <Compile Include="Directory\PeerDirectoryClientTests.cs" />
-    <Compile Include="Dispatch\DispatchMessages\DispatchCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\AsyncFailingCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\AsyncFailingCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\FailingCommand.cs" />
-    <Compile Include="Dispatch\DispatchMessages\FailingCommandHandler.cs" />
-    <Compile Include="Dispatch\SyncMessageHandlerInvokerTests.cs" />
-    <Compile Include="Dispatch\DispatchMessages\AsyncCommandHandler.cs" />
-    <Compile Include="Dispatch\DispatchMessages\SyncCommandHandler.cs" />
-    <Compile Include="Messages\FakeRoutableCommand.cs" />
-    <Compile Include="Messages\FakeCommand.cs" />
-    <Compile Include="Messages\FakeEvent.cs" />
-    <Compile Include="Log4netConfigurator.cs" />
-    <Compile Include="MessageIdTests.cs" />
-    <Compile Include="Messages\FakeInfrastructureCommand.cs" />
-    <Compile Include="Messages\FakeNonPersistentCommand.cs" />
-    <Compile Include="MessageUtilTests.cs" />
-    <Compile Include="Persistence\PersistentTransportTests.cs" />
-    <Compile Include="Persistence\PersistentTransportFixture.cs" />
-    <Compile Include="Persistence\TranscientPersistentTransportTests.cs" />
-    <Compile Include="Dispatch\Pipes\AttributePipeSourceTests.cs" />
-    <Compile Include="Dispatch\Pipes\TestPipe.cs" />
-    <Compile Include="Dispatch\Pipes\FakePipeSource.cs" />
-    <Compile Include="Dispatch\Pipes\PipeInvocationTests.cs" />
-    <Compile Include="Dispatch\Pipes\PipeManagerTests.cs" />
-    <Compile Include="Dispatch\Pipes\PipeSourceTests.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Dispatch\MessageDispatcherTests.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ScanCommand1.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ScanCommand2.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ScanCommandHandler1.cs" />
-    <Compile Include="Dispatch\DispatchMessages\ScanCommandHandler2.cs" />
-    <Compile Include="SerializationTests.cs" />
-    <Compile Include="Directory\PeerSubscriptionTreeTests.cs" />
-    <Compile Include="Serialization\MessageSerializerTests.cs" />
-    <Compile Include="Serialization\TestMessageSerializer.cs" />
-    <Compile Include="SubscriptionTests.cs" />
-    <Compile Include="SubscriptionTests.Legacy.cs" />
-    <Compile Include="TestDataBuilder.cs" />
-    <Compile Include="Testing\TestBusTests.cs" />
-    <Compile Include="Transport\BackwardCompatibilityTests.cs" />
-    <Compile Include="Transport\V1_5_0\OriginatorInfo_1_5_0.cs" />
-    <Compile Include="Transport\TransportMessageReaderTests.cs" />
-    <Compile Include="Transport\TransportMessageWriterTests.cs" />
-    <Compile Include="Transport\V1_5_0\TransportMessage_1_5_0.cs" />
-    <Compile Include="Transport\ZmqTests.cs" />
-    <Compile Include="Transport\ZmqTransportPerformanceTests.cs" />
-    <Compile Include="Transport\ZmqTransportTests.cs" />
-    <Compile Include="Util\Collections\ConcurrentSetTests.cs" />
-    <Compile Include="Util\Collections\FlushableBlockingCollectionPerformanceTests.cs" />
-    <Compile Include="Util\Collections\FlushableBlockingCollectionTests.cs" />
-    <Compile Include="Util\CultureScopeTests.cs" />
-    <Compile Include="Util\DisposableActionTests.cs" />
-    <Compile Include="Util\Extensions\ExtendDictionaryTests.cs" />
-    <Compile Include="Util\Extensions\ExtendICollectionTests.cs" />
-    <Compile Include="Util\Extensions\ExtendStringTests.cs" />
-    <Compile Include="Util\Extensions\ExtendTypeTests.cs" />
-    <Compile Include="Util\FluentTime\TimeSpanCreationTests.cs" />
-    <Compile Include="Util\GenZero\BufferTests.cs" />
-    <Compile Include="Util\SystemDateTimeTests.cs" />
-    <Compile Include="Util\TcpUtilTests.cs" />
-    <Compile Include="Util\TypeUtilTests.cs" />
-    <Compile Include="Util\UniqueTimestampProviderTests.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="app.config" />
     <None Include="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="packages.config" />
-    <EmbeddedResource Include="Transport\transport_message_1_4_1.bin" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Util\IO\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj">
-      <Project>{4ce123df-8021-411c-929b-53e5c5fc1e04}</Project>
-      <Name>Abc.Zebus.Testing</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj">
-      <Project>{652017d8-eb34-4a79-b14f-db0477e43915}</Project>
-      <Name>Abc.Zebus.Tests.TestExe</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj">
-      <Project>{1f4c6307-6113-40d5-bf42-4b6bf5df13b2}</Project>
-      <Name>Abc.Zebus</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
