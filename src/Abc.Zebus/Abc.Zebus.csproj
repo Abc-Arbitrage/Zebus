@@ -32,6 +32,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Transport\libzmq-x64-0.0.0.0.dll" />
+    <None Remove="Transport\libzmq-x86-0.0.0.0.dll" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="7.0.1" />
     <PackageReference Include="protobuf-net" Version="2.0.0.668" />
@@ -50,8 +54,10 @@
     <Compile Include="..\SharedVersionInfo.cs">
       <Link>Properties\SharedVersionInfo.cs</Link>
     </Compile>
+    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.dll" />
+    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.dll" />
     <None Include="Transport\libzmq-4.0.5-v140-mt" />
-    <None Include="Transport\libzmq-x64-0.0.0.0.pdb" />
-    <None Include="Transport\libzmq-x86-0.0.0.0.pdb" />
+    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.pdb" />
+    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.pdb" />
   </ItemGroup>
 </Project>

@@ -27,6 +27,12 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Transport\transport_message_1_4_1.bin" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Transport\transport_message_1_4_1.bin" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj" />
     <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
