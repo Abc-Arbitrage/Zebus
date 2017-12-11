@@ -1,4 +1,4 @@
-# About  [![NuGet](https://buildstats.info/nuget/Zebus.Directory)](https://www.nuget.org/packages/Zebus.Directory/)
+# About [![AppVeyor branch](https://ci.appveyor.com/api/projects/status/wcbc0mefhap535kd?svg=true)](https://ci.appveyor.com/project/Abc-Arbitrage/zebus-directory) [![NuGet](https://buildstats.info/nuget/Zebus.Directory)](https://www.nuget.org/packages/Zebus.Directory/)
 
 This repository is part of the [Zebus](https://github.com/Abc-Arbitrage/Zebus) project, it is documented in Zebus' [wiki](https://github.com/Abc-Arbitrage/Zebus/wiki) page.
 
