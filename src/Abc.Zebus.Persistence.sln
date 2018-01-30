@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Persistence", "Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj", "{A8117C95-B3CA-447C-BCDF-9B6F7A17F290}"
 EndProject
@@ -20,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "@ Solution Items", "@ Solut
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Persistence.CQL.Testing", "Abc.Zebus.Persistence.CQL.Testing\Abc.Zebus.Persistence.CQL.Testing.csproj", "{1059B7D5-1C8F-4702-A6DA-58986FB042F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Persistence.Runner", "Abc.Zebus.Persistence.Runner\Abc.Zebus.Persistence.Runner.csproj", "{04F7E288-7EFB-4074-88BC-04FFF99C424B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -103,8 +105,23 @@ Global
 		{1059B7D5-1C8F-4702-A6DA-58986FB042F6}.Release|x64.Build.0 = Release|Any CPU
 		{1059B7D5-1C8F-4702-A6DA-58986FB042F6}.Release|x86.ActiveCfg = Release|Any CPU
 		{1059B7D5-1C8F-4702-A6DA-58986FB042F6}.Release|x86.Build.0 = Release|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Debug|x64.Build.0 = Debug|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Debug|x86.Build.0 = Debug|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Release|x64.ActiveCfg = Release|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Release|x64.Build.0 = Release|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Release|x86.ActiveCfg = Release|Any CPU
+		{04F7E288-7EFB-4074-88BC-04FFF99C424B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EE55C0A1-C428-43CB-B0BF-FE2984ACF6DB}
 	EndGlobalSection
 EndGlobal
