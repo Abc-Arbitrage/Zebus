@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{A8117C95-B3CA-447C-BCDF-9B6F7A17F290}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Abc.Zebus.Persistence</RootNamespace>
     <AssemblyName>Abc.Zebus.Persistence</AssemblyName>
@@ -51,6 +51,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Abc.Zebus.Persistence.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Abc.Zebus, Version=2.0.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\lib\packages\Zebus.2.0.5\lib\net45\Abc.Zebus.dll</HintPath>
@@ -75,6 +78,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
@@ -87,6 +91,7 @@
     </Compile>
     <Compile Include="Initialization\PersistenceRegistry.cs" />
     <Compile Include="Matching\MatcherEntryType.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Reporter\IReporter.cs" />
     <Compile Include="Matching\InMemoryMessageMatcher.cs" />
     <Compile Include="Matching\MatcherEntry.cs" />
@@ -122,6 +127,7 @@
     <Compile Include="Util\TimeSpanCreation.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
