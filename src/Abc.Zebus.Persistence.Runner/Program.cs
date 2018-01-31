@@ -7,8 +7,10 @@ using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Persistence.CQL;
+using Abc.Zebus.Persistence.CQL.PeriodicAction;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Util;
+using Abc.Zebus.Persistence.Initialization;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
@@ -48,9 +50,26 @@ namespace Abc.Zebus.Persistence.Runner
 
             using (busFactory.CreateAndStartBus())
             {
-                _log.Info("Persistence started");
+                _log.Info("Starting initialisers");
+                var inMemoryMessageMatcherInitializer = busFactory.Container.GetInstance<InMemoryMessageMatcherInitializer>();
+                inMemoryMessageMatcherInitializer.BeforeStart();
 
+                var oldestNonAckedMessageUpdaterPeriodicAction = busFactory.Container.GetInstance<OldestNonAckedMessageUpdaterPeriodicAction>();
+                oldestNonAckedMessageUpdaterPeriodicAction.AfterStart();
+
+                _log.Info("Persistence started");
+                
                 _cancelKeySignal.WaitOne();
+
+                _log.Info("Stopping initialisers");
+                oldestNonAckedMessageUpdaterPeriodicAction.BeforeStop();
+                
+                var messageReplayerInitializer = busFactory.Container.GetInstance<MessageReplayerInitializer>();
+                messageReplayerInitializer.BeforeStop();
+
+                inMemoryMessageMatcherInitializer.AfterStop();
+
+                _log.Info("Persistence stopped");
             }
         }
 
