@@ -8,4 +8,5 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.Runner")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Tests")]

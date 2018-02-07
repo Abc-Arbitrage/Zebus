@@ -20,6 +20,7 @@ namespace Abc.Zebus.Persistence.Runner
             PeerIdsToInvestigate = AppSettings.GetArray("PeerIdsToInvestigate");
             ReplayBatchSize = AppSettings.Get("MessageReplayer.BatchSize", 2000);
             ReplayUnackedMessageCountThatReleasesNextBatch = AppSettings.Get("MessageReplayer.ReplayUnackedMessageCountThatReleasesNextBatch", 200);
+            UseInMemoryStorage = AppSettings.Get("UseInMemoryStorage", true);
         }
 
         public string[] DirectoryServiceEndPoints { get; }
@@ -37,5 +38,6 @@ namespace Abc.Zebus.Persistence.Runner
         public string[] PeerIdsToInvestigate { get; }
         public int ReplayBatchSize { get; }
         public int ReplayUnackedMessageCountThatReleasesNextBatch { get; }
+        public bool UseInMemoryStorage { get; }
     }
 }

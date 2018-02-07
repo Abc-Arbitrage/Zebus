@@ -13,6 +13,7 @@ using Abc.Zebus.Persistence.CQL.Util;
 using Abc.Zebus.Persistence.Initialization;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
+using Abc.Zebus.Persistence.Runner.Storage;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Transport;
 using Abc.Zebus.Transport;
@@ -84,8 +85,10 @@ namespace Abc.Zebus.Persistence.Runner
             {
                 c.ForSingletonOf<IPersistenceConfiguration>().Use(configuration);
 
-                // TODO: Add InMemoryStorage
-                c.ForSingletonOf<IStorage>().Use<CqlStorage>();
+                if(configuration.UseInMemoryStorage)
+                    c.ForSingletonOf<IStorage>().Use<InMemoryStorage>();
+                else
+                    c.ForSingletonOf<IStorage>().Use<CqlStorage>();
 
                 c.ForSingletonOf<IMessageReplayerRepository>().Use<MessageReplayerRepository>();
                 c.ForSingletonOf<IMessageReplayer>().Use<MessageReplayer>();
