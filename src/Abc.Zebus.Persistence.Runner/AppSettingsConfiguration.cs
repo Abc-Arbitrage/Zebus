@@ -1,5 +1,4 @@
 ﻿using System;
-using FluentDate;
 
 namespace Abc.Zebus.Persistence.Runner
 {
@@ -8,15 +7,15 @@ namespace Abc.Zebus.Persistence.Runner
         public AppSettingsConfiguration()
         {
             DirectoryServiceEndPoints = AppSettings.GetArray("Bus.Directory.EndPoints");
-            RegistrationTimeout = AppSettings.Get("Bus.Directory.RegistrationTimeout", 30.Seconds());
-            StartReplayTimeout = AppSettings.Get("Bus.Persistence.StartReplayTimeout", 30.Seconds());
+            RegistrationTimeout = AppSettings.Get("Bus.Directory.RegistrationTimeout", TimeSpan.FromSeconds(30));
+            StartReplayTimeout = AppSettings.Get("Bus.Persistence.StartReplayTimeout", TimeSpan.FromSeconds(30));
             IsDirectoryPickedRandomly = AppSettings.Get("Bus.Directory.PickRandom", true);
             MessagesBatchSize = AppSettings.Get("Bus.Persistence.MessagesBatchSize", 200);
 
             PersisterBatchSize = AppSettings.Get("Persister.BatchSize", 500);
-            PersisterDelay = AppSettings.Get("Persister.Delay", 30.Seconds());
-            SafetyPhaseDuration = AppSettings.Get("Replayer.SafetyPhaseDuration", 30.Seconds());
-            QueuingTransportStopTimeout = AppSettings.Get("Transport.StopTimeout", 15.Seconds());
+            PersisterDelay = AppSettings.Get("Persister.Delay", TimeSpan.FromSeconds(30));
+            SafetyPhaseDuration = AppSettings.Get("Replayer.SafetyPhaseDuration", TimeSpan.FromSeconds(30));
+            QueuingTransportStopTimeout = AppSettings.Get("Transport.StopTimeout", TimeSpan.FromSeconds(15));
             PeerIdsToInvestigate = AppSettings.GetArray("PeerIdsToInvestigate");
             ReplayBatchSize = AppSettings.Get("MessageReplayer.BatchSize", 2000);
             ReplayUnackedMessageCountThatReleasesNextBatch = AppSettings.Get("MessageReplayer.ReplayUnackedMessageCountThatReleasesNextBatch", 200);

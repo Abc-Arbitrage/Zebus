@@ -39,9 +39,6 @@
     <Reference Include="Abc.Zebus, Version=2.0.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\lib\packages\Zebus.2.0.5\lib\net45\Abc.Zebus.dll</HintPath>
     </Reference>
-    <Reference Include="FluentDateTime, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\lib\packages\FluentDateTime.1.14.0\lib\net452\FluentDateTime.dll</HintPath>
-    </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\..\lib\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>

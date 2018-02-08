@@ -1,6 +1,5 @@
 ﻿using System;
 using Abc.Zebus.Persistence.CQL;
-using FluentDate;
 
 namespace Abc.Zebus.Persistence.Runner
 {
@@ -10,9 +9,9 @@ namespace Abc.Zebus.Persistence.Runner
         {
             Hosts = AppSettings.Get("Cassandra.Hosts", "");
             KeySpace = AppSettings.Get("Cassandra.KeySpace", "");
-            QueryTimeout = AppSettings.Get("Casasndray.QueryTimeout", 5.Seconds());
+            QueryTimeout = AppSettings.Get("Casasndray.QueryTimeout", TimeSpan.FromSeconds(5));
             LocalDataCenter = AppSettings.Get("Casasndray.LocalDataCenter", "");
-            OldestMessagePerPeerCheckPeriod = AppSettings.Get("Casasndray.OldestMessagePerPeerCheckPeriod", 1.Minutes());
+            OldestMessagePerPeerCheckPeriod = AppSettings.Get("Casasndray.OldestMessagePerPeerCheckPeriod", TimeSpan.FromMinutes(1));
         }
 
         public string Hosts { get; }

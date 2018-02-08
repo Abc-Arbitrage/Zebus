@@ -100,6 +100,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Batching\InMemoryMessageMatcherTests.cs" />
+    <Compile Include="Runner\InMemoryStorageTests.cs" />
     <Compile Include="TestUtil\ExtendICollection.cs" />
     <Compile Include="FakeCommand.cs" />
     <Compile Include="Handlers\MessageHandledHandlerTests.cs" />
@@ -126,6 +127,10 @@
     <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj">
       <Project>{8FC5C46E-9C7F-4905-B8A8-89E154F576CF}</Project>
       <Name>Abc.Zebus.Persistence.Messages</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Runner\Abc.Zebus.Persistence.Runner.csproj">
+      <Project>{04f7e288-7efb-4074-88bc-04fff99c424b}</Project>
+      <Name>Abc.Zebus.Persistence.Runner</Name>
     </ProjectReference>
     <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj">
       <Project>{A8117C95-B3CA-447C-BCDF-9B6F7A17F290}</Project>
