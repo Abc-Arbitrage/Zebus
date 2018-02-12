@@ -1,5 +1,5 @@
 ﻿using System;
-using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Persistence.CQL.Storage
 {

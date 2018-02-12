@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Abc.Zebus.Lotus;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Storage;
-using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 
@@ -43,7 +42,8 @@ namespace Abc.Zebus.Persistence.Tests.Batching
             _matcher = new InMemoryMessageMatcher(_configurationMock.Object, _storageMock.Object, _bus);
 
             _storeBatchFunc = x => { };
-            _storageMock.Setup(x => x.Write(It.IsAny<IList<MatcherEntry>>())).Callback<IList<MatcherEntry>>(items => _storeBatchFunc(items));
+            _storageMock.Setup(x => x.Write(It.IsAny<IList<MatcherEntry>>()))
+                        .Returns<IList<MatcherEntry>>(items => Task.Run(() => _storeBatchFunc.Invoke(items)));
         }
 
         [TearDown]
@@ -60,8 +60,11 @@ namespace Abc.Zebus.Persistence.Tests.Batching
                 var persistedBatches = new List<List<MatcherEntry>>();
                 CapturePersistedBatches(persistedBatches);
                 _batchSize = 5;
+
                 for (var i = 0; i < 25; ++i)
+                {
                     EnqueueMessageToPersist();
+                }
 
                 _matcher.Start();
                 EnqueueMessageToPersist();
@@ -78,21 +81,78 @@ namespace Abc.Zebus.Persistence.Tests.Batching
         {
             _delay = 5.Seconds();
 
-            var persistedEntries = new List<MatcherEntry>();
-            _storeBatchFunc = persistedEntries.AddRange;
+            var persistedSignal = new ManualResetEvent(false);
+            _storeBatchFunc = _ => persistedSignal.Set();
 
             using (SystemDateTime.PauseTime())
             {
-                EnqueueMessageToPersist();
+                _matcher.Start();
+
+                _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
+
+                persistedSignal.WaitOne(500.Milliseconds()).ShouldBeFalse();
+
+                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(_delay.GetValueOrDefault()));
+
+                persistedSignal.WaitOne(600.Milliseconds()).ShouldBeTrue();
+            }
+        }
+
+        [TestCase(1)]
+        [TestCase(10)]
+        public void should_persist_message_and_ack(int batchSize)
+        {
+            var persistedEntries = new List<MatcherEntry>();
+            _storeBatchFunc = persistedEntries.AddRange;
+            _batchSize = batchSize;
+
+            using (SystemDateTime.PauseTime())
+            {
+                _matcher.Start();
+
+                var messageId = MessageId.NextId();
+                _matcher.EnqueueMessage(_peerId, messageId, new MessageTypeId("Abc.X"), new byte[0]);
+
+                var signal = new AutoResetEvent(false);
+                _matcher.EnqueueWaitHandle(signal);
+                signal.WaitOne(50000).ShouldBeTrue();
+
+                _matcher.EnqueueAck(_peerId, messageId);
+
+                _matcher.EnqueueWaitHandle(signal);
+                signal.WaitOne(50000).ShouldBeTrue();
+
+                persistedEntries.Count.ShouldEqual(2);
+            }
+        }
+
+        [Test]
+        public void should_save_entries_with_different_timestamps_in_different_batches()
+        {
+            var persistedEntries = new List<MatcherEntry>();
+            _storeBatchFunc = entries => persistedEntries.AddRange(entries);
+
+            _delay = 5.Seconds();
+            _batchSize = 10;
+
+            using (SystemDateTime.PauseTime())
+            {
+                // messages for batch 1
+                _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
+                _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
+                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(4.Seconds()));
+
+                // message for batch 2
+                _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
+                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(3.Seconds()));
 
                 _matcher.Start();
 
-                Thread.Sleep(500);
-                persistedEntries.Count.ShouldEqual(0);
+                Wait.Until(() => persistedEntries.Count == 2, 500.Milliseconds());
 
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(_delay.Value));
+                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(2.Seconds()));
 
-                Wait.Until(() => persistedEntries.Count == 1, 500.Milliseconds());
+                Wait.Until(() => persistedEntries.Count == 3, 500.Milliseconds());
             }
         }
 
@@ -121,8 +181,8 @@ namespace Abc.Zebus.Persistence.Tests.Batching
                 _matcher.Start();
 
                 var messageId = MessageId.NextId();
-                EnqueueMessageToPersist(messageId);
-                EnqueueMessageToPersist();
+                _matcher.EnqueueMessage(_peerId, messageId, new MessageTypeId("Abc.X"), new byte[0]);
+                _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
                 _matcher.EnqueueAck(_peerId, messageId);
 
                 SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(_delay.Value));
@@ -282,12 +342,6 @@ namespace Abc.Zebus.Persistence.Tests.Batching
                     MatcherEntry.EventWaitHandle(waitHandle)
                 }));
             }
-        }
-
-        private void EnqueueAndWaitForErrorCount(int errorCountToReach)
-        {
-            EnqueueMessageToPersist();
-            Wait.Until(() => _bus.Events.OfType<CustomProcessingFailed>().Count() == errorCountToReach, 2);
         }
 
         private void EnqueueMessageToPersist(MessageId? messageId = null, byte[] messageBytes = null)

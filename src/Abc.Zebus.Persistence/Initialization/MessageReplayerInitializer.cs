@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using Abc.Zebus.Hosting;
-using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 using log4net;
 
 namespace Abc.Zebus.Persistence.Initialization

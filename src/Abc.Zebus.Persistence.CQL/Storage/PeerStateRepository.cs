@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 using Cassandra.Data.Linq;
 using log4net;
 

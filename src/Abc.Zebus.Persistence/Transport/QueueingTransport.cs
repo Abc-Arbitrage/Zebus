@@ -5,8 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
-using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Transport;
+using Abc.Zebus.Util;
 using log4net;
 
 namespace Abc.Zebus.Persistence.Transport

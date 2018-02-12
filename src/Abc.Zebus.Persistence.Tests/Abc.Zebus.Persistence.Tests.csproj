@@ -116,8 +116,6 @@
     <Compile Include="TestUtil\MockContainer.cs" />
     <Compile Include="Transport\QueueingTransportTests.cs" />
     <Compile Include="Util\ConcurrentSetTests.cs" />
-    <Compile Include="Util\SystemDateTimeTests.cs" />
-    <Compile Include="Util\TimeSpanCreationTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

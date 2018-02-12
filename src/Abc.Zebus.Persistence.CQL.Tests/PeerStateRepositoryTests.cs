@@ -4,9 +4,9 @@ using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
 using Abc.Zebus.Persistence.Messages;
-using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Util;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Persistence.CQL.Tests

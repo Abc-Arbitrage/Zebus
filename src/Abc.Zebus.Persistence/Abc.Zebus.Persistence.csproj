@@ -119,12 +119,9 @@
     <Compile Include="Storage\TransportMessageDeserializer.cs" />
     <Compile Include="Storage\TransportMessageSerializer.cs" />
     <Compile Include="Transport\QueueingTransport.cs" />
-    <Compile Include="Util\BackgroundThread.cs" />
     <Compile Include="Util\ConcurrentSet.cs" />
     <Compile Include="Util\ExtendDictionary.cs" />
     <Compile Include="Util\ExtendIEnumerable.cs" />
-    <Compile Include="Util\SystemDateTime.cs" />
-    <Compile Include="Util\TimeSpanCreation.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

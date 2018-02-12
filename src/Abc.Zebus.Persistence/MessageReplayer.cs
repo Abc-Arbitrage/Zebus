@@ -10,6 +10,7 @@ using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
+using Abc.Zebus.Util;
 using log4net;
 
 namespace Abc.Zebus.Persistence

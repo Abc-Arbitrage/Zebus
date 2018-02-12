@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Initialization;
-using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Testing.Extensions;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 

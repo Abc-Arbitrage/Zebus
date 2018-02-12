@@ -7,12 +7,12 @@ using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Tests.TestUtil;
-using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Transport;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading;
-using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Persistence.Matching
 {

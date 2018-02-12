@@ -9,6 +9,7 @@ using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 using Cassandra;
 using log4net;
 
@@ -34,8 +35,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             _reporter = reporter;
 
             _preparedStatement = dataContext.Session.Prepare(dataContext.PersistentMessages.Insert(new PersistentMessage()).SetTTL(0).SetTimestamp(default(DateTimeOffset)).ToString());
-            _parallelPersistor = new ParallelPersistor(dataContext.Session, 64,
-                ex => _log.Warn("Exception caught while trying to persist message", ex));
+            _parallelPersistor = new ParallelPersistor(dataContext.Session, 64, ex => _log.Warn("Exception caught while trying to persist message", ex));
         }
 
         public static TimeSpan PersistentMessagesTimeToLive => 30.Days();
