@@ -68,6 +68,25 @@ namespace Abc.Zebus.Tests.Persistence
         }
 
         [Test]
+        public void should_force_WasPersisted_for_replayed_messages_during_safety_phase()
+        {
+            Transport.Start();
+
+            InnerTransport.RaiseMessageReceived(new ReplayPhaseEnded(ReplayId).ToTransportMessage());
+
+            var sourceTransportMessage = new FakeCommand(123).ToTransportMessage();
+            sourceTransportMessage.WasPersisted = null;
+
+            var replayTransportMessage = sourceTransportMessage.ToReplayedTransportMessage(ReplayId);
+            InnerTransport.RaiseMessageReceived(replayTransportMessage);
+
+            Wait.Until(() => MessagesForwardedToBus.Count == 1, 150.Milliseconds());
+
+            var forwardedTransportMessage = MessagesForwardedToBus.ExpectedSingle();
+            forwardedTransportMessage.WasPersisted.ShouldEqual(true);
+        }
+
+        [Test]
         public void should_forward_a_normal_message_after_a_back_to_live_event()
         {
             Transport.Start();
@@ -78,9 +97,10 @@ namespace Abc.Zebus.Tests.Persistence
 
             InnerTransport.RaiseMessageReceived(new ReplayPhaseEnded(StartMessageReplayCommand.ReplayId).ToTransportMessage());
 
-            Thread.Sleep(50);
-            MessagesForwardedToBus.Count.ShouldEqual(1);
-            MessagesForwardedToBus.Single().ShouldEqualDeeply(transportMessageToForward);
+            Wait.Until(() => MessagesForwardedToBus.Count == 1, 150.Milliseconds());
+
+            var transportMessage = MessagesForwardedToBus.Single();
+            transportMessage.ShouldEqualDeeply(transportMessageToForward);
         }
 
         [Test, Repeat(20)]
