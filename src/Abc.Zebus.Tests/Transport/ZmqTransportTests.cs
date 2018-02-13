@@ -145,6 +145,7 @@ namespace Abc.Zebus.Tests.Transport
         public void should_send_message_to_peer_and_persistence()
         {
             // standard case: the message is forwarded to the persistence through SendContext.PersistencePeer
+            // the target peer is up
 
             var senderTransport = CreateAndStartZmqTransport();
 
@@ -170,6 +171,30 @@ namespace Abc.Zebus.Tests.Transport
             messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted", "PersistentPeerIds", "IsPersistTransportMessage");
             messageFromPersistence.Environment.ShouldEqual("Test");
             messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeer.Id });
+        }
+
+        [Test]
+        public void should_send_message_to_persistence()
+        {
+            // standard case: the message is forwarded to the persistence through SendContext.PersistencePeer
+            // the target peer is down
+
+            var senderTransport = CreateAndStartZmqTransport();
+
+            var receiverPeerId = new PeerId("Abc.R.0");
+
+            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
+            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+
+            var message = new FakeCommand(999).ToTransportMessage();
+            senderTransport.Send(message, Enumerable.Empty<Peer>(), new SendContext { PersistentPeerIds = { receiverPeerId }, PersistencePeer = persistencePeer });
+
+            Wait.Until(() => persistenceMessages.Count == 1, 500.Milliseconds());
+            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted", "PersistentPeerIds", "IsPersistTransportMessage");
+            messageFromPersistence.Environment.ShouldEqual("Test");
+            messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeerId });
         }
 
         [Test]
