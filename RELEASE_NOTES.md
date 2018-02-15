@@ -1,3 +1,7 @@
+## 2.1.1
+- Features
+    - Improve performance when message logging is disabled
+    
 ## 2.1.0
 - Features
 	- Inject an error reporter in various zmq outbound socket operations
