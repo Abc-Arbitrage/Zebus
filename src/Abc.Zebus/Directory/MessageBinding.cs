@@ -15,26 +15,17 @@ namespace Abc.Zebus.Directory
         }
 
         public static MessageBinding FromMessage(IMessage message)
-        {
-            return new MessageBinding(message.TypeId(), BindingKey.Create(message));
-        }
+            => new MessageBinding(message.TypeId(), BindingKey.Create(message));
 
-        public static MessageBinding Default<T>() where T : IMessage
-        {
-            return new MessageBinding(MessageUtil.TypeId<T>(), BindingKey.Empty);
-        }
+        public static MessageBinding Default<T>()
+            where T : IMessage
+            => new MessageBinding(MessageUtil.TypeId<T>(), BindingKey.Empty);
 
         public bool Equals(MessageBinding other)
-        {
-            return Equals(MessageTypeId, other.MessageTypeId) && RoutingKey.Equals(other.RoutingKey);
-        }
+            => MessageTypeId == other.MessageTypeId && RoutingKey.Equals(other.RoutingKey);
 
         public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-                return false;
-            return obj is MessageBinding && Equals((MessageBinding)obj);
-        }
+            => obj is MessageBinding binding && Equals(binding);
 
         public override int GetHashCode()
         {

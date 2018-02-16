@@ -27,8 +27,8 @@ namespace Abc.Zebus
         [ProtoMember(1, IsRequired = true)]
         public string FullName
         {
-            get { return _descriptor?.FullName; }
-            private set { _descriptor = MessageUtil.GetMessageTypeDescriptor(value); }
+            get => _descriptor?.FullName;
+            private set => _descriptor = MessageUtil.GetMessageTypeDescriptor(value);
         }
 
         public Type GetMessageType() => _descriptor?.MessageType;
@@ -42,12 +42,12 @@ namespace Abc.Zebus
         }
 
         public bool Equals(MessageTypeId other) => _descriptor == other._descriptor;
-        public override bool Equals(object obj) => obj is MessageTypeId && Equals((MessageTypeId)obj);
+        public override bool Equals(object obj) => obj is MessageTypeId messageTypeId && Equals(messageTypeId);
 
         [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
         public override int GetHashCode() => _descriptor?.GetHashCode() ?? 0;
 
-        public static bool operator ==(MessageTypeId left, MessageTypeId right) => Equals(left, right);
-        public static bool operator !=(MessageTypeId left, MessageTypeId right) => !Equals(left, right);
+        public static bool operator ==(MessageTypeId left, MessageTypeId right) => left.Equals(right);
+        public static bool operator !=(MessageTypeId left, MessageTypeId right) => !left.Equals(right);
     }
 }
