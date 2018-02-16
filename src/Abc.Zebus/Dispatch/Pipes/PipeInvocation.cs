@@ -10,6 +10,7 @@ namespace Abc.Zebus.Dispatch.Pipes
     public class PipeInvocation : IMessageHandlerInvocation
     {
         private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(PipeInvocation), "Abc.Zebus.Dispatch");
+
         private readonly List<Action<object>> _handlerMutations = new List<Action<object>>();
         private readonly IMessageHandlerInvoker _invoker;
         private readonly IList<IMessage> _messages;
@@ -111,14 +112,11 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         private void ApplyMutations(object messageHandler)
         {
-            var messageContextAwareHandler = messageHandler as IMessageContextAware;
-            if (messageContextAwareHandler != null)
+            if (messageHandler is IMessageContextAware messageContextAwareHandler)
                 messageContextAwareHandler.Context = Context;
 
             foreach (var messageHandlerMutation in _handlerMutations)
-            {
                 messageHandlerMutation(messageHandler);
-            }
         }
     }
 }

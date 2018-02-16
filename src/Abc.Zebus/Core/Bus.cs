@@ -20,11 +20,12 @@ namespace Abc.Zebus.Core
 {
     public class Bus : IBus, IMessageDispatchFactory
     {
+        private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(Bus));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
+
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
         private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new UniqueTimestampProvider();
         private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
-        private readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(Bus));
-        private readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
         private readonly ITransport _transport;
         private readonly IPeerDirectory _directory;
         private readonly IMessageSerializer _serializer;
