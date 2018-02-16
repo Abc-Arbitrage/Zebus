@@ -19,7 +19,7 @@ namespace Abc.Zebus.Tests.Core
     public class BusPerformanceTests
     {
         // this must be a valid directory endpoint
-        private static readonly string _directoryEndPoint = Environment.GetEnvironmentVariable("ZEBUS_TEST_DIRECTORY", EnvironmentVariableTarget.User);
+        private static readonly string _directoryEndPoint = Environment.GetEnvironmentVariable("ZEBUS_TEST_DIRECTORY");
 
         [Test]
         public void MeasureCommandThroughputWithoutPersistence()
