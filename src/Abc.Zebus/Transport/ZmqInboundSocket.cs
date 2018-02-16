@@ -17,6 +17,7 @@ namespace Abc.Zebus.Transport
         private byte[] _readBuffer = new byte[0];
         private ZmqSocket _socket;
         private ZmqEndPoint _endPoint;
+        private TimeSpan _lastReceiveTimeout = TimeSpan.MinValue;
 
         public ZmqInboundSocket(ZmqContext context, PeerId peerId, ZmqEndPoint originalEndpoint, ZmqSocketOptions options, string environment)
         {
@@ -50,10 +51,14 @@ namespace Abc.Zebus.Transport
 
         public CodedInputStream Receive(TimeSpan? timeout = null)
         {
-            int size;
-
-            _socket.ReceiveTimeout = timeout ?? _options.ReadTimeout;
-            _readBuffer = _socket.Receive(_readBuffer, TimeSpan.MaxValue, out size);
+            var effectiveTimeout = timeout ?? _options.ReadTimeout;
+            if (effectiveTimeout != _lastReceiveTimeout)
+            {
+                _socket.ReceiveTimeout = effectiveTimeout; // This stuff allocates
+                _lastReceiveTimeout = effectiveTimeout;
+            }
+            
+            _readBuffer = _socket.Receive(_readBuffer, TimeSpan.MaxValue, out var size);
 
             if (size <= 0)
                 return null;

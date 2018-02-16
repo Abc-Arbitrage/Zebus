@@ -57,6 +57,9 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         private object[] BeforeInvoke()
         {
+            if (_pipes.Count == 0)
+                return ArrayUtil.Empty<object>();
+
             var stateRef = new BeforeInvokeArgs.StateRef();
             var pipeStates = new object[_pipes.Count];
             for (var pipeIndex = 0; pipeIndex < _pipes.Count; ++pipeIndex)
@@ -65,6 +68,7 @@ namespace Abc.Zebus.Dispatch.Pipes
                 _pipes[pipeIndex].BeforeInvoke(beforeInvokeArgs);
                 pipeStates[pipeIndex] = beforeInvokeArgs.State;
             }
+
             return pipeStates;
         }
 

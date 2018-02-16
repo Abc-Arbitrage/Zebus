@@ -2,7 +2,8 @@
 
 namespace Abc.Zebus.Dispatch
 {
-    public class DynamicMessageHandlerInvoker<T> : MessageHandlerInvoker where T : class, IMessage
+    public class DynamicMessageHandlerInvoker<T> : MessageHandlerInvoker
+        where T : class, IMessage
     {
         private readonly Action<T> _handler;
 
@@ -12,11 +13,11 @@ namespace Abc.Zebus.Dispatch
             _handler = handler;
         }
 
-        class DummyHandler : IMessageHandler<T>
+        private class DummyHandler : IMessageHandler<T>
         {
             public void Handle(T message)
             {
-                throw new NotImplementedException("This handler is only used to provide the base class with a valid implementation of IMessageHandler and is never actually used");
+                throw new NotSupportedException("This handler is only used to provide the base class with a valid implementation of IMessageHandler and is never actually used");
             }
         }
 
