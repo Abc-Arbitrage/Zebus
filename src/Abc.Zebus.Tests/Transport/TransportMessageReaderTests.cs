@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using Abc.Zebus.Serialization;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
@@ -8,7 +7,7 @@ using Abc.Zebus.Testing.Measurements;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
-using Serializer = ProtoBuf.Serializer;
+using ProtoBuf;
 
 namespace Abc.Zebus.Tests.Transport
 {
@@ -108,11 +107,12 @@ namespace Abc.Zebus.Tests.Transport
             var inputStream = new CodedInputStream(outputStream.Buffer, 0, outputStream.Position);
             inputStream.ReadTransportMessage();
 
-            const int count = 1000 * 1000 * 1000;
+            const int count = 100_000_000;
             using (Measure.Throughput(count))
             {
                 for (var i = 0; i < count; i++)
                 {
+                    inputStream.Position = 0;
                     inputStream.ReadTransportMessage();
                 }
             }

@@ -97,7 +97,11 @@ namespace Abc.Zebus.Serialization.Protobuf
         /// <summary>
         /// Returns the current position in the input stream, or the position in the input buffer
         /// </summary>
-        public long Position { get { return bufferPos; } }
+        public int Position
+        {
+            get => bufferPos;
+            set => bufferPos = value;
+        }
 
         #region Reading of tags etc
 
