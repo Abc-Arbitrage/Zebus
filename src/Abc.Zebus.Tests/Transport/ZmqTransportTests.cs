@@ -547,6 +547,7 @@ namespace Abc.Zebus.Tests.Transport
             receivingTransport.Stop();
             Console.WriteLine("Receiver stopped\r\n\r\n");
 
+            Thread.MemoryBarrier();
             receivedMessages.Count.ShouldEqual(count);
         }
 
