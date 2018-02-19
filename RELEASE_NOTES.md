@@ -1,3 +1,7 @@
+## 2.1.2
+- Features
+    - Reduce heap allocations in the receiving code path
+
 ## 2.1.1
 - Features
     - Improve performance when message logging is disabled
