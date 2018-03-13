@@ -16,6 +16,16 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             _dataContext = dataContext;
         }
 
+        public bool? IsPersistent(PeerId peerId)
+        {
+            return _dataContext.StoragePeers
+                               .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
+                               .Where(peer => peer.UselessKey == false && peer.PeerId == peerId.ToString())
+                               .Select(x => (bool?)x.IsPersistent)
+                               .Execute()
+                               .FirstOrDefault();
+        }
+
         public PeerDescriptor Get(PeerId peerId)
         {
             var peerDynamicSubscriptions = _dataContext.DynamicSubscriptions

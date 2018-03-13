@@ -35,6 +35,21 @@ namespace Abc.Zebus.Directory.Tests.Storage
             fetched.ShouldHaveSamePropertiesAs(peerDescriptor);
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void get_persistent_state(bool isPersistent)
+        {
+            _repository.AddOrUpdatePeer(_peer1.ToPeerDescriptor(isPersistent));
+
+            _repository.IsPersistent(_peer1.Id).ShouldEqual(isPersistent);
+        }
+
+        [Test]
+        public void get_persistent_state_when_peer_does_not_exists()
+        {
+            _repository.IsPersistent(_peer1.Id).ShouldBeNull();
+        }
+
         [Test]
         public void should_return_null_when_peer_does_not_exists()
         {

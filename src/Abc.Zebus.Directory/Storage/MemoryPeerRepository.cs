@@ -48,6 +48,12 @@ namespace Abc.Zebus.Directory.Storage
             return _peers.Values.Select(entry => loadDynamicSubscriptions ? entry.GetMergedPeerDescriptor() : entry.GetPeerDescriptorWithStaticSubscriptionOnly());
         }
 
+        public bool? IsPersistent(PeerId peerId)
+        {
+            PeerEntry peerEntry;
+            return _peers.TryGetValue(peerId, out peerEntry) ? peerEntry.PeerDescriptor.IsPersistent: (bool?)null;
+        }
+
         public PeerDescriptor Get(PeerId peerId)
         {
             PeerEntry peerEntry;

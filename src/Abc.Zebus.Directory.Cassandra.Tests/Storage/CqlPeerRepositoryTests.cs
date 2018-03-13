@@ -63,6 +63,21 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             otherPeerFetched.ShouldHaveSamePropertiesAs(otherDescriptor);
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void get_persistent_state(bool isPersistent)
+        {
+            _repository.AddOrUpdatePeer(_peer1.ToPeerDescriptor(isPersistent));
+
+            _repository.IsPersistent(_peer1.Id).ShouldEqual(isPersistent);
+        }
+
+        [Test]
+        public void get_persistent_state_when_peer_does_not_exists()
+        {
+            _repository.IsPersistent(_peer1.Id).ShouldBeNull();
+        }
+
         [Test]
         public void should_return_null_when_peer_does_not_exists()
         {
@@ -132,7 +147,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
-        public void should_readd_peer_after_removing_it()
+        public void should_read_peer_after_removing_it()
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(string));
             peerDescriptor.TimestampUtc = GetUnspecifiedKindUtcNow();

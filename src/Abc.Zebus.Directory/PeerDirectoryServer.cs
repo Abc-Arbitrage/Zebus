@@ -45,10 +45,7 @@ namespace Abc.Zebus.Directory
 
         public bool IsPersistent(PeerId peerId)
         {
-            // TODO: avoid loading subscriptions
-
-            var peer = _peerRepository.Get(peerId);
-            return peer != null && peer.IsPersistent;
+            return _peerRepository.IsPersistent(peerId).GetValueOrDefault();
         }
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
