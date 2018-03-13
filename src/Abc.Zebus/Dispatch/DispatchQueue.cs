@@ -14,7 +14,8 @@ namespace Abc.Zebus.Dispatch
         [ThreadStatic]
         private static string _currentDispatchQueueName;
 
-        private readonly ILog _logger = LogManager.GetLogger(typeof(DispatchQueue));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(DispatchQueue));
+
         private readonly IPipeManager _pipeManager;
         private readonly int _batchSize;
         private FlushableBlockingCollection<Entry> _queue = new FlushableBlockingCollection<Entry>();
@@ -328,7 +329,16 @@ namespace Abc.Zebus.Dispatch
             public void SetHandled(Exception error)
             {
                 foreach (var entry in Entries)
-                    entry.Dispatch.SetHandled(entry.Invoker, error);
+                {
+                    try
+                    {
+                        entry.Dispatch.SetHandled(entry.Invoker, error);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error($"Unable to run dispatch continuation, MessageType: {entry.Invoker.MessageType.Name}, HandlerType: {entry.Invoker.MessageHandlerType.Name}, HandlerError: {error}, ContinuationError: {ex}");
+                    }
+                }
             }
 
             public void Clear()
