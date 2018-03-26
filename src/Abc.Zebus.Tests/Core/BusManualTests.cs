@@ -16,7 +16,7 @@ using Timeout = ABC.ServiceBus.Contracts.Timeout;
 namespace Abc.Zebus.Tests.Core
 {
     [TestFixture]
-    [Ignore]
+    [Ignore("ManualOnly")]
     [Category("ManualOnly")]
     public class BusManualTests
     {

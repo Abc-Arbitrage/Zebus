@@ -14,7 +14,7 @@ using ProtoBuf;
 namespace Abc.Zebus.Tests.Core
 {
     [TestFixture]
-    [Ignore]
+    [Ignore("ManualOnly")]
     [Category("ManualOnly")]
     public class BusPerformanceTests
     {

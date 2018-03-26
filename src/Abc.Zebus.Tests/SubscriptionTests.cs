@@ -233,7 +233,7 @@ namespace Abc.Zebus.Tests
         }
 
         [Test]
-        [Ignore]
+        [Ignore("ManualOnly")]
         [Category("ManualOnly")]
         [TestCase("a.b", "a.b.c.d")]
         [TestCase("d.*", "a.b.c.d")]

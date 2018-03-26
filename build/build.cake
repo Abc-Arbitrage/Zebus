@@ -1,5 +1,5 @@
 #l "scripts/utilities.cake"
-#tool nuget:?package=NUnit.Runners.Net4&version=2.6.4
+#tool "nuget:?package=NUnit.ConsoleRunner"
 
 //////////////////////////////////////////////////////////////////////
 // ARGUMENTS
@@ -48,8 +48,8 @@ Task("MSBuild").Does(() => MSBuild(paths.solution, settings => settings.SetConfi
 Task("Clean-AssemblyInfo").Does(() => System.IO.File.WriteAllText(paths.assemblyInfo, string.Empty));
 Task("Run-Unit-Tests").Does(() =>
 {
-    NUnit(paths.output.build + "/*.Tests.exe", new NUnitSettings { Framework = "4.6.1", NoResults = true });
-    NUnit(paths.output.build + "/*.Tests.dll", new NUnitSettings { Framework = "4.6.1", NoResults = true });
+    NUnit3(paths.output.build + "/*.Tests.exe", new NUnit3Settings { NoResults = true });
+    NUnit3(paths.output.build + "/*.Tests.dll", new NUnit3Settings { NoResults = true });
 });
 Task("Nuget-Pack").Does(() => 
 {

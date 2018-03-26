@@ -11,7 +11,7 @@ namespace Abc.Zebus.Tests
     [SetUpFixture]
     public class Log4netConfigurator
     {
-        [SetUp]
+        [OneTimeSetUp]
         public void Setup()
         {
             var configurationFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config");

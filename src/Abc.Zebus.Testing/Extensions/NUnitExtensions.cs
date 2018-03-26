@@ -152,8 +152,9 @@ namespace Abc.Zebus.Testing.Extensions
         {
             foreach (var obj in actual)
             {
-                var empty = Tolerance.Empty;
-                if (NUnitEqualityComparer.Default.AreEqual(obj, expected, ref empty))
+                var @default = Tolerance.Default;
+                var equalityComparer = new NUnitEqualityComparer();
+                if (equalityComparer.AreEqual(obj, expected, ref @default))
                     return;
             }
 
@@ -176,8 +177,9 @@ namespace Abc.Zebus.Testing.Extensions
         {
             foreach (var obj in actual)
             {
-                var empty = Tolerance.Empty;
-                if (NUnitEqualityComparer.Default.AreEqual(obj, expected, ref empty))
+                var @default = Tolerance.Default;
+                var equalityComparer = new NUnitEqualityComparer();
+                if (equalityComparer.AreEqual(obj, expected, ref @default))
                     Assert.Fail("'{0}' is present in the enumerable", expected);
             }
         }
@@ -254,12 +256,12 @@ namespace Abc.Zebus.Testing.Extensions
 
         public static void ShouldContain(this string actual, string expected)
         {
-            Assert.That(actual, Is.StringContaining(expected));
+            Assert.That(actual, Does.Contain(expected));
         }
 
         public static void ShouldContainIgnoreCase(this string actual, string expected)
         {
-            Assert.That(actual, Is.StringContaining(expected).IgnoreCase);
+            Assert.That(actual, Does.Contain(expected).IgnoreCase);
         }
 
         public static void ShouldNotContain(this string actual, string expected)

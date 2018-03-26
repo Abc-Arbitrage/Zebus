@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.Routing
             predicate(expectedResult.Message).ShouldEqual(expectedResult.Result);
         }
 
-        public ExpectedResult[] TestSources { get; } = {
+        public static ExpectedResult[] TestSources { get; } = {
             new ExpectedResult(new FakeRoutableCommand(1, "toto"), new BindingKey("1", "toto", "*"), true),
             new ExpectedResult(new FakeRoutableCommand(1, "toto"), new BindingKey("*", "toto", "*"), true),
             new ExpectedResult(new FakeRoutableCommand(1, "toto"), new BindingKey("1", "*", "*"), true),
