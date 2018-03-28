@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using Abc.Zebus.Scan;
 using Abc.Zebus.Util.Annotations;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -44,7 +45,7 @@ namespace Abc.Zebus.Core
             => _logInfoEnabled && GetLogInfo(message).Logger.IsInfoEnabled;
 
         [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
+        public void InfoFormat(string format, IMessage message, string dispatchQueueName = null, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
         {
             if (!_logInfoEnabled)
                 return;
@@ -54,7 +55,9 @@ namespace Abc.Zebus.Core
                 return;
 
             var messageText = logInfo.GetMessageText(message);
-            _logger.InfoFormat(format, messageText, messageId, messageSize, peerId);
+            dispatchQueueName = string.IsNullOrEmpty(dispatchQueueName) || dispatchQueueName == DispatchQueueNameScanner.DefaultQueueName ? string.Empty : $" [{dispatchQueueName}] ";
+
+            _logger.InfoFormat(format, messageText, dispatchQueueName, messageId, messageSize, peerId);
         }
 
         [StringFormatMethod("format")]
@@ -80,11 +83,11 @@ namespace Abc.Zebus.Core
             switch (peers.Count)
             {
                 case 0:
-                    InfoFormat(format, message, messageId, messageSize);
+                    InfoFormat(format, message, messageId: messageId, messageSize: messageSize);
                     return;
 
                 case 1:
-                    InfoFormat(format, message, messageId, messageSize, peers[0].Id);
+                    InfoFormat(format, message, messageId: messageId, messageSize:messageSize, peerId:peers[0].Id);
                     return;
             }
 

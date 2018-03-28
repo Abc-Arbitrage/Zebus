@@ -100,14 +100,14 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation()
         {
-            _messageLogger.InfoFormat("HANDLE: {0} [{1}]", _messages[0], _messageContext.MessageId);
+            _messageLogger.InfoFormat("HANDLE{1}: {0} [{2}]", _messages[0], _invoker.DispatchQueueName, _messageContext.MessageId);
 
             return MessageContext.SetCurrent(_messageContext);
         }
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation(object messageHandler)
         {
-            _messageLogger.InfoFormat("HANDLE: {0} [{1}]", _messages[0], _messageContext.MessageId);
+            _messageLogger.InfoFormat("HANDLE{1}: {0} [{2}]", _messages[0], _invoker.DispatchQueueName, _messageContext.MessageId);
 
             ApplyMutations(messageHandler);
 
