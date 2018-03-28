@@ -55,7 +55,7 @@ namespace Abc.Zebus.Core
                 return;
 
             var messageText = logInfo.GetMessageText(message);
-            dispatchQueueName = string.IsNullOrEmpty(dispatchQueueName) || dispatchQueueName == DispatchQueueNameScanner.DefaultQueueName ? string.Empty : $" [{dispatchQueueName}] ";
+            dispatchQueueName = string.IsNullOrEmpty(dispatchQueueName) || dispatchQueueName == DispatchQueueNameScanner.DefaultQueueName ? string.Empty : $" [{dispatchQueueName}]";
 
             _logger.InfoFormat(format, messageText, dispatchQueueName, messageId, messageSize, peerId);
         }
