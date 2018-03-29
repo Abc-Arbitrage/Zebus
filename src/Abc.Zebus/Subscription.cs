@@ -52,9 +52,6 @@ namespace Abc.Zebus
             if (BindingKey.IsEmpty)
                 return true;
 
-            if (routingKey.IsJoined && BindingKey.PartCount != 1)
-                return MatchesJoinedRoutingKey(routingKey.GetPart(0));
-
             for (var i = 0; i < routingKey.PartCount; i++)
             {
                 var evaluatedPart = BindingKey.GetPart(i);
@@ -66,20 +63,6 @@ namespace Abc.Zebus
             }
 
             return routingKey.PartCount == BindingKey.PartCount;
-        }
-
-        private bool MatchesJoinedRoutingKey(string routingKey)
-        {
-            // TODO: Remove code when the gateway is decommissioned
-            // slow and ugly, this code is only used in the gateway for Qpid compatibility
-
-            var bindingKey = BindingKey.ToString();
-            var wildCardIndex = bindingKey.IndexOf('#');
-            if (wildCardIndex != -1)
-                bindingKey = bindingKey.Substring(0, wildCardIndex);
-
-            var pattern = "^" + bindingKey.Replace("*", ".*");
-            return Regex.IsMatch(routingKey, pattern);
         }
 
         public bool Equals(Subscription other)

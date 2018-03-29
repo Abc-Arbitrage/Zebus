@@ -5,6 +5,7 @@ using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Tests.Routing;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests
@@ -26,7 +27,7 @@ namespace Abc.Zebus.Tests
         public void single_star_should_always_match(string routingKey)
         {
             var subscription = CreateSubscription("*");
-            subscription.Matches(BindingKey.Split(routingKey)).ShouldBeTrue();
+            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
         }
 
         [TestCase("whatever")]
@@ -35,7 +36,7 @@ namespace Abc.Zebus.Tests
         public void single_dash_should_always_match(string routingKey)
         {
             var subscription = CreateSubscription("#");
-            subscription.Matches(BindingKey.Split(routingKey)).ShouldBeTrue();
+            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
         }
 
         [TestCase("whatever")]
@@ -44,7 +45,7 @@ namespace Abc.Zebus.Tests
         public void empty_bindingkey_should_always_match(string routingKey)
         {
             var subscription = new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Empty);
-            subscription.Matches(BindingKey.Split(routingKey)).ShouldBeTrue();
+            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
         }
 
         [TestCase("a.b.c")]
@@ -52,7 +53,7 @@ namespace Abc.Zebus.Tests
         public void stars_should_always_match_if_same_number_of_parts(string routingKey)
         {
             var subscription = CreateSubscription("*.*.*");
-            subscription.Matches(BindingKey.Split(routingKey)).ShouldBeTrue();
+            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
         }
 
         [TestCase("a.b.*")]
@@ -62,7 +63,7 @@ namespace Abc.Zebus.Tests
         public void binding_key_with_star_should_match_routing_key(string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            subscription.Matches(BindingKey.Split("a.b.c")).ShouldBeTrue();
+            subscription.Matches(BindingKeyHelper.CreateFromString("a.b.c", '.')).ShouldBeTrue();
         }
 
         [TestCase("a.b.#")]
@@ -70,7 +71,7 @@ namespace Abc.Zebus.Tests
         public void binding_key_with_dashr_should_match_routing_key(string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            subscription.Matches(BindingKey.Split("a.b.c")).ShouldBeTrue();
+            subscription.Matches(BindingKeyHelper.CreateFromString("a.b.c", '.')).ShouldBeTrue();
         }
 
         [TestCase("a.b", "a.b.c.d")]
@@ -79,14 +80,14 @@ namespace Abc.Zebus.Tests
         public void should_not_match_binding_key(string routingKey, string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            subscription.Matches(BindingKey.Split(routingKey)).ShouldBeFalse();
+            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeFalse();
         }
 
         [Test]
         public void exact_same_routing_key_should_match_binding_key()
         {
             var subscription = CreateSubscription("a.b.c");
-            subscription.Matches(BindingKey.Split("a.b.c")).ShouldBeTrue();
+            subscription.Matches(BindingKeyHelper.CreateFromString("a.b.c", '.')).ShouldBeTrue();
         }
 
         [Test]
@@ -94,7 +95,7 @@ namespace Abc.Zebus.Tests
         {
             var subscription = Subscription.ByExample(x => new FakeRoutableCommand(12, "name"));
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
-            subscription.BindingKey.ShouldEqual(BindingKey.Split("12.name.*"));
+            subscription.BindingKey.ShouldEqual(BindingKeyHelper.CreateFromString("12.name.*", '.'));
         }
 
         [Test]
@@ -118,7 +119,7 @@ namespace Abc.Zebus.Tests
         {
             var subscription = Subscription.ByExample(x => new FakeRoutableCommand(x.Any<decimal>(), "name"));
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
-            subscription.BindingKey.ShouldEqual(BindingKey.Split("*.name.*"));
+            subscription.BindingKey.ShouldEqual(BindingKeyHelper.CreateFromString("*.name.*", '.'));
         }
 
         [Test]
@@ -241,7 +242,7 @@ namespace Abc.Zebus.Tests
         public void MeasurePerformance(string routingKey, string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            var key = BindingKey.Split(routingKey);
+            var key = BindingKeyHelper.CreateFromString(routingKey, '.');
 
             Measure.Execution(x =>
             {
@@ -253,7 +254,7 @@ namespace Abc.Zebus.Tests
 
         private Subscription CreateSubscription(string bindingKey)
         {
-            return new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Split(bindingKey));
+            return new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKeyHelper.CreateFromString(bindingKey, '.'));
         }
 
         private int GetFieldValue()

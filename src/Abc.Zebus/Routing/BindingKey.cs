@@ -19,24 +19,16 @@ namespace Abc.Zebus.Routing
 
         private static readonly ConcurrentDictionary<Type, BindingKeyBuilder> _builders = new ConcurrentDictionary<Type, BindingKeyBuilder>();
         private static readonly Func<Type, BindingKeyBuilder> _bindingKeyBuilderFactory = CreateBuilder;
-        private static readonly char[] _separator = { '.' };
 
         [ProtoMember(1, IsRequired = true)]
         private readonly string[] _parts;
 
         public BindingKey(params string[] parts)
-            : this(parts, false)
-        {
-        }
-
-        private BindingKey(string[] parts, bool isJoined)
         {
             if (parts == null || parts.Length == 0)
                 _parts = null;
             else
                 _parts = parts;
-
-            IsJoined = isJoined;
         }
 
         public int PartCount => _parts?.Length ?? 0;
@@ -52,8 +44,6 @@ namespace Abc.Zebus.Routing
         {
             return _parts[index] == _star;
         }
-
-        internal bool IsJoined { get; }
 
         [Pure]
         public string GetPart(int index) => index < PartCount ? _parts[index] : null;
@@ -104,13 +94,6 @@ namespace Abc.Zebus.Routing
 
             return string.Join(".", _parts);
         }
-
-        /// <summary>
-        ///     For Qpid compatibility only, do not use in Zebus code.
-        /// </summary>
-        internal static BindingKey Joined(string s) => new BindingKey(new[] { s }, true);
-
-        internal static BindingKey Split(string s) => new BindingKey(s.Split(_separator));
 
         internal static BindingKey Create(IMessage message)
             => GetBindingKeyBuilder(message.GetType())?.BuildKey(message) ?? Empty;

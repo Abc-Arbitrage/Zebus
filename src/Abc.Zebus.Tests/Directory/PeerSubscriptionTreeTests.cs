@@ -3,6 +3,7 @@ using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Tests.Routing;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Directory
@@ -20,11 +21,11 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = BindingKey.Split("*");
+            var subscription = BindingKeyHelper.CreateFromString("*", '.');
             peerSubscriptionTree.Add(peer, subscription);
 
             // Act
-            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKey.Split(routingKey));
+            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKeyHelper.CreateFromString(routingKey, '.'));
 
             // Assert
             matchingPeers.Single().ShouldEqual(peer);
@@ -64,7 +65,7 @@ namespace Abc.Zebus.Tests.Directory
             peerSubscriptionTree.Add(peer, BindingKey.Empty);
 
             // Act
-            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKey.Split(routingKey));
+            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKeyHelper.CreateFromString(routingKey, '.'));
 
             // Assert
             matchingPeers.Single().ShouldEqual(peer);
@@ -77,12 +78,12 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = BindingKey.Split("*.*.*");
+            var subscription = BindingKeyHelper.CreateFromString("*.*.*", '.');
 
             peerSubscriptionTree.Add(peer, subscription);
 
             // Act
-            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKey.Split(routingKey));
+            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKeyHelper.CreateFromString(routingKey, '.'));
 
             // Assert
             matchingPeers.Single().ShouldEqual(peer);
@@ -97,7 +98,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = BindingKey.Split(subscriptionKey);
+            var subscription = BindingKeyHelper.CreateFromString(subscriptionKey, '.');
 
             peerSubscriptionTree.Add(peer, subscription);
 
@@ -115,7 +116,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = BindingKey.Split(subscriptionKey);
+            var subscription = BindingKeyHelper.CreateFromString(subscriptionKey, '.');
 
             peerSubscriptionTree.Add(peer, subscription);
 
@@ -138,11 +139,11 @@ namespace Abc.Zebus.Tests.Directory
             var peer = new Peer(new PeerId("1"), "endpoint");
 
             peerSubscriptionTree.IsEmpty.ShouldBeTrue();
-            peerSubscriptionTree.Add(peer, BindingKey.Split(subscriptionKey));
-            var subscription = BindingKey.Split("lol");
+            peerSubscriptionTree.Add(peer, BindingKeyHelper.CreateFromString(subscriptionKey, '.'));
+            var subscription = BindingKeyHelper.CreateFromString("lol", '.');
             peerSubscriptionTree.Add(peer, subscription);
             peerSubscriptionTree.IsEmpty.ShouldBeFalse();
-            peerSubscriptionTree.Remove(peer, BindingKey.Split(subscriptionKey));
+            peerSubscriptionTree.Remove(peer, BindingKeyHelper.CreateFromString(subscriptionKey, '.'));
             peerSubscriptionTree.IsEmpty.ShouldBeFalse();
             peerSubscriptionTree.Remove(peer, subscription);
             peerSubscriptionTree.IsEmpty.ShouldBeTrue();
@@ -188,31 +189,31 @@ namespace Abc.Zebus.Tests.Directory
             var peer9 = new Peer(new PeerId("9"), "endpoint");
             var peer0 = new Peer(new PeerId("0"), "endpoint");
 
-            peerSubscriptionTree.Add(peer1, BindingKey.Split("#"));
-            peerSubscriptionTree.Add(peer2, BindingKey.Split("a.b"));
-            peerSubscriptionTree.Add(peer3, BindingKey.Split("a.*"));
-            peerSubscriptionTree.Add(peer4, BindingKey.Split("b.*.c"));
-            peerSubscriptionTree.Add(peer5, BindingKey.Split("b.*.f"));
-            peerSubscriptionTree.Add(peer6, BindingKey.Split("d.*.c"));
-            peerSubscriptionTree.Add(peer7, BindingKey.Split("a"));
-            peerSubscriptionTree.Add(peer8, BindingKey.Split("*.*"));
-            peerSubscriptionTree.Add(peer9, BindingKey.Split("a.#"));
-            peerSubscriptionTree.Add(peer0, BindingKey.Split("*"));
+            peerSubscriptionTree.Add(peer1, BindingKeyHelper.CreateFromString("#", '.'));
+            peerSubscriptionTree.Add(peer2, BindingKeyHelper.CreateFromString("a.b", '.'));
+            peerSubscriptionTree.Add(peer3, BindingKeyHelper.CreateFromString("a.*", '.'));
+            peerSubscriptionTree.Add(peer4, BindingKeyHelper.CreateFromString("b.*.c", '.'));
+            peerSubscriptionTree.Add(peer5, BindingKeyHelper.CreateFromString("b.*.f", '.'));
+            peerSubscriptionTree.Add(peer6, BindingKeyHelper.CreateFromString("d.*.c", '.'));
+            peerSubscriptionTree.Add(peer7, BindingKeyHelper.CreateFromString("a", '.'));
+            peerSubscriptionTree.Add(peer8, BindingKeyHelper.CreateFromString("*.*", '.'));
+            peerSubscriptionTree.Add(peer9, BindingKeyHelper.CreateFromString("a.#", '.'));
+            peerSubscriptionTree.Add(peer0, BindingKeyHelper.CreateFromString("*", '.'));
 
             // Act - Assert
-            var peers = peerSubscriptionTree.GetPeers(BindingKey.Split("b.1.c"));
+            var peers = peerSubscriptionTree.GetPeers(BindingKeyHelper.CreateFromString("b.1.c", '.'));
             peers.Count.ShouldEqual(2);
             peers.ShouldContain(peer1);
             peers.ShouldContain(peer4);
 
-            peers = peerSubscriptionTree.GetPeers(BindingKey.Split("a.1"));
+            peers = peerSubscriptionTree.GetPeers(BindingKeyHelper.CreateFromString("a.1", '.'));
             peers.Count.ShouldEqual(4);
             peers.ShouldContain(peer1);
             peers.ShouldContain(peer3);
             peers.ShouldContain(peer8);
             peers.ShouldContain(peer9);
 
-            peers = peerSubscriptionTree.GetPeers(BindingKey.Split("a"));
+            peers = peerSubscriptionTree.GetPeers(BindingKeyHelper.CreateFromString("a", '.'));
             peers.Count.ShouldEqual(3);
             peers.ShouldContain(peer1);
             peers.ShouldContain(peer7);
@@ -232,12 +233,12 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var peerSubscriptionTree = new PeerSubscriptionTree();
             var peer = new Peer(new PeerId("jesuistonpeer"), "endpoint");
-            var subscription = BindingKey.Split(subscriptionKey);
+            var subscription = BindingKeyHelper.CreateFromString(subscriptionKey, '.');
 
             peerSubscriptionTree.Add(peer, subscription);
 
             // Act
-            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKey.Split(routingKey));
+            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKeyHelper.CreateFromString(routingKey, '.'));
 
             // Assert
             matchingPeers.ShouldBeEmpty();
