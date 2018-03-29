@@ -12,7 +12,7 @@ namespace Abc.Zebus.Tests.Directory
     public partial class PeerSubscriptionTreeTests
     {
         [Test]
-        [Ignore]
+        [Ignore("ManualOnly")]
         [Category("ManualOnly")]
         [TestCase("a.e.f")]
         [TestCase("a.e")]

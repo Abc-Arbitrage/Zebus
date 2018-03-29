@@ -11,7 +11,7 @@ using NUnit.Framework;
 namespace Abc.Zebus.Tests.Transport
 {
     [TestFixture]
-    [Ignore]
+    [Ignore("ManualOnly")]
     [Category("ManualOnly")]
     public class ZmqTransportPerformanceTests
     {

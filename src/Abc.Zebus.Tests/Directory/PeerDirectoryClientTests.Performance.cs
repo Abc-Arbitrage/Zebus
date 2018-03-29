@@ -12,7 +12,7 @@ namespace Abc.Zebus.Tests.Directory
     public partial class PeerDirectoryClientTests
     {
         [Test]
-        [Ignore]
+        [Ignore("ManualOnly")]
         [Category("ManualOnly")]
         public void MeasureUpdatePerformance()
         {
@@ -70,7 +70,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        [Ignore]
+        [Ignore("ManualOnly")]
         [Category("ManualOnly")]
         public void MeasureUpdatePerformanceWithManyBindingKeys()
         {
@@ -94,7 +94,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        [Ignore]
+        [Ignore("ManualOnly")]
         [Category("ManualOnly")]
         public void MeasureMemoryConsumption()
         {
