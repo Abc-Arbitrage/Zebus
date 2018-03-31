@@ -41,7 +41,13 @@ namespace Abc.Zebus.Core
         public BusFactory WithConfiguration(string directoryEndPoints, string environment)
         {
             var endpoints = directoryEndPoints.Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-            return WithConfiguration(new BusConfiguration(endpoints), environment);
+            return WithConfiguration(new BusConfiguration(endpoints, "Abc.Zebus.DirectoryService."), environment);
+        }
+
+        public BusFactory WithConfiguration(string directoryEndPoints, string directoryServicePeerIdPrefix, string environment)
+        {
+            var endpoints = directoryEndPoints.Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            return WithConfiguration(new BusConfiguration(endpoints, directoryServicePeerIdPrefix), environment);
         }
 
         public BusFactory WithConfiguration(IBusConfiguration configuration, string environment)
@@ -129,12 +135,14 @@ namespace Abc.Zebus.Core
 
         private class BusConfiguration : IBusConfiguration
         {
-            public BusConfiguration(params string[] directoryServiceEndPoints)
+            public BusConfiguration(string[] directoryServiceEndPoints, string directoryServicePeerIdPrefix)
             {
                 DirectoryServiceEndPoints = directoryServiceEndPoints;
+                DirectoryServicePeerIdPrefix = directoryServicePeerIdPrefix;
                 RegistrationTimeout = 10.Second();
             }
 
+            public string DirectoryServicePeerIdPrefix { get; }
             public string[] DirectoryServiceEndPoints { get; }
             public TimeSpan RegistrationTimeout { get; }
             public TimeSpan StartReplayTimeout => 30.Seconds();
