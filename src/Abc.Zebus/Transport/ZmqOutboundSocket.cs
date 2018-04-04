@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using log4net;
 using ZeroMQ;
 
@@ -118,17 +117,19 @@ namespace Abc.Zebus.Transport
             {
                 if (_closedStateStopwatch.Elapsed < _closedStateDuration)
                 {
-                    _logger.DebugFormat("Send or connect ignored in closed state, Peer: {0}, MessageTypeId: {1}, MessageId: {2}", PeerId, message.MessageTypeId, message.Id);
+                    _logger.WarnFormat("Send or connect ignored in closed state, Peer: {0}, MessageTypeId: {1}, MessageId: {2}", PeerId, message.MessageTypeId, message.Id);
                     return false;
                 }
+
                 SwitchToOpenState();
             }
+
             return true;
         }
 
         private void SwitchToClosedState(TimeSpan duration)
         {
-            _logger.InfoFormat("Switching to closed state, Peer: {0}, Duration: {1}", PeerId, duration);
+            _logger.ErrorFormat("Switching to closed state, Peer: {0}, Duration: {1}", PeerId, duration);
 
             _closedStateStopwatch.Start();
             _closedStateDuration = duration;
