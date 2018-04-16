@@ -15,18 +15,16 @@
       <reference file="Abc.Zebus.dll" />
     </references>
     <dependencies>
-      <dependency id="log4net" version="2.0.3" />
-      <dependency id="Newtonsoft.Json" version="7.0.1" />
-      <dependency id="protobuf-net" version="2.0.0.668" />
+      <dependency id="log4net" version="2.0.8" />
+      <dependency id="Newtonsoft.Json" version="11.0.2" />
+      <dependency id="protobuf-net" version="2.3.7" />
       <dependency id="structuremap" version="3.1.6.186" />
     </dependencies>
   </metadata>
   <files>
     <file src="Abc.Zebus.dll" target="lib\net45\" />
     <file src="Abc.Zebus.pdb" target="lib\net45\" />
-
     <file src=".\..\..\lib\zmq\clrzmq.dll" target="lib\net45\" />
-    
-    <file src=".\..\..\src\\Abc.Zebus\**\*.cs" target="src" />
+    <file src=".\..\..\src\Abc.Zebus\**\*.cs" target="src" />
   </files>
 </package>

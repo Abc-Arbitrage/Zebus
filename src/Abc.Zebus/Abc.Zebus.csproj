@@ -38,9 +38,9 @@
     <None Remove="Transport\libzmq-x86-0.0.0.0.dll" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="7.0.1" />
-    <PackageReference Include="protobuf-net" Version="2.0.0.668" />
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="protobuf-net" Version="2.3.7" />
     <PackageReference Include="structuremap" Version="3.1.6.186" />
   </ItemGroup>
   <ItemGroup>

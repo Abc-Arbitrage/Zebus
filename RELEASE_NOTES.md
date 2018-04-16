@@ -1,3 +1,7 @@
+## 2.2.0
+- Features
+    - Updated Newtonsoft.Json, protobuf-net and log4net dependencies
+
 ## 2.1.2
 - Features
     - Reduce heap allocations in the receiving code path
@@ -8,11 +12,11 @@
     
 ## 2.1.0
 - Features
-	- Inject an error reporter in various zmq outbound socket operations
-	- Allow local message dispatch when the bus is stopping
+    - Inject an error reporter in various zmq outbound socket operations
+    - Allow local message dispatch when the bus is stopping
 - Bug fixes
     - Ensure all replayed messages are acked to the persistence
-	- Support unserializable messages in dispatch error handling
+    - Support unserializable messages in dispatch error handling
 - Code cleanup
     - Migrate to VS2017 project file
 
