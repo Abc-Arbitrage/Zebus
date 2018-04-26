@@ -101,7 +101,7 @@ namespace Abc.Zebus.Directory
                 return false;
 
             var response = (RegisterPeerResponse)registration.Result.Response;
-            if (response == null || response.PeerDescriptors == null)
+            if (response?.PeerDescriptors == null)
                 return false;
 
             if (registration.Result.ErrorCode == DirectoryErrorCodes.PeerAlreadyExists)
@@ -123,7 +123,7 @@ namespace Abc.Zebus.Directory
 
             var command = new UpdatePeerSubscriptionsForTypesCommand(_self.Id, _timestampProvider.NextUtcTimestamp(), subscriptions);
             var directoryPeers = GetDirectoryPeers();
-            if (!directoryPeers.Any(peer => bus.Send(command, peer).Wait(5.Seconds())))
+            if (!directoryPeers.Any(peer => bus.Send(command, peer).Wait(_configuration.RegistrationTimeout)))
                 throw new TimeoutException("Unable to update peer subscriptions on directory");
         }
 
@@ -131,7 +131,7 @@ namespace Abc.Zebus.Directory
         {
             var command = new UnregisterPeerCommand(_self, _timestampProvider.NextUtcTimestamp());
             // using a cache of the directory peers in case of the underlying configuration proxy values changed before stopping (Abc.gestion...)
-            if (!_directoryPeers.Any(peer => bus.Send(command, peer).Wait(5.Seconds())))
+            if (!_directoryPeers.Any(peer => bus.Send(command, peer).Wait(_configuration.RegistrationTimeout)))
                 throw new TimeoutException("Unable to unregister peer on directory");
         }
 
@@ -246,8 +246,7 @@ namespace Abc.Zebus.Directory
             if (EnqueueIfRegistering(message))
                 return;
 
-            PeerEntry removedPeer;
-            if (!_peers.TryRemove(message.PeerId, out removedPeer))
+            if (!_peers.TryRemove(message.PeerId, out var removedPeer))
                 return;
 
             removedPeer.RemoveSubscriptions();
