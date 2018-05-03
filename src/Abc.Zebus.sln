@@ -1,44 +1,26 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus", "Abc.Zebus\Abc.Zebus.csproj", "{1F4C6307-6113-40D5-BF42-4B6BF5DF13B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus", "Abc.Zebus\Abc.Zebus.csproj", "{1F4C6307-6113-40D5-BF42-4B6BF5DF13B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Tests", "Abc.Zebus.Tests\Abc.Zebus.Tests.csproj", "{7BF5AC28-91DB-40EF-8CB7-024E518FA799}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Tests", "Abc.Zebus.Tests\Abc.Zebus.Tests.csproj", "{7BF5AC28-91DB-40EF-8CB7-024E518FA799}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Testing", "Abc.Zebus.Testing\Abc.Zebus.Testing.csproj", "{4CE123DF-8021-411C-929B-53E5C5FC1E04}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Testing", "Abc.Zebus.Testing\Abc.Zebus.Testing.csproj", "{4CE123DF-8021-411C-929B-53E5C5FC1E04}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "@ Solution Items", "@ Solution Items", "{A85342C3-7BA4-4A6B-B690-B1D0ACE14C76}"
 	ProjectSection(SolutionItems) = preProject
+		..\build\Abc.Zebus.nuspec = ..\build\Abc.Zebus.nuspec
+		..\build\Abc.Zebus.Testing.nuspec = ..\build\Abc.Zebus.Testing.nuspec
+		..\build\build.cake = ..\build\build.cake
+		..\RELEASE_NOTES.md = ..\RELEASE_NOTES.md
 		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
 		SharedVersionInfo.cs = SharedVersionInfo.cs
+		..\version.yml = ..\version.yml
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{7933BD78-DFD0-4F8E-BFE5-1660B14E7533}"
-	ProjectSection(SolutionItems) = preProject
-		..\build\Zebus.build = ..\build\Zebus.build
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{041FD6B0-49C1-4C7B-B6CC-6BA106FE734B}"
-	ProjectSection(SolutionItems) = preProject
-		..\build\nuget\BuildNuget.ps1 = ..\build\nuget\BuildNuget.ps1
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuspecs", "nuspecs", "{CF60551C-BB7F-4053-93BE-3E2B53222DF7}"
-	ProjectSection(SolutionItems) = preProject
-		..\build\nuget\nuspecs\Abc.Zebus.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.nuspec
-		..\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec = ..\build\nuget\nuspecs\Abc.Zebus.Testing.nuspec
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{7218C17B-72FC-4BED-AD81-F4BC6196D3AA}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Zebus.Directory", "Zebus.Directory", "{0232BC2F-5907-4957-8B7D-0DD1CCC6428F}"
-	ProjectSection(SolutionItems) = preProject
-		..\build\nuget\tools\Zebus.Directory\readme.txt = ..\build\nuget\tools\Zebus.Directory\readme.txt
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abc.Zebus.Tests.TestExe", "Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj", "{652017D8-EB34-4A79-B14F-DB0477E43915}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Tests.TestExe", "Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj", "{652017D8-EB34-4A79-B14F-DB0477E43915}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -107,11 +89,7 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{7933BD78-DFD0-4F8E-BFE5-1660B14E7533} = {A85342C3-7BA4-4A6B-B690-B1D0ACE14C76}
-		{041FD6B0-49C1-4C7B-B6CC-6BA106FE734B} = {7933BD78-DFD0-4F8E-BFE5-1660B14E7533}
-		{CF60551C-BB7F-4053-93BE-3E2B53222DF7} = {041FD6B0-49C1-4C7B-B6CC-6BA106FE734B}
-		{7218C17B-72FC-4BED-AD81-F4BC6196D3AA} = {041FD6B0-49C1-4C7B-B6CC-6BA106FE734B}
-		{0232BC2F-5907-4957-8B7D-0DD1CCC6428F} = {7218C17B-72FC-4BED-AD81-F4BC6196D3AA}
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5A62CA9-98D0-4C95-BC83-F0F57B76CC44}
 	EndGlobalSection
 EndGlobal

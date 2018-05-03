@@ -288,8 +288,7 @@ namespace Abc.Zebus.Directory
             if (EnqueueIfRegistering(message))
                 return;
 
-            PeerEntry removedPeer;
-            if (!_peers.TryRemove(message.PeerId, out removedPeer))
+            if (!_peers.TryRemove(message.PeerId, out var removedPeer))
                 return;
 
             removedPeer.RemoveSubscriptions();

@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using Abc.Zebus.Scan;
 using Abc.Zebus.Util.Annotations;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -12,16 +13,14 @@ namespace Abc.Zebus.Core
     public class BusMessageLogger
     {
         private static readonly ConcurrentDictionary<Type, MessageTypeLogInfo> _logInfos = new ConcurrentDictionary<Type, MessageTypeLogInfo>();
-        private static readonly Func<Type, MessageTypeLogInfo> _logInfoFactory;
+        private static readonly Func<Type, MessageTypeLogInfo> _logInfoFactory = CreateLogger;
         private readonly Type _loggerType;
         private readonly ILog _logger;
+        private bool _logDebugEnabled;
+        private bool _logInfoEnabled;
 
-        static BusMessageLogger()
-        {
-            _logInfoFactory = CreateLogger;
-        }
-
-        public BusMessageLogger(Type loggerType) : this(loggerType, loggerType.FullName)
+        public BusMessageLogger(Type loggerType)
+            : this(loggerType, loggerType.FullName)
         {
         }
 
@@ -29,28 +28,44 @@ namespace Abc.Zebus.Core
         {
             _loggerType = loggerType;
             _logger = LogManager.GetLogger(loggerFullName);
+
+            // Instances of BusMessageLogger are static, no need to unsubscribe from these events
+            _logger.Logger.Repository.ConfigurationChanged += (sender, args) => UpdateLogConfig();
+            _logger.Logger.Repository.ConfigurationReset += (sender, args) => UpdateLogConfig();
+            UpdateLogConfig();
+
+            void UpdateLogConfig()
+            {
+                _logDebugEnabled = _logger.IsDebugEnabled;
+                _logInfoEnabled = _logger.IsInfoEnabled;
+            }
         }
 
         public bool IsInfoEnabled(IMessage message)
-        {
-            var logInfo = GetLogInfo(message);
-            return logInfo.Logger.IsInfoEnabled;
-        }
+            => _logInfoEnabled && GetLogInfo(message).Logger.IsInfoEnabled;
 
         [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
+        public void InfoFormat(string format, IMessage message, string dispatchQueueName = null, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
         {
+            if (!_logInfoEnabled)
+                return;
+
             var logInfo = GetLogInfo(message);
             if (!logInfo.Logger.IsInfoEnabled)
                 return;
 
             var messageText = logInfo.GetMessageText(message);
-            _logger.InfoFormat(format, messageText, messageId, messageSize, peerId);
+            dispatchQueueName = string.IsNullOrEmpty(dispatchQueueName) || dispatchQueueName == DispatchQueueNameScanner.DefaultQueueName ? string.Empty : $" [{dispatchQueueName}]";
+
+            _logger.InfoFormat(format, messageText, dispatchQueueName, messageId, messageSize, peerId);
         }
 
         [StringFormatMethod("format")]
         public void DebugFormat(string format, IMessage message, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
         {
+            if (!_logDebugEnabled)
+                return;
+
             var logInfo = GetLogInfo(message);
             if (!logInfo.Logger.IsDebugEnabled)
                 return;
@@ -62,15 +77,18 @@ namespace Abc.Zebus.Core
         [StringFormatMethod("format")]
         public void InfoFormat(string format, IMessage message, MessageId messageId, long messageSize, IList<Peer> peers, Level logLevel = null)
         {
-            if (peers.Count == 0)
-            {
-                InfoFormat(format, message, messageId, messageSize);
+            if (!_logInfoEnabled)
                 return;
-            }
-            if (peers.Count == 1)
+
+            switch (peers.Count)
             {
-                InfoFormat(format, message, messageId, messageSize, peerId: peers[0].Id);
-                return;
+                case 0:
+                    InfoFormat(format, message, messageId: messageId, messageSize: messageSize);
+                    return;
+
+                case 1:
+                    InfoFormat(format, message, messageId: messageId, messageSize:messageSize, peerId:peers[0].Id);
+                    return;
             }
 
             var logInfo = GetLogInfo(message);
@@ -86,12 +104,11 @@ namespace Abc.Zebus.Core
             _logger.Logger.Log(_loggerType, logLevel ?? Level.Info, string.Format(format, messageText, messageId, messageSize, peerIdText), null);
         }
 
-        public static string ToString(IMessage message) => GetLogInfo(message).GetMessageText(message);
+        public static string ToString(IMessage message)
+            => GetLogInfo(message).GetMessageText(message);
 
         private static MessageTypeLogInfo GetLogInfo(IMessage message)
-        {
-            return _logInfos.GetOrAdd(message.GetType(), _logInfoFactory);
-        }
+            => _logInfos.GetOrAdd(message.GetType(), _logInfoFactory);
 
         private static MessageTypeLogInfo CreateLogger(Type messageType)
         {

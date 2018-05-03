@@ -34,14 +34,8 @@ namespace Abc.Zebus.Util.Extensions
         }
 
         [Pure]
-        public static IList<T> AsList<T>([InstantHandle] this IEnumerable<T> collection)
-        {
-            var list = collection as IList<T>;
-            if (list == null || list.IsReadOnly || list is T[])
-                return collection.ToList();
-
-            return list;
-        }
+        public static IList<T> AsList<T>([InstantHandle] this IEnumerable<T> collection) 
+            => collection is IList<T> list ? list : collection.ToList();
 
         [Pure]
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)

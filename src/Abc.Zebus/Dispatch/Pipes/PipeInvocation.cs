@@ -10,6 +10,7 @@ namespace Abc.Zebus.Dispatch.Pipes
     public class PipeInvocation : IMessageHandlerInvocation
     {
         private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(PipeInvocation), "Abc.Zebus.Dispatch");
+
         private readonly List<Action<object>> _handlerMutations = new List<Action<object>>();
         private readonly IMessageHandlerInvoker _invoker;
         private readonly IList<IMessage> _messages;
@@ -56,6 +57,9 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         private object[] BeforeInvoke()
         {
+            if (_pipes.Count == 0)
+                return ArrayUtil.Empty<object>();
+
             var stateRef = new BeforeInvokeArgs.StateRef();
             var pipeStates = new object[_pipes.Count];
             for (var pipeIndex = 0; pipeIndex < _pipes.Count; ++pipeIndex)
@@ -64,6 +68,7 @@ namespace Abc.Zebus.Dispatch.Pipes
                 _pipes[pipeIndex].BeforeInvoke(beforeInvokeArgs);
                 pipeStates[pipeIndex] = beforeInvokeArgs.State;
             }
+
             return pipeStates;
         }
 
@@ -95,14 +100,14 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation()
         {
-            _messageLogger.InfoFormat("HANDLE: {0} [{1}]", _messages[0], _messageContext.MessageId);
+            _messageLogger.InfoFormat("HANDLE{1}: {0} [{2}]", _messages[0], _invoker.DispatchQueueName, _messageContext.MessageId);
 
             return MessageContext.SetCurrent(_messageContext);
         }
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation(object messageHandler)
         {
-            _messageLogger.InfoFormat("HANDLE: {0} [{1}]", _messages[0], _messageContext.MessageId);
+            _messageLogger.InfoFormat("HANDLE{1}: {0} [{2}]", _messages[0], _invoker.DispatchQueueName, _messageContext.MessageId);
 
             ApplyMutations(messageHandler);
 
@@ -111,14 +116,11 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         private void ApplyMutations(object messageHandler)
         {
-            var messageContextAwareHandler = messageHandler as IMessageContextAware;
-            if (messageContextAwareHandler != null)
+            if (messageHandler is IMessageContextAware messageContextAwareHandler)
                 messageContextAwareHandler.Context = Context;
 
             foreach (var messageHandlerMutation in _handlerMutations)
-            {
                 messageHandlerMutation(messageHandler);
-            }
         }
     }
 }

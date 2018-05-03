@@ -6,8 +6,9 @@ namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatch
     {
+        private static readonly object _exceptionsLock = new object();
+
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
-        private readonly object _exceptionsLock = new object();
         private Dictionary<Type, Exception> _exceptions;
         private int _remainingHandlerCount;
 

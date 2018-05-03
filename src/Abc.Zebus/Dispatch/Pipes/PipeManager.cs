@@ -13,11 +13,13 @@ namespace Abc.Zebus.Dispatch.Pipes
         private readonly ConcurrentDictionary<Type, PipeList> _pipesByMessageType = new ConcurrentDictionary<Type, PipeList>();
         private readonly ConcurrentSet<string> _enabledPipeNames = new ConcurrentSet<string>();
         private readonly ConcurrentSet<string> _disabledPipeNames = new ConcurrentSet<string>();
+        private readonly Func<Type, PipeList> _createPipeList;
         private readonly IPipeSource[] _pipeSources;
 
         public PipeManager(IPipeSource[] pipeSources)
         {
             _pipeSources = pipeSources;
+            _createPipeList = CreatePipeList;
         }
 
         public void EnablePipe(string pipeName)
@@ -48,26 +50,18 @@ namespace Abc.Zebus.Dispatch.Pipes
             return new PipeInvocation(messageHandlerInvoker, messages, messageContext, pipes);
         }
 
-        public IEnumerable<IPipe> GetEnabledPipes(Type messageHandlerType)
-        {
-            return GetPipeList(messageHandlerType).EnabledPipes;
-        }
+        public IEnumerable<IPipe> GetEnabledPipes(Type messageHandlerType) 
+            => GetPipeList(messageHandlerType).EnabledPipes;
 
-        private PipeList GetPipeList(Type messageHandlerType)
-        {
-            return _pipesByMessageType.GetOrAdd(messageHandlerType, CreatePipeListEntry);
-        }
+        private PipeList GetPipeList(Type messageHandlerType) 
+            => _pipesByMessageType.GetOrAdd(messageHandlerType, _createPipeList);
 
-        private PipeList CreatePipeListEntry(Type handlerType)
-        {
-            var pipes = _pipeSources.SelectMany(x => x.GetPipes(handlerType));
-            return new PipeList(this, pipes);
-        }
+        private PipeList CreatePipeList(Type handlerType) 
+            => new PipeList(this, _pipeSources.SelectMany(x => x.GetPipes(handlerType)));
 
-        private bool IsPipeEnabled(IPipe pipe)
-        {
-            return !_disabledPipeNames.Contains(pipe.Name) && (pipe.IsAutoEnabled || _enabledPipeNames.Contains(pipe.Name));
-        }
+        private bool IsPipeEnabled(IPipe pipe) 
+            => !_disabledPipeNames.Contains(pipe.Name)
+               && (pipe.IsAutoEnabled || _enabledPipeNames.Contains(pipe.Name));
 
         private class PipeList
         {

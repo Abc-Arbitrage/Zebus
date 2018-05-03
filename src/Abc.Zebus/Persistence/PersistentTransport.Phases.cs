@@ -32,6 +32,11 @@ namespace Abc.Zebus.Persistence
                 var messageReplayed = replayEvent as MessageReplayed;
                 if (messageReplayed != null)
                 {
+                    // the message was persisted because it comes from the persistence
+                    // but previous Zebus versions do not specify the WasPersisted field
+                    // => force WasPersisted to support previous Zebus version and make sure the message will be acked
+                    messageReplayed.Message.WasPersisted = true;
+
                     OnMessageReplayed(messageReplayed);
                     return;
                 }
@@ -119,11 +124,6 @@ namespace Abc.Zebus.Persistence
             protected override void OnMessageReplayed(MessageReplayed messageReplayed)
             {
                 Transport._logger.DebugFormat("REPLAY: {0} {1}", messageReplayed.Message.MessageTypeId, messageReplayed.Message.Id);
-
-                // the message was persisted because it comes from the persistence
-                // but previous Zebus versions do not specify the WasPersisted field
-                // => force WasPersisted to support previous Zebus version and make sure the message will be acked
-                messageReplayed.Message.WasPersisted = true;
 
                 Transport.TriggerMessageReceived(messageReplayed.Message);
                 Transport._receivedMessagesIds.TryAdd(messageReplayed.Message.Id, true);

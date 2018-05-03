@@ -35,6 +35,14 @@ namespace Abc.Zebus.Dispatch
         }
 
         public override bool ShouldHandle(IMessage message)
-            => _predicates.Any(predicate => predicate(message));
+        {
+            foreach (var predicate in _predicates)
+            {
+                if (predicate(message))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

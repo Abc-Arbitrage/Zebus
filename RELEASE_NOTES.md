@@ -1,3 +1,25 @@
+## 2.2.0
+- Features
+    - Updated Newtonsoft.Json, protobuf-net and log4net dependencies
+
+## 2.1.2
+- Features
+    - Reduce heap allocations in the receiving code path
+
+## 2.1.1
+- Features
+    - Improve performance when message logging is disabled
+    
+## 2.1.0
+- Features
+    - Inject an error reporter in various zmq outbound socket operations
+    - Allow local message dispatch when the bus is stopping
+- Bug fixes
+    - Ensure all replayed messages are acked to the persistence
+    - Support unserializable messages in dispatch error handling
+- Code cleanup
+    - Migrate to VS2017 project file
+
 ## 2.0.0
 This version introduces a major breaking change: a dedicated `TransportMessage` is now used to forward messages to the persistence service, instead of sending a `PersistMessageCommand`. An updated persistence service is still able to process commands sent by old peers, but an old persistence service is not be able to process the new TransportMessage. Thus the persistence service must be updated first.
 - Features

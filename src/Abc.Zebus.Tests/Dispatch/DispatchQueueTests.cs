@@ -61,6 +61,23 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
+        public void should_continue_processing_messages_after_continuation_error()
+        {
+            _dispatchQueue.Start();
+
+            var message1 = new ExecutableEvent { Callback = x => throw new Exception("Processing error") };
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message1, (d, r) => throw new Exception("Continuation error"));
+            dispatch.SetHandlerCount(1);
+
+            _dispatchQueue.Enqueue(dispatch, new TestMessageHandlerInvoker<ExecutableEvent>());
+
+            var message2 = new ExecutableEvent();
+            var task = EnqueueInvocation(message2);
+
+            task.Wait(500.Milliseconds()).ShouldBeTrue();
+        }
+
+        [Test]
         public void should_finish_current_invocation_before_stopping()
         {
             var message = new ExecutableEvent { IsBlocking = true };

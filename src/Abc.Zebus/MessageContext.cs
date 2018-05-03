@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 
@@ -33,11 +34,7 @@ namespace Abc.Zebus
         public static MessageContext Current => _current;
 
         public static IDisposable SetCurrent(MessageContext context)
-        {
-            var previous = _current;
-            _current = context;
-            return new DisposableAction(() => _current = previous);
-        }
+            => new MessageContextScope(context);
 
         public static IDisposable OverrideInitiatorUsername(string username)
         {
@@ -110,6 +107,24 @@ namespace Abc.Zebus
                 return ErrorStatus.NoError;
 
             return new ErrorStatus(ReplyCode, ReplyMessage);
+        }
+
+        private class MessageContextScope : IDisposable
+        {
+            private readonly MessageContext _previous;
+            private int _disposed;
+
+            public MessageContextScope(MessageContext context)
+            {
+                _previous = _current;
+                _current = context;
+            }
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                    _current = _previous;
+            }
         }
     }
 }

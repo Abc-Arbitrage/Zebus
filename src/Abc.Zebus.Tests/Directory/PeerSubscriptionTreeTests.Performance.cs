@@ -32,7 +32,7 @@ namespace Abc.Zebus.Tests.Directory
                 subscriptionTree.Add(peerSubscription.Item1, peerSubscription.Item2.BindingKey);
             }
 
-            var bindingKey = BindingKey.Split(routingKey);
+            var bindingKey = new BindingKey(routingKey.Split('.'));
 
             Console.WriteLine("{0} test -------------", subscriptionList.GetType().Name);
             Console.WriteLine();

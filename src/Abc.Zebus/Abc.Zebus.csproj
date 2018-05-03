@@ -1,71 +1,41 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1F4C6307-6113-40D5-BF42-4B6BF5DF13B2}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Abc.Zebus</RootNamespace>
-    <AssemblyName>Abc.Zebus</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFramework>net46</TargetFramework>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <UseVSHostingProcess>false</UseVSHostingProcess>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="protobuf-net" Version="2.3.7" />
+    <PackageReference Include="structuremap" Version="3.1.6.186" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="clrzmq">
       <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
     </Reference>
-    <Reference Include="log4net">
-      <HintPath>..\..\lib\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\..\lib\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="StructureMap">
-      <HintPath>..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="StructureMap.Net4">
-      <HintPath>..\..\lib\packages\structuremap.3.1.6.186\lib\net40\StructureMap.Net4.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
@@ -73,220 +43,12 @@
     <Compile Include="..\SharedVersionInfo.cs">
       <Link>Properties\SharedVersionInfo.cs</Link>
     </Compile>
-    <Compile Include="Core\Bus.cs" />
-    <Compile Include="CommandResult.cs" />
-    <Compile Include="Core\BusFactory.cs" />
-    <Compile Include="Core\DefaultMessageSendingStrategy.cs" />
-    <Compile Include="Core\DefaultStoppingStrategy.cs" />
-    <Compile Include="Core\IMessageSendingStrategy.cs" />
-    <Compile Include="Directory\MarkPeerAsNotRespondingCommand.cs" />
-    <Compile Include="Directory\MarkPeerAsRespondingCommand.cs" />
-    <Compile Include="Dispatch\DispatchQueue.cs" />
-    <Compile Include="Dispatch\DynamicMessageHandlerInvoker.cs" />
-    <Compile Include="Core\IStoppingStrategy.cs" />
-    <Compile Include="Core\RoundRobinPeerSelector.cs" />
-    <Compile Include="Directory\DecommissionPeerCommand.cs" />
-    <Compile Include="Directory\DirectoryErrorCodes.cs" />
-    <Compile Include="Directory\IPeerDirectory.cs" />
-    <Compile Include="Directory\MessageBinding.cs" />
-    <Compile Include="Directory\PeerDecommissioned.cs" />
-    <Compile Include="Directory\PeerDirectoryClient.PeerEntry.cs" />
-    <Compile Include="Directory\PeerNotResponding.cs" />
-    <Compile Include="Directory\PeerResponding.cs" />
-    <Compile Include="Directory\PeerSubscriptionsForTypesUpdated.cs" />
-    <Compile Include="Directory\PeerSubscriptionsUpdated.cs" />
-    <Compile Include="Directory\PeerSubscriptionTree.cs" />
-    <Compile Include="Directory\PingPeerCommand.cs" />
-    <Compile Include="Directory\PeerUpdateAction.cs" />
-    <Compile Include="Directory\SubscriptionsForType.cs" />
-    <Compile Include="Directory\UpdatePeerSubscriptionsCommand.cs" />
-    <Compile Include="Directory\UpdatePeerSubscriptionsForTypesCommand.cs" />
-    <Compile Include="Dispatch\AsyncMessageHandlerInvoker.cs" />
-    <Compile Include="Dispatch\DispatchQueueFactory.cs" />
-    <Compile Include="Dispatch\IDispatchQueueFactory.cs" />
-    <Compile Include="Dispatch\IMessageDispatchFactory.cs" />
-    <Compile Include="Dispatch\IMessageHandlerInvocation.cs" />
-    <Compile Include="BusExtensions.cs" />
-    <Compile Include="Dispatch\MessageHandlerInvokerMode.cs" />
-    <Compile Include="ErrorStatus.cs" />
-    <Compile Include="Dispatch\BatchedMessageHandlerInvoker.cs" />
-    <Compile Include="Hosting\HostInitializer.cs" />
-    <Compile Include="Hosting\HostInitializerHelper.cs" />
-    <Compile Include="Hosting\PeriodicActionHostInitializer.cs" />
-    <Compile Include="IBatchedMessageHandler.cs" />
-    <Compile Include="ICommandHandler`1.cs" />
-    <Compile Include="IMessageHandler`1.cs" />
-    <Compile Include="Lotus\ReplayMessageCommand.cs" />
-    <Compile Include="Lotus\ReplayMessageHandler.cs" />
-    <Compile Include="MessageTypeDescriptor.cs" />
-    <Compile Include="Monitoring\IProvideQueueLength.cs" />
-    <Compile Include="Scan\BatchedMessageHandlerInvokerLoader.cs" />
-    <Compile Include="Serialization\Protobuf\ByteArray.cs" />
-    <Compile Include="Serialization\Protobuf\CodedInputStream.cs" />
-    <Compile Include="Serialization\Protobuf\CodedOutputStream.ComputeSize.cs" />
-    <Compile Include="Serialization\Protobuf\CodedOutputStream.cs" />
-    <Compile Include="Serialization\Protobuf\InvalidProtocolBufferException.cs" />
-    <Compile Include="Routing\BindingKeyPredicateBuilder.cs" />
-    <Compile Include="Routing\BindingKeyToken.cs" />
-    <Compile Include="Routing\IBindingKeyPredicateBuilder.cs" />
-    <Compile Include="Serialization\PeerIdConverter.cs" />
-    <Compile Include="Persistence\PersistentTransport.cs" />
-    <Compile Include="Dispatch\Pipes\AfterInvokeArgs.cs" />
-    <Compile Include="Dispatch\Pipes\BeforeInvokeArgs.cs" />
-    <Compile Include="Scan\DispatchQueueNameScanner.cs" />
-    <Compile Include="Dispatch\DispatchQueueNameAttribute.cs" />
-    <Compile Include="Dispatch\IMessageHandlerInvoker.cs" />
-    <Compile Include="Dispatch\IProvideDispatchQueueNameForCurrentNamespace.cs" />
-    <Compile Include="Core\MessageContextAwareBus.cs" />
-    <Compile Include="Dispatch\MessageDispatch.cs" />
-    <Compile Include="Dispatch\MessageHandlerInvoker.cs" />
-    <Compile Include="IBusConfiguration.cs" />
-    <Compile Include="Directory\PeerDescriptor.cs" />
-    <Compile Include="Directory\PeerDirectoryClient.cs" />
-    <Compile Include="Directory\PeerStarted.cs" />
-    <Compile Include="Directory\PeerStopped.cs" />
-    <Compile Include="Directory\RegisterPeerCommand.cs" />
-    <Compile Include="Directory\RegisterPeerResponse.cs" />
-    <Compile Include="Directory\UnregisterPeerCommand.cs" />
-    <Compile Include="Dispatch\DispatchResult.cs" />
-    <Compile Include="Dispatch\IMessageDispatcher.cs" />
-    <Compile Include="Dispatch\MessageDispatcher.cs" />
-    <Compile Include="DomainException.cs" />
-    <Compile Include="IBus.cs" />
-    <Compile Include="IMessageContextAware.cs" />
-    <Compile Include="Initialization\ZebusRegistry.cs" />
-    <Compile Include="Dispatch\SyncMessageHandlerInvoker.cs" />
-    <Compile Include="Dispatch\LocalDispatch.cs" />
-    <Compile Include="Lotus\CustomProcessingFailed.cs" />
-    <Compile Include="Lotus\MessageProcessingFailed.cs" />
-    <Compile Include="MessageContext.cs" />
-    <Compile Include="Core\BusMessageLogger.cs" />
-    <Compile Include="MessageId.cs" />
-    <Compile Include="MessageTypeId.cs" />
-    <Compile Include="MessageUtil.cs" />
-    <Compile Include="PeerId.cs" />
-    <Compile Include="Persistence\IReplayEvent.cs" />
-    <Compile Include="Persistence\StartMessageReplayCommand.cs" />
-    <Compile Include="Persistence\SafetyPhaseEnded.cs" />
-    <Compile Include="Persistence\ReplayPhaseEnded.cs" />
-    <Compile Include="Persistence\PersistenceUnreachableException.cs" />
-    <Compile Include="Dispatch\Pipes\AttributePipeSource.cs" />
-    <Compile Include="Dispatch\Pipes\IPipe.cs" />
-    <Compile Include="Dispatch\Pipes\IPipeManager.cs" />
-    <Compile Include="Dispatch\Pipes\IPipeSource.cs" />
-    <Compile Include="Dispatch\Pipes\PipeAttribute.cs" />
-    <Compile Include="Dispatch\Pipes\PipeInvocation.cs" />
-    <Compile Include="Dispatch\Pipes\PipeManager.cs" />
-    <Compile Include="Dispatch\Pipes\PipeSource.cs" />
-    <Compile Include="Persistence\MessageHandled.cs" />
-    <Compile Include="Persistence\MessageReplayed.cs" />
-    <Compile Include="Persistence\PersistMessageCommand.cs" />
-    <Compile Include="Scan\IMessageHandlerInvokerLoader.cs" />
-    <Compile Include="Scan\AsyncMessageHandlerInvokerLoader.cs" />
-    <Compile Include="Scan\SyncMessageHandlerInvokerLoader.cs" />
-    <Compile Include="Scan\MessageHandlerInvokerLoader.cs" />
-    <Compile Include="Scan\TypeSource.cs" />
-    <Compile Include="Serialization\ProtocolBufferSerializationException.cs" />
-    <Compile Include="EventSourcing\AggregateRootIdAttribute.cs" />
-    <Compile Include="EventSourcing\DomainEventSourcing.cs" />
-    <Compile Include="IAsyncMessageHandler.cs" />
-    <Compile Include="ICommand.cs" />
-    <Compile Include="ICommandHandler.cs" />
-    <Compile Include="EventSourcing\IDomainEvent.cs" />
-    <Compile Include="IEvent.cs" />
-    <Compile Include="ICustomInvokerMessageHandler.cs" />
-    <Compile Include="EventSourcing\IExtraTypesProvider.cs" />
-    <Compile Include="IMessage.cs" />
-    <Compile Include="IMessageHandler.cs" />
-    <Compile Include="InfrastructureAttribute.cs" />
-    <Compile Include="MessageTypeIdAttribute.cs" />
-    <Compile Include="NoScanAttribute.cs" />
-    <Compile Include="Routing\Routable.cs" />
-    <Compile Include="Routing\RoutingPositionAttribute.cs" />
-    <Compile Include="EventSourcing\SerializationIdAttribute.cs" />
-    <Compile Include="Serialization\Protobuf\WireFormat.cs" />
-    <Compile Include="SubscriptionMode.cs" />
-    <Compile Include="SubscriptionModeAttribute.cs" />
-    <Compile Include="SubscriptionRequest.cs" />
-    <Compile Include="TransientAttribute.cs" />
-    <Compile Include="Subscription.cs" />
-    <Compile Include="Serialization\IMessageSerializer.cs" />
-    <Compile Include="Serialization\MessageSerializer.cs" />
-    <Compile Include="Core\MessageExecutionCompleted.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Serialization\MessageSerializerExtensions.cs" />
-    <Compile Include="Routing\BindingKey.cs" />
-    <Compile Include="Timeout\RequestTimeoutCommand.cs" />
-    <Compile Include="Timeout\Timeout.cs" />
-    <Compile Include="Timeout\TimeoutCommand.cs" />
-    <Compile Include="Persistence\IPersistentTransport.cs" />
-    <Compile Include="Transport\ITransport.cs" />
-    <Compile Include="Peer.cs" />
-    <Compile Include="Transport\IZmqTransportConfiguration.cs" />
-    <Compile Include="Transport\SendContext.cs" />
-    <Compile Include="Transport\TransportMessageReader.cs" />
-    <Compile Include="Transport\TransportMessageWriter.cs" />
-    <Compile Include="Transport\ZmqInboundSocket.cs" />
-    <Compile Include="Transport\ZmqOutboundSocket.cs" />
-    <Compile Include="Transport\ZmqEndPoint.cs" />
-    <Compile Include="Transport\OriginatorInfo.cs" />
-    <Compile Include="Transport\ZmqTransport.cs" />
-    <Compile Include="Transport\TransportMessage.cs" />
-    <Compile Include="Transport\ZmqSocketOptions.cs" />
-    <Compile Include="Transport\ZmqUtil.cs" />
-    <Compile Include="Serialization\Serializer.cs" />
-    <Compile Include="Util\Annotations\JetBrains.Annotations.cs" />
-    <Compile Include="Util\ArrayUtil.cs" />
-    <Compile Include="Util\BackgroundThread.cs" />
-    <Compile Include="Util\Collections\ConcurrentSet.cs" />
-    <Compile Include="Util\Collections\FlushableBlockingCollection.cs" />
-    <Compile Include="Util\CultureScope.cs" />
-    <Compile Include="Util\DisposableAction.cs" />
-    <Compile Include="Util\Extensions\ExtendDictionary.cs" />
-    <Compile Include="Util\Extensions\ExtendICollection.cs" />
-    <Compile Include="Util\Extensions\ExtendEnum.cs" />
-    <Compile Include="Util\Extensions\ExtendIEnumerable.cs" />
-    <Compile Include="Util\Extensions\ExtendString.cs" />
-    <Compile Include="Util\Extensions\ExtendTask.cs" />
-    <Compile Include="Util\Extensions\ExtendType.cs" />
-    <Compile Include="Util\TimeSpanCreation.cs" />
-    <Compile Include="Util\Buffer.cs" />
-    <Compile Include="Util\PathUtil.cs" />
-    <Compile Include="Util\SystemDateTime.cs" />
-    <Compile Include="Util\TcpUtil.cs" />
-    <Compile Include="Util\TaskUtil.cs" />
-    <Compile Include="Util\TypeUtil.cs" />
-    <Compile Include="Util\UniqueTimestampProvider.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Persistence\PersistentTransport.Phases.cs" />
-  </ItemGroup>
-  <ItemGroup>
+
+    <None Include="Transport\libzmq-4.0.5-v140-mt" />
     <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.dll" />
     <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.dll" />
+    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.pdb" />
+    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.pdb" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Transport\libzmq-4.0.5-v140-mt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Transport\libzmq-x64-0.0.0.0.pdb" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Transport\libzmq-x86-0.0.0.0.pdb" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

@@ -3,7 +3,7 @@ using ProtoBuf;
 
 namespace Abc.Zebus.Persistence
 {
-    [ProtoContract, Transient, Infrastructure]
+    [ProtoContract, Transient]
     public class StartMessageReplayCommand : ICommand
     {
         [ProtoMember(1, IsRequired = true)]

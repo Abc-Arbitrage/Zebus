@@ -12,9 +12,7 @@ namespace Abc.Zebus.Transport
         {
             var transportMessage = new TransportMessage { Content = Stream.Null };
 
-            uint number;
-            WireType wireType;
-            while (!input.IsAtEnd && input.TryReadTag(out number, out wireType))
+            while (!input.IsAtEnd && input.TryReadTag(out var number, out var wireType))
             {
                 switch (number)
                 {
@@ -53,13 +51,11 @@ namespace Abc.Zebus.Transport
             var length = input.ReadLength();
             var endPosition = input.Position + length;
 
-            uint number;
-            WireType wireType;
             var senderId = new PeerId();
             string senderEndPoint = null;
             string initiatorUserName = null;
 
-            while (input.Position < endPosition && input.TryReadTag(out number, out wireType))
+            while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
             {
                 switch (number)
                 {
@@ -89,7 +85,7 @@ namespace Abc.Zebus.Transport
 
         private static MessageId ReadMessageId(CodedInputStream input)
         {
-            var guid = ReadSingleField(input, x => ReadGuid(input));
+            var guid = ReadSingleField(input, x => x.ReadGuid());
             return new MessageId(guid);
         }
 
@@ -97,11 +93,6 @@ namespace Abc.Zebus.Transport
         {
             var fullName = ReadSingleField(input, x => x.ReadString());
             return new MessageTypeId(fullName);
-        }
-
-        private static Guid ReadGuid(CodedInputStream input)
-        {
-            return input.ReadGuid();
         }
 
         private static Stream ReadStream(CodedInputStream input)
@@ -115,11 +106,9 @@ namespace Abc.Zebus.Transport
             var length = input.ReadLength();
             var endPosition = input.Position + length;
 
-            uint number;
-            WireType wireType;
             var value = default(T);
 
-            while (input.Position < endPosition && input.TryReadTag(out number, out wireType))
+            while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
             {
                 switch (number)
                 {
