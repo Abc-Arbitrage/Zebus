@@ -296,8 +296,6 @@ namespace Abc.Zebus.Core
         {
             if (request.Batch != null)
             {
-                await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
-
                 var batchSubscriptions = request.Batch.TryConsumeBatchSubscriptions();
                 if (batchSubscriptions != null)
                 {

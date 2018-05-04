@@ -397,6 +397,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
 
                 var batch = new SubscriptionRequestBatch();
+
                 var requestA = new SubscriptionRequest(new[]
                 {
                     Subscription.ByExample(x => new FakeRoutableCommand(1, "foo")),
