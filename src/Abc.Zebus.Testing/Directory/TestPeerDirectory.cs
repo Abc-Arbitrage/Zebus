@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
@@ -17,15 +18,16 @@ namespace Abc.Zebus.Testing.Directory
         public event Action Registered = delegate { };
         public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
 
-        public void Register(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
+        public Task RegisterAsync(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
         {
             Self = self;
             Peers[self.Id] = self.ToPeerDescriptor(true, subscriptions);
 
             Registered();
+            return Task.CompletedTask;
         }
 
-        public void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
+        public Task UpdateSubscriptionsAsync(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
         {
             var newSubscriptions = SubscriptionsForType.CreateDictionary(Peers[Self.Id].Subscriptions);
             foreach (var subscriptionsForType in subscriptionsForTypes)
@@ -33,11 +35,13 @@ namespace Abc.Zebus.Testing.Directory
             
             Peers[Self.Id] = Self.ToPeerDescriptor(true, newSubscriptions.Values.SelectMany(subForType => subForType.ToSubscriptions()));
             PeerUpdated(Self.Id, PeerUpdateAction.Updated);
+            return Task.CompletedTask;
         }
 
-        public void Unregister(IBus bus)
+        public Task UnregisterAsync(IBus bus)
         {
             PeerUpdated(Self.Id, PeerUpdateAction.Stopped);
+            return Task.CompletedTask;
         }
 
         public void RegisterRemoteListener<TMEssage>() where TMEssage : IMessage

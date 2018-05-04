@@ -45,20 +45,11 @@ namespace Abc.Zebus.Core
             }
         }
 
-        public IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default)
-            => _bus.Subscribe(subscription);
+        public Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
+            => _bus.SubscribeAsync(request);
 
-        public IDisposable Subscribe(Subscription[] subscriptions, SubscriptionOptions options = SubscriptionOptions.Default)
-            => _bus.Subscribe(subscriptions);
-
-        public IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage
-            => _bus.Subscribe(handler);
-
-        public IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler)
-            => _bus.Subscribe(subscriptions, handler);
-
-        public IDisposable Subscribe(Subscription subscription, Action<IMessage> handler)
-            => _bus.Subscribe(subscription, handler);
+        public Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
+            => _bus.SubscribeAsync(request, handler);
 
         public void Reply(int errorCode) => Reply(errorCode, null);
 
@@ -78,24 +69,26 @@ namespace Abc.Zebus.Core
 
         public event Action Starting
         {
-            add { _bus.Starting += value; }
-            remove { _bus.Starting -= value; }
+            add => _bus.Starting += value;
+            remove => _bus.Starting -= value;
         }
+
         public event Action Started
         {
-            add { _bus.Started += value; }
-            remove { _bus.Started -= value; }
+            add => _bus.Started += value;
+            remove => _bus.Started -= value;
         }
+
         public event Action Stopping
         {
-            add { _bus.Stopping += value; }
-            remove { _bus.Stopping -= value; }
+            add => _bus.Stopping += value;
+            remove => _bus.Stopping -= value;
         }
 
         public event Action Stopped
         {
-            add { _bus.Stopped += value; }
-            remove { _bus.Stopped -= value; }
+            add => _bus.Stopped += value;
+            remove => _bus.Stopped -= value;
         }
 
         public void Dispose() => _bus.Dispose();

@@ -1,43 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net45</TargetFramework>
-	<LanguageTargets>$(MSBuildExtensionsPath)\$(VisualStudioVersion)\Bin\Microsoft.CSharp.targets</LanguageTargets>
+    <TargetFramework>net46</TargetFramework>
     <OutputType>Exe</OutputType>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UseVSHostingProcess>false</UseVSHostingProcess>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <ItemGroup>
-    <None Remove="Transport\transport_message_1_4_1.bin" />
-  </ItemGroup>
+
   <ItemGroup>
     <EmbeddedResource Include="Transport\transport_message_1_4_1.bin" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Tests.TestExe\Abc.Zebus.Tests.TestExe.csproj" />
     <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="CompareNETObjects" Version="3.03.0.0" />
     <PackageReference Include="log4net" Version="2.0.8" />
@@ -47,6 +43,7 @@
     <PackageReference Include="protobuf-net" Version="2.3.7" />
     <PackageReference Include="structuremap" Version="3.1.6.186" />
   </ItemGroup>
+
   <ItemGroup>
     <Reference Include="clrzmq">
       <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
@@ -56,12 +53,14 @@
       <Aliases>senderVersion</Aliases>
     </Reference>
   </ItemGroup>
+
   <ItemGroup>
     <None Include="app.config" />
     <None Include="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>

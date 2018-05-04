@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Abc.Zebus.Directory
 {
@@ -7,9 +8,9 @@ namespace Abc.Zebus.Directory
     {
         event Action<PeerId, PeerUpdateAction> PeerUpdated;
 
-        void Register(IBus bus, Peer self, IEnumerable<Subscription> subscriptions);
-        void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes);
-        void Unregister(IBus bus);
+        Task RegisterAsync(IBus bus, Peer self, IEnumerable<Subscription> subscriptions);
+        Task UpdateSubscriptionsAsync(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes);
+        Task UnregisterAsync(IBus bus);
 
         IList<Peer> GetPeersHandlingMessage(IMessage message);
         IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding);
@@ -18,6 +19,7 @@ namespace Abc.Zebus.Directory
 
         // TODO: move to a specific interface (IPeerDirectoryExplorer)
         PeerDescriptor GetPeerDescriptor(PeerId peerId);
+
         IEnumerable<PeerDescriptor> GetPeerDescriptors();
     }
 }

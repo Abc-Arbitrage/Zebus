@@ -16,11 +16,8 @@ namespace Abc.Zebus
         Task<CommandResult> Send(ICommand message);
         Task<CommandResult> Send(ICommand message, Peer peer);
 
-        IDisposable Subscribe(Subscription subscription, SubscriptionOptions options = SubscriptionOptions.Default);
-        IDisposable Subscribe(Subscription[] subscriptions, SubscriptionOptions options = SubscriptionOptions.Default);
-        IDisposable Subscribe<T>(Action<T> handler) where T : class, IMessage;
-        IDisposable Subscribe(Subscription[] subscriptions, Action<IMessage> handler);
-        IDisposable Subscribe(Subscription subscription, Action<IMessage> handler);
+        Task<IDisposable> SubscribeAsync(SubscriptionRequest request);
+        Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler);
 
         void Reply(int errorCode);
         void Reply(int errorCode, string message);

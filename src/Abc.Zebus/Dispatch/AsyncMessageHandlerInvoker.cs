@@ -2,7 +2,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using Abc.Zebus.Util;
 using StructureMap;
 
 namespace Abc.Zebus.Dispatch
@@ -43,7 +42,7 @@ namespace Abc.Zebus.Dispatch
             }
             catch (Exception ex)
             {
-                return TaskUtil.FromError(ex);
+                return Task.FromException(ex);
             }
         }
 

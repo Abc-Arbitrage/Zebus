@@ -1,4 +1,6 @@
-﻿using Abc.Zebus.Core;
+﻿using System;
+using System.Threading.Tasks;
+using Abc.Zebus.Core;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
@@ -93,12 +95,12 @@ namespace Abc.Zebus.Tests.Core
         public void should_subscribe()
         {
             var expectedScope = new DisposableAction(() => { });
-            var subscription = new Subscription(MessageUtil.TypeId<FakeCommand>());
-            _busMock.Setup(x => x.Subscribe(subscription, SubscriptionOptions.Default)).Returns(expectedScope);
+            var subscription =  new SubscriptionRequest(new Subscription(MessageUtil.TypeId<FakeCommand>()));
+            _busMock.Setup(x => x.SubscribeAsync(subscription)).Returns(Task.FromResult<IDisposable>(expectedScope));
 
-            var scope = _bus.Subscribe(subscription);
+            var scope = _bus.SubscribeAsync(subscription);
 
-            scope.ShouldEqual(expectedScope);
+            scope.Result.ShouldEqual(expectedScope);
         }
 
         [Test]

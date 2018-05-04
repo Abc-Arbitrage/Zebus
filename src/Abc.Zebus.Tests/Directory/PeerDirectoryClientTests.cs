@@ -43,7 +43,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_register_peer([Values(true, false)]bool isPersistent)
+        public async Task should_register_peer([Values(true, false)]bool isPersistent)
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
             _configurationMock.SetupGet(x => x.IsPersistent).Returns(isPersistent);
@@ -51,7 +51,7 @@ namespace Abc.Zebus.Tests.Directory
 
             using (SystemDateTime.PauseTime())
             {
-                _directory.Register(_bus, _self, subscriptions);
+                await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
                 var expectedRecipientId = new PeerId("Abc.Zebus.DirectoryService.0");
                 _bus.Commands.Count().ShouldEqual(1);
@@ -59,7 +59,7 @@ namespace Abc.Zebus.Tests.Directory
                 var register = _bus.Commands.OfType<RegisterPeerCommand>().ExpectedSingle();
                 register.Peer.PeerId.ShouldEqual(_self.Id);
                 register.Peer.IsPersistent.ShouldEqual(isPersistent);
-                register.Peer.TimestampUtc.Value.ShouldBeGreaterOrEqualThan(SystemDateTime.UtcNow);
+                register.Peer.TimestampUtc.GetValueOrDefault().ShouldBeGreaterOrEqualThan(SystemDateTime.UtcNow);
                 register.Peer.Subscriptions.ShouldBeEquivalentTo(subscriptions);
 
                 _bus.GetRecipientPeer(register).Id.ShouldEqual(expectedRecipientId);
@@ -67,7 +67,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_re_register_peer()
+        public async Task should_re_register_peer()
         {
             var peers = new List<PeerDescriptor>();
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(peers.ToArray()));
@@ -75,14 +75,14 @@ namespace Abc.Zebus.Tests.Directory
             var peer1 = new Peer(new PeerId("Abc.X.1"), "tcp://x:1");
             peers.Add(peer1.ToPeerDescriptor(true, typeof(FakeCommand)));
 
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle().Id.ShouldEqual(peer1.Id);
 
             peers.Clear();
             var peer2 = new Peer(new PeerId("Abc.X.2"), "tcp://x:2");
             peers.Add(peer2.ToPeerDescriptor(true, typeof(FakeCommand)));
 
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle().Id.ShouldEqual(peer2.Id);
         }
 
@@ -91,25 +91,23 @@ namespace Abc.Zebus.Tests.Directory
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
             _configurationMock.SetupGet(x => x.IsPersistent).Returns(true);
-            _bus.AddHandler<RegisterPeerCommand>(x =>
-            {
-                throw new DomainException(DirectoryErrorCodes.PeerAlreadyExists, "Peer already exists");
-            } );
+            _bus.AddHandler<RegisterPeerCommand>(x => throw new DomainException(DirectoryErrorCodes.PeerAlreadyExists, "Peer already exists"));
 
             using (SystemDateTime.PauseTime())
             {
-                Assert.Throws<TimeoutException>(() => _directory.Register(_bus, _self, subscriptions));
+                Assert.Throws<AggregateException>(() => _directory.RegisterAsync(_bus, _self, subscriptions).Wait(20.Seconds()))
+                      .InnerException.ShouldBe<TimeoutException>();
             }
         }
 
         [Test]
-        public void should_update_peer()
+        public async Task should_update_peer()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             var expectedSubscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(new BindingKey("plip"), new BindingKey("plop")) };
-            _directory.UpdateSubscriptions(_bus, expectedSubscriptions);
+            await _directory.UpdateSubscriptionsAsync(_bus, expectedSubscriptions).ConfigureAwait(true);
 
             var command = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ExpectedSingle();
             command.PeerId.ShouldEqual(_self.Id);
@@ -117,26 +115,26 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_not_send_updatesubscriptions_when_not_needed()
+        public async Task should_not_send_updatesubscriptions_when_not_needed()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
-            _directory.UpdateSubscriptions(_bus, new SubscriptionsForType[0]);
+            await _directory.UpdateSubscriptionsAsync(_bus, new SubscriptionsForType[0]).ConfigureAwait(true);
 
             _bus.Commands.OfType<RegisterPeerCommand>().ExpectedSingle();
             _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ShouldBeEmpty();
         }
         
         [Test]
-        public void should_timestamp_updatesubscriptions_with_a_minimum_ten_ticks_granularity()
+        public async Task should_timestamp_updatesubscriptions_with_a_minimum_ten_ticks_granularity()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             var subscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(BindingKey.Empty) };
             for (var i = 0; i < 100; ++i)
-                _directory.UpdateSubscriptions(_bus, subscriptions);
+                await _directory.UpdateSubscriptionsAsync(_bus, subscriptions).ConfigureAwait(true);
 
             var commands = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ToList();
             commands.ShouldNotBeEmpty();
@@ -150,16 +148,16 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_have_unique_timestamp_in_UpdatePeerSubscriptionsCommand()
+        public async Task should_have_unique_timestamp_in_UpdatePeerSubscriptionsCommand()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             var lastTimestamp = DateTime.MinValue;
             for (int i = 0; i < 100; i++)
             {
                 var subscriptions = new[] { SubscriptionsForType.Create<FakeCommand>(new BindingKey(i.ToString())) };
-                _directory.UpdateSubscriptions(_bus, subscriptions);
+                await _directory.UpdateSubscriptionsAsync(_bus, subscriptions).ConfigureAwait(true);
 
                 var command = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ExpectedSingle();
                 command.TimestampUtc.ShouldBeGreaterThan(lastTimestamp);
@@ -251,49 +249,49 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_get_self_handled_messages()
+        public async Task should_get_self_handled_messages()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
-            _directory.Register(_bus, _self, subscriptions);
+            await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
             var peerHandlingMessage = _directory.GetPeersHandlingMessage(new FakeCommand(0)).Single();
             peerHandlingMessage.Id.ShouldEqual(_self.Id);
         }
 
         [Test]
-        public void should_get_peer_with_matching_subscrition_binding_key()
+        public async Task should_get_peer_with_matching_subscrition_binding_key()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
             var command = new FakeRoutableCommand(10, "name");
             var subscriptions = new[] { new Subscription(command.TypeId(), new BindingKey("10", "#")) };
-            _directory.Register(_bus, _self, subscriptions);
+            await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
             var peerHandlingMessage = _directory.GetPeersHandlingMessage(command).Single();
             peerHandlingMessage.Id.ShouldEqual(_self.Id);
         }
 
         [Test]
-        public void should_not_get_peer_with_non_matching_subscrition_binding_key()
+        public async Task should_not_get_peer_with_non_matching_subscrition_binding_key()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
             var command = new FakeRoutableCommand(10, "name");
             var subscriptions = new[] { new Subscription(command.TypeId(), new BindingKey("5", "#")) };
-            _directory.Register(_bus, _self, subscriptions);
+            await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
             _directory.GetPeersHandlingMessage(command).ShouldBeEmpty();
         }
 
         [Test]
-        public void should_load_descriptors_after_register()
+        public async Task should_load_descriptors_after_register()
         {
             var clientPeerDescriptor = _otherPeer.ToPeerDescriptor(true, typeof(FakeEvent));
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new[] { clientPeerDescriptor }));
 
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             var peerHandlingMessage = _directory.GetPeersHandlingMessage(new FakeEvent(0)).Single();
             peerHandlingMessage.Id.ShouldEqual(clientPeerDescriptor.Peer.Id);
@@ -313,16 +311,16 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_unregister_peer()
+        public async Task should_unregister_peer()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             using (SystemDateTime.PauseTime())
             {
-                _directory.Unregister(_bus);
-                _directory.Unregister(_bus);
+                await _directory.UnregisterAsync(_bus).ConfigureAwait(true);
+                await _directory.UnregisterAsync(_bus).ConfigureAwait(true);
 
                 var unregisterPeerCommands = _bus.Commands.OfType<UnregisterPeerCommand>().ToList();
                 unregisterPeerCommands.Count.ShouldEqual(2);
@@ -333,10 +331,10 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void unregister_should_be_blocking()
+        public async Task unregister_should_be_blocking()
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
-            _directory.Register(_bus, _self, new Subscription[0]);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             var startUnregisterSignal = new AutoResetEvent(false);
             var stopUnregisterSignal = new AutoResetEvent(false);
@@ -348,7 +346,7 @@ namespace Abc.Zebus.Tests.Directory
                 stopUnregisterSignal.WaitOne();
             });
 
-            var unregistration = Task.Factory.StartNew(() => _directory.Unregister(_bus));
+            var unregistration = Task.Run(() => _directory.UnregisterAsync(_bus));
 
             var started = startUnregisterSignal.WaitOne(2.Seconds());
             started.ShouldBeTrue();
@@ -436,7 +434,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_connect_to_next_directory_if_first_is_failing()
+        public async Task should_connect_to_next_directory_if_first_is_failing()
         {
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.0"), x =>
@@ -444,13 +442,10 @@ namespace Abc.Zebus.Tests.Directory
                 Thread.Sleep(500.Milliseconds());
                 return new RegisterPeerResponse(new PeerDescriptor[0]);
             });
-            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x =>
-            {
-                return new RegisterPeerResponse(new PeerDescriptor[0]);
-            });
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
-            _directory.Register(_bus, _self, subscriptions);
+            await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
             var contactedPeers = _bus.GetContactedPeerIds().ToList();
             contactedPeers.Count.ShouldEqual(2);
@@ -777,7 +772,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_not_ignore_subscriptions_received_while_registering()
+        public async Task should_not_ignore_subscriptions_received_while_registering()
         {
             _bus.AddHandler<RegisterPeerCommand>(x =>
             {
@@ -786,14 +781,14 @@ namespace Abc.Zebus.Tests.Directory
                 return new RegisterPeerResponse(new[] { peerDescriptor });
             });
 
-            _directory.Register(_bus, _self, Enumerable.Empty<Subscription>());
+            await _directory.RegisterAsync(_bus, _self, Enumerable.Empty<Subscription>()).ConfigureAwait(true);
 
             _directory.GetPeerDescriptor(_otherPeer.Id).Subscriptions.Length.ShouldEqual(1);
             _directory.GetPeersHandlingMessage(new FakeEvent(0)).ShouldNotBeEmpty();
         }
 
         [Test, Repeat(20)]
-        public void should_handle_directory_events_during_the_register()
+        public async Task should_handle_directory_events_during_the_register()
         {
             var otherPeerDescriptor = _otherPeer.ToPeerDescriptor(true, typeof(FakeCommand), typeof(FakeEvent));
             otherPeerDescriptor.TimestampUtc = default(DateTime);
@@ -820,7 +815,7 @@ namespace Abc.Zebus.Tests.Directory
 
             taskStarted.WaitOne(500.Milliseconds()).ShouldBeTrue("Task should be started");
 
-           _directory.Register(_bus, _self, otherPeerDescriptor.Subscriptions );
+           await _directory.RegisterAsync(_bus, _self, otherPeerDescriptor.Subscriptions ).ConfigureAwait(true);
 
             task.Wait(1.Second()).ShouldBeTrue();
         }

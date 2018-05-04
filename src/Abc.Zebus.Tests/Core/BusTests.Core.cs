@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
@@ -39,7 +40,9 @@ namespace Abc.Zebus.Tests.Core
 
                 _messageDispatcherMock.Setup(x => x.LoadMessageHandlerInvokers()).InSequence(sequence);
                 _transport.Started += sequence.GetCallback();
-                _directoryMock.Setup(x => x.Register(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>())).InSequence(sequence);
+                _directoryMock.Setup(x => x.RegisterAsync(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
+                              .InSequence(sequence)
+                              .Returns(Task.CompletedTask);
                 _transport.Registered += sequence.GetCallback();
 
                 _bus.Start();
@@ -53,8 +56,9 @@ namespace Abc.Zebus.Tests.Core
             public void should_be_running_when_registering_on_directory()
             {
                 var wasRunningDuringRegister = false;
-                _directoryMock.Setup(x => x.Register(_bus, It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
-                              .Callback(() => wasRunningDuringRegister = _bus.IsRunning);
+                _directoryMock.Setup(x => x.RegisterAsync(_bus, It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
+                              .Callback(() => wasRunningDuringRegister = _bus.IsRunning)
+                              .Returns(Task.CompletedTask);
 
                 _bus.Start();
 
@@ -66,11 +70,11 @@ namespace Abc.Zebus.Tests.Core
             {
                 try
                 {
-                    _directoryMock.Setup(x => x.Register(_bus, It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
-                                  .Throws<TimeoutException>();
+                    _directoryMock.Setup(x => x.RegisterAsync(_bus, It.IsAny<Peer>(), It.IsAny<IEnumerable<Subscription>>()))
+                                  .Returns(Task.FromException(new TimeoutException()));
                     _bus.Start();
                 }
-                catch (TimeoutException)
+                catch (AggregateException ex) when (ex.InnerException is TimeoutException)
                 {
                     _bus.IsRunning.ShouldBeFalse();
                 }
@@ -80,7 +84,7 @@ namespace Abc.Zebus.Tests.Core
             public void should_stop_transport_and_unregister_from_directory()
             {
                 var sequence = new SetupSequence();
-                _directoryMock.Setup(x => x.Unregister(_bus));
+                _directoryMock.Setup(x => x.UnregisterAsync(_bus)).Returns(Task.CompletedTask);
 
                 _bus.Start();
                 _bus.Stop();
@@ -143,7 +147,6 @@ namespace Abc.Zebus.Tests.Core
                 stoppingEventCalled.ShouldEqual(1);
                 stoppedEventCalled.ShouldEqual(2);
             }
-
 
             [Test]
             public void should_start_message_dispatcher()
