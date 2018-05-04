@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using Abc.Zebus.Util;
 using Abc.Zebus.Util.Annotations;
 using Newtonsoft.Json;
 using ProtoBuf;
@@ -20,10 +20,7 @@ namespace Abc.Zebus.Transport
         private byte[] ContentBytes
         {
             get { return GetContentBytes(); }
-            set
-            {
-                Content = new MemoryStream(value, 0, value.Length, false, true);
-            }
+            set { Content = new MemoryStream(value, 0, value.Length, false, true); }
         }
 
         [ProtoIgnore, JsonIgnore]
@@ -75,7 +72,7 @@ namespace Abc.Zebus.Transport
         public byte[] GetContentBytes()
         {
             if (Content == null)
-                return ArrayUtil.Empty<byte>();
+                return Array.Empty<byte>();
 
             var position = Content.Position;
             var buffer = new byte[Content.Length];

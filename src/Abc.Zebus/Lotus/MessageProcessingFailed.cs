@@ -1,21 +1,24 @@
 ﻿using System;
 using Abc.Zebus.Transport;
-using Abc.Zebus.Util;
 using ProtoBuf;
 
 namespace Abc.Zebus.Lotus
 {
-    [ProtoContract] 
+    [ProtoContract]
     public class MessageProcessingFailed : IEvent
     {
         [ProtoMember(1, IsRequired = true)]
         public readonly TransportMessage FailingMessage;
+
         [ProtoMember(2, IsRequired = true)]
         public readonly string FailingMessageJson;
+
         [ProtoMember(3, IsRequired = true)]
         public readonly string ExceptionMessage;
+
         [ProtoMember(4, IsRequired = true)]
         public readonly DateTime ExceptionUtcTime;
+
         [ProtoMember(5, IsRequired = false)]
         public readonly string[] FailingHandlerNames;
 
@@ -25,7 +28,7 @@ namespace Abc.Zebus.Lotus
             FailingMessageJson = failingMessageJson;
             ExceptionMessage = exceptionMessage;
             ExceptionUtcTime = exceptionUtcTime;
-            FailingHandlerNames = failingHandlerNames ?? ArrayUtil.Empty<string>();
+            FailingHandlerNames = failingHandlerNames ?? Array.Empty<string>();
         }
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
-using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Dispatch.Pipes
@@ -58,7 +57,7 @@ namespace Abc.Zebus.Dispatch.Pipes
         private object[] BeforeInvoke()
         {
             if (_pipes.Count == 0)
-                return ArrayUtil.Empty<object>();
+                return Array.Empty<object>();
 
             var stateRef = new BeforeInvokeArgs.StateRef();
             var pipeStates = new object[_pipes.Count];

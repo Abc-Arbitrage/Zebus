@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Abc.Zebus.Transport;
-using Abc.Zebus.Util;
 using ProtoBuf;
 
 namespace Abc.Zebus.Lotus
@@ -18,7 +17,7 @@ namespace Abc.Zebus.Lotus
         public ReplayMessageCommand(TransportMessage messageToReplay, string[] handlerTypes)
         {
             MessageToReplay = messageToReplay;
-            HandlerTypes = handlerTypes ?? ArrayUtil.Empty<string>();
+            HandlerTypes = handlerTypes ?? Array.Empty<string>();
         }
 
         public bool ShouldApplyToHandler(Type handlerType)

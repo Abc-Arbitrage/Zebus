@@ -185,7 +185,7 @@ namespace Abc.Zebus.Directory
         {
             var subscriptionList = _globalSubscriptionsIndex.GetValueOrDefault(messageBinding.MessageTypeId);
             if (subscriptionList == null)
-                return ArrayUtil.Empty<Peer>();
+                return Array.Empty<Peer>();
 
             return subscriptionList.GetPeers(messageBinding.RoutingKey);
         }
@@ -217,19 +217,21 @@ namespace Abc.Zebus.Directory
 
         private void AddOrUpdatePeerEntry(PeerDescriptor peerDescriptor)
         {
-            var subscriptions = peerDescriptor.Subscriptions ?? ArrayUtil.Empty<Subscription>();
+            var subscriptions = peerDescriptor.Subscriptions ?? Array.Empty<Subscription>();
 
-            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, key => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex), (key, entry) =>
-            {
-                entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
-                entry.Peer.IsUp = peerDescriptor.Peer.IsUp;
-                entry.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
-                entry.IsPersistent = peerDescriptor.IsPersistent;
-                entry.TimestampUtc = peerDescriptor.TimestampUtc ?? DateTime.UtcNow;
-                entry.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
+            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId,
+                                               key => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex),
+                                               (key, entry) =>
+                                               {
+                                                   entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
+                                                   entry.Peer.IsUp = peerDescriptor.Peer.IsUp;
+                                                   entry.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
+                                                   entry.IsPersistent = peerDescriptor.IsPersistent;
+                                                   entry.TimestampUtc = peerDescriptor.TimestampUtc ?? DateTime.UtcNow;
+                                                   entry.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
 
-                return entry;
-            });
+                                                   return entry;
+                                               });
 
             peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
         }
