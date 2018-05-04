@@ -294,22 +294,52 @@ namespace Abc.Zebus.Core
 
         private async Task AddSubscriptionsAsync(SubscriptionRequest request)
         {
-            var updatedTypes = new HashSet<MessageTypeId>();
-            var allSubscriptions = request.Batch?.ConsumeBatchSubscriptions() ?? request.Subscriptions;
-
-            lock (_subscriptions)
+            if (request.Batch != null)
             {
-                foreach (var subscription in allSubscriptions)
+                await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
+
+                var batchSubscriptions = request.Batch.TryConsumeBatchSubscriptions();
+                if (batchSubscriptions != null)
                 {
-                    updatedTypes.Add(subscription.MessageTypeId);
-                    _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                    try
+                    {
+                        await SendSubscriptionsAsync(batchSubscriptions).ConfigureAwait(false);
+                        request.Batch.NotifyRegistrationCompleted(null);
+                    }
+                    catch (Exception ex)
+                    {
+                        request.Batch.NotifyRegistrationCompleted(ex);
+                        throw;
+                    }
+                }
+                else
+                {
+                    await request.Batch.WhenRegistrationCompletedAsync().ConfigureAwait(false);
                 }
             }
+            else
+            {
+                await SendSubscriptionsAsync(request.Subscriptions).ConfigureAwait(false);
+            }
 
-            // Wait until all unsubscriptions are completed to prevent race conditions
-            await WhenUnsubscribeCompletedAsync().ConfigureAwait(false);
+            async Task SendSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
+            {
+                var updatedTypes = new HashSet<MessageTypeId>();
 
-            await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
+                lock (_subscriptions)
+                {
+                    foreach (var subscription in subscriptions)
+                    {
+                        updatedTypes.Add(subscription.MessageTypeId);
+                        _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                    }
+                }
+
+                // Wait until all unsubscriptions are completed to prevent race conditions
+                await WhenUnsubscribeCompletedAsync().ConfigureAwait(false);
+
+                await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
+            }
         }
 
         internal Task WhenUnsubscribeCompletedAsync()
