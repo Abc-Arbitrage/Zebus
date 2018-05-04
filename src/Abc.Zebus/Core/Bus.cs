@@ -237,13 +237,17 @@ namespace Abc.Zebus.Core
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var subscriptions = request.Subscriptions.ToList();
-
             if (!request.ThereIsNoHandlerButIKnowWhatIAmDoing)
-                EnsureMessageHandlerInvokerExists(subscriptions);
+                EnsureMessageHandlerInvokerExists(request.Subscriptions);
 
-            await AddSubscriptionsAsync(subscriptions).ConfigureAwait(false);
+            request.MarkAsSubmitted();
 
+            if (request.Batch != null)
+                await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
+
+            await AddSubscriptionsAsync(request).ConfigureAwait(false);
+
+            var subscriptions = request.Subscriptions.ToList();
             return new DisposableAction(() => RemoveSubscriptions(subscriptions));
         }
 
@@ -254,17 +258,22 @@ namespace Abc.Zebus.Core
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
 
-            var subscriptions = request.Subscriptions.ToList();
+            request.MarkAsSubmitted();
 
-            var eventHandlerInvokers = subscriptions.GroupBy(x => x.MessageTypeId)
-                                                    .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList(), _predicateBuilder))
-                                                    .ToList();
+            var eventHandlerInvokers = request.Subscriptions
+                                              .GroupBy(x => x.MessageTypeId)
+                                              .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList(), _predicateBuilder))
+                                              .ToList();
+
+            if (request.Batch != null)
+                await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
 
             foreach (var eventHandlerInvoker in eventHandlerInvokers)
                 _messageDispatcher.AddInvoker(eventHandlerInvoker);
 
-            await AddSubscriptionsAsync(subscriptions).ConfigureAwait(false);
+            await AddSubscriptionsAsync(request).ConfigureAwait(false);
 
+            var subscriptions = request.Subscriptions.ToList();
             return new DisposableAction(() =>
             {
                 foreach (var eventHandlerInvoker in eventHandlerInvokers)
@@ -283,13 +292,14 @@ namespace Abc.Zebus.Core
             }
         }
 
-        private async Task AddSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
+        private async Task AddSubscriptionsAsync(SubscriptionRequest request)
         {
             var updatedTypes = new HashSet<MessageTypeId>();
+            var allSubscriptions = request.Batch?.ConsumeBatchSubscriptions() ?? request.Subscriptions;
 
             lock (_subscriptions)
             {
-                foreach (var subscription in subscriptions)
+                foreach (var subscription in allSubscriptions)
                 {
                     updatedTypes.Add(subscription.MessageTypeId);
                     _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
@@ -297,10 +307,13 @@ namespace Abc.Zebus.Core
             }
 
             // Wait until all unsubscriptions are completed to prevent race conditions
-            await Task.WhenAny(_unsubscribeTask).ConfigureAwait(false);
+            await WhenUnsubscribeCompletedAsync().ConfigureAwait(false);
 
             await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
         }
+
+        internal Task WhenUnsubscribeCompletedAsync()
+            => _unsubscribeTask;
 
         private void RemoveSubscriptions(IEnumerable<Subscription> subscriptions)
         {
@@ -577,6 +590,7 @@ namespace Abc.Zebus.Core
             {
                 HandleDeserializationError(messageTypeId, messageStream, transportMessage.Originator, exception, transportMessage);
             }
+
             return null;
         }
 
@@ -589,7 +603,7 @@ namespace Abc.Zebus.Core
             if (!_configuration.IsErrorPublicationEnabled || !IsRunning)
                 return;
 
-            var processingFailed = new MessageProcessingFailed(transportMessage, String.Empty, errorMessage, SystemDateTime.UtcNow, null);
+            var processingFailed = new MessageProcessingFailed(transportMessage, string.Empty, errorMessage, SystemDateTime.UtcNow, null);
             Publish(processingFailed);
         }
 
@@ -607,6 +621,7 @@ namespace Abc.Zebus.Core
                 {
                     messageStream.CopyTo(fileStream);
                 }
+
                 return dumpFilePath;
             }
             catch (Exception ex)

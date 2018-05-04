@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -85,7 +84,8 @@ namespace Abc.Zebus.Tests.Core
 
                 _bus.Subscribe(subscriptions.ToArray());
                 directorySubscriptions.ExpectedSingle()
-                                      .ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), new BindingKey("1", "name", "*"),
+                                      .ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(),
+                                                                            new BindingKey("1", "name", "*"),
                                                                             new BindingKey("1", "toto", "*"),
                                                                             new BindingKey("2", "name", "*")));
             }
@@ -322,11 +322,12 @@ namespace Abc.Zebus.Tests.Core
             {
                 _bus.Start();
                 _bus.Subscribe(new[]
-                {
-                    Subscription.Matching<FakeRoutableCommand>(x => x.Id == 1),
-                    Subscription.Matching<FakeRoutableCommand>(x => x.Id == 2),
-                    Subscription.Any<FakeCommand>()
-                }, message => { });
+                               {
+                                   Subscription.Matching<FakeRoutableCommand>(x => x.Id == 1),
+                                   Subscription.Matching<FakeRoutableCommand>(x => x.Id == 2),
+                                   Subscription.Any<FakeCommand>()
+                               },
+                               message => { });
 
                 _messageDispatcherMock.Verify(x => x.AddInvoker(It.IsAny<IMessageHandlerInvoker>()), Times.Exactly(2));
                 _messageDispatcherMock.Verify(x => x.AddInvoker(It.Is<IMessageHandlerInvoker>(invoker => invoker.MessageType == typeof(FakeRoutableCommand))), Times.Once);
@@ -383,6 +384,64 @@ namespace Abc.Zebus.Tests.Core
                 var callOrder = highestSubscriptionVersionOnEachUpdate.ToList();
                 for (var i = 0; i < highestSubscriptionVersionOnEachUpdate.Count - 1; i++)
                     callOrder[i].ShouldBeLessOrEqualThan(callOrder[i + 1]);
+            }
+
+            [Test]
+            public async Task should_batch_multiple_subscription_requests()
+            {
+                AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
+
+                var subscriptions = new List<SubscriptionsForType>();
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+
+                _bus.Start();
+
+                var batch = new SubscriptionRequestBatch();
+                var requestA = new SubscriptionRequest(new[]
+                {
+                    Subscription.ByExample(x => new FakeRoutableCommand(1, "foo")),
+                    Subscription.ByExample(x => new FakeRoutableCommand(1, "bar"))
+                });
+
+                var requestB = new SubscriptionRequest(new[]
+                {
+                    Subscription.ByExample(x => new FakeRoutableCommand(1, "bar")),
+                    Subscription.ByExample(x => new FakeRoutableCommand(1, "baz"))
+                });
+
+                requestA.AddToBatch(batch);
+                requestB.AddToBatch(batch);
+
+                var taskA = _bus.SubscribeAsync(requestA);
+                var taskB = _bus.SubscribeAsync(requestB);
+
+                subscriptions.ShouldBeEmpty();
+
+                batch.Submit();
+
+                await Task.WhenAll(taskA, taskB);
+
+                subscriptions.ExpectedSingle()
+                             .ShouldEqual(new SubscriptionsForType(
+                                              MessageUtil.TypeId<FakeRoutableCommand>(),
+                                              new BindingKey("1", "foo", "*"),
+                                              new BindingKey("1", "bar", "*"),
+                                              new BindingKey("1", "baz", "*")
+                                          )
+                             );
+
+                subscriptions.Clear();
+                taskA.Result.Dispose();
+
+                await _bus.WhenUnsubscribeCompletedAsync();
+
+                subscriptions.ExpectedSingle()
+                             .ShouldEqual(new SubscriptionsForType(
+                                              MessageUtil.TypeId<FakeRoutableCommand>(),
+                                              new BindingKey("1", "bar", "*"),
+                                              new BindingKey("1", "baz", "*")
+                                          )
+                             );
             }
 
             private void SendParallelSubscriptionUpdates(int threadCount, int subscriptionCountPerThread)

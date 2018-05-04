@@ -61,5 +61,14 @@ namespace Abc.Zebus.Util.Extensions
                 action(t);
             }
         }
+
+        /// <summary>
+        /// Hides the underlying implementation
+        /// </summary>
+        public static IEnumerable<T> AsReadOnlyEnumerable<T>(this IEnumerable<T> items)
+        {
+            foreach (var item in items)
+                yield return item;
+        }
     }
 }
