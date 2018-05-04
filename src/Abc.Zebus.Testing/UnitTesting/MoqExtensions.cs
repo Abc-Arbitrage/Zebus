@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using Moq;
 using Moq.Language.Flow;
@@ -34,7 +33,7 @@ namespace Abc.Zebus.Testing.UnitTesting
             var methodExpression = Expression.Call(mockParam, methodCall.Method, arg0Param, enumerableParam);
             var expression = Expression.Lambda<Func<TMock, Task>>(methodExpression, mockParam);
 
-            mock.Setup(expression).Callback<TArg0, IEnumerable<TArg>>((x, items) => items.ForEach(target.Add)).Returns(TaskUtil.Completed);
+            mock.Setup(expression).Callback<TArg0, IEnumerable<TArg>>((x, items) => items.ForEach(target.Add)).Returns(Task.CompletedTask);
         }
 
         public static ICallbackResult InSequence<TMock>(this ISetup<TMock> setup, SetupSequence sequence)

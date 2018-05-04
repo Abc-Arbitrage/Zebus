@@ -90,7 +90,7 @@ namespace Abc.Zebus.Dispatch.Pipes
             if (runTask.Status == TaskStatus.Created)
             {
                 var exception = new InvalidProgramException($"{Invoker.MessageHandlerType.Name}.Handle({Invoker.MessageType.Name}) did not start the returned task");
-                runTask = TaskUtil.FromError(exception);
+                runTask = Task.FromException(exception);
             }
 
             runTask.ContinueWith(task => AfterInvoke(pipeStates, task.IsFaulted, task.Exception), TaskContinuationOptions.ExecuteSynchronously);

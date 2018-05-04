@@ -82,13 +82,13 @@ namespace Abc.Zebus.Tests.Scan
             public Task Handle(TestMessage message)
             {
                 message.HandledAsync = true;
-                return TaskUtil.Completed;
+                return Task.CompletedTask;
             }
 
             Task IAsyncMessageHandler<TestExplicitImplMessage>.Handle(TestExplicitImplMessage message)
             {
                 message.HandledAsync = true;
-                return TaskUtil.Completed;
+                return Task.CompletedTask;
             }
         }
 

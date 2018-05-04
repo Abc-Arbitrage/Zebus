@@ -24,7 +24,7 @@ namespace Abc.Zebus.Testing.Directory
             Peers[self.Id] = self.ToPeerDescriptor(true, subscriptions);
 
             Registered();
-            return TaskUtil.Completed;
+            return Task.CompletedTask;
         }
 
         public Task UpdateSubscriptionsAsync(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
@@ -35,13 +35,13 @@ namespace Abc.Zebus.Testing.Directory
             
             Peers[Self.Id] = Self.ToPeerDescriptor(true, newSubscriptions.Values.SelectMany(subForType => subForType.ToSubscriptions()));
             PeerUpdated(Self.Id, PeerUpdateAction.Updated);
-            return TaskUtil.Completed;
+            return Task.CompletedTask;
         }
 
         public Task UnregisterAsync(IBus bus)
         {
             PeerUpdated(Self.Id, PeerUpdateAction.Stopped);
-            return TaskUtil.Completed;
+            return Task.CompletedTask;
         }
 
         public void RegisterRemoteListener<TMEssage>() where TMEssage : IMessage

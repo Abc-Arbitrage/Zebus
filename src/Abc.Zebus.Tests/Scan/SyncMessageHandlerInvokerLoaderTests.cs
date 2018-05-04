@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Testing.Extensions;
-using Abc.Zebus.Util;
 using NUnit.Framework;
 using StructureMap;
 
@@ -84,7 +84,7 @@ namespace Abc.Zebus.Tests.Scan
         {
             public async void Handle(FakeMessage message)
             {
-                await TaskUtil.Completed;
+                await Task.CompletedTask;
             }
         }
 

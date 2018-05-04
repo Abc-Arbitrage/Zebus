@@ -35,7 +35,7 @@ namespace Abc.Zebus.Core
         private readonly IStoppingStrategy _stoppingStrategy;
         private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private readonly IBusConfiguration _configuration;
-        private Task _unsubscribeTask = TaskUtil.Completed;
+        private Task _unsubscribeTask = Task.CompletedTask;
 
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
         {

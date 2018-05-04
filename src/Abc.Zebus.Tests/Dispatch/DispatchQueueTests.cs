@@ -292,7 +292,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 Callback = _ =>
                 {
                     tcs.SetResult(null);
-                    return TaskUtil.Completed;
+                    return Task.CompletedTask;
                 }
             };
 
