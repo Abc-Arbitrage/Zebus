@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Routing;
@@ -41,14 +42,14 @@ namespace Abc.Zebus.Directory.Tests
         }
 
         [Test]
-        public void register_persist_state_and_advertise()
+        public async Task register_persist_state_and_advertise()
         {
             using (SystemDateTime.PauseTime())
             using (SystemDateTime.Set(SystemDateTime.Now))
             {
                 var peerDescriptor = _self.ToPeerDescriptor(false, typeof(FakeCommand));
 
-                _peerDirectory.Register(_bus, peerDescriptor.Peer, peerDescriptor.Subscriptions);
+                await _peerDirectory.RegisterAsync(_bus, peerDescriptor.Peer, peerDescriptor.Subscriptions);
 
                 _bus.ExpectExactly(new PeerStarted(peerDescriptor));
                 _repositoryMock.Verify(x => x.AddOrUpdatePeer(It.Is<PeerDescriptor>(descriptor => peerDescriptor.DeepCompare(descriptor))));
@@ -56,20 +57,20 @@ namespace Abc.Zebus.Directory.Tests
         }
 
         [Test]
-        public void should_raise_registered_event()
+        public async Task should_raise_registered_event()
         {
             var peerDescriptor = _self.ToPeerDescriptor(true, typeof(FakeCommand));
 
             var raised = false;
             _peerDirectory.Registered += () => raised = true;
 
-            _peerDirectory.Register(_bus, peerDescriptor.Peer, new Subscription[0]);
+            await _peerDirectory.RegisterAsync(_bus, peerDescriptor.Peer, new Subscription[0]);
 
             raised.ShouldBeTrue();
         }
 
         [Test]
-        public void unregister_should_persist_state_and_advertise()
+        public async Task unregister_should_persist_state_and_advertise()
         {
             using (SystemDateTime.PauseTime())
             using (SystemDateTime.Set(SystemDateTime.Now))
@@ -77,11 +78,11 @@ namespace Abc.Zebus.Directory.Tests
                 var peerDescriptor = _self.ToPeerDescriptor(true, typeof(FakeCommand));
 
                 _repositoryMock.Setup(repo => repo.Get(It.Is<PeerId>(id => peerDescriptor.Peer.Id.Equals(id)))).Returns(peerDescriptor);
-                _peerDirectory.Register(_bus, peerDescriptor.Peer, peerDescriptor.Subscriptions);
+                await _peerDirectory.RegisterAsync(_bus, peerDescriptor.Peer, peerDescriptor.Subscriptions);
 
-                _peerDirectory.Unregister(_bus);
+                await _peerDirectory.UnregisterAsync(_bus);
 
-                _bus.Expect(new[] { new PeerStopped(peerDescriptor.Peer) });
+                _bus.Expect(new PeerStopped(peerDescriptor.Peer));
                 _repositoryMock.Verify(repo => repo.Get(It.Is<PeerId>(id => peerDescriptor.Peer.Id.Equals(id))));
                 _repositoryMock.Verify(repo => repo.AddOrUpdatePeer(It.Is<PeerDescriptor>(descriptor => peerDescriptor.DeepCompare(descriptor))));
             }
@@ -152,58 +153,58 @@ namespace Abc.Zebus.Directory.Tests
         }
 
         [Test]
-        public void should_publish_event_when_modifying_subscriptions()
+        public async Task should_publish_event_when_modifying_subscriptions()
         {
             using (SystemDateTime.PauseTime())
             {
                 var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty) };
-                _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+                await _peerDirectory.RegisterAsync(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
                 _bus.ClearMessages();
 
-                _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
-                
+                await _peerDirectory.UpdateSubscriptionsAsync(_bus, subscriptionsForTypes);
+
                 _bus.ExpectExactly(new PeerSubscriptionsForTypesUpdated(_self.Id, SystemDateTime.UtcNow, subscriptionsForTypes));
             }
         }
 
         [Test]
-        public void should_specify_datetime_kind_when_adding_subscriptions_for_a_type()
+        public async Task should_specify_datetime_kind_when_adding_subscriptions_for_a_type()
         {
             var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty) };
-            _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+            await _peerDirectory.RegisterAsync(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
 
-            _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
-            
+            await _peerDirectory.UpdateSubscriptionsAsync(_bus, subscriptionsForTypes);
+
             _repositoryMock.Verify(repo => repo.AddDynamicSubscriptionsForTypes(_self.Id, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), subscriptionsForTypes));
         }
 
         [Test]
-        public void should_specify_datetime_kind_when_removing_subscriptions_for_a_type()
+        public async Task should_specify_datetime_kind_when_removing_subscriptions_for_a_type()
         {
-            var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), new BindingKey[0]) };
-            _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+            var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int))) };
+            await _peerDirectory.RegisterAsync(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
 
-            _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+            await _peerDirectory.UpdateSubscriptionsAsync(_bus, subscriptionsForTypes);
 
-            _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(_self.Id, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), new [] { MessageUtil.GetTypeId(typeof(int)) }));
+            _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(_self.Id, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), new[] { MessageUtil.GetTypeId(typeof(int)) }));
         }
 
         [Test]
-        public void should_handle_null_bindingkeys_array_when_removing_subscriptions()
+        public async Task should_handle_null_bindingkeys_array_when_removing_subscriptions()
         {
             using (SystemDateTime.PauseTime())
             {
                 var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), null) };
-                _peerDirectory.Register(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
+                await _peerDirectory.RegisterAsync(_bus, _self, new[] { Subscription.Any<FakeCommand>() });
 
-                _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+                await _peerDirectory.UpdateSubscriptionsAsync(_bus, subscriptionsForTypes);
 
                 _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(_self.Id, SystemDateTime.UtcNow, new[] { MessageUtil.GetTypeId(typeof(int)) }));
             }
         }
 
         [Test]
-        public void should_remove_peer_subscriptions_for_a_type_if_there_are_no_binding_keys()
+        public async Task should_remove_peer_subscriptions_for_a_type_if_there_are_no_binding_keys()
         {
             using (SystemDateTime.PauseTime())
             {
@@ -212,7 +213,7 @@ namespace Abc.Zebus.Directory.Tests
                     new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int))),
                     new SubscriptionsForType(MessageUtil.GetTypeId(typeof(double)), BindingKey.Empty)
                 };
-                _peerDirectory.Register(_bus, _self, Enumerable.Empty<Subscription>());
+                await _peerDirectory.RegisterAsync(_bus, _self, Enumerable.Empty<Subscription>());
                 _bus.ClearMessages();
                 SubscriptionsForType[] addedSubscriptions = null;
                 MessageTypeId[] removedMessageTypeIds = null;
@@ -221,8 +222,7 @@ namespace Abc.Zebus.Directory.Tests
                 _repositoryMock.Setup(repo => repo.RemoveDynamicSubscriptionsForTypes(_self.Id, SystemDateTime.UtcNow, It.IsAny<MessageTypeId[]>()))
                                .Callback((PeerId peerId, DateTime timestampUtc, MessageTypeId[] ids) => removedMessageTypeIds = ids);
 
-
-                _peerDirectory.UpdateSubscriptions(_bus, subscriptionsForTypes);
+                await _peerDirectory.UpdateSubscriptionsAsync(_bus, subscriptionsForTypes);
 
                 var addedSubscription = addedSubscriptions.ExpectedSingle();
                 addedSubscription.ShouldHaveSamePropertiesAs(new SubscriptionsForType(MessageUtil.GetTypeId(typeof(double)), BindingKey.Empty));
@@ -251,7 +251,7 @@ namespace Abc.Zebus.Directory.Tests
             _updatedPeer.PeerId.ShouldEqual(_otherPeer.Id);
             _updatedPeer.Action.ShouldEqual(PeerUpdateAction.Stopped);
         }
-        
+
         [Test]
         public void should_raise_peer_updated_after_peer_decommissioned()
         {
@@ -261,7 +261,7 @@ namespace Abc.Zebus.Directory.Tests
             _updatedPeer.PeerId.ShouldEqual(_otherPeer.Id);
             _updatedPeer.Action.ShouldEqual(PeerUpdateAction.Decommissioned);
         }
-        
+
         [Test]
         public void should_raise_peer_updated_after_peer_subscription_updated()
         {

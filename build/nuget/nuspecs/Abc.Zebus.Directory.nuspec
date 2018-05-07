@@ -12,13 +12,13 @@
     <copyright>Copyright © ABC arbitrage 2018</copyright>
     <tags></tags>
     <dependencies>
-      <dependency id="Zebus" version="[2.2.0,3.0)" />
+      <dependency id="Zebus" version="[2.3.0,3.0)" />
       <dependency id="log4net" version="2.0.8" />
     </dependencies>
   </metadata>
   <files>
-    <file src="Abc.Zebus.Directory.dll" target="lib\net45\" />
-    <file src="Abc.Zebus.Directory.pdb" target="lib\net45\" />
+    <file src="Abc.Zebus.Directory.dll" target="lib\net46\" />
+    <file src="Abc.Zebus.Directory.pdb" target="lib\net46\" />
     
     <file src=".\..\..\..\src\Abc.Zebus.Directory\**\*.cs" target="src" />
   </files>

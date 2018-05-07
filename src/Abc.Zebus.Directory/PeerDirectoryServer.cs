@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
@@ -58,7 +59,7 @@ namespace Abc.Zebus.Directory
             return _peerRepository.GetPeers();
         }
 
-        public void Register(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
+        public Task RegisterAsync(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
         {
             _self = self;
 
@@ -72,9 +73,11 @@ namespace Abc.Zebus.Directory
             bus.Publish(new PeerStarted(selfDescriptor));
 
             Registered();
+
+            return Task.CompletedTask;
         }
 
-        public void UpdateSubscriptions(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
+        public Task UpdateSubscriptionsAsync(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
         {
             var subsForTypes = subscriptionsForTypes.ToList();
             var subscriptionsToAdd = subsForTypes.Where(sub => sub.BindingKeys != null && sub.BindingKeys.Any()).ToArray();
@@ -88,12 +91,16 @@ namespace Abc.Zebus.Directory
                 _peerRepository.RemoveDynamicSubscriptionsForTypes(_self.Id, utcNow, subscriptionsToRemove.Select(sub => sub.MessageTypeId).ToArray());
 
             bus.Publish(new PeerSubscriptionsForTypesUpdated(_self.Id, utcNow, subsForTypes.ToArray()));
+
+            return Task.CompletedTask;
         }
 
-        public void Unregister(IBus bus)
+        public Task UnregisterAsync(IBus bus)
         {
             _peerRepository.SetPeerDown(_self.Id, SystemDateTime.UtcNow);
             bus.Publish(new PeerStopped(_self));
+
+            return Task.CompletedTask;
         }
 
         public void Handle(PeerStarted message)
