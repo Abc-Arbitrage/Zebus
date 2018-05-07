@@ -13,7 +13,7 @@
     <copyright>Copyright © ABC arbitrage 2018</copyright>
     <tags></tags>
     <dependencies>
-      <dependency id="Zebus" version="[2.2.0,3.0)" />
+      <dependency id="Zebus" version="[2.3.0,3.0)" />
       <dependency id="log4net" version="2.0.8" />
       <dependency id="Newtonsoft.Json" version="11.0.2" />
       <dependency id="protobuf-net" version="2.3.7" />
@@ -21,9 +21,9 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="Abc.Zebus.Persistence.dll" target="lib\net45\" />
-    <file src="Abc.Zebus.Persistence.Messages.dll" target="lib\net45\" />
-    <file src="Abc.Zebus.Persistence.pdb" target="lib\net45\" />
+    <file src="Abc.Zebus.Persistence.dll" target="lib\net46\" />
+    <file src="Abc.Zebus.Persistence.Messages.dll" target="lib\net46\" />
+    <file src="Abc.Zebus.Persistence.pdb" target="lib\net46\" />
     <file src=".\..\..\src\Abc.Zebus.Persistence\**\*.cs" target="src" />
   </files>
 </package>

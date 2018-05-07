@@ -35,8 +35,8 @@
     <StartupObject>Abc.Zebus.Persistence.Runner.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Abc.Zebus, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\lib\packages\Zebus.2.2.0\lib\net45\Abc.Zebus.dll</HintPath>
+    <Reference Include="Abc.Zebus, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\lib\packages\Zebus.2.3.0\lib\net46\Abc.Zebus.dll</HintPath>
     </Reference>
     <Reference Include="FluentDateTime, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\lib\packages\FluentDateTime.1.14.0\lib\net452\FluentDateTime.dll</HintPath>

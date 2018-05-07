@@ -13,7 +13,7 @@
     <copyright>Copyright © ABC arbitrage 2018</copyright>
     <tags></tags>
     <dependencies>
-      <dependency id="Zebus" version="[2.2.0,3.0)" />
+      <dependency id="Zebus" version="[2.3.0,3.0)" />
       <dependency id="Zebus.Persistence" version="$version$" />
       <dependency id="Zebus.Persistence.CQL" version="$version$" />
       <dependency id="CassandraCSharpDriver" version="[3.0.8,3.1)" />
@@ -25,8 +25,8 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="Abc.Zebus.Persistence.CQL.Testing.dll" target="lib\net45\" />
-    <file src="Abc.Zebus.Persistence.CQL.Testing.pdb" target="lib\net45\" />
+    <file src="Abc.Zebus.Persistence.CQL.Testing.dll" target="lib\net46\" />
+    <file src="Abc.Zebus.Persistence.CQL.Testing.pdb" target="lib\net46\" />
     
     <file src=".\..\..\src\Abc.Zebus.Persistence.CQL.Testing\**\*.cs" target="src" />
   </files>
