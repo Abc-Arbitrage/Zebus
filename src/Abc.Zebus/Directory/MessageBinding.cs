@@ -3,7 +3,7 @@ using Abc.Zebus.Routing;
 
 namespace Abc.Zebus.Directory
 {
-    public struct MessageBinding : IEquatable<MessageBinding>
+    public readonly struct MessageBinding : IEquatable<MessageBinding>
     {
         public readonly MessageTypeId MessageTypeId;
         public readonly BindingKey RoutingKey;

@@ -7,6 +7,8 @@ namespace Abc.Zebus
     [ProtoContract]
     public struct MessageTypeId : IEquatable<MessageTypeId>
     {
+        // TODO make this struct readonly, but this needs special care because of the protobuf serialization
+
         public static readonly MessageTypeId EndOfStream = new MessageTypeId("Abc.Zebus.Transport.EndOfStream");
         public static readonly MessageTypeId EndOfStreamAck = new MessageTypeId("Abc.Zebus.Transport.EndOfStreamAck");
         public static readonly MessageTypeId PersistenceStopping = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStopping");

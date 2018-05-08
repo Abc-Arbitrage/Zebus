@@ -375,7 +375,7 @@ namespace Abc.Zebus.Directory
             return new PeerEntryResult(peer);
         }
 
-        private struct PeerEntryResult
+        private readonly struct PeerEntryResult
         {
             internal enum FailureReasonType
             {
@@ -395,8 +395,8 @@ namespace Abc.Zebus.Directory
                 FailureReason = failureReason;
             }
 
-            public PeerEntry Value { get; private set; }
-            public FailureReasonType? FailureReason { get; private set; }
+            public PeerEntry Value { get; }
+            public FailureReasonType? FailureReason { get; }
         }
     }
 }

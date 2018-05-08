@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Security.Cryptography;
-using System.Threading;
 using Abc.Zebus.Util;
 using ProtoBuf;
 
 namespace Abc.Zebus
 {
     [ProtoContract]
-    public struct MessageId : IEquatable<MessageId>
+    public readonly struct MessageId : IEquatable<MessageId>
     {
         private static readonly long _ticksSinceEpoch = new DateTime(1582, 10, 15, 0, 0, 0, DateTimeKind.Utc).Ticks;
         private static readonly byte[] _randomBytes = new byte[6];
@@ -139,6 +138,7 @@ namespace Abc.Zebus
             {
                 mostSigBits = (mostSigBits << 8) | (bytes[i] & 0xff);
             }
+
             return (mostSigBits & 0x0FFFL) << 48 | ((mostSigBits >> 16) & 0x0FFFFL) << 32 | (long)((ulong)mostSigBits >> 32);
         }
 #pragma warning restore 675

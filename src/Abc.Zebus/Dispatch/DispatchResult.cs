@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Abc.Zebus.Dispatch
 {
-    public struct DispatchResult
+    public readonly struct DispatchResult
     {
         private static readonly Dictionary<Type, Exception> _noErrors = new Dictionary<Type, Exception>();
         private readonly IDictionary<Type, Exception> _errors;

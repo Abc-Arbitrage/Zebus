@@ -487,7 +487,7 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        private struct OutboundSocketAction
+        private readonly struct OutboundSocketAction
         {
             private static readonly TransportMessage _disconnectMessage = new TransportMessage(default(MessageTypeId), null, new PeerId(), null);
 
@@ -504,14 +504,10 @@ namespace Abc.Zebus.Transport
             public SendContext Context { get; }
 
             public static OutboundSocketAction Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context)
-            {
-                return new OutboundSocketAction(message, peers, context);
-            }
+                => new OutboundSocketAction(message, peers, context);
 
             public static OutboundSocketAction Disconnect(PeerId peerId)
-            {
-                return new OutboundSocketAction(_disconnectMessage, new List<Peer> { new Peer(peerId, null) }, null);
-            }
+                => new OutboundSocketAction(_disconnectMessage, new List<Peer> { new Peer(peerId, null) }, null);
         }
 
         private class PendingDisconnect

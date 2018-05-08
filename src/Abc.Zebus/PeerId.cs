@@ -7,7 +7,7 @@ using ProtoBuf;
 namespace Abc.Zebus
 {
     [ProtoContract, JsonConverter(typeof(PeerIdConverter))]
-    public struct PeerId : IEquatable<PeerId>
+    public readonly struct PeerId : IEquatable<PeerId>
     {
         [ProtoMember(1, IsRequired = true)]
         private readonly string _value;

@@ -285,7 +285,7 @@ namespace Abc.Zebus.Dispatch
             return new DisposableAction(() => _currentDispatchQueueName = null);
         }
 
-        private struct Entry
+        private readonly struct Entry
         {
             public Entry(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
             {

@@ -1,10 +1,11 @@
 ﻿namespace Abc.Zebus.Dispatch.Pipes
 {
-    public struct BeforeInvokeArgs
+    public readonly struct BeforeInvokeArgs
     {
         private readonly StateRef _stateRef;
 
-        public BeforeInvokeArgs(PipeInvocation invocation) : this(invocation, new StateRef())
+        public BeforeInvokeArgs(PipeInvocation invocation)
+            : this(invocation, new StateRef())
         {
         }
 
@@ -18,8 +19,8 @@
 
         public object State
         {
-            get { return _stateRef.Value; }
-            set { _stateRef.Value = value; }
+            get => _stateRef.Value;
+            set => _stateRef.Value = value;
         }
 
         public class StateRef

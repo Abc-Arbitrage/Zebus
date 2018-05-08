@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security.Principal;
 using Abc.Zebus.Util.Annotations;
 using Abc.Zebus.Util.Extensions;
 using ProtoBuf;
@@ -11,7 +10,7 @@ using ProtoBuf;
 namespace Abc.Zebus.Routing
 {
     [ProtoContract]
-    public struct BindingKey : IEquatable<BindingKey>
+    public readonly struct BindingKey : IEquatable<BindingKey>
     {
         private const string _star = "*";
         private const string _sharp = "#";
@@ -36,26 +35,21 @@ namespace Abc.Zebus.Routing
         public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
 
         public bool IsSharp(int index)
-        {
-            return _parts[index] == _sharp;
-        }
+            => _parts[index] == _sharp;
 
         public bool IsStar(int index)
-        {
-            return _parts[index] == _star;
-        }
+            => _parts[index] == _star;
 
         [Pure]
-        public string GetPart(int index) => index < PartCount ? _parts[index] : null;
+        public string GetPart(int index)
+            => index < PartCount ? _parts[index] : null;
 
         [Pure]
-        public IEnumerable<string> GetParts() => _parts?.ToList() ?? Enumerable.Empty<string>();
+        public IEnumerable<string> GetParts()
+            => _parts?.ToList() ?? Enumerable.Empty<string>();
 
         public override bool Equals(object obj)
-        {
-            var other = obj as BindingKey?;
-            return other != null && Equals(other.Value);
-        }
+            => obj is BindingKey other && Equals(other);
 
         public bool Equals(BindingKey other)
         {
@@ -84,6 +78,7 @@ namespace Abc.Zebus.Routing
             {
                 hashCode = (hashCode * 397) ^ _parts[partIndex].GetHashCode();
             }
+
             return hashCode;
         }
 
@@ -138,6 +133,7 @@ namespace Abc.Zebus.Routing
                 {
                     parts[tokenIndex] = _tokens[tokenIndex].GetValue(message);
                 }
+
                 return new BindingKey(parts);
             }
 
@@ -148,6 +144,7 @@ namespace Abc.Zebus.Routing
                 {
                     parts[tokenIndex] = fieldValues.GetValueOrDefault(_tokens[tokenIndex].Name, _star);
                 }
+
                 return new BindingKey(parts);
             }
         }

@@ -2,7 +2,7 @@
 
 namespace Abc.Zebus.Dispatch.Pipes
 {
-    public struct AfterInvokeArgs
+    public readonly struct AfterInvokeArgs
     {
         public readonly PipeInvocation Invocation;
         public readonly object State;
