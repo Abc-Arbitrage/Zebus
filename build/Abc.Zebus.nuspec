@@ -9,7 +9,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A lightweight Peer to Peer Service Bus</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright © ABC arbitrage 2017</copyright>
+    <copyright>Copyright © ABC arbitrage 2018</copyright>
     <tags></tags>
     <references>
       <reference file="Abc.Zebus.dll" />

@@ -9,7 +9,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Test tools for Zebus</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright © ABC arbitrage 2017</copyright>
+    <copyright>Copyright © ABC arbitrage 2018</copyright>
     <tags></tags>
     <dependencies>
       <dependency id="Zebus" version="$version$" />
