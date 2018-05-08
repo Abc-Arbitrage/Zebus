@@ -418,7 +418,7 @@ namespace Abc.Zebus.Tests.Core
 
                 subscriptions.ShouldBeEmpty();
 
-                batch.Submit();
+                await batch.SubmitAsync();
 
                 await Task.WhenAll(taskA, taskB);
 

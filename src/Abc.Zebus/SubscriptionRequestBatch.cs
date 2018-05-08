@@ -23,7 +23,7 @@ namespace Abc.Zebus
             }
         }
 
-        public void Submit()
+        public async Task SubmitAsync()
         {
             EnsureNotSubmitted();
 
@@ -34,6 +34,8 @@ namespace Abc.Zebus
             }
 
             _submitCompletionSource.SetResult(null);
+
+            await WhenRegistrationCompletedAsync().ConfigureAwait(false);
         }
 
         internal Task WhenSubmittedAsync()
