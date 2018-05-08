@@ -82,6 +82,7 @@ namespace Abc.Zebus.Testing
             {
                 _events.Add(message);
             }
+
             var handler = _handlers.GetValueOrDefault(new HandlerKey(message.GetType(), default(PeerId)));
             handler?.Invoke(message);
         }
@@ -111,32 +112,32 @@ namespace Abc.Zebus.Testing
 
         public Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
         {
-            var subscriptions = request.Subscriptions.ToList();
+            request.MarkAsSubmitted();
 
             lock (_subscriptions)
             {
-                _subscriptions.AddRange(subscriptions);
+                _subscriptions.AddRange(request.Subscriptions);
             }
 
             return Task.FromResult<IDisposable>(new DisposableAction(() =>
             {
                 lock (_subscriptions)
                 {
-                    _subscriptions.RemoveRange(subscriptions);
+                    _subscriptions.RemoveRange(request.Subscriptions);
                 }
             }));
         }
 
         public Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
         {
-            var subscriptions = request.Subscriptions.ToList();
+            request.MarkAsSubmitted();
 
             lock (_subscriptions)
             {
-                _subscriptions.AddRange(subscriptions);
+                _subscriptions.AddRange(request.Subscriptions);
             }
 
-            var handlerKeys = subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default(PeerId))).ToList();
+            var handlerKeys = request.Subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default(PeerId))).ToList();
             foreach (var handlerKey in handlerKeys)
             {
                 _handlers[handlerKey] = x =>
@@ -150,7 +151,7 @@ namespace Abc.Zebus.Testing
             {
                 lock (_subscriptions)
                 {
-                    _subscriptions.RemoveRange(subscriptions);
+                    _subscriptions.RemoveRange(request.Subscriptions);
                 }
 
                 _handlers.RemoveRange(handlerKeys);
@@ -363,6 +364,7 @@ namespace Abc.Zebus.Testing
                 _peerByCommand.Clear();
                 _messagesByPeerId.Clear();
             }
+
             lock (_events)
             {
                 _events.Clear();
