@@ -445,6 +445,13 @@ namespace Abc.Zebus.Tests.Core
                              );
             }
 
+            [Test]
+            public void empty_batch_should_not_block()
+            {
+                var batch = new SubscriptionRequestBatch();
+                batch.SubmitAsync().IsCompleted.ShouldBeTrue();
+            }
+
             private void SendParallelSubscriptionUpdates(int threadCount, int subscriptionCountPerThread)
             {
                 var subscriptionVersion = 0;

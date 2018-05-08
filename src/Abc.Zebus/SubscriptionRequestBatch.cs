@@ -50,7 +50,15 @@ namespace Abc.Zebus
         }
 
         internal async Task WhenRegistrationCompletedAsync()
-            => await _registerCompletionSource.Task.ConfigureAwait(false);
+        {
+            lock (_requests)
+            {
+                if (_requests.Count == 0)
+                    return;
+            }
+
+            await _registerCompletionSource.Task.ConfigureAwait(false);
+        }
 
         [CanBeNull]
         internal IEnumerable<Subscription> TryConsumeBatchSubscriptions()
