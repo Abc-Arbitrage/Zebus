@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -56,10 +57,10 @@ namespace Abc.Zebus.Tests.Core
             public void should_resend_existing_bindings_when_making_a_new_subscription_to_a_type()
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
+                _bus.Start();
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "firstRoutingValue")));
                 var subscriptions = new List<SubscriptionsForType>();
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
-                _bus.Start();
 
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "secondRoutingValue")));
 
@@ -450,6 +451,67 @@ namespace Abc.Zebus.Tests.Core
             {
                 var batch = new SubscriptionRequestBatch();
                 batch.SubmitAsync().IsCompleted.ShouldBeTrue();
+            }
+
+            [Test]
+            public async Task should_not_unsubscribe_when_bus_is_stopped()
+            {
+                AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+
+                _bus.Start();
+                var subscription = _bus.Subscribe(Subscription.Any<FakeCommand>());
+
+                _bus.Stop();
+                _directoryMock.ResetCalls();
+
+                subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
+                _directoryMock.Verify(i => i.UpdateSubscriptionsAsync(_bus, It.IsAny<IEnumerable<SubscriptionsForType>>()), Times.Never);
+            }
+
+            [Test]
+            public void should_throw_when_batch_is_sent_after_bus_is_stopped()
+            {
+                AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+
+                var batch = new SubscriptionRequestBatch();
+                var request = new SubscriptionRequest(Subscription.Any<FakeCommand>());
+                request.AddToBatch(batch);
+
+                _bus.Start();
+                var _ = _bus.SubscribeAsync(request);
+
+                _bus.Stop();
+
+                var submitTask = batch.SubmitAsync();
+                Assert.Throws<AggregateException>(() => submitTask.Wait()).InnerExceptions.ExpectedSingle().ShouldBe<InvalidOperationException>();
+            }
+
+            [Test]
+            public void should_not_subscribe_when_bus_is_stopped()
+            {
+                AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+
+                Assert.Throws<InvalidOperationException>(() => _bus.Subscribe(Subscription.Any<FakeCommand>()));
+            }
+
+            [Test]
+            public async Task should_not_subscribe_after_bus_is_stopped()
+            {
+                AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+
+                _bus.Start();
+                var subscription = _bus.Subscribe(Subscription.Any<FakeCommand>());
+
+                _bus.Stop();
+                _bus.Start();
+                _directoryMock.ResetCalls();
+
+                subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
+                _directoryMock.Verify(i => i.UpdateSubscriptionsAsync(_bus, It.IsAny<IEnumerable<SubscriptionsForType>>()), Times.Never);
             }
 
             private void SendParallelSubscriptionUpdates(int threadCount, int subscriptionCountPerThread)

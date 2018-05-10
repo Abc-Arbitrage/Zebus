@@ -36,6 +36,7 @@ namespace Abc.Zebus.Core
         private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private readonly IBusConfiguration _configuration;
         private Task _unsubscribeTask = Task.CompletedTask;
+        private int _subscriptionsVersion;
 
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
         {
@@ -157,6 +158,12 @@ namespace Abc.Zebus.Core
             lock (_subscriptions)
             {
                 _subscriptions.Clear();
+                _unsubscribeTask = Task.CompletedTask;
+
+                unchecked
+                {
+                    ++_subscriptionsVersion;
+                }
             }
 
             _messageIdToTaskCompletionSources.Clear();
@@ -234,8 +241,7 @@ namespace Abc.Zebus.Core
 
         public async Task<IDisposable> SubscribeAsync([NotNull] SubscriptionRequest request)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ValidateSubscriptionRequest(request);
 
             if (!request.ThereIsNoHandlerButIKnowWhatIAmDoing)
                 EnsureMessageHandlerInvokerExists(request.Subscriptions);
@@ -247,14 +253,13 @@ namespace Abc.Zebus.Core
 
             await AddSubscriptionsAsync(request).ConfigureAwait(false);
 
-            var subscriptions = request.Subscriptions.ToList();
-            return new DisposableAction(() => RemoveSubscriptions(subscriptions));
+            return new DisposableAction(() => RemoveSubscriptions(request));
         }
 
         public async Task<IDisposable> SubscribeAsync([NotNull] SubscriptionRequest request, [NotNull] Action<IMessage> handler)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ValidateSubscriptionRequest(request);
+
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
 
@@ -273,14 +278,22 @@ namespace Abc.Zebus.Core
 
             await AddSubscriptionsAsync(request).ConfigureAwait(false);
 
-            var subscriptions = request.Subscriptions.ToList();
             return new DisposableAction(() =>
             {
                 foreach (var eventHandlerInvoker in eventHandlerInvokers)
                     _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
 
-                RemoveSubscriptions(subscriptions);
+                RemoveSubscriptions(request);
             });
+        }
+
+        private void ValidateSubscriptionRequest(SubscriptionRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (!IsRunning)
+                throw new InvalidOperationException("Cannot perform a subscription, the bus is not running");
         }
 
         private void EnsureMessageHandlerInvokerExists(IEnumerable<Subscription> subscriptions)
@@ -294,6 +307,8 @@ namespace Abc.Zebus.Core
 
         private async Task AddSubscriptionsAsync(SubscriptionRequest request)
         {
+            request.SubmissionSubscriptionsVersion = _subscriptionsVersion;
+
             if (request.Batch != null)
             {
                 var batchSubscriptions = request.Batch.TryConsumeBatchSubscriptions();
@@ -322,6 +337,9 @@ namespace Abc.Zebus.Core
 
             async Task SendSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
             {
+                if (!IsRunning)
+                    throw new InvalidOperationException("Cannot perform a subscription, the bus is not running");
+
                 var updatedTypes = new HashSet<MessageTypeId>();
 
                 lock (_subscriptions)
@@ -343,13 +361,19 @@ namespace Abc.Zebus.Core
         internal Task WhenUnsubscribeCompletedAsync()
             => _unsubscribeTask;
 
-        private void RemoveSubscriptions(IEnumerable<Subscription> subscriptions)
+        private void RemoveSubscriptions(SubscriptionRequest request)
         {
+            if (!IsRunning)
+                return;
+
             var updatedTypes = new HashSet<MessageTypeId>();
 
             lock (_subscriptions)
             {
-                foreach (var subscription in subscriptions)
+                if (request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                    return;
+
+                foreach (var subscription in request.Subscriptions)
                 {
                     updatedTypes.Add(subscription.MessageTypeId);
                     var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);

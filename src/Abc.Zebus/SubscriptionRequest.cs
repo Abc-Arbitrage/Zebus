@@ -17,6 +17,7 @@ namespace Abc.Zebus
         internal SubscriptionRequestBatch Batch { get; private set; }
 
         internal bool IsSubmitted { get; private set; }
+        internal int? SubmissionSubscriptionsVersion { get; set; }
 
         public SubscriptionRequest(Subscription subscription)
         {
