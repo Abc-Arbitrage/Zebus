@@ -376,6 +376,7 @@ namespace Abc.Zebus.Core
                 foreach (var subscription in request.Subscriptions)
                 {
                     updatedTypes.Add(subscription.MessageTypeId);
+
                     var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
                     if (subscriptionCount <= 1)
                         _subscriptions.Remove(subscription);
@@ -383,7 +384,19 @@ namespace Abc.Zebus.Core
                         _subscriptions[subscription] = subscriptionCount - 1;
                 }
 
-                _unsubscribeTask = _unsubscribeTask.ContinueWith(_ => UpdateDirectorySubscriptionsAsync(updatedTypes)).Unwrap();
+                _unsubscribeTask = _unsubscribeTask.ContinueWith(async _ =>
+                {
+                    if (!IsRunning)
+                        return;
+
+                    lock (_subscriptions)
+                    {
+                        if (request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                            return;
+                    }
+
+                    await UpdateDirectorySubscriptionsAsync(updatedTypes);
+                }).Unwrap();
             }
         }
 
