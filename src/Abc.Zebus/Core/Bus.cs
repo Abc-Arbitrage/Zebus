@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
@@ -37,6 +38,7 @@ namespace Abc.Zebus.Core
         private readonly IBusConfiguration _configuration;
         private Task _unsubscribeTask = Task.CompletedTask;
         private int _subscriptionsVersion;
+        private int _status;
 
         public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
         {
@@ -59,9 +61,15 @@ namespace Abc.Zebus.Core
 
         public PeerId PeerId { get; private set; }
         public string Environment { get; private set; }
-        public bool IsRunning { get; private set; }
+        public bool IsRunning => Status == BusStatus.Started || Status == BusStatus.Stopping;
         public string EndPoint => _transport.InboundEndPoint;
         public string DeserializationFailureDumpDirectoryPath { get; set; } = PathUtil.InBaseDirectory("deserialization_failure_dumps");
+
+        private BusStatus Status
+        {
+            get => (BusStatus)_status;
+            set => _status = (int)value;
+        }
 
         public void Configure(PeerId peerId, string environment)
         {
@@ -72,10 +80,18 @@ namespace Abc.Zebus.Core
 
         public virtual void Start()
         {
-            if (IsRunning)
+            if (Interlocked.CompareExchange(ref _status, (int)BusStatus.Starting, (int)BusStatus.Stopped) != (int)BusStatus.Stopped)
                 throw new InvalidOperationException("Unable to start, the bus is already running");
 
-            Starting();
+            try
+            {
+                Starting();
+            }
+            catch
+            {
+                Status = BusStatus.Stopped;
+                throw;
+            }
 
             var registered = false;
             try
@@ -91,7 +107,7 @@ namespace Abc.Zebus.Core
                 _logger.DebugFormat("Starting transport...");
                 _transport.Start();
 
-                IsRunning = true;
+                Status = BusStatus.Started;
 
                 _logger.DebugFormat("Registering on directory...");
                 var self = new Peer(PeerId, EndPoint);
@@ -103,7 +119,7 @@ namespace Abc.Zebus.Core
             catch
             {
                 InternalStop(registered);
-                IsRunning = false;
+                Status = BusStatus.Stopped;
                 throw;
             }
 
@@ -136,10 +152,18 @@ namespace Abc.Zebus.Core
 
         public virtual void Stop()
         {
-            if (!IsRunning)
+            if (Interlocked.CompareExchange(ref _status, (int)BusStatus.Stopping, (int)BusStatus.Started) != (int)BusStatus.Started)
                 throw new InvalidOperationException("Unable to stop, the bus is not running");
 
-            Stopping();
+            try
+            {
+                Stopping();
+            }
+            catch
+            {
+                Status = BusStatus.Started;
+                throw;
+            }
 
             InternalStop(true);
 
@@ -148,12 +172,10 @@ namespace Abc.Zebus.Core
 
         private void InternalStop(bool unregister)
         {
+            Status = BusStatus.Stopping;
+
             if (unregister)
                 _directory.UnregisterAsync(this).Wait();
-
-            _stoppingStrategy.Stop(_transport, _messageDispatcher);
-
-            IsRunning = false;
 
             lock (_subscriptions)
             {
@@ -165,6 +187,10 @@ namespace Abc.Zebus.Core
                     ++_subscriptionsVersion;
                 }
             }
+
+            _stoppingStrategy.Stop(_transport, _messageDispatcher);
+
+            Status = BusStatus.Stopped;
 
             _messageIdToTaskCompletionSources.Clear();
         }
@@ -386,7 +412,7 @@ namespace Abc.Zebus.Core
 
                 _unsubscribeTask = _unsubscribeTask.ContinueWith(async _ =>
                 {
-                    if (!IsRunning)
+                    if (!IsRunning || Status == BusStatus.Stopping)
                         return;
 
                     lock (_subscriptions)
@@ -697,8 +723,16 @@ namespace Abc.Zebus.Core
 
         public void Dispose()
         {
-            if (IsRunning)
+            if (Status == BusStatus.Started)
                 Stop();
+        }
+
+        private enum BusStatus
+        {
+            Stopped,
+            Stopping,
+            Starting,
+            Started
         }
     }
 }

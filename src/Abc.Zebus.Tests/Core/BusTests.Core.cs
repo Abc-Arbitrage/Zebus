@@ -202,6 +202,23 @@ namespace Abc.Zebus.Tests.Core
             {
                 _bus.Environment.ShouldEqual(_environment);
             }
+
+            [Test]
+            public void should_stop_if_starting_event_throws()
+            {
+                _bus.Starting += () => throw new DivideByZeroException();
+                Assert.Throws<DivideByZeroException>(() => _bus.Start());
+                _bus.IsRunning.ShouldBeFalse();
+            }
+
+            [Test]
+            public void should_continue_running_if_stopping_event_throws()
+            {
+                _bus.Stopping += () => throw new DivideByZeroException();
+                _bus.Start();
+                Assert.Throws<DivideByZeroException>(() => _bus.Stop());
+                _bus.IsRunning.ShouldBeTrue();
+            }
         }
     }
 }
