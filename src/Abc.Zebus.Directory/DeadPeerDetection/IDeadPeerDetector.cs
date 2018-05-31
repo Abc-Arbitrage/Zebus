@@ -4,13 +4,10 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 {
     public interface IDeadPeerDetector : IDisposable
     {
+        event Action<Exception> Error;
         event Action PersistenceDownDetected;
-        event Action<PeerId, DateTime> PeerDownDetected;
-        event Action<PeerId, DateTime> PeerRespondingDetected;
-        event Action<PeerId, DateTime> PingMissed;
-        
-        Action<Exception> ExceptionHandler { get; set; }
-        
+        event Action<PeerId, DateTime> PingTimeout;
+
         void Start();
         void Stop();
     }

@@ -6,6 +6,7 @@ using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
+using log4net;
 
 namespace Abc.Zebus.Directory.Handlers
 {
@@ -14,8 +15,11 @@ namespace Abc.Zebus.Directory.Handlers
                                             IMessageHandler<UnregisterPeerCommand>,
                                             IMessageHandler<DecommissionPeerCommand>,
                                             IMessageHandler<UpdatePeerSubscriptionsForTypesCommand>,
+                                            IMessageHandler<MarkPeerAsRespondingCommand>,
+                                            IMessageHandler<MarkPeerAsNotRespondingCommand>,
                                             IMessageContextAware
     {
+        private static readonly ILog _log = LogManager.GetLogger(typeof(DirectoryCommandsHandler));
         private readonly HashSet<string> _blacklistedMachines;
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
@@ -126,6 +130,23 @@ namespace Abc.Zebus.Directory.Handlers
             _bus.Publish(new PeerSubscriptionsForTypesUpdated(message.PeerId, message.TimestampUtc, message.SubscriptionsForTypes));
 
             _speedReporter.ReportSubscriptionUpdateForTypesDuration(stopwatch.Elapsed);
+        }
+
+        public void Handle(MarkPeerAsRespondingCommand message)
+        {
+            _peerRepository.SetPeerResponding(message.PeerId, true);
+            _bus.Publish(new PeerResponding(message.PeerId, message.TimestampUtc));
+        }
+
+        public void Handle(MarkPeerAsNotRespondingCommand message)
+        {
+            if (_peerRepository.Get(message.PeerId) == null)
+            {
+                _log.Warn("MarkPeerAsNotRespondingCommand ignored because the peer cannot be found");
+                return;
+            }
+            _peerRepository.SetPeerResponding(message.PeerId, false);
+            _bus.Publish(new PeerNotResponding(message.PeerId, message.TimestampUtc));
         }
     }
 }

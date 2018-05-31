@@ -442,5 +442,45 @@ namespace Abc.Zebus.Directory.Tests.Handlers
 
             _speedReporter.Verify(x => x.ReportSubscriptionUpdateForTypesDuration(It.Is<TimeSpan>(t => t < 1.Second())));
         }
+
+        [Test]
+        public void should_persist_not_responding_peer()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123");
+
+            _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns(peerDescriptor);
+
+            _handler.Handle(new MarkPeerAsNotRespondingCommand(peerDescriptor.PeerId, SystemDateTime.UtcNow));
+
+            _repositoryMock.Verify(x => x.SetPeerResponding(peerDescriptor.PeerId, false));
+
+            var notRespondingEvent = _bus.Events.OfType<PeerNotResponding>().ExpectedSingle();
+            notRespondingEvent.PeerId.ShouldEqual(peerDescriptor.PeerId);
+        }
+
+        [Test]
+        public void should_persist_responding_peer()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+
+            _handler.Handle(new MarkPeerAsRespondingCommand(peerDescriptor.PeerId, SystemDateTime.UtcNow));
+
+            _repositoryMock.Verify(x => x.SetPeerResponding(peerDescriptor.PeerId, true));
+
+            var respondingEvent = _bus.Events.OfType<PeerResponding>().ExpectedSingle();
+            respondingEvent.PeerId.ShouldEqual(peerDescriptor.PeerId);
+        }
+
+        [Test]
+        public void should_not_revive_decommissionned_peer()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+
+            _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns((PeerDescriptor)null);
+
+            _handler.Handle(new MarkPeerAsNotRespondingCommand(peerDescriptor.PeerId, SystemDateTime.UtcNow));
+
+            _repositoryMock.Verify(repo => repo.SetPeerResponding(It.IsAny<PeerId>(), It.IsAny<bool>()), Times.Never());
+        }
     }
 }

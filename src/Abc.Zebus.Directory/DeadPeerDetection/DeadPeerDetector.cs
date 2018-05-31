@@ -15,6 +15,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 {
     public class DeadPeerDetector : IDeadPeerDetector
     {
+        private static readonly TimeSpan _commandTimeout = 5.Seconds();
         private readonly Dictionary<PeerId, DeadPeerDetectorEntry> _peers = new Dictionary<PeerId, DeadPeerDetectorEntry>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(DeadPeerDetector));
         private readonly IBus _bus;
@@ -32,16 +33,13 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             _configuration = configuration;
 
             TaskScheduler = TaskScheduler.Current;
-            ExceptionHandler = ex => _logger.ErrorFormat("MainLoop error: {0}", ex);
         }
 
+        public event Action<Exception> Error = delegate { };
         public event Action PersistenceDownDetected = delegate { };
-        public event Action<PeerId, DateTime> PeerDownDetected = delegate { };
-        public event Action<PeerId, DateTime> PingMissed = delegate { };
-        public event Action<PeerId, DateTime> PeerRespondingDetected = delegate { };
+        public event Action<PeerId, DateTime> PingTimeout = delegate { };
 
         public TaskScheduler TaskScheduler { get; set; }
-        public Action<Exception> ExceptionHandler { get; set; }
 
         internal void DetectDeadPeers()
         {
@@ -74,7 +72,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             var entry = new DeadPeerDetectorEntry(descriptor, _configuration, _bus, TaskScheduler);
             entry.PeerTimeoutDetected += OnPeerTimeout;
             entry.PeerRespondingDetected += OnPeerResponding;
-            entry.PingMissed += (detectorEntry, time) => PingMissed(detectorEntry.Descriptor.PeerId, time);
+            entry.PingTimeout += (detectorEntry, time) => PingTimeout(detectorEntry.Descriptor.PeerId, time);
 
             return entry;
         }
@@ -95,8 +93,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
             else if (descriptor.Peer.IsResponding)
             {
-                PeerDownDetected(descriptor.PeerId, timeoutTimestampUtc);
-                
+                _bus.Send(new MarkPeerAsNotRespondingCommand(descriptor.PeerId, timeoutTimestampUtc)).Wait(_commandTimeout);
                 descriptor.Peer.IsResponding = false;
             }
         }
@@ -109,7 +106,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         private void OnPeerResponding(DeadPeerDetectorEntry entry,DateTime timeoutTimestampUtc)
         {
-            PeerRespondingDetected(entry.Descriptor.PeerId, timeoutTimestampUtc);
+            _bus.Send(new MarkPeerAsRespondingCommand(entry.Descriptor.PeerId, timeoutTimestampUtc)).Wait(_commandTimeout);
         }
 
         private bool ShouldSendPing(DateTime timestampUtc)
@@ -163,10 +160,24 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 }
                 catch (Exception ex)
                 {
-                    ExceptionHandler(ex);
+                    OnError(ex);
                 }
             }
             _logger.Info("MainLoop stopped");
+        }
+
+        private void OnError(Exception ex)
+        {
+            _logger.ErrorFormat("MainLoop error: {0}", ex);
+
+            try
+            {
+                Error.Invoke(ex);
+            }
+            catch (Exception errorException)
+            {
+                _logger.Error(errorException);
+            }
         }
     }
 }

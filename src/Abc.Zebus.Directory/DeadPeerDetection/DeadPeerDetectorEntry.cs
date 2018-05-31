@@ -26,7 +26,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         public event Action<DeadPeerDetectorEntry, DateTime> PeerTimeoutDetected = delegate { };
         public event Action<DeadPeerDetectorEntry, DateTime> PeerRespondingDetected = delegate { };
-        public event Action<DeadPeerDetectorEntry, DateTime> PingMissed = delegate { };
+        public event Action<DeadPeerDetectorEntry, DateTime> PingTimeout = delegate { };
 
         public PeerDescriptor Descriptor { get; set; }
         public DeadPeerStatus Status { get; private set; }
@@ -67,7 +67,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                     _oldestUnansweredPingTimeUtc = timestampUtc;
                 var elapsedTimeSinceFirstPing = SystemDateTime.UtcNow - _oldestUnansweredPingTimeUtc;
                 if (elapsedTimeSinceFirstPing > _configuration.PeerPingInterval)
-                    PingMissed(this, timestampUtc);
+                    PingTimeout(this, timestampUtc);
             }
 
             SendPingCommand(timestampUtc);

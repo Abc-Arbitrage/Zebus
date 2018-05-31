@@ -239,16 +239,6 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 var startTime = SystemDateTime.UtcNow;
                 var firstPingTimestampUtc = startTime;
 
-                var peerDownDetectedCount = 0;
-                var lastPeerDown = new PeerId(string.Empty);
-                var lastPeerDownTimestamp = DateTime.MinValue;
-                _detector.PeerDownDetected += (peer, timestamp) =>
-                {
-                    peerDownDetectedCount++;
-                    lastPeerDown = peer;
-                    lastPeerDownTimestamp = timestamp;
-                };
-
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
@@ -260,10 +250,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
-                _bus.ExpectNothing();
-                peerDownDetectedCount.ShouldEqual(1);
-                lastPeerDown.ShouldEqualDeeply(_transientAlivePeer0.Peer.Id);
-                lastPeerDownTimestamp.ShouldEqual(firstPingTimestampUtc);
+                _bus.ExpectExactly(new MarkPeerAsNotRespondingCommand(_transientAlivePeer0.Peer.Id, firstPingTimestampUtc));
             }
         }
 
@@ -278,16 +265,6 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             {
                 var startTime = SystemDateTime.UtcNow;
                 var firstPingTimestampUtc = startTime;
-
-                var peerDownDetectedCount = 0;
-                var lastPeerDown = new PeerId(string.Empty);
-                var lastPeerDownTimestamp = DateTime.MinValue;
-                _detector.PeerDownDetected += (peer, timestamp) =>
-                {
-                    peerDownDetectedCount++;
-                    lastPeerDown = peer;
-                    lastPeerDownTimestamp = timestamp;
-                };
 
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
@@ -306,9 +283,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             
                 SystemDateTime.Set(startTime.AddSeconds(_persistentPeerTimeout + 1));
                 _detector.DetectDeadPeers();
-                peerDownDetectedCount.ShouldEqual(1);
-                lastPeerDown.ShouldEqualDeeply(_persistentAlivePeer.Peer.Id);
-                lastPeerDownTimestamp.ShouldEqual(firstPingTimestampUtc);
+                _bus.ExpectExactly(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
             }
         }
 
@@ -389,7 +364,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             using (SystemDateTime.PauseTime())
             {
                 var missedPings = new List<PeerEvent>();
-                _detector.PingMissed += (peer, timestamp) => missedPings.Add(new PeerEvent(peer, timestamp));
+                _detector.PingTimeout += (peer, timestamp) => missedPings.Add(new PeerEvent(peer, timestamp));
 
                 var startTime = SystemDateTime.UtcNow;
                 _detector.DetectDeadPeers();
@@ -421,26 +396,6 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 var startTime = SystemDateTime.UtcNow;
                 var firstPingTimestampUtc = startTime;
 
-                var peerDownDetectedCount = 0;
-                var lastPeerDown = new PeerId(string.Empty);
-                var lastPeerDownTimestamp = DateTime.MinValue;
-                _detector.PeerDownDetected += (peer, timestamp) =>
-                {
-                    peerDownDetectedCount++;
-                    lastPeerDown = peer;
-                    lastPeerDownTimestamp = timestamp;
-                };
-
-                var peerUpDetectedCount = 0;
-                var lastPeerUp = new PeerId(string.Empty);
-                var lastPeerUpTimestamp = DateTime.MinValue;
-                _detector.PeerRespondingDetected += (peer, timestamp) =>
-                {
-                    peerUpDetectedCount++;
-                    lastPeerUp = peer;
-                    lastPeerUpTimestamp = timestamp;
-                };
-
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
@@ -452,9 +407,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.Set(startTime.AddSeconds(_persistentPeerTimeout + 1));
                 _detector.DetectDeadPeers();
-                peerDownDetectedCount.ShouldEqual(1);
-                lastPeerDown.ShouldEqualDeeply(_persistentAlivePeer.Peer.Id);
-                lastPeerDownTimestamp.ShouldEqual(firstPingTimestampUtc);
+                _bus.Expect(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
+                _bus.ClearMessages();
 
                 // simulate MarkPeerAsNotRespondingCommand handler
                 _persistentAlivePeer.Peer.IsResponding = false;
@@ -466,9 +420,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.Set(SystemDateTime.Now.Add(_pingInterval));
                 _detector.DetectDeadPeers();
-                peerUpDetectedCount.ShouldEqual(1);
-                lastPeerUp.ShouldEqualDeeply(_persistentAlivePeer.Peer.Id);
-                lastPeerUpTimestamp.ShouldEqual(SystemDateTime.UtcNow);
+                _bus.Expect(new MarkPeerAsRespondingCommand(_persistentAlivePeer.Peer.Id, SystemDateTime.UtcNow));
             }
         }
 
@@ -506,7 +458,6 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         {
             _peerRepositoryMock.Setup(repo => repo.GetPeers(It.IsAny<bool>())).Returns(new List<PeerDescriptor>(peer));
         }
-
 
         private void SetupPeerResponse(PeerId peerId, params bool[] respondToPing)
         {
