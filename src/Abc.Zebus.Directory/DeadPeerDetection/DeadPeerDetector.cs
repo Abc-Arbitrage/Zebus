@@ -40,6 +40,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         public event Action<PeerId, DateTime> PingTimeout = delegate { };
 
         public TaskScheduler TaskScheduler { get; set; }
+        public IEnumerable<PeerId> KnownPeerIds => _peers.Keys;
 
         internal void DetectDeadPeers()
         {
@@ -57,6 +58,9 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             {
                 entry.Process(timestampUtc, shouldSendPing);
             }
+
+            var decommissionedPeerIds = _peers.Keys.Except(entries.Select(x => x.Descriptor.PeerId)).ToList();
+            _peers.RemoveRange(decommissionedPeerIds);
         }
 
         private DeadPeerDetectorEntry ToPeerEntry(PeerDescriptor descriptor)

@@ -92,6 +92,18 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             _bus.ExpectExactly(_debugPersistentAlivePeer.PeerId, new PingPeerCommand());
             _bus.ExpectExactly(_debugTransientAlivePeer.PeerId, new PingPeerCommand());
         }
+
+        [Test]
+        public void forget_decommissioned_peers()
+        {
+            _detector.DetectDeadPeers();
+
+            SetupPeerRepository(_persistentAlivePeer);
+
+            _detector.DetectDeadPeers();
+
+            _detector.KnownPeerIds.ShouldBeEquivalentTo(new[] { _persistentAlivePeer.PeerId });
+        }
         
         [Test]
         public void should_not_ping_until_the_ping_interval_elapsed()
