@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using ProtoBuf;
 
 namespace Abc.Zebus
@@ -33,8 +34,13 @@ namespace Abc.Zebus
             private set => _descriptor = MessageUtil.GetMessageTypeDescriptor(value);
         }
 
+        [Pure]
         public Type GetMessageType() => _descriptor?.MessageType;
+
+        [Pure]
         public bool IsInfrastructure() => _descriptor?.IsInfrastructure ?? false;
+
+        [Pure]
         public bool IsPersistent() => _descriptor?.IsPersistent ?? true;
 
         public override string ToString()

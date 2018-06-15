@@ -110,34 +110,27 @@ namespace Abc.Zebus.Testing
             return HandlerExecutor.Execute(message, handler);
         }
 
-        public Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
+        public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
         {
             request.MarkAsSubmitted();
 
-            lock (_subscriptions)
-            {
-                _subscriptions.AddRange(request.Subscriptions);
-            }
+            if (request.Batch != null)
+                await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
 
-            return Task.FromResult<IDisposable>(new DisposableAction(() =>
-            {
-                lock (_subscriptions)
-                {
-                    _subscriptions.RemoveRange(request.Subscriptions);
-                }
-            }));
+            await AddSubscriptionsAsync(request).ConfigureAwait(false);
+
+            return new DisposableAction(() => RemoveSubscriptions(request));
         }
 
-        public Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
+        public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
         {
             request.MarkAsSubmitted();
 
-            lock (_subscriptions)
-            {
-                _subscriptions.AddRange(request.Subscriptions);
-            }
+            if (request.Batch != null)
+                await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
 
             var handlerKeys = request.Subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default(PeerId))).ToList();
+
             foreach (var handlerKey in handlerKeys)
             {
                 _handlers[handlerKey] = x =>
@@ -147,15 +140,50 @@ namespace Abc.Zebus.Testing
                 };
             }
 
-            return Task.FromResult<IDisposable>(new DisposableAction(() =>
+            await AddSubscriptionsAsync(request).ConfigureAwait(false);
+
+            return new DisposableAction(() =>
+            {
+                RemoveSubscriptions(request);
+                _handlers.RemoveRange(handlerKeys);
+            });
+        }
+
+        private async Task AddSubscriptionsAsync(SubscriptionRequest request)
+        {
+            if (request.Batch != null)
+            {
+                var batchSubscriptions = request.Batch.TryConsumeBatchSubscriptions();
+                if (batchSubscriptions != null)
+                {
+                    AddSubscriptions(batchSubscriptions);
+                    request.Batch.NotifyRegistrationCompleted(null);
+                }
+                else
+                {
+                    await request.Batch.WhenRegistrationCompletedAsync().ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                AddSubscriptions(request.Subscriptions);
+            }
+
+            void AddSubscriptions(IEnumerable<Subscription> subscriptions)
             {
                 lock (_subscriptions)
                 {
-                    _subscriptions.RemoveRange(request.Subscriptions);
+                    _subscriptions.AddRange(subscriptions);
                 }
+            }
+        }
 
-                _handlers.RemoveRange(handlerKeys);
-            }));
+        private void RemoveSubscriptions(SubscriptionRequest request)
+        {
+            lock (_subscriptions)
+            {
+                _subscriptions.RemoveRange(request.Subscriptions);
+            }
         }
 
         public void Reply(int errorCode)
