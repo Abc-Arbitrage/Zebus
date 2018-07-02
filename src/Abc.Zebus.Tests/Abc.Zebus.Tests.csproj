@@ -1,17 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net471;netcoreapp2.1</TargetFrameworks>
-    <OutputType>Library</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Transport\transport_message_1_4_1.bin" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
@@ -28,6 +18,10 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
     <PackageReference Include="protobuf-net" Version="2.3.13" />
     <PackageReference Include="structuremap" Version="4.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Transport\transport_message_1_4_1.bin" />
   </ItemGroup>
 
   <ItemGroup>

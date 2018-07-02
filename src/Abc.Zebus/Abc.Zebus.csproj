@@ -1,12 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
+    <PackageId>Zebus</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,12 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs">
-      <Link>Properties\SharedAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\SharedVersionInfo.cs">
-      <Link>Properties\SharedVersionInfo.cs</Link>
-    </Compile>
+    <None Include="..\..\lib\zmq\ZeroMQ.dll">
+      <Pack>True</Pack>
+      <PackagePath>lib\netstandard2.0</PackagePath>
+    </None>
 
     <EmbeddedResource Include="Transport\libsodium-x64.dll" />
     <EmbeddedResource Include="Transport\libsodium-x86.dll" />

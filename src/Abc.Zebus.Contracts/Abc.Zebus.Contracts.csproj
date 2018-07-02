@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Zebus.Contracts</PackageId>
     <RootNamespace>Abc.Zebus</RootNamespace>
   </PropertyGroup>
 
