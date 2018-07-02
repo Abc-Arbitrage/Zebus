@@ -24,7 +24,7 @@
   <files>
     <file src="Abc.Zebus.dll" target="lib\net46\" />
     <file src="Abc.Zebus.pdb" target="lib\net46\" />
-    <file src=".\..\..\lib\zmq\clrzmq.dll" target="lib\net46\" />
+    <file src=".\..\..\lib\zmq\ZeroMQ.dll" target="lib\net46\" />
     <file src=".\..\..\src\Abc.Zebus\**\*.cs" target="src" />
   </files>
 </package>

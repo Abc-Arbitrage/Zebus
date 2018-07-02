@@ -31,8 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="clrzmq">
-      <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
+    <Reference Include="ZeroMQ">
+      <HintPath>..\..\lib\zmq\ZeroMQ.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
@@ -45,11 +45,10 @@
       <Link>Properties\SharedVersionInfo.cs</Link>
     </Compile>
 
-    <None Include="Transport\libzmq-4.0.5-v140-mt" />
-    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.dll" />
-    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.dll" />
-    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.pdb" />
-    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.pdb" />
+    <EmbeddedResource Include="Transport\libsodium-x64.dll" />
+    <EmbeddedResource Include="Transport\libsodium-x86.dll" />
+    <EmbeddedResource Include="Transport\libzmq-x64.dll" />
+    <EmbeddedResource Include="Transport\libzmq-x86.dll" />
   </ItemGroup>
 
 </Project>

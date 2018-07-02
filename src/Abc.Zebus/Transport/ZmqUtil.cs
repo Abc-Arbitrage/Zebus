@@ -1,34 +1,36 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Text;
-using System.Threading;
-using ZeroMQ;
+using System.IO;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Transport
 {
     public static class ZmqUtil
     {
-        public static void SetPeerId(this ZmqSocket socket, PeerId peerId)
+        internal static void ExtractLibZmq(string platform, string directory)
         {
-            socket.Identity = Encoding.ASCII.GetBytes(peerId.ToString());
-        }
+            var directoryPath = PathUtil.InBaseDirectory(directory);
+            if (!System.IO.Directory.Exists(directoryPath))
+                System.IO.Directory.CreateDirectory(directoryPath);
 
-        public static int SendWithTimeout(this ZmqSocket socket, byte[] buffer, int length, TimeSpan timeout)
-        {
-            var stopwatch = Stopwatch.StartNew();
-            var spinWait = new SpinWait();
-            int result;
-            do
+            foreach (var libraryName in new[] { "libzmq", "libsodium" })
             {
-                result = socket.Send(buffer, length, SocketFlags.DontWait);
-                if (socket.SendStatus != SendStatus.TryAgain)
-                    break;
+                var libraryPath = PathUtil.InBaseDirectory(directory, $"{libraryName}.dll");
+                if (File.Exists(libraryPath))
+                    continue;
 
-                spinWait.SpinOnce();
+                var resourceName = $"{libraryName}-{platform}.dll";
+                var transportType = typeof(ZmqTransport);
+                using (var resourceStream = transportType.Assembly.GetManifestResourceStream(transportType, resourceName))
+                {
+                    if (resourceStream == null)
+                        throw new Exception($"Unable to find {libraryName} in the embedded resources.");
+
+                    using (var libraryFileStream = new FileStream(libraryPath, FileMode.OpenOrCreate, FileAccess.Write))
+                    {
+                        resourceStream.CopyTo(libraryFileStream);
+                    }
+                }
             }
-            while (stopwatch.Elapsed <= timeout);
-
-            return result;
         }
     }
 }

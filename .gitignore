@@ -24,6 +24,7 @@ Thumbs.db
 *.sbr
 *.ncrunchproject
 *.ncrunchsolution
+*.orig
 obj/
 [Rr]elease*/
 _ReSharper*/

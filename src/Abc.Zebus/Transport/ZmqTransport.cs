@@ -21,7 +21,7 @@ namespace Abc.Zebus.Transport
         private ConcurrentDictionary<PeerId, ZmqOutboundSocket> _outboundSockets;
         private BlockingCollection<OutboundSocketAction> _outboundSocketActions;
         private BlockingCollection<PendingDisconnect> _pendingDisconnects;
-        private ZmqContext _context;
+        private ZContext _context;
         private Thread _inboundThread;
         private Thread _outboundThread;
         private Thread _disconnectThread;
@@ -33,29 +33,8 @@ namespace Abc.Zebus.Transport
 
         static ZmqTransport()
         {
-            ExtractLibZmq("x64");
-            ExtractLibZmq("x86");
-        }
-
-        static void ExtractLibZmq(string platform)
-        {
-            var resourceName = $"libzmq-{platform}-0.0.0.0.dll";
-
-            var libraryPath = PathUtil.InBaseDirectory(resourceName);
-            if (File.Exists(libraryPath))
-                return;
-
-            var transportType = typeof(ZmqTransport);
-            using (var resourceStream = transportType.Assembly.GetManifestResourceStream(transportType, resourceName))
-            {
-                if (resourceStream == null)
-                    throw new Exception("Unable to find libzmq in the embedded resources.");
-
-                using (var libraryFileStream = new FileStream(libraryPath, FileMode.OpenOrCreate, FileAccess.Write))
-                {
-                    resourceStream.CopyTo(libraryFileStream);
-                }
-            }
+            ZmqUtil.ExtractLibZmq("x64", "amd64");
+            ZmqUtil.ExtractLibZmq("x86", "i386");
         }
 
         public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
@@ -68,11 +47,7 @@ namespace Abc.Zebus.Transport
 
         public event Action<TransportMessage> MessageReceived;
 
-        public virtual bool IsListening
-        {
-            get { return _isListening; }
-            internal set { _isListening = value; }
-        }
+        public bool IsListening => _isListening;
 
         public string InboundEndPoint => _realInboundEndPoint != null ? _realInboundEndPoint.Value : _configuredInboundEndPoint.Value;
 
@@ -114,12 +89,12 @@ namespace Abc.Zebus.Transport
 
         public void Start()
         {
-            IsListening = true;
+            _isListening = true;
 
             _outboundSockets = new ConcurrentDictionary<PeerId, ZmqOutboundSocket>();
             _outboundSocketActions = new BlockingCollection<OutboundSocketAction>();
             _pendingDisconnects = new BlockingCollection<PendingDisconnect>();
-            _context = ZmqContext.Create();
+            _context = new ZContext();
 
             var startSequenceState = new InboundProcStartSequenceState();
 
@@ -157,7 +132,7 @@ namespace Abc.Zebus.Transport
             if (!_outboundThread.Join(30.Seconds()))
                 _logger.Error("Unable to terminate outbound thread");
 
-            IsListening = false;
+            _isListening = false;
             if (!_inboundThread.Join(30.Seconds()))
                 _logger.Error("Unable to terminate inbound thread");
 
@@ -216,7 +191,7 @@ namespace Abc.Zebus.Transport
 
             using (inboundSocket)
             {
-                while (IsListening)
+                while (_isListening)
                 {
                     var inputStream = inboundSocket.Receive();
                     if (inputStream == null)
@@ -283,7 +258,7 @@ namespace Abc.Zebus.Transport
                     return;
                 }
 
-                if (IsListening)
+                if (_isListening)
                     MessageReceived?.Invoke(transportMessage);
             }
             catch (Exception ex)

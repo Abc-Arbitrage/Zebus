@@ -1,5 +1,4 @@
 ﻿using Abc.Zebus.Directory;
-using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
@@ -37,8 +36,7 @@ namespace Abc.Zebus.Tests.Transport
             {
                 try
                 {
-                    if (transport.IsListening)
-                        transport.Stop(true);
+                    transport.Stop(true);
                 }
                 catch (Exception)
                 {
@@ -487,37 +485,40 @@ namespace Abc.Zebus.Tests.Transport
         {
             var receivedMessages = new List<TransportMessage>();
 
-            var receivingPeerId = new PeerId("Abc.Receiving.0");
-            var stopwatch = Stopwatch.StartNew();
-            var receivingTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add, peerId: receivingPeerId.ToString(), 
-                                                                transportFactory: conf => new CapturingIsListeningTimeZmqTransport(conf, stopwatch));
-            var receivingPeer = new Peer(receivingPeerId, receivingTransport.InboundEndPoint);
-            var messageSerializer = new MessageSerializer();
-            bool receivedWhileNotListening = false;
-            receivingTransport.MessageReceived += message =>
-            {
-                var cmdWithTimetamp = (FakeCommandWithTimestamp)messageSerializer.Deserialize(message.MessageTypeId, message.Content);
+            var receivingTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
 
-                if (cmdWithTimetamp.Timestamp > ((CapturingIsListeningTimeZmqTransport)receivingTransport).IsListeningSwitchTimestamp)
-                    receivedWhileNotListening = true;
-            };
+            var receivingPeer = new Peer(receivingTransport.PeerId, receivingTransport.InboundEndPoint);
+            bool receivedWhileNotListening = false;
+            receivingTransport.MessageReceived += message => receivedWhileNotListening |= !receivingTransport.IsListening;
 
             var sendingTransport = CreateAndStartZmqTransport();
             var shouldSendMessages = true;
-            var sendTask = Task.Factory.StartNew(() =>
-            {
-                while (shouldSendMessages)
-                    sendingTransport.Send(new FakeCommandWithTimestamp(stopwatch.Elapsed).ToTransportMessage(), new[] { receivingPeer });
 
+            Task.Factory.StartNew(() =>
+            {
+                var sendCount = 0;
+                var spinWait = new SpinWait();
+                // ReSharper disable once AccessToModifiedClosure
+                while (shouldSendMessages)
+                {
+                    sendingTransport.Send(new FakeCommand(0).ToTransportMessage(), new[] { receivingPeer });
+                    sendCount++;
+                    spinWait.SpinOnce();
+                }
+                Console.WriteLine($"{sendCount} messages sent");
             });
-            Wait.Until(() => sendTask.Status == TaskStatus.Running, 10.Seconds());
+
             Wait.Until(() => receivedMessages.Count > 1, 10.Seconds());
-            
+            Console.WriteLine("Message received");
+
             receivingTransport.Stop();
+            Console.WriteLine("Receiving transport stopped");
 
             receivedWhileNotListening.ShouldBeFalse();
             shouldSendMessages = false;
+
             sendingTransport.Stop();
+            Console.WriteLine("Sending transport stopped");
         }
 
         [Test]
@@ -590,8 +591,7 @@ namespace Abc.Zebus.Tests.Transport
             }
         }
 
-        private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null,
-                                                        string environment = _environment, Func<IZmqTransportConfiguration, ZmqTransport> transportFactory = null)
+        private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment)
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
             configurationMock.SetupGet(x => x.InboundEndPoint).Returns(endPoint);
@@ -600,7 +600,7 @@ namespace Abc.Zebus.Tests.Transport
             if (peerId == null)
                 peerId = "Abc.Testing." + _transports.Count;
 
-            var transport = transportFactory == null ? new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler()) : transportFactory(configurationMock.Object);
+            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
             transport.SetLogId(_transports.Count);
 
             transport.SocketOptions.SendTimeout = 10.Milliseconds();
@@ -613,38 +613,6 @@ namespace Abc.Zebus.Tests.Transport
 
             transport.Start();
             return transport;
-        }
-
-        private class CapturingIsListeningTimeZmqTransport : ZmqTransport
-        {
-            private readonly Stopwatch _stopwatch;
-            private readonly object _lock = new object();
-            public TimeSpan IsListeningSwitchTimestamp { get; private set; }
-
-            public override bool IsListening
-            {
-                get
-                {
-                    lock (_lock)
-                        return base.IsListening;
-                }
-                internal set
-                {
-                    lock (_lock)
-                    {
-                        base.IsListening = value;
-                        if (!value)
-                            IsListeningSwitchTimestamp = _stopwatch.Elapsed;
-                    }
-                }
-            }
-
-
-            public CapturingIsListeningTimeZmqTransport(IZmqTransportConfiguration configuration, Stopwatch stopwatch) : base(configuration, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler())
-            {
-                _stopwatch = stopwatch;
-                IsListeningSwitchTimestamp = TimeSpan.MaxValue;
-            }
         }
     }
 }
