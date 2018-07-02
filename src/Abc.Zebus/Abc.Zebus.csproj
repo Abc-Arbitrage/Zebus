@@ -30,8 +30,8 @@
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="protobuf-net" Version="2.3.7" />
-    <PackageReference Include="structuremap" Version="3.1.6.186" />
+    <PackageReference Include="protobuf-net" Version="2.3.13" />
+    <PackageReference Include="structuremap" Version="4.6.1" />
   </ItemGroup>
 
   <ItemGroup>
