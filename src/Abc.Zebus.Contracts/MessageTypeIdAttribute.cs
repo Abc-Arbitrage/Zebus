@@ -5,7 +5,7 @@ namespace Abc.Zebus
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class MessageTypeIdAttribute : Attribute
     {
-        public Guid MessageTypeId { get; private set; }
+        public Guid MessageTypeId { get; }
 
         public MessageTypeIdAttribute(string typeId)
         {
