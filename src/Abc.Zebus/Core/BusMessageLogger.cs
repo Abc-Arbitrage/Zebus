@@ -27,7 +27,7 @@ namespace Abc.Zebus.Core
         public BusMessageLogger(Type loggerType, string loggerFullName)
         {
             _loggerType = loggerType;
-            _logger = LogManager.GetLogger(loggerFullName);
+            _logger = LogManager.GetLogger(typeof(BusMessageLogger).Assembly, loggerFullName);
 
             // Instances of BusMessageLogger are static, no need to unsubscribe from these events
             _logger.Logger.Repository.ConfigurationChanged += (sender, args) => UpdateLogConfig();

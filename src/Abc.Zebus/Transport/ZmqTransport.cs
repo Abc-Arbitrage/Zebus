@@ -61,7 +61,7 @@ namespace Abc.Zebus.Transport
 
         internal void SetLogId(int logId)
         {
-            _logger = LogManager.GetLogger(typeof(ZmqTransport).FullName + "#" + logId);
+            _logger = LogManager.GetLogger(typeof(ZmqTransport).Assembly, typeof(ZmqTransport).FullName + "#" + logId);
         }
 
         public void Configure(PeerId peerId, string environment)
