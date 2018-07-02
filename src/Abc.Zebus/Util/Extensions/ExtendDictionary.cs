@@ -14,20 +14,20 @@ namespace Abc.Zebus.Util.Extensions
 
         public static TValue GetValueOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> valueBuilder)
         {
-            TValue value;
-            if (!dictionary.TryGetValue(key, out value))
+            if (!dictionary.TryGetValue(key, out var value))
             {
                 value = valueBuilder(key);
                 dictionary.Add(key, value);
             }
+
             return value;
         }
 
         [Pure]
-        public static TValue? GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) where TValue : struct
+        public static TValue? GetValueOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
+            where TValue : struct
         {
-            TValue value;
-            return dictionary.TryGetValue(key, out value) ? value : (TValue?)null;
+            return dictionary.TryGetValue(key, out var value) ? value : (TValue?)null;
         }
 
         [Pure]
@@ -39,20 +39,17 @@ namespace Abc.Zebus.Util.Extensions
         [Pure]
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
         {
-            TValue value;
-            return dictionary.TryGetValue(key, out value) ? value : defaultValue;
+            return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
         }
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, [InstantHandle] Func<TKey, TValue> defaultValueBuilder)
         {
-            TValue value;
-            return dictionary.TryGetValue(key, out value) ? value : defaultValueBuilder(key);
+            return dictionary.TryGetValue(key, out var value) ? value : defaultValueBuilder(key);
         }
 
         public static bool Remove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key)
         {
-            TValue value;
-            return dictionary.TryRemove(key, out value);
+            return dictionary.TryRemove(key, out _);
         }
 
         public static bool TryRemove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue comparisonValue)

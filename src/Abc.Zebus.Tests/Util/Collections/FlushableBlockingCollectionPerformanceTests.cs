@@ -10,7 +10,7 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Util.Collections
 {
-    [TestFixture, Ignore("Manual tests")]
+    [TestFixture, Explicit("Manual tests")]
     public class FlushableBlockingCollectionPerformanceTests
     {
         [Test]

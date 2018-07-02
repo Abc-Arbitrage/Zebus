@@ -130,7 +130,7 @@ namespace Abc.Zebus.Tests.Transport
             deserialized2.WasPersisted.ShouldEqual(false);
         }
 
-        [Test, Ignore("Manual test")]
+        [Test, Explicit("Manual test")]
         public void MeasureWritePerformance()
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();

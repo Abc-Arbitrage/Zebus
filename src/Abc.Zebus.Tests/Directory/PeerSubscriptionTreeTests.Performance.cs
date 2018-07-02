@@ -12,7 +12,7 @@ namespace Abc.Zebus.Tests.Directory
     public partial class PeerSubscriptionTreeTests
     {
         [Test]
-        [Ignore]
+        [Explicit]
         [Category("ManualOnly")]
         [TestCase("a.e.f")]
         [TestCase("a.e")]
@@ -54,7 +54,7 @@ namespace Abc.Zebus.Tests.Directory
             });
         }
 
-        [Test, Ignore("Manual tests")]
+        [Test, Explicit("Manual tests")]
         public void MeasureStaticSubscriptionsPerformance()
         {
             var peers = Enumerable.Range(0, 100).Select(x => new Peer(new PeerId("Abc.Testing" + x), "tcp://testing:" + x)).ToList();

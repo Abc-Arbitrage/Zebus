@@ -277,7 +277,7 @@ namespace Abc.Zebus.Tests.Dispatch
             dispatch2.Result.Errors.ShouldNotBeEmpty();
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_run_async_without_blocking_dispatcher_thread()
         {
             var tcs = new TaskCompletionSource<object>();
@@ -306,7 +306,7 @@ namespace Abc.Zebus.Tests.Dispatch
             secondMessage.DispatchQueueName.ShouldEqual(_dispatchQueue.Name);
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_enqueue_async_continuations_on_dispatch_queue_when_requested()
         {
             _dispatchQueue.Start();
@@ -365,7 +365,7 @@ namespace Abc.Zebus.Tests.Dispatch
             Volatile.Read(ref secondMessageDispatchQueueAfterAwait).ShouldBeNull();
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_propagate_async_exceptions_from_continuations()
         {
             var tcs = new TaskCompletionSource<object>();
@@ -398,7 +398,7 @@ namespace Abc.Zebus.Tests.Dispatch
             secondTask.Result.Errors.Count.ShouldEqual(1);
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_internleave_sync_and_async_messages_properly()
         {
             var tcs = new TaskCompletionSource<object>();

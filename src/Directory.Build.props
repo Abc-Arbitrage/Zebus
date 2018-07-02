@@ -1,0 +1,12 @@
+<Project>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants Condition="'$(TargetFramework)' == 'net471'
+                     or '$(TargetFramework)' == 'net461'">$(DefineConstants);NETFWK</DefineConstants>
+  </PropertyGroup>
+</Project>

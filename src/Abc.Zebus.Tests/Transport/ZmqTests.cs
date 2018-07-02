@@ -6,7 +6,7 @@ using ZeroMQ;
 namespace Abc.Zebus.Tests.Transport
 {
     [TestFixture]
-    [Ignore]
+    [Explicit]
     [Category("ManualOnly")]
     public class ZmqTests
     {

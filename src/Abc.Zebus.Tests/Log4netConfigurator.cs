@@ -11,11 +11,11 @@ namespace Abc.Zebus.Tests
     [SetUpFixture]
     public class Log4netConfigurator
     {
-        [SetUp]
+        [OneTimeSetUp]
         public void Setup()
         {
             var configurationFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config");
-            XmlConfigurator.Configure(new FileInfo(configurationFile));
+            XmlConfigurator.Configure(LoggerManager.GetRepository(typeof(Log4netConfigurator).Assembly), new FileInfo(configurationFile));
         }
 
         [UsedImplicitly]

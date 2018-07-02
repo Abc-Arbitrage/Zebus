@@ -371,7 +371,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            [Ignore("The implementation is non trivial and will be dealt with later")]
+            [Explicit("The implementation is non trivial and will be dealt with later")]
             public void subscriptions_sent_to_the_directory_should_always_be_more_recent_than_the_previous()
             {
                 const int threadCount = 10;

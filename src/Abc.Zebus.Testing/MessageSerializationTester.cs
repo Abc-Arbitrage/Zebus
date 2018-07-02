@@ -8,8 +8,8 @@ using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util.Extensions;
 using NUnit.Framework;
-using Ploeh.AutoFixture;
-using Ploeh.AutoFixture.Kernel;
+using AutoFixture;
+using AutoFixture.Kernel;
 
 namespace Abc.Zebus.Testing
 {
@@ -69,7 +69,6 @@ namespace Abc.Zebus.Testing
 
             fixture.Inject(sourcing);
             fixture.Inject(new Uri(@"http://this.is.just.a.valid.url/"));
-            fixture.Customize(new MultipleCustomization());
             fixture.Inject('X');
 
             return fixture;

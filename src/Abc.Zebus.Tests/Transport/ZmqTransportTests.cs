@@ -109,7 +109,7 @@ namespace Abc.Zebus.Tests.Transport
             transport2ReceivedMessages.Single().Id.ShouldEqual(message2.Id);
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_send_messages()
         {
             var transport1ReceivedMessages = new ConcurrentBag<TransportMessage>();
@@ -218,7 +218,7 @@ namespace Abc.Zebus.Tests.Transport
             messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeerId });
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_write_WasPersisted_when_requested()
         {
             var sender = CreateAndStartZmqTransport();
@@ -237,7 +237,7 @@ namespace Abc.Zebus.Tests.Transport
             receivedMessages.Single(x => x.Id == otherMessage.Id).WasPersisted.ShouldEqual(false);
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_send_message_to_both_persisted_and_non_persisted_peers()
         {
             var sender = CreateAndStartZmqTransport();
@@ -359,7 +359,7 @@ namespace Abc.Zebus.Tests.Transport
             }
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_not_block_when_hitting_high_water_mark()
         {
             var senderTransport = CreateAndStartZmqTransport();
@@ -386,7 +386,7 @@ namespace Abc.Zebus.Tests.Transport
             }
         }
 
-        [Test, Timeout(5000)]
+        [Test]
         public void should_not_wait_blocked_peers_on_every_send()
         {
             var senderTransport = CreateAndStartZmqTransport();

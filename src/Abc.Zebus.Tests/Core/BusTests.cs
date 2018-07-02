@@ -13,7 +13,7 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Core
 {
-    [TestFixture, Timeout(20000)]
+    [TestFixture]
     public abstract partial class BusTests
     {
         private const string _environment = "Test";

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Abc.Zebus.Serialization;
-using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Tests.Serialization
 {
@@ -12,7 +11,8 @@ namespace Abc.Zebus.Tests.Serialization
         private readonly Dictionary<MessageTypeId, Func<IMessage, Stream>> _serializationFuncs = new Dictionary<MessageTypeId, Func<IMessage, Stream>>();
         private readonly MessageSerializer _serializer = new MessageSerializer();
 
-        public void AddSerializationFuncFor<TMessage>(Func<TMessage, Stream> func) where TMessage : IMessage
+        public void AddSerializationFuncFor<TMessage>(Func<TMessage, Stream> func)
+            where TMessage : IMessage
         {
             _serializationFuncs.Add(MessageUtil.TypeId<TMessage>(), msg => func((TMessage)msg));
         }
@@ -22,15 +22,15 @@ namespace Abc.Zebus.Tests.Serialization
             _serializationExceptions.Add(messageTypeId, new Exception(exceptionMessage));
         }
 
-        public void AddSerializationExceptionFor<TMessage>(Exception exception) where TMessage : IMessage
+        public void AddSerializationExceptionFor<TMessage>(Exception exception)
+            where TMessage : IMessage
         {
             _serializationExceptions.Add(MessageUtil.TypeId<TMessage>(), exception);
         }
 
         public IMessage Deserialize(MessageTypeId messageTypeId, Stream stream)
         {
-            var exception = _serializationExceptions.GetValueOrDefault(messageTypeId);
-            if (exception != null)
+            if (_serializationExceptions.TryGetValue(messageTypeId, out var exception))
                 throw exception;
 
             return _serializer.Deserialize(messageTypeId, stream);
@@ -38,12 +38,10 @@ namespace Abc.Zebus.Tests.Serialization
 
         public Stream Serialize(IMessage message)
         {
-            var exception = _serializationExceptions.GetValueOrDefault(message.TypeId());
-            if (exception != null)
+            if (_serializationExceptions.TryGetValue(message.TypeId(), out var exception))
                 throw exception;
 
-            var serializationFunc = _serializationFuncs.GetValueOrDefault(message.TypeId());
-            if (serializationFunc != null)
+            if (_serializationFuncs.TryGetValue(message.TypeId(), out var serializationFunc))
                 return serializationFunc.Invoke(message);
 
             return _serializer.Serialize(message);
