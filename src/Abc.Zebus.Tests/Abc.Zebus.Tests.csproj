@@ -3,6 +3,8 @@
     <TargetFrameworks>net471;netcoreapp2.1</TargetFrameworks>
   </PropertyGroup>
 
+  <Import Project="..\Abc.Zebus.Tests.props" />
+
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
     <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
@@ -11,11 +13,8 @@
   <ItemGroup>
     <PackageReference Include="CompareNETObjects" Version="4.54.0" />
     <PackageReference Include="log4net" Version="2.0.8" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
     <PackageReference Include="Moq" Version="4.8.3" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="NUnit" Version="3.10.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
     <PackageReference Include="protobuf-net" Version="2.3.13" />
     <PackageReference Include="structuremap" Version="4.6.1" />
   </ItemGroup>

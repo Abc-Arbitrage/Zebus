@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net471</TargetFramework>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
+
+  <Import Project="..\Abc.Zebus.Tests.props" />
 
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj" />

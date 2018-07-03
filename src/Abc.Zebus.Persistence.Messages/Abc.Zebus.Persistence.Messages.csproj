@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
+    <PackageId>Zebus.Persistence.Messages</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
