@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Persistence.CQL.Testing\Abc.Zebus.Persistence.CQL.Testing.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
   </ItemGroup>
 

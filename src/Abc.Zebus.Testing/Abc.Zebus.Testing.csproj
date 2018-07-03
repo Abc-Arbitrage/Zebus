@@ -24,6 +24,7 @@
   <ItemGroup>
     <Content Include="Integration\Configurations\Directory-Local.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
     </Content>
   </ItemGroup>
 

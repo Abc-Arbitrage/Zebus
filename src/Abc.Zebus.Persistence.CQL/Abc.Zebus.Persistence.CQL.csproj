@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
