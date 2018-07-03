@@ -167,7 +167,7 @@ namespace Abc.Zebus.Tests.Dispatch
             DispatchFromDefaultDispatchQueue(command);
 
             syncHandler.Called.ShouldBeTrue();
-            asyncHandler.CalledSignal.Wait(2.Seconds()).ShouldBeFalse();
+            asyncHandler.CalledSignal.Wait(50.Milliseconds()).ShouldBeFalse();
 
             command.Signal.Set();
 

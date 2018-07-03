@@ -37,7 +37,7 @@ namespace Abc.Zebus.Tests.Transport
                 }
                 for (var i = 0; i < 10; ++i)
                 {
-                    var bytes = receiver.Receive(receiveBuffer, 2.Seconds());
+                    var bytes = receiver.Receive(receiveBuffer, 200.Milliseconds());
                     Console.WriteLine(bytes);
                 }
 
@@ -52,13 +52,13 @@ namespace Abc.Zebus.Tests.Transport
                 sender.Disconnect(sendEndpoint);
                 sender.Connect(sendEndpoint);
 
-                var oneMoreSend = sender.SendWithTimeout(message, message.Length, 2.Seconds());
+                var oneMoreSend = sender.SendWithTimeout(message, message.Length, 1000.Milliseconds());
                 Console.WriteLine(oneMoreSend);
 
                 receiver.Bind(receiveEndpoint);
                 
                 var receivedMessageCount = 0;
-                while (receiver.Receive(receiveBuffer, 2.Seconds()) != -1)
+                while (receiver.Receive(receiveBuffer, 2000.Milliseconds()) != -1)
                 {
                     ++receivedMessageCount;
                 }

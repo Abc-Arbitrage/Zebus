@@ -556,6 +556,7 @@ namespace Abc.Zebus.Tests.Transport
             receivingTransport.Stop();
             Log($"Receiver stopped");
 
+            Thread.MemoryBarrier();
             state.ReceivedMessageCount.ShouldEqual(state.SentMessageCount);
 
             void Log(string text) => Console.WriteLine(DateTime.Now.TimeOfDay + " " + text + Environment.NewLine + Environment.NewLine);
