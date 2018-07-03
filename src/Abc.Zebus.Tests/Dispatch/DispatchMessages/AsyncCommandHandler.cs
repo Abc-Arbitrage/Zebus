@@ -14,7 +14,7 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
             return Task.Factory.StartNew(() =>
                 {
                     if (WaitForSignal)
-                        message.Signal.WaitOne(500.Milliseconds());
+                        message.Signal.WaitOne(2.Seconds());
 
                     CalledSignal.Set();
                 });
@@ -25,7 +25,7 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
             return Task.Factory.StartNew(() =>
             {
                 if (WaitForSignal)
-                    message.Signal.WaitOne(500.Milliseconds());
+                    message.Signal.WaitOne(2.Seconds());
 
                 CalledSignal.Set();
             });

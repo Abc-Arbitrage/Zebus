@@ -19,7 +19,7 @@ namespace Abc.Zebus.Tests.Persistence
             var message = new FakeCommand(123).ToTransportMessage();
             InnerTransport.RaiseMessageReceived(message);
 
-            Wait.Until(() => MessagesForwardedToBus.Count == 1, 500.Milliseconds());
+            Wait.Until(() => MessagesForwardedToBus.Count == 1, 2.Seconds());
         }
 
         [Test]

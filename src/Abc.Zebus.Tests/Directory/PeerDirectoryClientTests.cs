@@ -813,7 +813,7 @@ namespace Abc.Zebus.Tests.Directory
                 }
             });
 
-            taskStarted.WaitOne(500.Milliseconds()).ShouldBeTrue("Task should be started");
+            taskStarted.WaitOne(2.Seconds()).ShouldBeTrue("Task should be started");
 
            await _directory.RegisterAsync(_bus, _self, otherPeerDescriptor.Subscriptions ).ConfigureAwait(true);
 

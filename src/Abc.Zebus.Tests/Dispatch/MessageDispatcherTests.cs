@@ -171,7 +171,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             command.Signal.Set();
 
-            asyncHandler.CalledSignal.Wait(1000.Milliseconds()).ShouldBeTrue();
+            asyncHandler.CalledSignal.Wait(2.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -191,7 +191,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var dispatch = new MessageDispatch(context, command, (x, r) => dispatched.Set());
             _messageDispatcher.Dispatch(dispatch, x => x == typeof(AsyncCommandHandler));
 
-            dispatched.WaitOne(500.Milliseconds()).ShouldBeTrue();
+            dispatched.WaitOne(2.Seconds()).ShouldBeTrue();
 
             syncHandler.Called.ShouldBeFalse();
             asyncHandler.CalledSignal.IsSet.ShouldBeTrue();
@@ -313,7 +313,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var dispatch = new MessageDispatch(context, new ReplyCommand(), (x, r) => replyCode = context.ReplyCode);
             _messageDispatcher.Dispatch(dispatch);
 
-            Wait.Until(() => replyCode == ReplyCommand.ReplyCode, 500.Milliseconds());
+            Wait.Until(() => replyCode == ReplyCommand.ReplyCode, 2.Seconds());
         }
 
         [Test]
@@ -325,7 +325,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(firstMessage);
 
-            firstMessage.HandleStarted.Wait(500.Milliseconds()).ShouldBeTrue();
+            firstMessage.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
 
             Dispatch(new ExecutableEvent());
             Dispatch(new ExecutableEvent());

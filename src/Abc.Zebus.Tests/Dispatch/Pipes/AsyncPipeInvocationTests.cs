@@ -62,7 +62,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
 
             _invocation.RunAsync().Wait();
 
-            Wait.Until(() => order.Count == 5, 500.Milliseconds());
+            Wait.Until(() => order.Count == 5, 2.Seconds());
             order.ShouldBeOrdered();
         }
 
@@ -77,7 +77,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             _message.Callback = x => { throw expectedException; };
 
             var task = _invocation.RunAsync().ContinueWith(t => t.Exception.InnerExceptions.ExpectedSingle());
-            task.Wait(500.Milliseconds()).ShouldBeTrue();
+            task.Wait(2.Seconds()).ShouldBeTrue();
 
             var exceptionFromInvocation = task.Result;
 

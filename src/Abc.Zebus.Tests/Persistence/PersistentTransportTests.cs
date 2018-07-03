@@ -80,7 +80,7 @@ namespace Abc.Zebus.Tests.Persistence
             var replayTransportMessage = sourceTransportMessage.ToReplayedTransportMessage(ReplayId);
             InnerTransport.RaiseMessageReceived(replayTransportMessage);
 
-            Wait.Until(() => MessagesForwardedToBus.Count == 1, 150.Milliseconds());
+            Wait.Until(() => MessagesForwardedToBus.Count == 1, 2.Seconds());
 
             var forwardedTransportMessage = MessagesForwardedToBus.ExpectedSingle();
             forwardedTransportMessage.WasPersisted.ShouldEqual(true);
@@ -97,7 +97,7 @@ namespace Abc.Zebus.Tests.Persistence
 
             InnerTransport.RaiseMessageReceived(new ReplayPhaseEnded(StartMessageReplayCommand.ReplayId).ToTransportMessage());
 
-            Wait.Until(() => MessagesForwardedToBus.Count == 1, 150.Milliseconds());
+            Wait.Until(() => MessagesForwardedToBus.Count == 1, 2.Seconds());
 
             var transportMessage = MessagesForwardedToBus.Single();
             transportMessage.ShouldEqualDeeply(transportMessageToForward);
@@ -115,7 +115,7 @@ namespace Abc.Zebus.Tests.Persistence
             InnerTransport.RaiseMessageReceived(new ReplayPhaseEnded(StartMessageReplayCommand.ReplayId).ToTransportMessage());
             InnerTransport.RaiseMessageReceived(replayedMessageToPlayAfterStack.ToReplayedTransportMessage(StartMessageReplayCommand.ReplayId));
 
-            Wait.Until(() => MessagesForwardedToBus.Count >= 2, 150.Milliseconds());
+            Wait.Until(() => MessagesForwardedToBus.Count >= 2, 2.Seconds());
 
             MessagesForwardedToBus.Count.ShouldEqual(2);
             MessagesForwardedToBus.First().Id.ShouldEqual(liveMessageToStack.Id);
@@ -142,7 +142,7 @@ namespace Abc.Zebus.Tests.Persistence
             InnerTransport.RaiseMessageReceived(failingMessage);
             InnerTransport.RaiseMessageReceived(otherMessage);
 
-            Wait.Until(() => successfullyReceivedMessages.Count >= 1, 150.Milliseconds());
+            Wait.Until(() => successfullyReceivedMessages.Count >= 1, 2.Seconds());
 
             successfullyReceivedMessages.Single().ShouldEqual(otherMessage);
         }
@@ -158,7 +158,7 @@ namespace Abc.Zebus.Tests.Persistence
             InnerTransport.RaiseMessageReceived(duplicatedMessage);
             InnerTransport.RaiseMessageReceived(duplicatedMessage.ToReplayedTransportMessage(StartMessageReplayCommand.ReplayId));
 
-            Wait.Until(() => MessagesForwardedToBus.Count == 1, 150.Milliseconds());
+            Wait.Until(() => MessagesForwardedToBus.Count == 1, 2.Seconds());
 
             MessagesForwardedToBus.Single().Id.ShouldEqual(duplicatedMessage.Id);
         }
@@ -202,7 +202,7 @@ namespace Abc.Zebus.Tests.Persistence
             InnerTransport.RaiseMessageReceived(duplicatedMessage);
             InnerTransport.RaiseMessageReceived(duplicatedMessage);
 
-            Wait.Until(() => MessagesForwardedToBus.Count == 2, 100.Milliseconds());
+            Wait.Until(() => MessagesForwardedToBus.Count == 2, 2.Seconds());
 
             MessagesForwardedToBus.ForEach(msg => msg.Id.ShouldEqual(duplicatedMessage.Id));
         }
