@@ -6,4 +6,8 @@
     <RootNamespace>Abc.Zebus</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="2.3.13" />
+  </ItemGroup>
+
 </Project>
