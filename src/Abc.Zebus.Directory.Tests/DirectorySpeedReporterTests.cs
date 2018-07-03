@@ -17,7 +17,7 @@ namespace Abc.Zebus.Directory.Tests
             _speedReporter = new DirectorySpeedReporter();
         }
 
-        public readonly ReportingMethod[] ReportingMethods =
+        private static readonly ReportingMethod[] _reportingMethods =
         {
             new ReportingMethod { Name = "Registration", EnqueueMethod = (x, value) => x.ReportRegistrationDuration(value), RetrievalMethod = x => x.GetAndResetRegistrationDurations() },
             new ReportingMethod { Name = "Unregistration", EnqueueMethod = (x, value) => x.ReportUnregistrationDuration(value), RetrievalMethod = x => x.GetAndResetUnregistrationDurations() },
@@ -26,7 +26,7 @@ namespace Abc.Zebus.Directory.Tests
         };
 
         [Test]
-        [TestCaseSource("ReportingMethods")]
+        [TestCaseSource(nameof(_reportingMethods))]
         public void should_report_speed_for_given_method(ReportingMethod reportingMethod)
         {
             reportingMethod.EnqueueMethod(_speedReporter, 1.Second());

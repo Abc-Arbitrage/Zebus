@@ -230,7 +230,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             }
         }
 
-        public readonly string[] _peersNotToDecommissionExamples = 
+        private static readonly string[] _peersNotToDecommissionExamples = 
         {
             "Abc.TransientAlive.0",
             "Abc.TransientAlive.*",
@@ -239,7 +239,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         };
 
         [Test]
-        [TestCaseSource("_peersNotToDecommissionExamples")]
+        [TestCaseSource(nameof(_peersNotToDecommissionExamples))]
         public void should_mark_as_not_responding_if_a_transient_peer_in_the_whitelist_does_not_respond_in_time(string peerNotToDecommission)
         {
             _peersNotToDecommission = new[] { peerNotToDecommission };
