@@ -92,7 +92,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void can_batch_and_dispose_empty_subscribe_list()
+            public async Task can_batch_and_dispose_empty_subscribe_list()
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
 
@@ -106,10 +106,11 @@ namespace Abc.Zebus.Tests.Core
                 subscriptions.Count.ShouldEqual(0);
 
                 subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
             }
 
             [Test]
-            public void should_unsubscribe_to_batch()
+            public async Task should_unsubscribe_to_batch()
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
                 _bus.Start();
@@ -122,13 +123,15 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
 
                 subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
                 Wait.Until(() => directorySubscriptions.Count > 0, 2.Seconds());
 
                 directorySubscriptions.ExpectedSingle().ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>()));
             }
 
             [Test]
-            public void should_not_unsubscribe_static_subscription()
+            public async Task should_not_unsubscribe_static_subscription()
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: true);
                 _bus.Start();
@@ -137,13 +140,15 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
 
                 subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
                 Wait.Until(() => directorySubscriptions.Count > 0, 2.Seconds());
 
                 directorySubscriptions.ExpectedSingle().ShouldEqual(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>(), BindingKey.Empty));
             }
 
             [Test]
-            public void should_unsubscribe_from_message()
+            public async Task should_unsubscribe_from_message()
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
                 _bus.Start();
@@ -152,13 +157,15 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
                 Wait.Until(() => subscriptions.Count > 0, 2.Seconds());
 
                 subscriptions.ShouldContain(new SubscriptionsForType(MessageUtil.TypeId<FakeRoutableCommand>()));
             }
 
             [Test]
-            public void should_not_resend_other_message_subscriptions_when_unsubscribing_from_a_message()
+            public async Task should_not_resend_other_message_subscriptions_when_unsubscribing_from_a_message()
             {
                 AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
@@ -169,6 +176,8 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
 
                 firstSubscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
                 Wait.Until(() => subscriptions.Count > 0, 2.Seconds());
 
                 subscriptions.ExpectedSingle();
@@ -176,7 +185,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void should_unsubscribe_when_last_subscription_is_disposed()
+            public async Task should_unsubscribe_when_last_subscription_is_disposed()
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
 
@@ -192,11 +201,15 @@ namespace Abc.Zebus.Tests.Core
                 var subscription2 = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "toto")));
 
                 subscription1.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
                 Wait.Until(() => lastDirectorySubscriptions.Count > 0, 2.Seconds());
                 lastDirectorySubscriptions.ExpectedSingle().BindingKeys.ShouldBeEquivalentTo(new[] { new BindingKey("1", "toto", "*") });
 
                 lastDirectorySubscriptions.Clear();
                 subscription2.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
                 Wait.Until(() => lastDirectorySubscriptions.Count > 0, 2.Seconds());
                 lastDirectorySubscriptions.ExpectedSingle().BindingKeys.ShouldBeEmpty();
             }
@@ -279,7 +292,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void should_unsubscribe_from_handler()
+            public async Task should_unsubscribe_from_handler()
             {
                 _bus.Start();
 
@@ -295,6 +308,7 @@ namespace Abc.Zebus.Tests.Core
                 invokers.Count.ShouldEqual(1);
 
                 subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
 
                 invokers.Count.ShouldEqual(0);
             }
@@ -433,8 +447,8 @@ namespace Abc.Zebus.Tests.Core
                              );
 
                 subscriptions.Clear();
-                taskA.Result.Dispose();
 
+                taskA.Result.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();
 
                 subscriptions.ExpectedSingle()

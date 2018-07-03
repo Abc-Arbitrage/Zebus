@@ -259,22 +259,21 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
-        public void should_run_continuation_with_batch_error()
+        public async Task should_run_continuation_with_batch_error()
         {
             _dispatchQueue.Start();
 
             var firstMessage = new ExecutableEvent { IsBlocking = true };
-            EnqueueInvocation(firstMessage);
+            var _ = EnqueueInvocation(firstMessage);
+            firstMessage.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
 
             var dispatch1 = EnqueueBatchedInvocation(new ExecutableEvent { Callback = x => Throw() });
             var dispatch2 = EnqueueBatchedInvocation(new ExecutableEvent());
-
+            
             firstMessage.Unblock();
 
-            dispatch1.Wait(2.Seconds()).ShouldBeTrue();
-            dispatch1.Result.Errors.ShouldNotBeEmpty();
-            dispatch2.Wait(2.Seconds()).ShouldBeTrue();
-            dispatch2.Result.Errors.ShouldNotBeEmpty();
+            (await dispatch1).Errors.ShouldNotBeEmpty();
+            (await dispatch2).Errors.ShouldNotBeEmpty();
         }
 
         [Test]
