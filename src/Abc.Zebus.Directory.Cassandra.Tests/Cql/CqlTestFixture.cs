@@ -30,7 +30,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
 
         protected abstract string LocalDataCenter { get; }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public virtual void CreateSchema()
         {
             Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
@@ -59,10 +59,10 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
             return new CassandraConfigurationMock<TConfig>(Hosts, _keySpace, LocalDataCenter, 5.Seconds());
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void DropSchema()
         {
-            Session.Execute(new SimpleStatement(string.Format("drop keyspace \"{0}\";", _keySpace)));
+            Session.Execute(new SimpleStatement($"drop keyspace \"{_keySpace}\";"));
             _sessionManager.Dispose();
         }
 
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         {
             var tableNames = DataContext.GetTableNames();
             foreach (var name in tableNames)
-                Session.Execute(new SimpleStatement(string.Format("truncate \"{0}\";", name)));
+                Session.Execute(new SimpleStatement($"truncate \"{name}\";"));
         }
     }
 }

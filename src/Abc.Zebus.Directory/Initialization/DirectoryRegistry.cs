@@ -1,4 +1,4 @@
-﻿using StructureMap.Configuration.DSL;
+﻿using StructureMap;
 
 namespace Abc.Zebus.Directory.Initialization
 {
