@@ -72,7 +72,7 @@ namespace Abc.Zebus.Tests.Hosting
             Thread.Sleep(100.Milliseconds());
             callCount.ShouldEqual(2);
 
-            Wait.Until(() => callCount > 2, 500.Milliseconds());
+            Wait.Until(() => callCount > 2, 2.Seconds());
         }
 
         [Test]
