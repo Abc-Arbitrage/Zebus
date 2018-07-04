@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompareNETObjects" Version="4.54.0" />
+    <PackageReference Include="CompareNETObjects" Version="4.55.0" />
     <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="Moq" Version="4.8.3" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
@@ -34,7 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
