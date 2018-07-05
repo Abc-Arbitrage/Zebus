@@ -6,9 +6,9 @@ using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Serialization.Protobuf;
+using Abc.Zebus.Transport.Zmq;
 using Abc.Zebus.Util;
 using log4net;
-using ZeroMQ;
 
 namespace Abc.Zebus.Transport
 {
@@ -21,7 +21,7 @@ namespace Abc.Zebus.Transport
         private ConcurrentDictionary<PeerId, ZmqOutboundSocket> _outboundSockets;
         private BlockingCollection<OutboundSocketAction> _outboundSocketActions;
         private BlockingCollection<PendingDisconnect> _pendingDisconnects;
-        private ZContext _context;
+        private ZmqContext _context;
         private Thread _inboundThread;
         private Thread _outboundThread;
         private Thread _disconnectThread;
@@ -30,12 +30,6 @@ namespace Abc.Zebus.Transport
         private string _environment;
         private CountdownEvent _outboundSocketsToStop;
         private bool _isRunning;
-
-        static ZmqTransport()
-        {
-            ZmqUtil.ExtractLibZmq("x64", "amd64");
-            ZmqUtil.ExtractLibZmq("x86", "i386");
-        }
 
         public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
         {
@@ -89,12 +83,14 @@ namespace Abc.Zebus.Transport
 
         public void Start()
         {
+            _logger.InfoFormat("Loaded ZMQ v{0}", ZmqUtil.GetVersion().ToString(3));
+
             _isListening = true;
 
             _outboundSockets = new ConcurrentDictionary<PeerId, ZmqOutboundSocket>();
             _outboundSocketActions = new BlockingCollection<OutboundSocketAction>();
             _pendingDisconnects = new BlockingCollection<PendingDisconnect>();
-            _context = new ZContext();
+            _context = new ZmqContext();
 
             var startSequenceState = new InboundProcStartSequenceState();
 

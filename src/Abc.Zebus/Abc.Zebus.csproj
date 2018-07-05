@@ -19,21 +19,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="ZeroMQ">
-      <HintPath>..\..\lib\zmq\ZeroMQ.dll</HintPath>
-    </Reference>
+    <None Include="..\..\lib\Abc.Zebus.libzmq.*.dll">
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>lib\native</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\lib\zmq\ZeroMQ.dll">
-      <Pack>True</Pack>
-      <PackagePath>lib\netstandard2.0</PackagePath>
+    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.x64.dll" Link="Abc.Zebus.libzmq.x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.x86.dll" Link="Abc.Zebus.libzmq.x86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
-    <EmbeddedResource Include="Transport\libsodium-x64.dll" />
-    <EmbeddedResource Include="Transport\libsodium-x86.dll" />
-    <EmbeddedResource Include="Transport\libzmq-x64.dll" />
-    <EmbeddedResource Include="Transport\libzmq-x86.dll" />
+  <ItemGroup>
+    <None Update="Transport\Zmq\ZmqNative.Generated.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ZmqNative.Generated.cs</LastGenOutput>
+    </None>
+    <Compile Update="Transport\Zmq\ZmqNative.Generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ZmqNative.Generated.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>
