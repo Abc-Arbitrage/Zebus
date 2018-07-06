@@ -602,12 +602,12 @@ namespace Abc.Zebus.Tests.Transport
             configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(100.Milliseconds());
 
             if (peerId == null)
-                peerId = "Abc.Testing." + _transports.Count;
+                peerId = $"Abc.Testing.{Guid.NewGuid():N}";
 
             var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
             transport.SetLogId(_transports.Count);
 
-            transport.SocketOptions.SendTimeout = 10.Milliseconds();
+            transport.SocketOptions.SendTimeout = 500.Milliseconds();
             _transports.Add(transport);
 
             transport.Configure(new PeerId(peerId), environment);
