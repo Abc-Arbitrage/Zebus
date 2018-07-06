@@ -6,11 +6,9 @@ using NUnit.Framework;
 namespace Abc.Zebus.Tests.Transport
 {
     [TestFixture]
-    [Explicit]
-    [Category("ManualOnly")]
     public class ZmqTests
     {
-        [Test]
+        [Test, Explicit]
         public void OkNowIKnowThatMyMessagesAreLostAfterDisconnect()
         {
             var message = new byte[50];
@@ -73,6 +71,13 @@ namespace Abc.Zebus.Tests.Transport
 
                 Console.WriteLine("{0} received messages", receivedMessageCount);
             }
+        }
+
+        [Test]
+        public void should_get_error_messages()
+        {
+            Console.WriteLine(ZmqErrorCode.EAGAIN.ToErrorMessage());
+            Console.WriteLine(((ZmqErrorCode)(-42)).ToErrorMessage());
         }
     }
 }

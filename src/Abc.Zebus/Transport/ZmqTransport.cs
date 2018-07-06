@@ -384,8 +384,7 @@ namespace Abc.Zebus.Transport
 
         private ZmqOutboundSocket GetConnectedOutboundSocket(Peer peer, TransportMessage transportMessage)
         {
-            ZmqOutboundSocket outboundSocket;
-            if (!_outboundSockets.TryGetValue(peer.Id, out outboundSocket))
+            if (!_outboundSockets.TryGetValue(peer.Id, out var outboundSocket))
             {
                 outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, SocketOptions, _errorHandler);
                 outboundSocket.ConnectFor(transportMessage);

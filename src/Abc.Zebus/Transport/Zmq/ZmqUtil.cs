@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Abc.Zebus.Util.Annotations;
 
 namespace Abc.Zebus.Transport.Zmq
@@ -17,7 +18,11 @@ namespace Abc.Zebus.Transport.Zmq
             if (errorCode == ZmqErrorCode.None)
                 return string.Empty;
 
-            return $"{ZmqNative.strerror((int)errorCode)} (code {(int)errorCode})";
+            var errorStrBuf = ZmqNative.strerror((int)errorCode);
+            if (errorStrBuf == null)
+                return string.Empty;
+
+            return $"{Marshal.PtrToStringAnsi((IntPtr)errorStrBuf)} (code {(int)errorCode})";
         }
 
         public static string GetLastErrorMessage()

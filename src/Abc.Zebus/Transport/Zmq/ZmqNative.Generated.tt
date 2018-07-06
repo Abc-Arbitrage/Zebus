@@ -31,7 +31,7 @@ var funcs = ParseFuncs(@"
     IntPtr msg_size (ZmqMessage* msg);
 
     ZmqErrorCode errno();
-    string strerror(int errnum);
+    byte* strerror(int errnum);
     void version(int* major, int* minor, int* patch);
 ").ToList();
 
@@ -79,7 +79,7 @@ namespace Abc.Zebus.Transport.Zmq
                 => zmq_<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.Name)) #>);
 
             [DllImport("<#= platform.LibName #>", CallingConvention = CallingConvention.Cdecl)]
-            <#= func.GetPInvokeAttributes() #>private static extern <#= func.ReturnType #> zmq_<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.GetPInvokeAttributes() + p.Declaration)) #>);
+            private static extern <#= func.ReturnType #> zmq_<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.GetPInvokeAttributes() + p.Declaration)) #>);
 
 <# } #>
         }
@@ -136,18 +136,6 @@ private class FuncDef
 
     public string Declaration => $"{ReturnType} {Name}({ParametersDeclaration})";
     public string ParametersDeclaration => string.Join(", ", Parameters.Select(p => p.Declaration));
-
-    public string GetPInvokeAttributes()
-    {
-        switch (ReturnType)
-        {
-            case "string":
-                return "[return: MarshalAs(UnmanagedType.LPStr)] ";
-
-            default:
-                return string.Empty;
-        }
-    }
 }
 
 private class FuncParamDef

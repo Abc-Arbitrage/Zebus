@@ -65,7 +65,7 @@ namespace Abc.Zebus.Transport.Zmq
         public static ZmqErrorCode errno()
             => _impl.errno();
 
-        public static string strerror(int errnum)
+        public static byte* strerror(int errnum)
             => _impl.strerror(errnum);
 
         public static void version(int* major, int* minor, int* patch)
@@ -91,7 +91,7 @@ namespace Abc.Zebus.Transport.Zmq
             public abstract void* msg_data(ZmqMessage* msg);
             public abstract IntPtr msg_size(ZmqMessage* msg);
             public abstract ZmqErrorCode errno();
-            public abstract string strerror(int errnum);
+            public abstract byte* strerror(int errnum);
             public abstract void version(int* major, int* minor, int* patch);
         }
 
@@ -200,11 +200,11 @@ namespace Abc.Zebus.Transport.Zmq
             [DllImport("Abc.Zebus.libzmq.x86.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern ZmqErrorCode zmq_errno();
 
-            public override string strerror(int errnum)
+            public override byte* strerror(int errnum)
                 => zmq_strerror(errnum);
 
             [DllImport("Abc.Zebus.libzmq.x86.dll", CallingConvention = CallingConvention.Cdecl)]
-            [return: MarshalAs(UnmanagedType.LPStr)] private static extern string zmq_strerror(int errnum);
+            private static extern byte* zmq_strerror(int errnum);
 
             public override void version(int* major, int* minor, int* patch)
                 => zmq_version(major, minor, patch);
@@ -319,11 +319,11 @@ namespace Abc.Zebus.Transport.Zmq
             [DllImport("Abc.Zebus.libzmq.x64.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern ZmqErrorCode zmq_errno();
 
-            public override string strerror(int errnum)
+            public override byte* strerror(int errnum)
                 => zmq_strerror(errnum);
 
             [DllImport("Abc.Zebus.libzmq.x64.dll", CallingConvention = CallingConvention.Cdecl)]
-            [return: MarshalAs(UnmanagedType.LPStr)] private static extern string zmq_strerror(int errnum);
+            private static extern byte* zmq_strerror(int errnum);
 
             public override void version(int* major, int* minor, int* patch)
                 => zmq_version(major, minor, patch);
