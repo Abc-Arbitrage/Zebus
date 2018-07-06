@@ -24,6 +24,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>True</Pack>
       <PackagePath>lib\native</PackagePath>
+      <Visible>false</Visible>
     </None>
     <None Update="Zebus.targets">
       <Pack>true</Pack>

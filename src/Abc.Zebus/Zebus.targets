@@ -3,6 +3,7 @@
     <None Include="$(MSBuildThisFileDirectory)\..\lib\native\**\*.*">
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
     </None>
   </ItemGroup>
 </Project>
