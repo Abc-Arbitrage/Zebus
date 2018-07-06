@@ -19,20 +19,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\lib\Abc.Zebus.libzmq.*.dll">
+    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.*.dll">
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>True</Pack>
       <PackagePath>lib\native</PackagePath>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.x64.dll" Link="Abc.Zebus.libzmq.x64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.x86.dll" Link="Abc.Zebus.libzmq.x86.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="Zebus.targets">
+      <Pack>true</Pack>
+      <PackagePath>build</PackagePath>
     </None>
   </ItemGroup>
 
