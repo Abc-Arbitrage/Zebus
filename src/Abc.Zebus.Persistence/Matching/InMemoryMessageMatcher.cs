@@ -14,7 +14,7 @@ namespace Abc.Zebus.Persistence.Matching
 {
     public class InMemoryMessageMatcher : IInMemoryMessageMatcher, IProvideQueueLength
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(InMemoryMessageMatcher));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(InMemoryMessageMatcher));
         private readonly BlockingCollection<MatcherEntry> _persistenceQueue = new BlockingCollection<MatcherEntry>();
         private readonly ConcurrentSet<MessageKey> _ackMessageKeys = new ConcurrentSet<MessageKey>();
         private readonly IPersistenceConfiguration _persistenceConfiguration;

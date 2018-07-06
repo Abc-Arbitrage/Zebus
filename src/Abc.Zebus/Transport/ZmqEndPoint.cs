@@ -8,9 +8,9 @@ using log4net;
 
 namespace Abc.Zebus.Transport
 {
-    public class ZmqEndPoint
+    internal class ZmqEndPoint
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqEndPoint));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(ZmqEndPoint));
 
         public ZmqEndPoint(string value)
         {
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Transport
 
             Value = endPointValue;
         }
-        
+
         private static string CleanEndPoint(string value)
         {
             if (value == null)
@@ -45,10 +45,10 @@ namespace Abc.Zebus.Transport
         }
 
         /// <remarks>
-        /// Selecting a random port is more complicated than just usint tcp://*.* because we want to avoid using a port 
+        /// Selecting a random port is more complicated than just usint tcp://*.* because we want to avoid using a port
         /// that was used for another environment. If we were to share a port between two environments, clients from the
         /// second environment might try to send us messages that we would have to discard
-        /// </remarks>>
+        /// </remarks>
         public void SelectRandomPort(string environment)
         {
             _logger.InfoFormat("Selecting random port for {0}", environment);
@@ -56,7 +56,7 @@ namespace Abc.Zebus.Transport
             var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
             var forbiddenPorts = directory.GetFiles("*.inboundport.*").Select(ReadPort).Where(port => port.HasValue).ToHashSet();
 
-            if(forbiddenPorts.Any())
+            if (forbiddenPorts.Any())
                 _logger.InfoFormat("Ports already reserved for other environments: {0}", string.Join(", ", forbiddenPorts));
 
             int? selectedPort = null;
@@ -70,10 +70,9 @@ namespace Abc.Zebus.Transport
             SetPort(selectedPort.Value);
         }
 
-        private int? ReadPort(FileInfo filePath)
+        private static int? ReadPort(FileInfo filePath)
         {
-            int port;
-            if (int.TryParse(File.ReadAllText(filePath.FullName), NumberStyles.Integer, CultureInfo.InvariantCulture, out port))
+            if (int.TryParse(File.ReadAllText(filePath.FullName), NumberStyles.Integer, CultureInfo.InvariantCulture, out var port))
                 return port;
 
             return null;

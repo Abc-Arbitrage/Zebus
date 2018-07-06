@@ -20,9 +20,10 @@ namespace Abc.Zebus.Directory
                                                IMessageHandler<PeerNotResponding>,
                                                IMessageHandler<PeerResponding>
     {
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
+
         private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionsIndex = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
-        private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;

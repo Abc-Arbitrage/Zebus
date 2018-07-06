@@ -9,7 +9,8 @@ namespace Abc.Zebus.Dispatch.Pipes
 {
     internal class PipeManager : IPipeManager
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(PipeManager));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(PipeManager));
+
         private readonly ConcurrentDictionary<Type, PipeList> _pipesByMessageType = new ConcurrentDictionary<Type, PipeList>();
         private readonly ConcurrentSet<string> _enabledPipeNames = new ConcurrentSet<string>();
         private readonly ConcurrentSet<string> _disabledPipeNames = new ConcurrentSet<string>();

@@ -8,7 +8,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 {
     public class DeadPeerDetectorEntry
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(DeadPeerDetectorEntry));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(DeadPeerDetectorEntry));
         private readonly IDirectoryConfiguration _configuration;
         private readonly IBus _bus;
         private readonly TaskScheduler _taskScheduler;

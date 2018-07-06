@@ -301,6 +301,7 @@ namespace Abc.Zebus.Transport
                 _logger.ErrorFormat("Receiving messages from wrong environment: {0} from {1}, discarding message type {2}", transportMessage.Environment, transportMessage.Originator.SenderEndPoint, transportMessage.MessageTypeId);
                 return false;
             }
+
             return true;
         }
 
@@ -459,7 +460,7 @@ namespace Abc.Zebus.Transport
 
         private readonly struct OutboundSocketAction
         {
-            private static readonly TransportMessage _disconnectMessage = new TransportMessage(default(MessageTypeId), null, new PeerId(), null);
+            private static readonly TransportMessage _disconnectMessage = new TransportMessage(default, null, new PeerId(), null);
 
             private OutboundSocketAction(TransportMessage message, IEnumerable<Peer> targets, SendContext context)
             {

@@ -9,7 +9,8 @@ namespace Abc.Zebus.Transport
 {
     internal class ZmqOutboundSocket
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqOutboundSocket));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(ZmqOutboundSocket));
+
         private readonly Stopwatch _closedStateStopwatch = new Stopwatch();
         private readonly ZmqContext _context;
         private readonly ZmqSocketOptions _options;

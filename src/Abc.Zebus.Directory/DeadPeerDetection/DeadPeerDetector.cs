@@ -16,8 +16,8 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
     public class DeadPeerDetector : IDeadPeerDetector
     {
         private static readonly TimeSpan _commandTimeout = 5.Seconds();
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(DeadPeerDetector));
         private readonly Dictionary<PeerId, DeadPeerDetectorEntry> _peers = new Dictionary<PeerId, DeadPeerDetectorEntry>();
-        private readonly ILog _logger = LogManager.GetLogger(typeof(DeadPeerDetector));
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
         private readonly IDirectoryConfiguration _configuration;

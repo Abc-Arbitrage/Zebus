@@ -8,7 +8,8 @@ namespace Abc.Zebus.Transport
 {
     internal class ZmqInboundSocket : IDisposable
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqInboundSocket));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(ZmqInboundSocket));
+
         private readonly ZmqContext _context;
         private readonly PeerId _peerId;
         private readonly ZmqEndPoint _originalEndpoint;

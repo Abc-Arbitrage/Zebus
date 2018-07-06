@@ -13,7 +13,7 @@ namespace Abc.Zebus.Persistence.Transport
 {
     public class QueueingTransport : ITransport
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(QueueingTransport));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(QueueingTransport));
         private readonly BlockingCollection<TransportMessage> _pendingReceives = new BlockingCollection<TransportMessage>();
         private readonly ITransport _transport;
         private readonly IPeerDirectory _peerDirectory;

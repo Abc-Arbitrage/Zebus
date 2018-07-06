@@ -9,7 +9,7 @@ namespace Abc.Zebus.Persistence.Initialization
 {
     public class MessageReplayerInitializer : HostInitializer
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(MessageReplayerInitializer));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(MessageReplayerInitializer));
         private readonly IMessageReplayerRepository _messageReplayerRepository;
         private readonly TimeSpan _waitTimeout;
 
