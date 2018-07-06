@@ -24,9 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="ZeroMQ">
-      <HintPath>..\..\lib\zmq\ZeroMQ.dll</HintPath>
-    </Reference>
     <Reference Include="VersionedLibrary_2">
       <HintPath>.\VersionedLibrary_2.dll</HintPath>
       <Aliases>senderVersion</Aliases>

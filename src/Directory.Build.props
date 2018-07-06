@@ -6,6 +6,7 @@
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
+    <DefaultItemExcludes>$(DefaultItemExcludes);*.DotSettings;*.ncrunchproject</DefaultItemExcludes>
   </PropertyGroup>
 
   <PropertyGroup>

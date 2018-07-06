@@ -2,7 +2,7 @@
 
 namespace Abc.Zebus.Transport.Zmq
 {
-    internal partial class ZmqNative
+    internal static partial class ZmqNative
     {
         private static readonly LibImpl _impl = GetLibImpl();
 
