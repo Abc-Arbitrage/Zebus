@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 
 namespace Abc.Zebus.Util.Extensions
 {

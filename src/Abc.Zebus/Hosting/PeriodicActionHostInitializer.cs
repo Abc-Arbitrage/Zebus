@@ -2,7 +2,7 @@
 using System.Threading;
 using Abc.Zebus.Lotus;
 using Abc.Zebus.Util;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using log4net;
 
 namespace Abc.Zebus.Hosting

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus

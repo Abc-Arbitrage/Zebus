@@ -1,4 +1,4 @@
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 
 namespace Abc.Zebus
 {

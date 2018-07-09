@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using Abc.Zebus.Scan;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
 using log4net;
 using log4net.Core;

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Routing;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus.Directory

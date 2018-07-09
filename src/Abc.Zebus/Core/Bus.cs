@@ -13,7 +13,7 @@ using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
 using log4net;
 using Newtonsoft.Json;

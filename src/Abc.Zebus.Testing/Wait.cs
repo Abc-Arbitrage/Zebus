@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using Abc.Zebus.Util;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 
 namespace Abc.Zebus.Testing
 {

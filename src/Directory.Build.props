@@ -24,4 +24,8 @@
     <Copyright>Copyright © ABC arbitrage 2018</Copyright>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="11.1.0" PrivateAssets="All" />
+  </ItemGroup>
+
 </Project>

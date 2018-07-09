@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus

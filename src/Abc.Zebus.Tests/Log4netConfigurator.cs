@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Core;

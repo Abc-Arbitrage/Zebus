@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using ProtoBuf;
 
