@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Abc.Zebus.EventSourcing;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
@@ -58,16 +57,7 @@ namespace Abc.Zebus.Testing
         private static Fixture BuildFixture()
         {
             var fixture = new Fixture();
-            var sourcing = new DomainEventSourcing
-            {
-                AggregateId = Guid.NewGuid(),
-                DateTime = DateTime.Now,
-                EventId = Guid.NewGuid(),
-                UserId = Environment.UserName,
-                Version = 12
-            };
 
-            fixture.Inject(sourcing);
             fixture.Inject(new Uri(@"http://this.is.just.a.valid.url/"));
             fixture.Inject('X');
 
@@ -95,7 +85,7 @@ namespace Abc.Zebus.Testing
             var bytes = _serializer.Serialize(message);
             var messageCopy = _serializer.Deserialize(messageType, bytes);
 
-            NUnitExtensions.ShouldNotBeNull(messageCopy);
+            messageCopy.ShouldNotBeNull();
 
             var comparer = ComparisonExtensions.CreateComparer();
             comparer.Config.MembersToIgnore = new List<string> { "Item" };
@@ -103,28 +93,6 @@ namespace Abc.Zebus.Testing
 
             if (!result.AreEqual)
                 Assert.Fail(result.DifferencesString);
-        }
-
-        public static void DetectDuplicatedSerializationIds(params Assembly[] assemblies)
-        {
-            var domainEvents = assemblies.SelectMany(asm => asm.GetTypes())
-                                         .Where(type => type.Is<IDomainEvent>())
-                                         .Where(type => !type.IsAbstract && !type.IsInterface && !type.IsGenericTypeDefinition)
-                                         .Select(type => new { Type = type, Attribute = type.GetAttribute<SerializationIdAttribute>(true) });
-
-            var dic = new Dictionary<string, Type>();
-            foreach (var domainEvent in domainEvents)
-            {
-                Console.WriteLine("Testing " + domainEvent.Type.Name + "...");
-                var ns = domainEvent.Attribute != null ? domainEvent.Attribute.FullName : domainEvent.Type.FullName;
-                if (dic.ContainsKey(ns))
-                {
-                    var sameNsType = dic[ns];
-                    Assert.Fail(sameNsType.FullName + " and " + domainEvent.Type.FullName + " have the same serializationId: " + ns);
-                }
-
-                dic.Add(ns, domainEvent.Type);
-            }
         }
     }
 }
