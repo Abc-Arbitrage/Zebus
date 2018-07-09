@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using Abc.Zebus.Hosting;
 using Abc.Zebus.Testing;
@@ -17,7 +19,10 @@ namespace Abc.Zebus.Tests.Hosting
         [SetUp]
         public void SetUp()
         {
-            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds(), null) { CallBase = true };
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds(), null)
+            {
+                CallBase = true
+            };
         }
 
         [TearDown]
@@ -47,7 +52,11 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_pause_execution_after_successive_failures(int successiveFailureCount)
         {
             var callCount = 0;
-            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; throw new Exception(); });
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
+            {
+                ++callCount;
+                throw new Exception();
+            });
 
             _periodicInitializer.Object.ErrorCountBeforePause = successiveFailureCount;
             _periodicInitializer.Object.AfterStart();
@@ -62,7 +71,11 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_continue_execution_after_error_pause_duration()
         {
             var callCount = 0;
-            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; throw new Exception(); });
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
+            {
+                ++callCount;
+                throw new Exception();
+            });
 
             _periodicInitializer.Object.ErrorCountBeforePause = 2;
             _periodicInitializer.Object.ErrorPauseDuration = 200.Milliseconds();
@@ -79,7 +92,11 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_continue_execution_if_the_10_failures_are_not_consecutive()
         {
             var callCount = 0;
-            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() => { ++callCount; if (callCount % 2 == 0)throw new Exception(); });
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
+            {
+                ++callCount;
+                if (callCount%2 == 0) throw new Exception();
+            });
             _periodicInitializer.Object.AfterStart();
 
             Wait.Until(() => callCount >= 21, 2.Seconds());
@@ -109,7 +126,7 @@ namespace Abc.Zebus.Tests.Hosting
             var offset = 1.Seconds();
             var dueTime = now + offset;
             Func<DateTime> startOffsetFactory = () => dueTime;
-            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds(), startOffsetFactory) { CallBase = true };
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 20.Milliseconds(), startOffsetFactory) {CallBase = true};
 
             DateTime? firstCallTime = null;
             _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
@@ -119,8 +136,8 @@ namespace Abc.Zebus.Tests.Hosting
             });
 
             _periodicInitializer.Object.AfterStart();
-            
-            Thread.Sleep((int)((offset.TotalMilliseconds) * 2));
+
+            Thread.Sleep((int) ((offset.TotalMilliseconds)*2));
 
             firstCallTime.ShouldNotBeNull();
             firstCallTime.Value.ShouldApproximateDateTime(dueTime, 50);
@@ -130,7 +147,10 @@ namespace Abc.Zebus.Tests.Hosting
         public void should_start_after_first_period()
         {
             var period = 500.Milliseconds();
-            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), period, null) { CallBase = true };
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), period, null)
+            {
+                CallBase = true
+            };
 
             DateTime? firstCallTime = null;
             _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
@@ -142,12 +162,39 @@ namespace Abc.Zebus.Tests.Hosting
             _periodicInitializer.Object.AfterStart();
             var startTime = DateTime.UtcNow;
 
-            Thread.Sleep((int)((period.TotalMilliseconds) * 2));
+            Thread.Sleep((int) (period.TotalMilliseconds*2));
 
             firstCallTime.ShouldNotBeNull();
             Console.WriteLine("First call " + firstCallTime.Value.ToString("h:mm:ss.fffff"));
             Console.WriteLine("Expected " + (startTime + period).ToString("h:mm:ss.fffff"));
-            firstCallTime.Value.ShouldApproximateDateTime(startTime + period, 50); 
+            firstCallTime.Value.ShouldApproximateDateTime(startTime + period, 50);
+        }
+
+        [Test]
+        public void should_not_execute_action_multiple_times_from_multiple_threads_if_actions_takes_too_long()
+        {
+            var totalExecutionCount = 0;
+            var paralleleExecutionCount = 0;
+            var capturedCounts = new ConcurrentStack<int>();
+
+            _periodicInitializer = new Mock<PeriodicActionHostInitializer>(new TestBus(), 100.Milliseconds(), null)
+            {
+                CallBase = true
+            };
+            _periodicInitializer.Setup(x => x.DoPeriodicAction()).Callback(() =>
+            {
+                Interlocked.Increment(ref totalExecutionCount);
+                capturedCounts.Push(Interlocked.Increment(ref paralleleExecutionCount));
+                Thread.Sleep(200.Milliseconds());
+                capturedCounts.Push(Interlocked.Decrement(ref paralleleExecutionCount));
+            });
+
+            _periodicInitializer.Object.AfterStart();
+
+            Wait.Until(() => totalExecutionCount >= 10, 5.Seconds());
+
+            var maxConcurrentExecutionCount = capturedCounts.Max();
+            maxConcurrentExecutionCount.ShouldEqual(1, $"Concurrent executions are not allowed, max concurrent executions should have been 1 but it was {maxConcurrentExecutionCount}");
         }
     }
 }

@@ -11,12 +11,14 @@ namespace Abc.Zebus.Hosting
     public abstract class PeriodicActionHostInitializer : HostInitializer
     {
         protected readonly ILog _logger;
+        private readonly object _avoidConcurrentExecutionsLock = new object();
         private readonly IBus _bus;
-        private TimeSpan _period;
-        private Thread _thread;
-        private int _exceptionCount;
-        private volatile bool _isRunning;
+        private readonly TimeSpan _period;
         private readonly Func<DateTime> _startOffset;
+        private readonly Timer _timer;
+
+        private volatile bool _isRunning;
+        private int _exceptionCount;
 
         protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime> startOffset = null)
         {
@@ -24,6 +26,7 @@ namespace Abc.Zebus.Hosting
             _bus = bus;
             _period = period;
             _startOffset = startOffset ?? (() => DateTime.UtcNow);
+            _timer = new Timer(OnTimer);
 
             ErrorPublicationEnabled = true;
             ErrorCountBeforePause = 10;
@@ -50,8 +53,16 @@ namespace Abc.Zebus.Hosting
             }
 
             _isRunning = true;
-            _thread = new Thread(MainLoop) { Name = GetType().Name + "MainLoop" };
-            _thread.Start();
+            
+            var startTime = _startOffset();
+            var startWaitingPeriod = (startTime - DateTime.UtcNow);
+            if (startWaitingPeriod > 5.Minutes())
+                throw new InvalidOperationException("Start offset is too large, please review your offset function");
+
+            if(startWaitingPeriod > TimeSpan.Zero)
+                _logger.Info($"Periodic action of type {GetType().FullName} has a start offset specified, the start will be delayed for {startWaitingPeriod.TotalSeconds} seconds");
+
+            _timer.Change(startWaitingPeriod + Period, Period);
         }
 
         public override void BeforeStop()
@@ -60,39 +71,24 @@ namespace Abc.Zebus.Hosting
                 return;
 
             _isRunning = false;
-            if (!_thread.Join(2000))
+            var timerStopWaitHandle = new ManualResetEvent(false);
+            if (!_timer.Dispose(timerStopWaitHandle) || !timerStopWaitHandle.WaitOne(2.Seconds()))
                 _logger.Warn("Unable to terminate periodic action");
         }
 
-        private void MainLoop()
+        private void OnTimer(object state)
         {
-            var sleep = (int)Math.Min(300, _period.TotalMilliseconds / 2);
-
-            var startTime = _startOffset();
-            var startWaitingPeriod = (startTime - DateTime.UtcNow) - _period;
-            if (startWaitingPeriod > 5.Minutes())
-                throw new InvalidOperationException("Start offset is too large, please review your offset function");
-
-            if (startWaitingPeriod.TotalMilliseconds > 0)
-            {
-                _logger.InfoFormat("MainLoop sleeping for {0}s before starting", startWaitingPeriod.TotalSeconds);
-                Thread.Sleep(startWaitingPeriod);
-            }
-
-            _logger.InfoFormat("MainLoop started, Period: {0}ms, Sleep: {1}ms", _period.TotalMilliseconds, sleep);
-            var next = DateTime.UtcNow + _period;
-            while (_isRunning)
-            {
-                if (DateTime.UtcNow >= next)
-                    InvokePeriodicAction(ref next);
-                else
-                    Thread.Sleep(sleep);
-            }
-            _logger.Info("MainLoop stopped");
+            InvokePeriodicAction();
         }
 
-        private void InvokePeriodicAction(ref DateTime next)
+        private void InvokePeriodicAction()
         {
+            if (!Monitor.TryEnter(_avoidConcurrentExecutionsLock))
+            {
+                _logger.WarnFormat("Periodic action taking too much time to execute (at least more than configured period {0})", Period);
+                return;
+            }
+
             try
             {
                 DoPeriodicAction();
@@ -105,15 +101,15 @@ namespace Abc.Zebus.Hosting
 
                 PublishError(ex);
             }
-            if (_exceptionCount >= ErrorCountBeforePause)
+            finally
             {
-                _logger.ErrorFormat("Too many exceptions, periodic action paused ({0})", ErrorPauseDuration);
-                next = next + _period + ErrorPauseDuration;
+                Monitor.Exit(_avoidConcurrentExecutionsLock);
             }
-            else
-            {
-                next = next + _period;
-            }
+            if (_exceptionCount < ErrorCountBeforePause)
+                return;
+
+            _logger.ErrorFormat("Too many exceptions, periodic action paused ({0})", ErrorPauseDuration);
+            _timer.Change(ErrorPauseDuration, Period);
         }
 
         private void PublishError(Exception error)
