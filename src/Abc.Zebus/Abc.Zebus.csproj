@@ -13,9 +13,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="protobuf-net" Version="2.3.13" />
     <PackageReference Include="structuremap" Version="4.6.1" />
-
-    <!-- Avoid "NU1605: Detected package downgrade" error -->
-    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" /> <!-- T4 -->
   </ItemGroup>
 
 </Project>
