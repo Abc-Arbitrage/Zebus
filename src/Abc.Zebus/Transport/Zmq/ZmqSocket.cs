@@ -9,15 +9,15 @@ namespace Abc.Zebus.Transport.Zmq
         [SuppressMessage("ReSharper", "PrivateFieldCanBeConvertedToLocalVariable", Justification = "Needed as a GC root")]
         private readonly ZmqContext _context;
 
-        public IntPtr Handle { get; private set; }
+        private IntPtr _handle;
 
         public ZmqSocket(ZmqContext context, ZmqSocketType type)
         {
             _context = context;
 
-            Handle = ZmqNative.socket(_context.Handle, (int)type);
+            _handle = ZmqNative.socket(_context.Handle, (int)type);
 
-            if (Handle == IntPtr.Zero)
+            if (_handle == IntPtr.Zero)
                 ZmqUtil.ThrowLastError($"Could not create ZMQ {type} socket");
         }
 
@@ -34,23 +34,26 @@ namespace Abc.Zebus.Transport.Zmq
 
         private void Close(bool canThrow)
         {
-            if (Handle == IntPtr.Zero)
+            if (_handle == IntPtr.Zero)
                 return;
 
-            if (ZmqNative.close(Handle) == -1)
+            while (ZmqNative.close(_handle) == -1)
             {
+                if (ZmqUtil.WasInterrupted())
+                    continue;
+
                 if (canThrow)
                     ZmqUtil.ThrowLastError("Could not close ZMQ socket");
             }
 
-            Handle = IntPtr.Zero;
+            _handle = IntPtr.Zero;
         }
 
         public void SetOption(ZmqSocketOption option, int value)
         {
-            while (ZmqNative.setsockopt(Handle, (int)option, &value, (IntPtr)sizeof(int)) == -1)
+            while (ZmqNative.setsockopt(_handle, (int)option, &value, (IntPtr)sizeof(int)) == -1)
             {
-                if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                if (ZmqUtil.WasInterrupted())
                     continue;
 
                 ZmqUtil.ThrowLastError($"Unable to set ZMQ socket option {option} to {value}");
@@ -61,9 +64,9 @@ namespace Abc.Zebus.Transport.Zmq
         {
             fixed (byte* valuePtr = value)
             {
-                while (ZmqNative.setsockopt(Handle, (int)option, valuePtr, (IntPtr)(value?.Length ?? 0)) == -1)
+                while (ZmqNative.setsockopt(_handle, (int)option, valuePtr, (IntPtr)(value?.Length ?? 0)) == -1)
                 {
-                    if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                    if (ZmqUtil.WasInterrupted())
                         continue;
 
                     ZmqUtil.ThrowLastError($"Unable to set ZMQ socket option {option}");
@@ -77,22 +80,25 @@ namespace Abc.Zebus.Transport.Zmq
             var buf = stackalloc byte[bufSize];
             var size = (IntPtr)bufSize;
 
-            while (ZmqNative.getsockopt(Handle, (int)option, buf, &size) == -1)
+            while (ZmqNative.getsockopt(_handle, (int)option, buf, &size) == -1)
             {
-                if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                if (ZmqUtil.WasInterrupted())
                     continue;
 
                 ZmqUtil.ThrowLastError($"Unable to get ZMQ socket option {option}");
             }
+
+            if ((long)size <= 1)
+                return string.Empty;
 
             return Marshal.PtrToStringAnsi((IntPtr)buf, (int)size - 1);
         }
 
         public void Bind(string endpoint)
         {
-            while (ZmqNative.bind(Handle, endpoint) == -1)
+            while (ZmqNative.bind(_handle, endpoint) == -1)
             {
-                if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                if (ZmqUtil.WasInterrupted())
                     continue;
 
                 ZmqUtil.ThrowLastError($"Unable to bind ZMQ socket to {endpoint}");
@@ -101,9 +107,9 @@ namespace Abc.Zebus.Transport.Zmq
 
         public bool TryUnbind(string endpoint)
         {
-            while (ZmqNative.unbind(Handle, endpoint) == -1)
+            while (ZmqNative.unbind(_handle, endpoint) == -1)
             {
-                if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                if (ZmqUtil.WasInterrupted())
                     continue;
 
                 return false;
@@ -114,9 +120,9 @@ namespace Abc.Zebus.Transport.Zmq
 
         public void Connect(string endpoint)
         {
-            while (ZmqNative.connect(Handle, endpoint) == -1)
+            while (ZmqNative.connect(_handle, endpoint) == -1)
             {
-                if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                if (ZmqUtil.WasInterrupted())
                     continue;
 
                 ZmqUtil.ThrowLastError($"Unable to connect ZMQ socket to {endpoint}");
@@ -125,9 +131,9 @@ namespace Abc.Zebus.Transport.Zmq
 
         public bool TryDisconnect(string endpoint)
         {
-            while (ZmqNative.disconnect(Handle, endpoint) == -1)
+            while (ZmqNative.disconnect(_handle, endpoint) == -1)
             {
-                if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                if (ZmqUtil.WasInterrupted())
                     continue;
 
                 return false;
@@ -151,7 +157,7 @@ namespace Abc.Zebus.Transport.Zmq
             {
                 while (true)
                 {
-                    var length = ZmqNative.send(Handle, pBuf + offset, (IntPtr)count, 0);
+                    var length = ZmqNative.send(_handle, pBuf + offset, (IntPtr)count, 0);
                     if (length >= 0)
                     {
                         error = ZmqErrorCode.None;
@@ -174,7 +180,7 @@ namespace Abc.Zebus.Transport.Zmq
 
             try
             {
-                while (ZmqNative.msg_recv(&message, Handle, 0) == -1)
+                while ((messageLength = ZmqNative.msg_recv(&message, _handle, 0)) == -1)
                 {
                     error = ZmqNative.errno();
                     if (error == ZmqErrorCode.EINTR)
@@ -184,7 +190,6 @@ namespace Abc.Zebus.Transport.Zmq
                     return false;
                 }
 
-                messageLength = (int)ZmqNative.msg_size(&message);
                 if (messageLength <= 0)
                 {
                     error = ZmqErrorCode.None;

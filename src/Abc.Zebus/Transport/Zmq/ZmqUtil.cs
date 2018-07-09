@@ -28,6 +28,9 @@ namespace Abc.Zebus.Transport.Zmq
         public static string GetLastErrorMessage()
             => ZmqNative.errno().ToErrorMessage();
 
+        public static bool WasInterrupted()
+            => ZmqNative.errno() == ZmqErrorCode.EINTR;
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void ThrowArgOutOfRange()
             => throw new ArgumentOutOfRangeException();

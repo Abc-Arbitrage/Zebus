@@ -16,7 +16,7 @@
 
   <PropertyGroup>
     <Version>3.0.0</Version>
-    <PackageVersion>3.0.0-alpha4</PackageVersion>
+    <PackageVersion>3.0.0-beta1</PackageVersion>
     <Authors>ABC arbitrage</Authors>
     <Description>A lightweight Peer to Peer Service Bus</Description>
     <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>

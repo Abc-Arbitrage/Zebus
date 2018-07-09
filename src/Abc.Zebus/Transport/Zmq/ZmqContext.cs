@@ -4,7 +4,7 @@ namespace Abc.Zebus.Transport.Zmq
 {
     internal sealed class ZmqContext : IDisposable
     {
-        public IntPtr Handle { get; private set; }
+        internal IntPtr Handle { get; private set; }
 
         public ZmqContext()
         {
@@ -32,7 +32,7 @@ namespace Abc.Zebus.Transport.Zmq
 
             while (ZmqNative.ctx_term(Handle) == -1)
             {
-                if (ZmqNative.errno() == ZmqErrorCode.EINTR)
+                if (ZmqUtil.WasInterrupted())
                     continue;
 
                 if (canThrow)

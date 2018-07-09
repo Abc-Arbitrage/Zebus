@@ -83,7 +83,11 @@ namespace Abc.Zebus.Transport
 
         public void Start()
         {
-            _logger.InfoFormat("Loaded ZMQ v{0}", ZmqUtil.GetVersion().ToString(3));
+            var zmqVersion = ZmqUtil.GetVersion();
+            _logger.InfoFormat("Loaded ZMQ v{0}", zmqVersion.ToString(3));
+
+            if (zmqVersion.Major != 4)
+                throw new InvalidOperationException($"Expected ZMQ v4.*, loaded ZMQ v{zmqVersion.ToString(3)}");
 
             _isListening = true;
 
@@ -94,7 +98,7 @@ namespace Abc.Zebus.Transport
 
             var startSequenceState = new InboundProcStartSequenceState();
 
-            _inboundThread = BackgroundThread.Start(InboundProc, startSequenceState, null);
+            _inboundThread = BackgroundThread.Start(InboundProc, startSequenceState);
             _outboundThread = BackgroundThread.Start(OutboundProc);
             _disconnectThread = BackgroundThread.Start(DisconnectProc);
 
@@ -141,8 +145,7 @@ namespace Abc.Zebus.Transport
 
         private static void DiscardItems<T>(BlockingCollection<T> collection)
         {
-            T item;
-            while (collection.TryTake(out item))
+            while (collection.TryTake(out _))
             {
             }
         }
@@ -375,8 +378,7 @@ namespace Abc.Zebus.Transport
         {
             foreach (var peerId in peerIds)
             {
-                ZmqOutboundSocket outboundSocket;
-                if (!_outboundSockets.TryRemove(peerId, out outboundSocket))
+                if (!_outboundSockets.TryRemove(peerId, out var outboundSocket))
                     continue;
 
                 outboundSocket.Disconnect();

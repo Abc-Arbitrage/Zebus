@@ -19,8 +19,8 @@ namespace Abc.Zebus.Transport
         [ProtoMember(3, IsRequired = true)]
         private byte[] ContentBytes
         {
-            get { return GetContentBytes(); }
-            set { Content = new MemoryStream(value, 0, value.Length, false, true); }
+            get => GetContentBytes();
+            set => Content = new MemoryStream(value, 0, value.Length, false, true);
         }
 
         [ProtoIgnore, JsonIgnore]
