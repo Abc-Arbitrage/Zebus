@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Threading;
 using Abc.Zebus.Util;
 using ProtoBuf;
 
@@ -34,61 +35,30 @@ namespace Abc.Zebus
 
         public static IDisposable PauseIdGeneration()
         {
-            lock (_generator)
-            {
-                _pausedGuid = NewGuid();
-            }
-
-            return new DisposableAction(() =>
-            {
-                lock (_generator)
-                {
-                    _pausedGuid = null;
-                }
-            });
+            _pausedGuid = _generator.NewGuid();
+            return new DisposableAction(() => _pausedGuid = null);
         }
 
         public static IDisposable PauseIdGenerationAtDate(DateTime utcDatetime)
         {
-            var systemDatetimeContext = SystemDateTime.Set(utcNow: utcDatetime);
-            var messageIdContext = PauseIdGeneration();
-
-            return new DisposableAction(() =>
-            {
-                messageIdContext.Dispose();
-                systemDatetimeContext.Dispose();
-            });
+            _pausedGuid = _generator.NewGuid(utcDatetime.Ticks);
+            return new DisposableAction(() => _pausedGuid = null);
         }
 
         public static MessageId NextId()
-        {
-            lock (_generator)
-            {
-                return new MessageId(NewGuid());
-            }
-        }
+            => new MessageId(NewGuid());
 
         private static Guid NewGuid()
-        {
-            return _pausedGuid ?? _generator.NewGuid();
-        }
+            => _pausedGuid ?? _generator.NewGuid();
 
         public DateTime GetDateTime()
-        {
-            return TimeGuidGenerator.ExtractDateTime(Value);
-        }
+            => TimeGuidGenerator.ExtractDateTime(Value);
 
         public static void ResetLastTimestamp()
-        {
-            lock (_generator)
-            {
-                _generator.Reset();
-            }
-        }
+            => _generator.Reset();
 
         /// <summary>
         /// Time-based Guid generator.
-        /// Not thread-safe.
         /// </summary>
         /// <remarks>
         /// Reference: https://www.famkruithof.net/guid-uuid-timebased.html.
@@ -128,15 +98,20 @@ namespace Abc.Zebus
                 _lastTicks = 0;
             }
 
+            [SuppressMessage("ReSharper", "MemberHidesStaticFromOuterClass")]
             public Guid NewGuid()
             {
-                var ticks = SystemDateTime.UtcNow.Ticks;
-                _lastTicks = Math.Max(ticks, _lastTicks + 1);
+                while (true)
+                {
+                    var lastTicks = _lastTicks;
+                    var ticks = Math.Max(SystemDateTime.UtcNow.Ticks, lastTicks + 1);
 
-                return NewGuid(_lastTicks);
+                    if (Interlocked.CompareExchange(ref _lastTicks, ticks, lastTicks) == lastTicks)
+                        return NewGuid(ticks);
+                }
             }
 
-            private unsafe Guid NewGuid(long absoluteTimestamp)
+            public unsafe Guid NewGuid(long absoluteTimestamp)
             {
                 var bytes = stackalloc byte[16];
 
@@ -188,7 +163,7 @@ namespace Abc.Zebus
 
             private static unsafe long GetTicks(Guid uuid)
             {
-                var proxy = (GuidProxy*)(&uuid);
+                var proxy = (GuidProxy*)&uuid;
                 var timestamp = proxy->a;
                 return timestamp & 0x0FFFFFFFFFFFFFFFL;
             }
