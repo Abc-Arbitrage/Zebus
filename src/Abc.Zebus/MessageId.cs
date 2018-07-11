@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Abc.Zebus.Util;
 using ProtoBuf;
@@ -8,22 +10,11 @@ namespace Abc.Zebus
     [ProtoContract]
     public readonly struct MessageId : IEquatable<MessageId>
     {
-        private static readonly long _ticksSinceEpoch = new DateTime(1582, 10, 15, 0, 0, 0, DateTimeKind.Utc).Ticks;
-        private static readonly byte[] _randomBytes = new byte[6];
-        private static readonly object _lock = new object();
-        private static Guid? _pausedId;
-        private static long _lastTimestampTicks;
+        private static readonly TimeGuidGenerator _generator = new TimeGuidGenerator();
+        private static Guid? _pausedGuid;
 
         [ProtoMember(1, IsRequired = true)]
         public readonly Guid Value;
-
-        static MessageId()
-        {
-            using (var random = new RNGCryptoServiceProvider())
-            {
-                random.GetBytes(_randomBytes);
-            }
-        }
 
         public MessageId(Guid value)
         {
@@ -34,12 +25,7 @@ namespace Abc.Zebus
 
         public bool Equals(MessageId other) => Value.Equals(other.Value);
 
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-                return false;
-            return obj is MessageId && Equals((MessageId)obj);
-        }
+        public override bool Equals(object obj) => obj is MessageId id && Equals(id);
 
         public override int GetHashCode() => Value.GetHashCode();
 
@@ -48,8 +34,18 @@ namespace Abc.Zebus
 
         public static IDisposable PauseIdGeneration()
         {
-            _pausedId = CreateNewSequentialId();
-            return new DisposableAction(() => _pausedId = null);
+            lock (_generator)
+            {
+                _pausedGuid = NewGuid();
+            }
+
+            return new DisposableAction(() =>
+            {
+                lock (_generator)
+                {
+                    _pausedGuid = null;
+                }
+            });
         }
 
         public static IDisposable PauseIdGenerationAtDate(DateTime utcDatetime)
@@ -64,83 +60,145 @@ namespace Abc.Zebus
             });
         }
 
-        public static void ResetLastTimestamp()
-        {
-            _lastTimestampTicks = 0;
-        }
-
         public static MessageId NextId()
         {
-            var value = _pausedId ?? CreateNewSequentialId();
-            return new MessageId(value);
+            lock (_generator)
+            {
+                return new MessageId(NewGuid());
+            }
         }
 
-        private static Guid CreateNewSequentialId()
+        private static Guid NewGuid()
         {
-            var timestampTicks = SystemDateTime.UtcNow.Ticks;
-            timestampTicks = timestampTicks - _ticksSinceEpoch;
+            return _pausedGuid ?? _generator.NewGuid();
+        }
 
-            lock (_lock)
+        public DateTime GetDateTime()
+        {
+            return TimeGuidGenerator.ExtractDateTime(Value);
+        }
+
+        public static void ResetLastTimestamp()
+        {
+            lock (_generator)
             {
-                if (timestampTicks <= _lastTimestampTicks)
-                    timestampTicks = _lastTimestampTicks + 1;
+                _generator.Reset();
+            }
+        }
 
-                _lastTimestampTicks = timestampTicks;
+        /// <summary>
+        /// Time-based Guid generator.
+        /// Not thread-safe.
+        /// </summary>
+        /// <remarks>
+        /// Reference: https://www.famkruithof.net/guid-uuid-timebased.html.
+        /// </remarks>
+        private class TimeGuidGenerator
+        {
+            private static readonly long _gregorianCalendarTimeTicks = new DateTime(1582, 10, 15, 0, 0, 0, DateTimeKind.Utc).Ticks;
+            private static readonly RNGCryptoServiceProvider _cryptoServiceProvider = new RNGCryptoServiceProvider();
+
+            private readonly uint _nodeIdPart1;
+            private readonly ushort _nodeIdPart2;
+            private readonly ushort _clockId;
+            private long _lastTicks;
+
+            public TimeGuidGenerator()
+                : this(GetRandomNodeId(), GetRandomClockId())
+            {
             }
 
-            var newId = new byte[16];
-            var offsetBytes = ConvertEndian(BitConverter.GetBytes((short)Environment.TickCount));
-            var timestampBytes = ConvertEndian(BitConverter.GetBytes(timestampTicks));
-
-            Array.Copy(_randomBytes, 0, newId, 10, _randomBytes.Length);
-            Array.Copy(offsetBytes, 0, newId, 8, offsetBytes.Length);
-            Array.Copy(timestampBytes, 4, newId, 0, 4);
-            Array.Copy(timestampBytes, 2, newId, 4, 2);
-            Array.Copy(timestampBytes, 0, newId, 6, 2);
-
-            // set variant
-            newId[8] &= 0x3f;
-            newId[8] |= 0x80;
-
-            // set version
-            newId[6] &= 0x0f;
-            newId[6] |= 0x01 << 4;
-
-            // set node high order bit 1
-            newId[10] |= 0x80;
-
-            return new Guid(newId);
-        }
-
-        private static byte[] ConvertEndian(byte[] value)
-        {
-            if (!BitConverter.IsLittleEndian)
-                return value;
-
-            for (var index = 0; index < value.Length / 2; ++index)
+            private TimeGuidGenerator(byte[] nodeId, ushort clockId)
             {
-                var tmp = value[index];
-                value[index] = value[value.Length - index - 1];
-                value[value.Length - index - 1] = tmp;
+                _nodeIdPart1 = BitConverter.ToUInt32(nodeId, 0);
+                _nodeIdPart2 = BitConverter.ToUInt16(nodeId, sizeof(int));
+
+                // Variant Byte: 1.0.x
+                // 10xxxxxx
+                // turn off first 2 bits
+                clockId &= 0xff3f; // 1111111100111111
+                //turn on first bit
+                clockId |= 0x0080; // 0000000010000000
+
+                _clockId = clockId;
             }
 
-            return value;
-        }
-
-        public DateTime GetDateTime() => new DateTime(GetJavaTicks(Value) + _ticksSinceEpoch, DateTimeKind.Utc);
-
-#pragma warning disable 675
-        private static long GetJavaTicks(Guid uuid)
-        {
-            var bytes = uuid.ToByteArray();
-            var mostSigBits = 0L;
-            for (var i = 0; i < 8; i++)
+            public void Reset()
             {
-                mostSigBits = (mostSigBits << 8) | (bytes[i] & 0xff);
+                _lastTicks = 0;
             }
 
-            return (mostSigBits & 0x0FFFL) << 48 | ((mostSigBits >> 16) & 0x0FFFFL) << 32 | (long)((ulong)mostSigBits >> 32);
+            public Guid NewGuid()
+            {
+                var ticks = SystemDateTime.UtcNow.Ticks;
+                _lastTicks = Math.Max(ticks, _lastTicks + 1);
+
+                return NewGuid(_lastTicks);
+            }
+
+            private unsafe Guid NewGuid(long absoluteTimestamp)
+            {
+                var bytes = stackalloc byte[16];
+
+                var relativeTimestamp = absoluteTimestamp - _gregorianCalendarTimeTicks;
+                // 0-7: Timestamp
+                *(long*)bytes = relativeTimestamp;
+
+                // Version Byte: Time based
+                // 0001xxxx for bytes[7]
+                // turn off first 4 bits
+                bytes[7] &= 0x0f; //00001111
+                //turn on fifth bit
+                bytes[7] |= 0x10; //00010000
+
+                // 8-9: ClockId
+                *(ushort*)(bytes + 8) = _clockId;
+
+                // 10-15: NodeId
+                *(uint*)(bytes + 10) = _nodeIdPart1;
+                *(ushort*)(bytes + 14) = _nodeIdPart2;
+
+                var a = (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
+                var b = (short)((bytes[5] << 8) | bytes[4]);
+                var c = (short)((bytes[7] << 8) | bytes[6]);
+
+                return new Guid(a, b, c, bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]);
+            }
+
+            private static byte[] GetRandomNodeId()
+            {
+                var nodeId = new byte[6];
+                _cryptoServiceProvider.GetBytes(nodeId);
+
+                return nodeId;
+            }
+
+            private static ushort GetRandomClockId()
+            {
+                var clockId = new byte[2];
+                _cryptoServiceProvider.GetBytes(clockId);
+                return BitConverter.ToUInt16(clockId, 0);
+            }
+
+            public static DateTime ExtractDateTime(Guid uuid)
+            {
+                var ticks = GetTicks(uuid) + _gregorianCalendarTimeTicks;
+                return new DateTime(ticks, DateTimeKind.Utc);
+            }
+
+            private static unsafe long GetTicks(Guid uuid)
+            {
+                var proxy = (GuidProxy*)(&uuid);
+                var timestamp = proxy->a;
+                return timestamp & 0x0FFFFFFFFFFFFFFFL;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
+            private struct GuidProxy
+            {
+                public long a;
+            }
         }
-#pragma warning restore 675
     }
 }
