@@ -76,19 +76,20 @@ namespace Abc.Zebus.Hosting
             var utcNow = DateTime.UtcNow;
             var dueTime = _nextInvocationUtc > utcNow ? _nextInvocationUtc - utcNow : TimeSpan.Zero;
 
-            _timer.Change(dueTime, Timeout.InfiniteTimeSpan);
+            _timer?.Change(dueTime, Timeout.InfiniteTimeSpan);
         }
 
         public override void BeforeStop()
         {
-            if (_timer == null)
+            var timer = _timer;
+            if (timer == null)
                 return;
 
-            var timerStopWaitHandle = new ManualResetEvent(false);
-            if (!_timer.Dispose(timerStopWaitHandle) || !timerStopWaitHandle.WaitOne(2.Seconds()))
-                _logger.Warn("Unable to terminate periodic action");
-
             _timer = null;
+
+            var timerStopWaitHandle = new ManualResetEvent(false);
+            if (!timer.Dispose(timerStopWaitHandle) || !timerStopWaitHandle.WaitOne(2.Seconds()))
+                _logger.Warn("Unable to terminate periodic action");
         }
 
         private void OnTimer()
