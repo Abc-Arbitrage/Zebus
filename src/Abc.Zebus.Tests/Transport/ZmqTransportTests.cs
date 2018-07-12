@@ -584,14 +584,14 @@ namespace Abc.Zebus.Tests.Transport
 
             transport1.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer2 });
             transport2.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer1 });
-            Wait.Until(() => transport1.OutboundSocketCount == 1, 2.Seconds());
-            Wait.Until(() => transport2.OutboundSocketCount == 1, 2.Seconds());
+            Wait.Until(() => transport1.OutboundSocketCount == 1, 10.Seconds());
+            Wait.Until(() => transport2.OutboundSocketCount == 1, 10.Seconds());
             
             transport2.Stop();
 
             using (SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(30.Seconds())))
             {
-                Wait.Until(() => transport1.OutboundSocketCount == 0, 2.Seconds());
+                Wait.Until(() => transport1.OutboundSocketCount == 0, 10.Seconds());
             }
         }
 
