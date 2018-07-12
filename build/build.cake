@@ -78,6 +78,11 @@ Task("Nuget")
         Information("       git push origin --tags");
     });
 
+Task("AppVeyor")
+    .IsDependentOn("Build")
+    .IsDependentOn("Test")
+    .IsDependentOn("Nuget-Pack");
+
 //////////////////////////////////////////////////////////////////////
 // EXECUTION
 //////////////////////////////////////////////////////////////////////
