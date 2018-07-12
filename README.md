@@ -72,7 +72,7 @@ And you're set ! This is all the code you need to send an event from one machine
 
 # Requirements
 
-On Windows, you will need to have [Microsoft Visual C++ 2015 Redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=53587) installed in order to load the x86 or the x64 version of `libzmq` embedded in the project.
+On Windows, you will need to have [Microsoft Visual C++ 2017 Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) installed in order to load the x86 or the x64 version of `libzmq` embedded in the project.
 
 # Release notes
 
