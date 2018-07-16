@@ -476,7 +476,7 @@ namespace Abc.Zebus.Tests.Core
                 var subscription = _bus.Subscribe(Subscription.Any<FakeCommand>());
 
                 _bus.Stop();
-                _directoryMock.ResetCalls();
+                _directoryMock.Invocations.Clear();
 
                 subscription.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();
@@ -520,7 +520,7 @@ namespace Abc.Zebus.Tests.Core
 
                 _bus.Stop();
                 _bus.Start();
-                _directoryMock.ResetCalls();
+                _directoryMock.Invocations.Clear();
 
                 subscription.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();

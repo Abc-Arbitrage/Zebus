@@ -13,10 +13,10 @@
   <ItemGroup>
     <PackageReference Include="CompareNETObjects" Version="4.55.0" />
     <PackageReference Include="log4net" Version="2.0.8" />
-    <PackageReference Include="Moq" Version="4.8.3" />
+    <PackageReference Include="Moq" Version="4.9.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="protobuf-net" Version="2.3.13" />
-    <PackageReference Include="structuremap" Version="4.6.1" />
+    <PackageReference Include="structuremap" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>
