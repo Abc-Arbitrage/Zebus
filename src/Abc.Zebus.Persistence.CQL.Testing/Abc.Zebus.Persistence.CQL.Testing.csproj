@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <PackageId>Zebus.Persistence.CQL.Testing</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Persistence.CQL\Abc.Zebus.Persistence.CQL.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.8.3" />
+  </ItemGroup>
+
+</Project>

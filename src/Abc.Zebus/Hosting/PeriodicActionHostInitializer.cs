@@ -2,7 +2,7 @@
 using System.Threading;
 using Abc.Zebus.Lotus;
 using Abc.Zebus.Util;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using log4net;
 
 namespace Abc.Zebus.Hosting
@@ -12,32 +12,32 @@ namespace Abc.Zebus.Hosting
     {
         protected readonly ILog _logger;
         private readonly IBus _bus;
-        private TimeSpan _period;
-        private Thread _thread;
+        private readonly Func<DateTime> _dueTimeUtcFunc;
+        private Timer _timer;
         private int _exceptionCount;
-        private volatile bool _isRunning;
-        private readonly Func<DateTime> _startOffset;
+        private DateTime _nextInvocationUtc;
+        private DateTime _pauseEndTimeUtc;
 
-        protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime> startOffset = null)
+        protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime> dueTimeUtcFunc = null)
         {
             _logger = LogManager.GetLogger(GetType());
             _bus = bus;
-            _period = period;
-            _startOffset = startOffset ?? (() => DateTime.UtcNow);
+            _dueTimeUtcFunc = dueTimeUtcFunc;
 
-            ErrorPublicationEnabled = true;
-            ErrorCountBeforePause = 10;
-            ErrorPauseDuration = 2.Minutes();
+            Period = period;
         }
+
+        public bool IsRunning => _timer != null;
+
+        public TimeSpan Period { get; }
+        public bool ErrorPublicationEnabled { get; set; } = true;
+        public int ErrorCountBeforePause { get; set; } = 10;
+        public TimeSpan ErrorPauseDuration { get; set; } = 2.Minutes();
+        public MissedTimeoutCatchupMode CatchupMode { get; set; } = MissedTimeoutCatchupMode.RunActionForMissedTimeouts;
 
         public abstract void DoPeriodicAction();
 
-        public TimeSpan Period => _period;
-        public bool ErrorPublicationEnabled { get; set; }
-        public int ErrorCountBeforePause { get; set; }
-        public TimeSpan ErrorPauseDuration { get; set; }
-
-        protected bool IsRunning => _isRunning;
+        protected virtual bool ShouldPublishError(Exception error) => ErrorPublicationEnabled;
 
         public override void AfterStart()
         {
@@ -49,50 +49,73 @@ namespace Abc.Zebus.Hosting
                 return;
             }
 
-            _isRunning = true;
-            _thread = new Thread(MainLoop) { Name = GetType().Name + "MainLoop" };
-            _thread.Start();
+            _timer = new Timer(_ => OnTimer());
+            _nextInvocationUtc = GetInitialInvocationUtc();
+            _pauseEndTimeUtc = DateTime.MinValue;
+
+            SetTimer();
+        }
+
+        private DateTime GetInitialInvocationUtc()
+        {
+            var utcNow = DateTime.UtcNow;
+
+            if (_dueTimeUtcFunc == null)
+                return utcNow.Add(Period);
+
+            var dueTimeUtc = _dueTimeUtcFunc.Invoke();
+
+            while (dueTimeUtc < utcNow)
+                dueTimeUtc = dueTimeUtc.Add(Period);
+
+            return dueTimeUtc;
+        }
+
+        private void SetTimer()
+        {
+            var utcNow = DateTime.UtcNow;
+            var dueTime = _nextInvocationUtc > utcNow ? _nextInvocationUtc - utcNow : TimeSpan.Zero;
+
+            _timer?.Change(dueTime, Timeout.InfiniteTimeSpan);
         }
 
         public override void BeforeStop()
         {
-            if (!_isRunning)
+            var timer = _timer;
+            if (timer == null)
                 return;
 
-            _isRunning = false;
-            if (!_thread.Join(2000))
+            _timer = null;
+
+            var timerStopWaitHandle = new ManualResetEvent(false);
+            if (!timer.Dispose(timerStopWaitHandle) || !timerStopWaitHandle.WaitOne(2.Seconds()))
                 _logger.Warn("Unable to terminate periodic action");
         }
 
-        private void MainLoop()
+        private void OnTimer()
         {
-            var sleep = (int)Math.Min(300, _period.TotalMilliseconds / 2);
+            InvokePeriodicAction();
 
-            var startTime = _startOffset();
-            var startWaitingPeriod = (startTime - DateTime.UtcNow) - _period;
-            if (startWaitingPeriod > 5.Minutes())
-                throw new InvalidOperationException("Start offset is too large, please review your offset function");
+            _nextInvocationUtc = _nextInvocationUtc.Add(Period);
 
-            if (startWaitingPeriod.TotalMilliseconds > 0)
+            var utcNow = DateTime.UtcNow;
+
+            while (_nextInvocationUtc < utcNow)
             {
-                _logger.InfoFormat("MainLoop sleeping for {0}s before starting", startWaitingPeriod.TotalSeconds);
-                Thread.Sleep(startWaitingPeriod);
+                if (CatchupMode == MissedTimeoutCatchupMode.RunActionForMissedTimeouts)
+                    InvokePeriodicAction();
+
+                _nextInvocationUtc = _nextInvocationUtc.Add(Period);
             }
 
-            _logger.InfoFormat("MainLoop started, Period: {0}ms, Sleep: {1}ms", _period.TotalMilliseconds, sleep);
-            var next = DateTime.UtcNow + _period;
-            while (_isRunning)
-            {
-                if (DateTime.UtcNow >= next)
-                    InvokePeriodicAction(ref next);
-                else
-                    Thread.Sleep(sleep);
-            }
-            _logger.Info("MainLoop stopped");
+            SetTimer();
         }
 
-        private void InvokePeriodicAction(ref DateTime next)
+        private void InvokePeriodicAction()
         {
+            if (_pauseEndTimeUtc > DateTime.UtcNow)
+                return;
+
             try
             {
                 DoPeriodicAction();
@@ -101,26 +124,21 @@ namespace Abc.Zebus.Hosting
             catch (Exception ex)
             {
                 _logger.Error(ex);
-                ++_exceptionCount;
 
-                PublishError(ex);
-            }
-            if (_exceptionCount >= ErrorCountBeforePause)
-            {
-                _logger.ErrorFormat("Too many exceptions, periodic action paused ({0})", ErrorPauseDuration);
-                next = next + _period + ErrorPauseDuration;
-            }
-            else
-            {
-                next = next + _period;
+                if (ShouldPublishError(ex))
+                    PublishError(ex);
+
+                _exceptionCount++;
+                if (_exceptionCount >= ErrorCountBeforePause)
+                {
+                    _logger.WarnFormat("Too many exceptions, periodic action paused ({0})", ErrorPauseDuration);
+                    _pauseEndTimeUtc = DateTime.UtcNow.Add(ErrorPauseDuration);
+                }
             }
         }
 
         private void PublishError(Exception error)
         {
-            if (!ErrorPublicationEnabled)
-                return;
-
             try
             {
                 _bus.Publish(new CustomProcessingFailed(GetType().FullName, error.ToString()));
@@ -129,6 +147,12 @@ namespace Abc.Zebus.Hosting
             {
                 _logger.ErrorFormat("Unable to send CustomProcessingFailed, Exception: {0}", ex);
             }
+        }
+
+        public enum MissedTimeoutCatchupMode
+        {
+            RunActionForMissedTimeouts,
+            SkipMissedTimeouts,
         }
     }
 }

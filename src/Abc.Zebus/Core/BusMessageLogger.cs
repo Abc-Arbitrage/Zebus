@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using Abc.Zebus.Scan;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
 using log4net;
 using log4net.Core;
@@ -27,7 +27,7 @@ namespace Abc.Zebus.Core
         public BusMessageLogger(Type loggerType, string loggerFullName)
         {
             _loggerType = loggerType;
-            _logger = LogManager.GetLogger(loggerFullName);
+            _logger = LogManager.GetLogger(typeof(BusMessageLogger).Assembly, loggerFullName);
 
             // Instances of BusMessageLogger are static, no need to unsubscribe from these events
             _logger.Logger.Repository.ConfigurationChanged += (sender, args) => UpdateLogConfig();

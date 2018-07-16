@@ -1,5 +1,5 @@
 ﻿using System;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Abc.Zebus.Serialization

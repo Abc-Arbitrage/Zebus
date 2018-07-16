@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Text;
+using System.Threading;
+using Abc.Zebus.Transport.Zmq;
 using log4net;
-using ZeroMQ;
 
 namespace Abc.Zebus.Transport
 {
-    public class ZmqOutboundSocket
+    internal class ZmqOutboundSocket
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(ZmqOutboundSocket));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(ZmqOutboundSocket));
+
         private readonly Stopwatch _closedStateStopwatch = new Stopwatch();
         private readonly ZmqContext _context;
         private readonly ZmqSocketOptions _options;
@@ -37,12 +40,13 @@ namespace Abc.Zebus.Transport
 
             try
             {
-                _socket = _context.CreateSocket(SocketType.PUSH);
-                _socket.SendHighWatermark = _options.SendHighWaterMark;
-                _socket.TcpKeepalive = TcpKeepaliveBehaviour.Enable;
-                _socket.TcpKeepaliveIdle = 30;
-                _socket.TcpKeepaliveIntvl = 3;
-                _socket.SetPeerId(PeerId);
+                _socket = new ZmqSocket(_context, ZmqSocketType.PUSH);
+                _socket.SetOption(ZmqSocketOption.SNDHWM, _options.SendHighWaterMark);
+                _socket.SetOption(ZmqSocketOption.SNDTIMEO, (int)_options.SendTimeout.TotalMilliseconds);
+                _socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE, 1);
+                _socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE_IDLE, 30);
+                _socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE_INTVL, 3);
+                _socket.SetOption(ZmqSocketOption.ROUTING_ID, Encoding.ASCII.GetBytes(PeerId.ToString()));
 
                 _socket.Connect(EndPoint);
 
@@ -77,7 +81,7 @@ namespace Abc.Zebus.Transport
 
             try
             {
-                _socket.Linger = TimeSpan.Zero;
+                _socket.SetOption(ZmqSocketOption.LINGER, 0);
                 _socket.Dispose();
 
                 _logger.InfoFormat("Socket disconnected, Peer: {0}", PeerId);
@@ -96,13 +100,30 @@ namespace Abc.Zebus.Transport
             if (!CanSendOrConnect(message))
                 return;
 
-            if (_socket.SendWithTimeout(buffer, length, _options.SendTimeout) >= 0)
+            var stopwatch = Stopwatch.StartNew();
+            var spinWait = new SpinWait();
+
+            ZmqErrorCode error;
+
+            while (true)
             {
-                _failedSendCount = 0;
-                return;
+                if (_socket.TrySend(buffer, 0, length, out error))
+                {
+                    _failedSendCount = 0;
+                    return;
+                }
+
+                // EAGAIN: Non-blocking mode was requested and the message cannot be sent at the moment.
+                if (error == ZmqErrorCode.EAGAIN && stopwatch.Elapsed < _options.SendTimeout)
+                {
+                    spinWait.SpinOnce();
+                    continue;
+                }
+
+                break;
             }
 
-            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}", PeerId, message.MessageTypeId, message.Id);
+            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}, Error: {3}", PeerId, message.MessageTypeId, message.Id, error.ToErrorMessage());
             _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
 
             if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)

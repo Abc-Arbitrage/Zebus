@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using ABC.ServiceBus.Contracts;
 using Abc.Zebus.Dispatch;
-using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Initialization;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Transport;
@@ -22,7 +20,8 @@ namespace Abc.Zebus.Core
         private string _environment;
         public PeerId PeerId { get; set; }
 
-        public BusFactory() : this(new Container())
+        public BusFactory()
+            : this(new Container())
         {
         }
 
@@ -36,7 +35,6 @@ namespace Abc.Zebus.Core
         }
 
         public IContainer Container { get; }
-        public bool EnableTimeoutCommandDispatch { get; set; }
 
         public BusFactory WithConfiguration(string directoryEndPoints, string environment)
         {
@@ -63,6 +61,7 @@ namespace Abc.Zebus.Core
             {
                 _scanTargets.Add(new ScanTarget(handler.Assembly, handler));
             }
+
             return this;
         }
 
@@ -78,6 +77,7 @@ namespace Abc.Zebus.Core
             {
                 _scanTargets.Add(new ScanTarget(assembly, null));
             }
+
             return this;
         }
 
@@ -92,9 +92,6 @@ namespace Abc.Zebus.Core
             var bus = CreateBus();
             bus.Start();
 
-            if(EnableTimeoutCommandDispatch)
-                bus.Subscribe(Subscription.Any<TimeoutCommand>());
-
             return bus;
         }
 
@@ -107,14 +104,17 @@ namespace Abc.Zebus.Core
             {
                 x.ForSingletonOf<IBusConfiguration>().Use(_configuration);
                 x.ForSingletonOf<IZmqTransportConfiguration>().Use(_transportConfiguration);
-                x.ForSingletonOf<IMessageDispatcher>().Use("MessageDispatcher factory", ctx =>
-                {
-                    var dispatcher = new MessageDispatcher(ctx.GetAllInstances<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetInstance<IDispatchQueueFactory>());
-                    dispatcher.ConfigureHandlerFilter(assembly => _scanTargets.Any(scanTarget => scanTarget.Matches(assembly)));
-                    dispatcher.ConfigureAssemblyFilter(type => _scanTargets.Any(scanTarget => scanTarget.Matches(type)));
+                x.ForSingletonOf<IMessageDispatcher>().Use(
+                    "MessageDispatcher factory",
+                    ctx =>
+                    {
+                        var dispatcher = new MessageDispatcher(ctx.GetAllInstances<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetInstance<IDispatchQueueFactory>());
+                        dispatcher.ConfigureHandlerFilter(assembly => _scanTargets.Any(scanTarget => scanTarget.Matches(assembly)));
+                        dispatcher.ConfigureAssemblyFilter(type => _scanTargets.Any(scanTarget => scanTarget.Matches(type)));
 
-                    return dispatcher;
-                });
+                        return dispatcher;
+                    }
+                );
             });
 
             foreach (var configurationAction in _configurationActions)

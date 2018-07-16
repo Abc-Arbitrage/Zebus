@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
+using JetBrains.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus
 {
-    [ProtoContract]
-    public struct MessageTypeId : IEquatable<MessageTypeId>
+    [ProtoContract(Surrogate = typeof(ProtobufSurrogate))]
+    public readonly struct MessageTypeId : IEquatable<MessageTypeId>
     {
-        // TODO make this struct readonly, but this needs special care because of the protobuf serialization
-
         public static readonly MessageTypeId EndOfStream = new MessageTypeId("Abc.Zebus.Transport.EndOfStream");
         public static readonly MessageTypeId EndOfStreamAck = new MessageTypeId("Abc.Zebus.Transport.EndOfStreamAck");
         public static readonly MessageTypeId PersistenceStopping = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStopping");
         public static readonly MessageTypeId PersistenceStoppingAck = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStoppingAck");
 
-        private MessageTypeDescriptor _descriptor;
+        private readonly MessageTypeDescriptor _descriptor;
 
         public MessageTypeId(Type messageType)
         {
@@ -27,20 +25,15 @@ namespace Abc.Zebus
             _descriptor = MessageUtil.GetMessageTypeDescriptor(fullName);
         }
 
-        [ProtoMember(1, IsRequired = true)]
-        public string FullName
-        {
-            get => _descriptor?.FullName;
-            private set => _descriptor = MessageUtil.GetMessageTypeDescriptor(value);
-        }
+        public string FullName => _descriptor?.FullName;
 
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public Type GetMessageType() => _descriptor?.MessageType;
 
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public bool IsInfrastructure() => _descriptor?.IsInfrastructure ?? false;
 
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public bool IsPersistent() => _descriptor?.IsPersistent ?? true;
 
         public override string ToString()
@@ -57,5 +50,21 @@ namespace Abc.Zebus
 
         public static bool operator ==(MessageTypeId left, MessageTypeId right) => left.Equals(right);
         public static bool operator !=(MessageTypeId left, MessageTypeId right) => !left.Equals(right);
+
+        [ProtoContract]
+        [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
+        internal struct ProtobufSurrogate
+        {
+            [ProtoMember(1, IsRequired = true)]
+            private string FullName { get; set; }
+
+            private ProtobufSurrogate(MessageTypeId typeId)
+            {
+                FullName = typeId.FullName;
+            }
+
+            public static implicit operator MessageTypeId(ProtobufSurrogate value) => new MessageTypeId(value.FullName);
+            public static implicit operator ProtobufSurrogate(MessageTypeId value) => new ProtobufSurrogate(value);
+        }
     }
 }

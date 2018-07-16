@@ -15,11 +15,11 @@ namespace Abc.Zebus.Persistence
 {
     public partial class PersistentTransport : IPersistentTransport
     {
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(PersistentTransport));
         private static readonly List<MessageTypeId> _replayMessageTypeIds = new List<MessageTypeId> { MessageReplayed.TypeId, ReplayPhaseEnded.TypeId, SafetyPhaseEnded.TypeId };
         private static readonly MessageBinding _bindingForPersistence = MessageBinding.Default<PersistMessageCommand>();
         private static readonly List<Peer> _emptyPeerList = new List<Peer>();
 
-        private readonly ILog _logger = LogManager.GetLogger(typeof(PersistentTransport));
         private readonly ConcurrentDictionary<MessageId, bool> _receivedMessagesIds = new ConcurrentDictionary<MessageId, bool>();
         private readonly BlockingCollection<TransportMessage> _messagesWaitingForPersistence = new BlockingCollection<TransportMessage>();
         private readonly IMessageSerializer _serializer = new MessageSerializer();

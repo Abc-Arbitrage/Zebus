@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <PackageId>Zebus.Directory.Cassandra</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CassandraCSharpDriver" Version="3.0.8" />
+  </ItemGroup>
+
+</Project>

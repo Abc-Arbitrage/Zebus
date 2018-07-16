@@ -15,7 +15,7 @@ namespace Abc.Zebus.Tests.Dispatch
 {
     public partial class MessageDispatcherTests
     {
-        [Test, Timeout(3000)]
+        [Test]
         public void should_dispatch_message_to_queue_name()
         {
             _messageDispatcher.LoadMessageHandlerInvokers();

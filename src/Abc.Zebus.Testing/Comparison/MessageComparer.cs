@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Abc.Zebus.EventSourcing;
 using KellermanSoftware.CompareNetObjects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -29,8 +28,8 @@ namespace Abc.Zebus.Testing.Comparison
                 Assert.Fail(errorMsg);
         }
 
-
-        private string CreateErrorMessage<TItem>(Differences<TItem> differences, bool exactMatch) where TItem : class
+        private string CreateErrorMessage<TItem>(Differences<TItem> differences, bool exactMatch)
+            where TItem : class
         {
             string errorMsg = string.Empty;
 
@@ -44,23 +43,20 @@ namespace Abc.Zebus.Testing.Comparison
                         errorMsg += $"Possible match: {candidate.GetType().Name} {SerializeJsonSerializer(candidate)}" + Environment.NewLine;
                 }
             }
-                
 
             if (exactMatch)
             {
                 foreach (var notExpected in differences.NotExpected)
                 {
-                    var notExpectedEvent = notExpected as IDomainEvent;
-                    if (notExpectedEvent != null)
-                        notExpectedEvent.Sourcing = null;
                     errorMsg += $"Not Expected: {notExpected.GetType().Name} {SerializeJsonSerializer(notExpected)} " + Environment.NewLine;
                 }
             }
+
             return errorMsg;
         }
 
-
-        private Differences<TItem> GetListsDiff<TItem>(IEnumerable<TItem> actualItems, IEnumerable<TItem> expectedItems) where TItem : class
+        private Differences<TItem> GetListsDiff<TItem>(IEnumerable<TItem> actualItems, IEnumerable<TItem> expectedItems)
+            where TItem : class
         {
             var notExpectedEvents = new List<TItem>(actualItems);
             var missingEvents = new List<TItem>();
@@ -79,9 +75,9 @@ namespace Abc.Zebus.Testing.Comparison
                         possibleCandidates.Add(eventOfSameType);
                 }
             }
+
             return new Differences<TItem>(missingEvents, notExpectedEvents, possibleCandidates);
         }
-
 
         private string SerializeJsonSerializer(object value)
         {
@@ -91,12 +87,13 @@ namespace Abc.Zebus.Testing.Comparison
                 jsonWriter.QuoteName = false;
                 jsonWriter.Formatting = Formatting.Indented;
                 var serializerSettings = new JsonSerializerSettings
-                    {
-                        Converters = new JsonConverter[] { new IsoDateTimeConverter() },
-                        NullValueHandling = NullValueHandling.Ignore,
-                    };
+                {
+                    Converters = new JsonConverter[] { new IsoDateTimeConverter() },
+                    NullValueHandling = NullValueHandling.Ignore,
+                };
                 JsonSerializer.Create(serializerSettings).Serialize(jsonWriter, value);
             }
+
             return stringWriter.ToString();
         }
 

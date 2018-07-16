@@ -49,7 +49,7 @@ namespace Abc.Zebus.Tests.Routing
         }
 
         [Test]
-        [Ignore]
+        [Explicit]
         [Category("ManualOnly")]
         public void MeasurePerformances()
         {

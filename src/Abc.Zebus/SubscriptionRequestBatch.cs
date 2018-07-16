@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 
 namespace Abc.Zebus
 {

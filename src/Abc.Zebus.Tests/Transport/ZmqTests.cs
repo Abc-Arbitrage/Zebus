@@ -1,70 +1,83 @@
 ﻿using System;
-using Abc.Zebus.Transport;
+using Abc.Zebus.Transport.Zmq;
 using Abc.Zebus.Util;
 using NUnit.Framework;
-using ZeroMQ;
 
 namespace Abc.Zebus.Tests.Transport
 {
     [TestFixture]
-    [Ignore]
-    [Category("ManualOnly")]
     public class ZmqTests
     {
-        [Test]
+        [Test, Explicit]
         public void OkNowIKnowThatMyMessagesAreLostAfterDisconnect()
         {
             var message = new byte[50];
             var receiveBuffer = new byte[100];
 
-            using (var context = ZmqContext.Create())
+            Console.WriteLine("ZMQ v{0}", ZmqUtil.GetVersion().ToString(3));
+            Console.WriteLine(Environment.Is64BitProcess ? "x64" : "x86");
+
+            using (var context = new ZmqContext())
+            using (var receiver = new ZmqSocket(context, ZmqSocketType.PULL))
+            using (var sender = new ZmqSocket(context, ZmqSocketType.PUSH))
             {
                 var sendEndpoint = $"tcp://localhost:{TcpUtil.GetRandomUnusedPort()}";
                 var receiveEndpoint = sendEndpoint.Replace("localhost", "*");
 
-                var receiver = context.CreateSocket(SocketType.PULL);
-                receiver.ReceiveHighWatermark = 10;
+                receiver.SetOption(ZmqSocketOption.RCVHWM, 10);
+                receiver.SetOption(ZmqSocketOption.RCVTIMEO, 200);
                 receiver.Bind(receiveEndpoint);
 
-                var sender = context.CreateSocket(SocketType.PUSH);
-                sender.SendHighWatermark = 10;
+                sender.SetOption(ZmqSocketOption.SNDHWM, 10);
                 sender.Connect(sendEndpoint);
 
                 for (var i = 0; i < 10; ++i)
                 {
-                    var sendStatus = sender.Send(message);
-                    Console.WriteLine(sendStatus);
+                    var sendStatus = sender.TrySend(message, 0, message.Length, out var error);
+                    Console.WriteLine($"SEND: {sendStatus} - {error.ToErrorMessage()}");
                 }
-                for (var i = 0; i < 10; ++i)
-                {
-                    var bytes = receiver.Receive(receiveBuffer, 200.Milliseconds());
-                    Console.WriteLine(bytes);
-                }
-
-                receiver.Unbind(receiveEndpoint);
 
                 for (var i = 0; i < 10; ++i)
                 {
-                    var sendStatus = sender.Send(message);
-                    Console.WriteLine(sendStatus);
+                    var receiveStatus = receiver.TryReadMessage(ref receiveBuffer, out var bytes, out var error);
+                    Console.WriteLine($"RECV: {receiveStatus} - {bytes} - {error.ToErrorMessage()}");
                 }
 
-                sender.Disconnect(sendEndpoint);
+                receiver.TryUnbind(receiver.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+
+                for (var i = 0; i < 10; ++i)
+                {
+                    var sendStatus = sender.TrySend(message, 0, message.Length, out var error);
+                    Console.WriteLine($"SEND: {sendStatus} - {error.ToErrorMessage()}");
+                }
+
+                sender.TryDisconnect(sender.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+                sender.SetOption(ZmqSocketOption.SNDTIMEO, 1000);
                 sender.Connect(sendEndpoint);
 
-                var oneMoreSend = sender.SendWithTimeout(message, message.Length, 1000.Milliseconds());
-                Console.WriteLine(oneMoreSend);
+                {
+                    var sendStatus = sender.TrySend(message, 0, message.Length, out var error);
+                    Console.WriteLine($"SEND: {sendStatus} - {error.ToErrorMessage()}");
+                }
 
+                receiver.SetOption(ZmqSocketOption.RCVTIMEO, 2000);
                 receiver.Bind(receiveEndpoint);
-                
+
                 var receivedMessageCount = 0;
-                while (receiver.Receive(receiveBuffer, 2000.Milliseconds()) != -1)
+                while (receiver.TryReadMessage(ref receiveBuffer, out _, out _))
                 {
                     ++receivedMessageCount;
                 }
 
                 Console.WriteLine("{0} received messages", receivedMessageCount);
             }
+        }
+
+        [Test]
+        public void should_get_error_messages()
+        {
+            Console.WriteLine(ZmqErrorCode.EAGAIN.ToErrorMessage());
+            Console.WriteLine(((ZmqErrorCode)(-42)).ToErrorMessage());
         }
     }
 }

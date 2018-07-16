@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
@@ -15,6 +14,7 @@ namespace Abc.Zebus.Tests
     [TestFixture]
     public class MessageIdTests
     {
+#if NETFWK
         [Test]
         public void should_not_generate_identical_MessageIds_when_multiple_buses_are_started_in_different_app_domains_simultaneously()
         {
@@ -43,6 +43,7 @@ namespace Abc.Zebus.Tests
             var newAppDomain = AppDomain.CreateDomain("MyAppDomain", null, appDomainInfo);
             return (MessageIdProxy)newAppDomain.CreateInstanceAndUnwrap(typeof(MessageIdProxy).Assembly.FullName, "Abc.Zebus.Tests.MessageIdTests+MessageIdProxy");
         }
+#endif
 
         [Test]
         public void should_generate_unique_ids()
@@ -124,7 +125,7 @@ namespace Abc.Zebus.Tests
             }
         }
 
-        [Test, Ignore("Manual test")]
+        [Test, Explicit("Manual test")]
         public void MesurePerformances()
         {
             Measure.Execution(x =>

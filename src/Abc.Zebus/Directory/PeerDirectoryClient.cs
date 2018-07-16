@@ -20,9 +20,10 @@ namespace Abc.Zebus.Directory
                                                IMessageHandler<PeerNotResponding>,
                                                IMessageHandler<PeerResponding>
     {
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
+
         private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionsIndex = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
-        private readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
@@ -62,15 +63,44 @@ namespace Abc.Zebus.Directory
 
         private void ProcessMessagesReceivedDuringRegister()
         {
-            foreach (dynamic message in _messagesReceivedDuringRegister.GetConsumingEnumerable())
+            foreach (var message in _messagesReceivedDuringRegister.GetConsumingEnumerable())
             {
                 try
                 {
-                    Handle(message);
+                    switch (message)
+                    {
+                        case PeerStarted msg:
+                            Handle(msg);
+                            break;
+
+                        case PeerStopped msg:
+                            Handle(msg);
+                            break;
+
+                        case PeerDecommissioned msg:
+                            Handle(msg);
+                            break;
+
+                        case PeerSubscriptionsUpdated msg:
+                            Handle(msg);
+                            break;
+
+                        case PeerSubscriptionsForTypesUpdated msg:
+                            Handle(msg);
+                            break;
+
+                        case PeerNotResponding msg:
+                            Handle(msg);
+                            break;
+
+                        case PeerResponding msg:
+                            Handle(msg);
+                            break;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.WarnFormat("Unable to process message {0} {{{1}}}, Exception: {2}", message.GetType(), message.ToString(), ex);
+                    _logger.WarnFormat("Unable to process message {0} {{{1}}}, Exception: {2}", message.GetType(), message, ex);
                 }
             }
         }

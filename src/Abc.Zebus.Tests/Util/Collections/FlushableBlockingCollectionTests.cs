@@ -32,12 +32,13 @@ namespace Abc.Zebus.Tests.Util.Collections
             bc.CompleteAdding();
 
             consume.Wait();
-            var expectedItems = Enumerable.Range(0, 2000000).ToHashSet();
+            const int itemCount = 2000000;
 
-            consumedItems.Count.ShouldEqual(expectedItems.Count);
+            consumedItems.Count.ShouldEqual(itemCount);
             foreach (var item in consumedItems)
             {
-                expectedItems.Contains(item).ShouldBeTrue();
+                item.ShouldBeGreaterOrEqualThan(0);
+                item.ShouldBeLessThan(itemCount);
             }
         }
 
@@ -110,12 +111,13 @@ namespace Abc.Zebus.Tests.Util.Collections
             Console.WriteLine("{0} flushed items (#1)", flushedItems1.Count);
             Console.WriteLine("{0} flushed items (#2)", flushedItems2.Count);
 
-            var exectedItems = Enumerable.Range(0, writerItemCount * 3).ToHashSet();
+            const int expectedCount = writerItemCount * 3;
             var items = consumedItems.Concat(flushedItems1).Concat(flushedItems2).ToList();
-            items.Count.ShouldEqual(exectedItems.Count);
+            items.Count.ShouldEqual(expectedCount);
             foreach (var item in items)
             {
-                exectedItems.Contains(item).ShouldBeTrue();
+                item.ShouldBeGreaterOrEqualThan(0);
+                item.ShouldBeLessThan(expectedCount);
             }
         }
 
@@ -174,12 +176,13 @@ namespace Abc.Zebus.Tests.Util.Collections
             collection.CompleteAdding();
             consume.Wait();
 
-            var exectedItems = Enumerable.Range(0, 1500000).ToHashSet();
+            const int expectedCount = 1500000;
             var items = consumedItems.Concat(flushedItems1).Concat(flushedItems2).Concat(flushedItems3).ToList();
-            items.Count.ShouldEqual(exectedItems.Count);
+            items.Count.ShouldEqual(expectedCount);
             foreach (var item in items)
             {
-                exectedItems.Contains(item).ShouldBeTrue();
+                item.ShouldBeGreaterOrEqualThan(0);
+                item.ShouldBeLessThan(expectedCount);
             }
         }
 

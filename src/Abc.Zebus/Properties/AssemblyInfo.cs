@@ -1,8 +1,6 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("Abc.Zebus")]
 [assembly: ComVisible(false)]
 [assembly: Guid("a287fe42-8da0-46cd-9562-9b35274da061")]
 

@@ -1,0 +1,43 @@
+<Project>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DefaultItemExcludes>$(DefaultItemExcludes);*.DotSettings;*.ncrunchproject</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants Condition="'$(TargetFramework)' == 'net471'
+                     or '$(TargetFramework)' == 'net461'">$(DefineConstants);NETFWK</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Zebus.Contracts is versioned independently -->
+    <Version>3.0.0</Version>
+    <Authors>ABC arbitrage</Authors>
+    <Description>A lightweight Peer to Peer Service Bus</Description>
+    <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</PackageLicenseUrl>
+    <Copyright>Copyright © ABC arbitrage 2018</Copyright>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <ContinuousIntegrationBuild Condition="'$(ContinuousIntegrationBuild)' == ''">false</ContinuousIntegrationBuild>
+    <ContinuousIntegrationBuild Condition="'$(APPVEYOR)' == 'True'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(ContinuousIntegrationBuild)">
+    <Deterministic>true</Deterministic>
+    <DeterministicSourcePaths>true</DeterministicSourcePaths>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
+    <PackageVersion Condition="'$(APPVEYOR_REPO_TAG)' == 'false'">$(PackageVersion)-pre$(APPVEYOR_BUILD_NUMBER)</PackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="11.1.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63102-01" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

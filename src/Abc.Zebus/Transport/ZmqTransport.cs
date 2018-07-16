@@ -6,9 +6,9 @@ using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Serialization.Protobuf;
+using Abc.Zebus.Transport.Zmq;
 using Abc.Zebus.Util;
 using log4net;
-using ZeroMQ;
 
 namespace Abc.Zebus.Transport
 {
@@ -31,33 +31,6 @@ namespace Abc.Zebus.Transport
         private CountdownEvent _outboundSocketsToStop;
         private bool _isRunning;
 
-        static ZmqTransport()
-        {
-            ExtractLibZmq("x64");
-            ExtractLibZmq("x86");
-        }
-
-        static void ExtractLibZmq(string platform)
-        {
-            var resourceName = $"libzmq-{platform}-0.0.0.0.dll";
-
-            var libraryPath = PathUtil.InBaseDirectory(resourceName);
-            if (File.Exists(libraryPath))
-                return;
-
-            var transportType = typeof(ZmqTransport);
-            using (var resourceStream = transportType.Assembly.GetManifestResourceStream(transportType, resourceName))
-            {
-                if (resourceStream == null)
-                    throw new Exception("Unable to find libzmq in the embedded resources.");
-
-                using (var libraryFileStream = new FileStream(libraryPath, FileMode.OpenOrCreate, FileAccess.Write))
-                {
-                    resourceStream.CopyTo(libraryFileStream);
-                }
-            }
-        }
-
         public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
         {
             _configuration = configuration;
@@ -68,11 +41,7 @@ namespace Abc.Zebus.Transport
 
         public event Action<TransportMessage> MessageReceived;
 
-        public virtual bool IsListening
-        {
-            get { return _isListening; }
-            internal set { _isListening = value; }
-        }
+        public bool IsListening => _isListening;
 
         public string InboundEndPoint => _realInboundEndPoint != null ? _realInboundEndPoint.Value : _configuredInboundEndPoint.Value;
 
@@ -86,7 +55,7 @@ namespace Abc.Zebus.Transport
 
         internal void SetLogId(int logId)
         {
-            _logger = LogManager.GetLogger(typeof(ZmqTransport).FullName + "#" + logId);
+            _logger = LogManager.GetLogger(typeof(ZmqTransport).Assembly, typeof(ZmqTransport).FullName + "#" + logId);
         }
 
         public void Configure(PeerId peerId, string environment)
@@ -114,16 +83,22 @@ namespace Abc.Zebus.Transport
 
         public void Start()
         {
-            IsListening = true;
+            var zmqVersion = ZmqUtil.GetVersion();
+            _logger.InfoFormat("Loaded ZMQ v{0}", zmqVersion.ToString(3));
+
+            if (zmqVersion.Major != 4)
+                throw new InvalidOperationException($"Expected ZMQ v4.*, loaded ZMQ v{zmqVersion.ToString(3)}");
+
+            _isListening = true;
 
             _outboundSockets = new ConcurrentDictionary<PeerId, ZmqOutboundSocket>();
             _outboundSocketActions = new BlockingCollection<OutboundSocketAction>();
             _pendingDisconnects = new BlockingCollection<PendingDisconnect>();
-            _context = ZmqContext.Create();
+            _context = new ZmqContext();
 
             var startSequenceState = new InboundProcStartSequenceState();
 
-            _inboundThread = BackgroundThread.Start(InboundProc, startSequenceState, null);
+            _inboundThread = BackgroundThread.Start(InboundProc, startSequenceState);
             _outboundThread = BackgroundThread.Start(OutboundProc);
             _disconnectThread = BackgroundThread.Start(DisconnectProc);
 
@@ -157,7 +132,7 @@ namespace Abc.Zebus.Transport
             if (!_outboundThread.Join(30.Seconds()))
                 _logger.Error("Unable to terminate outbound thread");
 
-            IsListening = false;
+            _isListening = false;
             if (!_inboundThread.Join(30.Seconds()))
                 _logger.Error("Unable to terminate inbound thread");
 
@@ -170,8 +145,7 @@ namespace Abc.Zebus.Transport
 
         private static void DiscardItems<T>(BlockingCollection<T> collection)
         {
-            T item;
-            while (collection.TryTake(out item))
+            while (collection.TryTake(out _))
             {
             }
         }
@@ -216,7 +190,7 @@ namespace Abc.Zebus.Transport
 
             using (inboundSocket)
             {
-                while (IsListening)
+                while (_isListening)
                 {
                     var inputStream = inboundSocket.Receive();
                     if (inputStream == null)
@@ -283,7 +257,7 @@ namespace Abc.Zebus.Transport
                     return;
                 }
 
-                if (IsListening)
+                if (_isListening)
                     MessageReceived?.Invoke(transportMessage);
             }
             catch (Exception ex)
@@ -330,6 +304,7 @@ namespace Abc.Zebus.Transport
                 _logger.ErrorFormat("Receiving messages from wrong environment: {0} from {1}, discarding message type {2}", transportMessage.Environment, transportMessage.Originator.SenderEndPoint, transportMessage.MessageTypeId);
                 return false;
             }
+
             return true;
         }
 
@@ -403,8 +378,7 @@ namespace Abc.Zebus.Transport
         {
             foreach (var peerId in peerIds)
             {
-                ZmqOutboundSocket outboundSocket;
-                if (!_outboundSockets.TryRemove(peerId, out outboundSocket))
+                if (!_outboundSockets.TryRemove(peerId, out var outboundSocket))
                     continue;
 
                 outboundSocket.Disconnect();
@@ -413,8 +387,7 @@ namespace Abc.Zebus.Transport
 
         private ZmqOutboundSocket GetConnectedOutboundSocket(Peer peer, TransportMessage transportMessage)
         {
-            ZmqOutboundSocket outboundSocket;
-            if (!_outboundSockets.TryGetValue(peer.Id, out outboundSocket))
+            if (!_outboundSockets.TryGetValue(peer.Id, out var outboundSocket))
             {
                 outboundSocket = new ZmqOutboundSocket(_context, peer.Id, peer.EndPoint, SocketOptions, _errorHandler);
                 outboundSocket.ConnectFor(transportMessage);
@@ -489,7 +462,7 @@ namespace Abc.Zebus.Transport
 
         private readonly struct OutboundSocketAction
         {
-            private static readonly TransportMessage _disconnectMessage = new TransportMessage(default(MessageTypeId), null, new PeerId(), null);
+            private static readonly TransportMessage _disconnectMessage = new TransportMessage(default, null, new PeerId(), null);
 
             private OutboundSocketAction(TransportMessage message, IEnumerable<Peer> targets, SendContext context)
             {

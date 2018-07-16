@@ -14,6 +14,7 @@ namespace Abc.Zebus.Transport
                 if (PersistentPeerIds[index] == peerId)
                     return true;
             }
+
             return false;
         }
     }

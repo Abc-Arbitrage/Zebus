@@ -1,24 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <PackageId>Zebus.Testing</PackageId>
+    <Description>Test tools for Zebus</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,28 +10,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoFixture" Version="3.36.8" />
-    <PackageReference Include="CompareNETObjects" Version="3.03.0.0" />
-    <PackageReference Include="Moq" Version="4.2.1507.0118" />
+    <PackageReference Include="AutoFixture" Version="4.4.0" />
+    <PackageReference Include="CompareNETObjects" Version="4.55.0" />
+    <PackageReference Include="Moq" Version="4.8.3" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="NUnit" Version="2.6.4" />
-    <PackageReference Include="protobuf-net" Version="2.3.7" />
-    <PackageReference Include="structuremap" Version="3.1.6.186" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="protobuf-net" Version="2.3.13" />
+    <PackageReference Include="structuremap" Version="4.6.1" />
+    <PackageReference Include="System.Management" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="System.Management" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs">
-      <Link>Properties\SharedAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\SharedVersionInfo.cs">
-      <Link>Properties\SharedVersionInfo.cs</Link>
-    </Compile>
     <Content Include="Integration\Configurations\Directory-Local.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
     </Content>
   </ItemGroup>
+
 </Project>

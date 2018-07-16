@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Util;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus

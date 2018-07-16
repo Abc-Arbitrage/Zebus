@@ -1,55 +1,48 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Zebus</PackageId>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Contracts\Abc.Zebus.Contracts.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="protobuf-net" Version="2.3.7" />
-    <PackageReference Include="structuremap" Version="3.1.6.186" />
+    <PackageReference Include="protobuf-net" Version="2.3.13" />
+    <PackageReference Include="structuremap" Version="4.6.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="clrzmq">
-      <HintPath>..\..\lib\zmq\clrzmq.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CSharp" />
+    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.*.dll">
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>lib\native</PackagePath>
+      <Visible>false</Visible>
+    </None>
+    <None Update="Zebus.targets">
+      <Pack>true</Pack>
+      <PackagePath>build</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs">
-      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    <None Update="Transport\Zmq\ZmqNative.Generated.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ZmqNative.Generated.cs</LastGenOutput>
+    </None>
+    <Compile Update="Transport\Zmq\ZmqNative.Generated.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ZmqNative.Generated.tt</DependentUpon>
     </Compile>
-    <Compile Include="..\SharedVersionInfo.cs">
-      <Link>Properties\SharedVersionInfo.cs</Link>
-    </Compile>
+  </ItemGroup>
 
-    <None Include="Transport\libzmq-4.0.5-v140-mt" />
-    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.dll" />
-    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.dll" />
-    <EmbeddedResource Include="Transport\libzmq-x64-0.0.0.0.pdb" />
-    <EmbeddedResource Include="Transport\libzmq-x86-0.0.0.0.pdb" />
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" /> <!-- T4 -->
   </ItemGroup>
 
 </Project>

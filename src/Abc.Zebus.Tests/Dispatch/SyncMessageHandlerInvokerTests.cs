@@ -114,7 +114,7 @@ namespace Abc.Zebus.Tests.Dispatch
             ReferenceEquals(handler1, handler2).ShouldBeTrue("references should be equal");
         }
 
-        [Test, Ignore("Manual test")]
+        [Test, Explicit("Manual test")]
         public void MeasureHandlerCreationPerformances()
         {
             var busMock = new Mock<IBus>();

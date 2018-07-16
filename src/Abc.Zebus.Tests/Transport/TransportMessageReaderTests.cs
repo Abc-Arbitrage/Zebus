@@ -96,7 +96,7 @@ namespace Abc.Zebus.Tests.Transport
             deserialized.WasPersisted.ShouldEqual(transportMessage.WasPersisted);
         }
 
-        [Test, Ignore("Manual test")]
+        [Test, Explicit("Manual test")]
         public void MeasureReadPerformance()
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();

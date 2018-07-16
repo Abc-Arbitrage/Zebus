@@ -8,7 +8,7 @@ using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
-using StructureMap.Configuration.DSL;
+using StructureMap;
 
 namespace Abc.Zebus.Initialization
 {

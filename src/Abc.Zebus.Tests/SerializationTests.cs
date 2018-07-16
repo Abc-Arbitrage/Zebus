@@ -39,12 +39,6 @@ namespace Abc.Zebus.Tests
         }
 
         [Test]
-        public void should_detect_duplicate_serialization_ids()
-        {
-            MessageSerializationTester.DetectDuplicatedSerializationIds(typeof(IBus).Assembly);
-        }
-
-        [Test]
         public void should_convert_peer_id_to_json_string()
         {
             var peerId = new PeerId("Abc.Testing.42");

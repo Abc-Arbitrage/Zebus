@@ -24,12 +24,14 @@ Thumbs.db
 *.sbr
 *.ncrunchproject
 *.ncrunchsolution
+*.orig
 obj/
 [Rr]elease*/
 _ReSharper*/
 [Tt]est[Rr]esult*
 output/**
 .vs/
+local-*
 
 src/_NCrunch_Abc.Zebus/**
 lib/packages/**

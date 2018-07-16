@@ -1,3 +1,18 @@
+## 3.0.0
+- Breaking changes
+    - Moved contract types to Abc.Zebus.Contracts
+    - Updated dependencies: StructureMap and protobuf-net
+    - Removed ABC.ServiceBus.Contracts namespace
+    - Removed Abc.Zebus.EventSourcing namespace
+- Features
+    - Target changed to netstandard2.0
+    - Updated ZMQ to v4.2.5
+    - PeriodicActionHostInitializer now uses a timer instead of a thread
+    - Changed the way native libraries are delivered
+- Code cleanup
+    - Merged directory and persistence repositories
+    - Updated projects to the SDK format
+
 ## 2.2.0
 - Features
     - Updated Newtonsoft.Json, protobuf-net and log4net dependencies

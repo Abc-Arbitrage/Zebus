@@ -1,5 +1,5 @@
 ﻿using System;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 
 namespace Abc.Zebus.Dispatch.Pipes
 {

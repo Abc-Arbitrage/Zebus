@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Abc.Zebus.Util.Annotations;
+using JetBrains.Annotations;
 
 namespace Abc.Zebus.Util.Extensions
 {
     internal static class ExtendIEnumerable
     {
+#if !NETFWK
         [Pure]
         public static HashSet<T> ToHashSet<T>([InstantHandle] this IEnumerable<T> collection)
         {
@@ -18,6 +19,7 @@ namespace Abc.Zebus.Util.Extensions
         {
             return new HashSet<T>(collection, comparer);
         }
+#endif
 
         [Pure]
         public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)
@@ -34,7 +36,7 @@ namespace Abc.Zebus.Util.Extensions
         }
 
         [Pure]
-        public static IList<T> AsList<T>([InstantHandle] this IEnumerable<T> collection) 
+        public static IList<T> AsList<T>([InstantHandle] this IEnumerable<T> collection)
             => collection is IList<T> list ? list : collection.ToList();
 
         [Pure]
@@ -45,7 +47,7 @@ namespace Abc.Zebus.Util.Extensions
         }
 
         /// <summary>
-        /// Performs the specified <see cref="Action{T}"/> against every element of <see cref="IEnumerable{T}"/>
+        /// Performs the specified <see cref="Action{T}" /> against every element of <see cref="IEnumerable{T}" />
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="enumerable">Enumerable to extend</param>
