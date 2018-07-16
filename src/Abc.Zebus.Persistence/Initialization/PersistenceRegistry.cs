@@ -1,6 +1,6 @@
 ﻿using Abc.Zebus.Persistence.Handlers;
 using Abc.Zebus.Persistence.Reporter;
-using StructureMap.Configuration.DSL;
+using StructureMap;
 
 namespace Abc.Zebus.Persistence.Initialization
 {

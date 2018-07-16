@@ -3,8 +3,8 @@ using Abc.Zebus.Persistence.Handlers;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Tests.TestUtil;
-using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 

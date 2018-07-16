@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net471</TargetFramework>
+  </PropertyGroup>
+
+  <Import Project="..\Abc.Zebus.Tests.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

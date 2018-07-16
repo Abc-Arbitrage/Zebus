@@ -1,6 +1,7 @@
 ﻿using System;
 using Moq;
 using StructureMap;
+using StructureMap.Graph;
 using StructureMap.Pipeline;
 
 namespace Abc.Zebus.Persistence.Tests.TestUtil
@@ -32,7 +33,7 @@ namespace Abc.Zebus.Persistence.Tests.TestUtil
         {
             Configure(x =>
             {
-                var constructorInfo = new GreediestConstructorSelector().Find(typeof(T));
+                var constructorInfo = new GreediestConstructorSelector().Find(typeof(T), new DependencyCollection(), PluginGraph.CreateRoot());
 
                 foreach (var parameter in constructorInfo.GetParameters())
                 {

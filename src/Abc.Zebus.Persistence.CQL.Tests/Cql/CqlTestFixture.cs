@@ -31,7 +31,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests.Cql
 
         public Mock<TConfig> ConfigurationMock { get; private set; }
         
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public virtual void CreateSchema()
         {
             Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
@@ -68,10 +68,10 @@ namespace Abc.Zebus.Persistence.CQL.Tests.Cql
             return new CassandraConfigurationMock<TConfig>(Hosts, _keySpace, LocalDataCenter);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void DropSchema()
         {
-            Session.Execute(new SimpleStatement(string.Format("drop keyspace \"{0}\";", _keySpace)));
+            Session.Execute(new SimpleStatement($"drop keyspace \"{_keySpace}\";"));
             _sessionManager.Dispose();
         }
 
@@ -80,7 +80,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests.Cql
         {
             var tableNames = DataContext.GetTableNames();
             foreach (var name in tableNames)
-                Session.Execute(new SimpleStatement(string.Format("truncate \"{0}\";", name)));
+                Session.Execute(new SimpleStatement($"truncate \"{name}\";"));
         }
     }
 }

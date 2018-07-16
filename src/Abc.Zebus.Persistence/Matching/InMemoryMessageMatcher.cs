@@ -7,13 +7,14 @@ using Abc.Zebus.Lotus;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 using log4net;
 
 namespace Abc.Zebus.Persistence.Matching
 {
     public class InMemoryMessageMatcher : IInMemoryMessageMatcher, IProvideQueueLength
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(InMemoryMessageMatcher));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(InMemoryMessageMatcher));
         private readonly BlockingCollection<MatcherEntry> _persistenceQueue = new BlockingCollection<MatcherEntry>();
         private readonly ConcurrentSet<MessageKey> _ackMessageKeys = new ConcurrentSet<MessageKey>();
         private readonly IPersistenceConfiguration _persistenceConfiguration;
@@ -52,12 +53,16 @@ namespace Abc.Zebus.Persistence.Matching
             foreach (var entry in _persistenceQueue.GetConsumingEnumerable())
             {
                 var currentEntry = entry;
-                while (currentEntry != null)
+                do
                 {
                     WaitForDelay(currentEntry);
-                    LoadBatch(batch, ref currentEntry);
+                    PairUpOrAddToBatch(batch, currentEntry);
+                    LoadBatch(batch, out var nextEntry);
                     PersistAndClearBatch(batch);
+
+                    currentEntry = nextEntry;
                 }
+                while (currentEntry != null);
             }
         }
 
@@ -109,32 +114,35 @@ namespace Abc.Zebus.Persistence.Matching
             }
         }
 
-        private void LoadBatch(List<MatcherEntry> batch, ref MatcherEntry currentEntry)
+        private void LoadBatch(List<MatcherEntry> batch, out MatcherEntry nextEntry)
         {
-            PairUpOrAddToBatch(batch, currentEntry);
-            currentEntry = null;
-
             var configuration = _persistenceConfiguration;
 
             while (batch.Count < configuration.PersisterBatchSize && _persistenceQueue.TryTake(out var entry))
             {
                 if (!entry.CanBeProcessed(configuration.PersisterDelay.GetValueOrDefault()))
                 {
-                    currentEntry = entry;
+                    // the dequeued entry cannot be processed now
+                    nextEntry = entry;
                     return;
                 }
 
                 PairUpOrAddToBatch(batch, entry);
             }
+
+            // all dequeued entries are int the batch
+            nextEntry = null;
         }
 
         // Internal for testing purposes
         internal void PersistBatch(List<MatcherEntry> batch)
         {
             var entriesToInsert = batch.Where(x => !x.IsEventWaitHandle).ToList();
-
             if (entriesToInsert.Any())
-                _storage.Write(entriesToInsert).Wait(30.Seconds());
+            {
+                if (!_storage.Write(entriesToInsert).Wait(30.Seconds()))
+                    _logger.WarnFormat("Unable to Write {0} entries in 30s", entriesToInsert.Count);
+            }
 
             foreach (var entry in batch.Where(x => x.IsEventWaitHandle))
             {

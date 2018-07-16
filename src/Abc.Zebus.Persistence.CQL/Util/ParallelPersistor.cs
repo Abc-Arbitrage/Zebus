@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 using Cassandra;
 using log4net;
 

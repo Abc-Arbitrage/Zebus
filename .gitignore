@@ -24,16 +24,19 @@ Thumbs.db
 *.sbr
 *.ncrunchproject
 *.ncrunchsolution
+*.orig
 obj/
 [Rr]elease*/
 _ReSharper*/
 [Tt]est[Rr]esult*
 output/**
+.vs/
+local-*
 
+src/_NCrunch_Abc.Zebus/**
 lib/packages/**
-*.ncrunchproject
-*.ncrunchsolution
 tools/cake/tools/Cake/*
 tools/cake/tools/nuget.exe
 build/tools/*
-src/.vs/*
+
+src/Abc.Zebus.Tests/Properties/launchSettings.json

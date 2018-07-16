@@ -85,7 +85,7 @@ namespace Abc.Zebus.Persistence.Runner
             {
                 c.ForSingletonOf<IPersistenceConfiguration>().Use(configuration);
 
-                if(configuration.UseInMemoryStorage)
+                if (configuration.UseInMemoryStorage)
                     c.ForSingletonOf<IStorage>().Use<InMemoryStorage>();
                 else
                     c.ForSingletonOf<IStorage>().Use<CqlStorage>();

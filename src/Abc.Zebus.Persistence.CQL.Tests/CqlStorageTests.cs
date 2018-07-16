@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Testing;
@@ -12,6 +13,7 @@ using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 using ProtoBuf;
@@ -79,16 +81,14 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_write_message_entry_fields_to_cassandra()
+        public async Task should_write_message_entry_fields_to_cassandra()
         {
             var messageBytes = new byte[512];
             new Random().NextBytes(messageBytes);
             var messageId = MessageId.NextId();
             var peerId = "Abc.Peer.0";
 
-            _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
-
-            WaitUntilAMessageIsWrittenToStorage();
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
 
             var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
             retrievedMessage.TransportMessage.ShouldBeEquivalentTo(messageBytes, true);
@@ -101,7 +101,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_not_overwrite_messages_with_same_time_component_and_different_message_id()
+        public async Task should_not_overwrite_messages_with_same_time_component_and_different_message_id()
         {
             var messageBytes = new byte[512];
             new Random().NextBytes(messageBytes);
@@ -109,19 +109,17 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             var otherMessageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9806-f1ef55aac8e9")); // Time component @2016-01-01 00:00:00Z
             var peerId = "Abc.Peer.0";
 
-            _storage.Write(new List<MatcherEntry>
+            await _storage.Write(new List<MatcherEntry>
             {
                 MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes),
                 MatcherEntry.Message(new PeerId(peerId), otherMessageId, MessageTypeId.PersistenceStopping, messageBytes),
             });
 
-            WaitUntilAMessageIsWrittenToStorage();
-
             var retrievedMessages = DataContext.PersistentMessages.Execute().ToList();
             retrievedMessages.Count.ShouldEqual(2);
         }
 
-        private long ToUnixMicroSeconds(DateTime timestamp)
+        private static long ToUnixMicroSeconds(DateTime timestamp)
         {
             var origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
             var diff = timestamp - origin;
@@ -130,14 +128,12 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_write_ack_entry_fields_to_cassandra()
+        public async Task should_write_ack_entry_fields_to_cassandra()
         {
             var messageId = MessageId.NextId();
             var peerId = "Abc.Peer.0";
 
-            _storage.Write(new List<MatcherEntry> { MatcherEntry.Ack(new PeerId(peerId), messageId) });
-
-            WaitUntilAMessageIsWrittenToStorage();
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Ack(new PeerId(peerId), messageId) });
 
             var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
             retrievedMessage.TransportMessage.ShouldBeNull();
@@ -150,17 +146,17 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_support_out_of_order_acks_and_messages()
+        public async Task should_support_out_of_order_acks_and_messages()
         {
             var messageBytes = new byte[512];
             new Random().NextBytes(messageBytes);
-            var messageId = MessageId.NextId();
+            //var messageId = MessageId.NextId();
+            var messageId = new MessageId(Guid.Parse("fbc300ad-910d-e811-99e1-d06d81d2d2c7"));
             var peerId = "Abc.Peer.0";
 
-            _storage.Write(new List<MatcherEntry> { MatcherEntry.Ack(new PeerId(peerId), messageId) });
-            _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
-
-            WaitUntilAMessageIsWrittenToStorage();
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Ack(new PeerId(peerId), messageId) });
+            await Task.Delay(50);
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
 
             var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
             retrievedMessage.TransportMessage.ShouldBeNull();
@@ -197,19 +193,14 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             _storage.CreateMessageReader(new PeerId("UnknownPeerId")).ShouldBeNull();
         }
 
-        private void WaitUntilAMessageIsWrittenToStorage(TimeSpan? timeout = null)
-        {
-            Wait.Until(() => DataContext.PersistentMessages.Execute().Any(), timeout ?? 2.Seconds());
-        }
-
-        private long GetBucketIdFromMessageId(MessageId message)
+        private static long GetBucketIdFromMessageId(MessageId message)
         {
             var timestamp = message.GetDateTime();
             return new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hour, 0, 0).Ticks;
         }
 
         [Test]
-        public void should_store_messages_in_different_buckets()
+        public async Task should_store_messages_in_different_buckets()
         {
             MessageId.ResetLastTimestamp();
 
@@ -220,14 +211,14 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                 var peerId = new PeerId("Abc.Testing.Target");
 
                 var firstMessageId = MessageId.NextId();
-                _storage.Write(new[] { MatcherEntry.Message(peerId, firstMessageId, new MessageTypeId("Abc.Message"), new byte[] { 0x01, 0x02, 0x03 }) }).Wait();
+                await _storage.Write(new[] { MatcherEntry.Message(peerId, firstMessageId, new MessageTypeId("Abc.Message"), new byte[] { 0x01, 0x02, 0x03 }) });
 
                 var secondTime = firstTime.AddHours(1);
                 SystemDateTime.Set(secondTime);
                 MessageId.PauseIdGenerationAtDate(secondTime);
 
                 var secondMessageId = MessageId.NextId();
-                _storage.Write(new[] { MatcherEntry.Message(peerId, secondMessageId, new MessageTypeId("Abc.OtherMessage"), new byte[] { 0x04, 0x05, 0x06 }) }).Wait();
+                await _storage.Write(new[] { MatcherEntry.Message(peerId, secondMessageId, new MessageTypeId("Abc.OtherMessage"), new byte[] { 0x04, 0x05, 0x06 }) });
 
                 var persistedMessages = DataContext.PersistentMessages.Execute().OrderBy(x => x.UniqueTimestampInTicks).ToList(); // Results are only ordered withing a partition
                 persistedMessages.Count.ShouldEqual(2);
@@ -273,7 +264,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_persist_messages_in_order()
+        public async Task should_persist_messages_in_order()
         {
             var firstPeer = new PeerId("Abc.Testing.Target");
             var secondPeer = new PeerId("Abc.Testing.OtherTarget");
@@ -295,7 +286,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                                                         })
                                                         .ToList();
 
-                _storage.Write(messages).Wait();
+                await _storage.Write(messages);
 
                 _peerStateRepository[firstPeer].NonAckedMessageCount.ShouldEqual(100);
                 _peerStateRepository[secondPeer].NonAckedMessageCount.ShouldEqual(100);

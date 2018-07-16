@@ -10,13 +10,14 @@ using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
+using Abc.Zebus.Util;
 using log4net;
 
 namespace Abc.Zebus.Persistence
 {
     public class MessageReplayer : IMessageReplayer
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(MessageReplayer));
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(MessageReplayer));
         private readonly BlockingCollection<TransportMessage> _liveMessages = new BlockingCollection<TransportMessage>();
         private readonly ConcurrentSet<MessageId> _unackedIds = new ConcurrentSet<MessageId>();
         private readonly Serializer _serializer = new Serializer();

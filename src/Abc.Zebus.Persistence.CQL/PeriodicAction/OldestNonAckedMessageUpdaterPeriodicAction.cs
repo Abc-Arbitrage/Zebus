@@ -5,7 +5,7 @@ using Abc.Zebus.Hosting;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.Messages;
-using Abc.Zebus.Persistence.Util;
+using Abc.Zebus.Util;
 using Cassandra.Data.Linq;
 
 namespace Abc.Zebus.Persistence.CQL.PeriodicAction
