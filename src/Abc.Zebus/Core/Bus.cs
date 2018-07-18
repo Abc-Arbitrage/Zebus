@@ -410,8 +410,19 @@ namespace Abc.Zebus.Core
                         _subscriptions[subscription] = subscriptionCount - 1;
                 }
 
-                _unsubscribeTask = _unsubscribeTask.ContinueWith(async _ =>
+                var previousUnsubscribeTask = _unsubscribeTask;
+
+                _unsubscribeTask = Task.Run(async () =>
                 {
+                    try
+                    {
+                        await previousUnsubscribeTask.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex);
+                    }
+
                     if (!IsRunning || Status == BusStatus.Stopping)
                         return;
 
@@ -422,7 +433,7 @@ namespace Abc.Zebus.Core
                     }
 
                     await UpdateDirectorySubscriptionsAsync(updatedTypes);
-                }).Unwrap();
+                });
             }
         }
 
