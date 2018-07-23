@@ -366,8 +366,8 @@ namespace Abc.Zebus.Testing.Extensions
 
                 var actualValue = actualProperty.GetValue(actual);
                 object expectedValue = null;
-                var expectedProperty = expectedProperties.GetValueOrDefault(actualProperty.Name);
-                if (expectedProperty != null)
+                
+                if (expectedProperties.TryGetValue(actualProperty.Name, out var expectedProperty))
                     expectedValue = expectedProperty.GetValue(expected);
 
                 if (actualValue == null && expectedValue == null)

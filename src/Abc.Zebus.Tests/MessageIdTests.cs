@@ -18,6 +18,9 @@ namespace Abc.Zebus.Tests
         [Test]
         public void should_not_generate_identical_MessageIds_when_multiple_buses_are_started_in_different_app_domains_simultaneously()
         {
+            if (NCrunch.Framework.NCrunchEnvironment.NCrunchIsResident())
+                Assert.Inconclusive();
+
             const int appDomainsToGenerate = 100;
             var appDomainProxies = Enumerable.Range(0, appDomainsToGenerate).Select(i => CreateMessageIdCallerFromNewAppDomain()).ToList();
             var proxiesTasks = appDomainProxies.Select(proxy => new Task<Guid>(proxy.GetNextId)).ToArray();

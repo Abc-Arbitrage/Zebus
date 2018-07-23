@@ -59,7 +59,7 @@ namespace Abc.Zebus.Testing
             {
                 lock (_subscriptions)
                 {
-                    return _subscriptions.ToHashSet();
+                    return new HashSet<Subscription>(_subscriptions);
                 }
             }
         }
@@ -83,8 +83,8 @@ namespace Abc.Zebus.Testing
                 _events.Add(message);
             }
 
-            var handler = _handlers.GetValueOrDefault(new HandlerKey(message.GetType(), default(PeerId)));
-            handler?.Invoke(message);
+            if (_handlers.TryGetValue(new HandlerKey(message.GetType(), default), out var handler))
+                handler.Invoke(message);
         }
 
         public Task<CommandResult> Send(ICommand message)
@@ -103,9 +103,16 @@ namespace Abc.Zebus.Testing
                 _peerByCommand[message] = peer;
             }
 
-            var handler = (peer != null) ? _handlers.GetValueOrDefault(new HandlerKey(message.GetType(), peer.Id)) : null;
+            Func<IMessage, object> handler;
+
+            if (peer != null)
+                _handlers.TryGetValue(new HandlerKey(message.GetType(), peer.Id), out handler);
+            else
+                handler = null;
+
+            // TODO why do we fall back in all cases?
             if (handler == null)
-                handler = _handlers.GetValueOrDefault(new HandlerKey(message.GetType(), default(PeerId)));
+                _handlers.TryGetValue(new HandlerKey(message.GetType(), default), out handler);
 
             return HandlerExecutor.Execute(message, handler);
         }
@@ -129,7 +136,7 @@ namespace Abc.Zebus.Testing
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
 
-            var handlerKeys = request.Subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default(PeerId))).ToList();
+            var handlerKeys = request.Subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default)).ToList();
 
             foreach (var handlerKey in handlerKeys)
             {
@@ -228,13 +235,13 @@ namespace Abc.Zebus.Testing
         public void AddHandler<TMessage>(Func<TMessage, object> handler)
             where TMessage : IMessage
         {
-            _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => handler((TMessage)x);
+            _handlers[new HandlerKey(typeof(TMessage), default)] = x => handler((TMessage)x);
         }
 
         public void AddSuccessfulHandler<TMessage>()
             where TMessage : IMessage
         {
-            _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => true;
+            _handlers[new HandlerKey(typeof(TMessage), default)] = x => true;
         }
 
         public void AddHandlerForPeer<TMessage>(PeerId peerId, Func<TMessage, object> handler)
@@ -256,7 +263,7 @@ namespace Abc.Zebus.Testing
         public void AddHandler<TMessage>(Action<TMessage> handler)
             where TMessage : IMessage
         {
-            _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x =>
+            _handlers[new HandlerKey(typeof(TMessage), default)] = x =>
             {
                 handler((TMessage)x);
                 return null;
@@ -266,13 +273,13 @@ namespace Abc.Zebus.Testing
         public void AddHandlerThatThrowsDomainException<TMessage>(DomainException ex)
             where TMessage : IMessage
         {
-            _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex; };
+            _handlers[new HandlerKey(typeof(TMessage), default)] = x => { throw ex; };
         }
 
         public void AddHandlerThatThrows<TMessage>(Exception ex = null)
             where TMessage : IMessage
         {
-            _handlers[new HandlerKey(typeof(TMessage), default(PeerId))] = x => { throw ex ?? new Exception(); };
+            _handlers[new HandlerKey(typeof(TMessage), default)] = x => { throw ex ?? new Exception(); };
         }
 
         public void Expect(IEnumerable<IMessage> expectedMessages)

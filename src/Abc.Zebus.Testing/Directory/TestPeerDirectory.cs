@@ -67,13 +67,14 @@ namespace Abc.Zebus.Testing.Directory
 
         public bool IsPersistent(PeerId peerId)
         {
-            var peer = Peers.GetValueOrDefault(peerId);
-            return peer != null && peer.IsPersistent;
+            return Peers.TryGetValue(peerId, out var peer) && peer.IsPersistent;
         }
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
         {
-            return Peers.GetValueOrDefault(peerId);
+            return Peers.TryGetValue(peerId, out var peer)
+                ? peer
+                : null;
         }
 
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()

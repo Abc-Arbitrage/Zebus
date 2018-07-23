@@ -22,8 +22,6 @@ Thumbs.db
 [Dd]ebug*/
 *.lib
 *.sbr
-*.ncrunchproject
-*.ncrunchsolution
 *.orig
 obj/
 [Rr]elease*/

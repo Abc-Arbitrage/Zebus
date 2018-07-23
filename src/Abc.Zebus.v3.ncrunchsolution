@@ -1,0 +1,7 @@
+﻿<SolutionConfiguration>
+  <Settings>
+    <AllowParallelTestExecution>True</AllowParallelTestExecution>
+    <ConsiderInconclusiveTestsAsPassing>True</ConsiderInconclusiveTestsAsPassing>
+    <SolutionConfigured>True</SolutionConfigured>
+  </Settings>
+</SolutionConfiguration>
