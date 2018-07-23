@@ -292,6 +292,31 @@ namespace Abc.Zebus.Directory.Tests
             _updatedPeer.Action.ShouldEqual(PeerUpdateAction.Updated);
         }
 
+        [Test]
+        public async Task should_measure_time_elapsed_since_last_directory_ping()
+        {
+            _peerDirectory.TimeSinceLastPing.ShouldEqual(TimeSpan.MaxValue);
+
+            _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(Array.Empty<PeerDescriptor>()));
+
+            await _peerDirectory.RegisterAsync(_bus, _self, Enumerable.Empty<Subscription>());
+            _peerDirectory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(TimeSpan.Zero);
+            _peerDirectory.TimeSinceLastPing.ShouldNotEqual(TimeSpan.MaxValue);
+
+            var time = _peerDirectory.TimeSinceLastPing;
+
+            await Task.Delay(200.Milliseconds());
+
+            _peerDirectory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(time + 200.Milliseconds());
+
+            _peerDirectory.Handle(new PingPeerCommand());
+            _peerDirectory.TimeSinceLastPing.ShouldBeLessThan(time);
+
+            await _peerDirectory.UnregisterAsync(_bus);
+
+            _peerDirectory.TimeSinceLastPing.ShouldEqual(TimeSpan.MaxValue);
+        }
+
         private class UpdatedPeer
         {
             public readonly PeerId PeerId;

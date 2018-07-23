@@ -820,6 +820,31 @@ namespace Abc.Zebus.Tests.Directory
             task.Wait(5.Seconds()).ShouldBeTrue();
         }
 
+        [Test]
+        public async Task should_measure_time_elapsed_since_last_directory_ping()
+        {
+            _directory.TimeSinceLastPing.ShouldEqual(TimeSpan.MaxValue);
+
+            _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(Array.Empty<PeerDescriptor>()));
+
+            await _directory.RegisterAsync(_bus, _self, Enumerable.Empty<Subscription>());
+            _directory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(TimeSpan.Zero);
+            _directory.TimeSinceLastPing.ShouldNotEqual(TimeSpan.MaxValue);
+
+            var time = _directory.TimeSinceLastPing;
+
+            await Task.Delay(200.Milliseconds());
+
+            _directory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(time + 200.Milliseconds());
+
+            _directory.Handle(new PingPeerCommand());
+            _directory.TimeSinceLastPing.ShouldBeLessThan(time);
+
+            await _directory.UnregisterAsync(_bus);
+
+            _directory.TimeSinceLastPing.ShouldEqual(TimeSpan.MaxValue);
+        }
+
         private class OtherFakeEvent1 : IEvent
         {
         }

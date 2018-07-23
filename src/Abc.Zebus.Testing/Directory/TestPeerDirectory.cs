@@ -18,6 +18,8 @@ namespace Abc.Zebus.Testing.Directory
         public event Action Registered = delegate { };
         public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
 
+        public TimeSpan TimeSinceLastPing => TimeSpan.Zero;
+
         public Task RegisterAsync(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
         {
             Self = self;

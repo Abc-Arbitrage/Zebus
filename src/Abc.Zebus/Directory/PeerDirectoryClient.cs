@@ -26,6 +26,7 @@ namespace Abc.Zebus.Directory
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
+        private readonly Stopwatch _pingStopwatch = new Stopwatch();
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
@@ -36,6 +37,8 @@ namespace Abc.Zebus.Directory
         }
 
         public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
+
+        public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
         public async Task RegisterAsync(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
         {
@@ -58,6 +61,7 @@ namespace Abc.Zebus.Directory
                 _messagesReceivedDuringRegister.CompleteAdding();
             }
 
+            _pingStopwatch.Restart();
             ProcessMessagesReceivedDuringRegister();
         }
 
@@ -197,6 +201,7 @@ namespace Abc.Zebus.Directory
                 try
                 {
                     await bus.Send(command, directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
+                    _pingStopwatch.Stop();
                     return;
                 }
                 catch (TimeoutException ex)
@@ -297,6 +302,8 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PingPeerCommand message)
         {
+            if (_pingStopwatch.IsRunning)
+                _pingStopwatch.Restart();
         }
 
         public void Handle(PeerStopped message)
