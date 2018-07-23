@@ -35,6 +35,11 @@
     <PackageVersion Condition="'$(APPVEYOR_REPO_TAG)' == 'false'">$(PackageVersion)-pre$(APPVEYOR_BUILD_NUMBER)</PackageVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(NCrunch)' == '1'">
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="11.1.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63102-01" PrivateAssets="All" />
