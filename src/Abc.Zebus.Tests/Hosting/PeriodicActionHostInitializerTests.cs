@@ -6,6 +6,7 @@ using Abc.Zebus.Lotus;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
+using NCrunch.Framework;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Hosting
@@ -207,12 +208,12 @@ namespace Abc.Zebus.Tests.Hosting
 
             _periodicInitializer.AfterStart();
 
-            Wait.Until(() => runCount >= 2, 1.Seconds());
+            Wait.Until(() => runCount >= 2, 10.Seconds());
 
             wasRunInParallel.ShouldBeFalse();
         }
 
-        [Test]
+        [Test, Serial]
         public void should_run_action_for_missed_timeouts()
         {
             var runCount = 0;

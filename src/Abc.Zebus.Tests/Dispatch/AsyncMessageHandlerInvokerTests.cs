@@ -49,13 +49,13 @@ namespace Abc.Zebus.Tests.Dispatch
             var messageContext1 = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             var messageContext2 = MessageContext.CreateOverride(new PeerId("Abc.Testing.1"), null);
 
-            var handler1 = Task.Run(() => (TestAsyncHandler)invoker.CreateHandler(messageContext1));
-            var handler2 = Task.Run(() => (TestAsyncHandler)invoker.CreateHandler(messageContext2));
+            var handler1 = Task.Run(() => (TestAsyncHandler)invoker.CreateHandler(messageContext1)).WaitForActivation();
+            var handler2 = Task.Run(() => (TestAsyncHandler)invoker.CreateHandler(messageContext2)).WaitForActivation();
 
-            Wait.Until(() => handlerData.WaitingHandlerCount == 2, 1.Second());
+            Wait.Until(() => handlerData.WaitingHandlerCount == 2, 10.Seconds());
             handlerData.Release();
 
-            Task.WaitAll(new Task[] { handler1, handler2 }, 1.Second());
+            Task.WaitAll(new Task[] { handler1, handler2 }, 10.Seconds());
 
             handler1.Result.Bus.ShouldNotEqual(handler2.Result.Bus);
             ((MessageContextAwareBus)handler1.Result.Bus).InnerBus.ShouldEqual(((MessageContextAwareBus)handler2.Result.Bus).InnerBus);

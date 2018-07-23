@@ -77,7 +77,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             _message.Callback = x => { throw expectedException; };
 
             var task = _invocation.RunAsync().ContinueWith(t => t.Exception.InnerExceptions.ExpectedSingle());
-            task.Wait(2.Seconds()).ShouldBeTrue();
+            task.Wait(5.Seconds()).ShouldBeTrue();
 
             var exceptionFromInvocation = task.Result;
 

@@ -171,7 +171,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             command.Signal.Set();
 
-            asyncHandler.CalledSignal.Wait(2.Seconds()).ShouldBeTrue();
+            asyncHandler.CalledSignal.Wait(10.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -191,7 +191,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var dispatch = new MessageDispatch(context, command, (x, r) => dispatched.Set());
             _messageDispatcher.Dispatch(dispatch, x => x == typeof(AsyncCommandHandler));
 
-            dispatched.WaitOne(2.Seconds()).ShouldBeTrue();
+            dispatched.WaitOne(5.Seconds()).ShouldBeTrue();
 
             syncHandler.Called.ShouldBeFalse();
             asyncHandler.CalledSignal.IsSet.ShouldBeTrue();
@@ -356,8 +356,8 @@ namespace Abc.Zebus.Tests.Dispatch
             var command = new DispatchCommand();
             Dispatch(command);
 
-            syncHandler.Signal.WaitOne(1.Second()).ShouldBeTrue();
-            asyncHandler.Signal.WaitOne(1.Second()).ShouldBeTrue();
+            syncHandler.Signal.WaitOne(10.Seconds()).ShouldBeTrue();
+            asyncHandler.Signal.WaitOne(10.Seconds()).ShouldBeTrue();
 
             syncHandler.TaskScheduler.ShouldEqual(TaskScheduler.Default);
             asyncHandler.TaskScheduler.ShouldEqual(TaskScheduler.Default);
@@ -367,7 +367,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var dispatch = Dispatch(message);
 
-            dispatch.Wait(500).ShouldBeTrue("Dispatch should be completed");
+            dispatch.Wait(20.Seconds()).ShouldBeTrue("Dispatch should be completed");
 
             return dispatch.Result;
         }

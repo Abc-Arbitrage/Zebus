@@ -32,7 +32,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             _configurationMock = new Mock<IBusConfiguration>();
             _configurationMock.SetupGet(x => x.DirectoryServiceEndPoints).Returns(new[] { "tcp://main-directory:777", "tcp://backup-directory:777" });
-            _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(200.Milliseconds());
+            _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(500.Milliseconds());
             _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(false);
 
             _directory = new PeerDirectoryClient(_configurationMock.Object);
@@ -346,16 +346,16 @@ namespace Abc.Zebus.Tests.Directory
                 stopUnregisterSignal.WaitOne();
             });
 
-            var unregistration = Task.Run(() => _directory.UnregisterAsync(_bus));
+            var unregistration = Task.Factory.StartNew(() => _directory.UnregisterAsync(_bus), TaskCreationOptions.LongRunning).WaitForActivation().Unwrap();
 
-            var started = startUnregisterSignal.WaitOne(2.Seconds());
+            var started = startUnregisterSignal.WaitOne(5.Seconds());
             started.ShouldBeTrue();
 
             unregistration.IsCompleted.ShouldBeFalse();
 
             stopUnregisterSignal.Set();
 
-            unregistration.Wait(300);
+            unregistration.Wait(5.Seconds());
             unregistration.IsCompleted.ShouldBeTrue();
         }
 
@@ -439,7 +439,7 @@ namespace Abc.Zebus.Tests.Directory
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.0"), x =>
             {
-                Thread.Sleep(500.Milliseconds());
+                Thread.Sleep(1000.Milliseconds());
                 return new RegisterPeerResponse(new PeerDescriptor[0]);
             });
             _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x => new RegisterPeerResponse(new PeerDescriptor[0]));
@@ -811,13 +811,13 @@ namespace Abc.Zebus.Tests.Directory
                     _directory.Handle(peerStarted);
                     _directory.Handle(peerStopped);
                 }
-            });
+            }).WaitForActivation();
 
-            taskStarted.WaitOne(2.Seconds()).ShouldBeTrue("Task should be started");
+            taskStarted.WaitOne(5.Seconds()).ShouldBeTrue("Task should be started");
 
            await _directory.RegisterAsync(_bus, _self, otherPeerDescriptor.Subscriptions ).ConfigureAwait(true);
 
-            task.Wait(1.Second()).ShouldBeTrue();
+            task.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         private class OtherFakeEvent1 : IEvent

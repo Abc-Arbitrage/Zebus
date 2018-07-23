@@ -40,19 +40,19 @@ namespace Abc.Zebus.Tests.Core
             _transport.RaiseMessageReceived(new EventPublisherEvent().ToTransportMessage());
 
             // make sure the handler is running
-            handler.StartedSignal.WaitOne(1.Second()).ShouldBeTrue("Handler was not started");
+            handler.StartedSignal.WaitOne(5.Seconds()).ShouldBeTrue("Handler was not started");
 
-            var stopTask = Task.Run(() => _bus.Stop());
+            var stopTask = Task.Run(() => _bus.Stop()).WaitForActivation();
 
             // resume the handler
             handler.WaitingSignal.Set();
 
             // wait for handler completion
-            Wait.Until(() => handler.Processed, 1.Second(), "Handler was not processed");
+            Wait.Until(() => handler.Processed, 5.Seconds(), "Handler was not processed");
 
             handler.Error.ShouldBeNull("Handler was not able to send a message");
 
-            stopTask.Wait(1.Second()).ShouldBeTrue("Bus was not stopped");
+            stopTask.Wait(10.Seconds()).ShouldBeTrue("Bus was not stopped");
         }
 
         [ProtoContract]

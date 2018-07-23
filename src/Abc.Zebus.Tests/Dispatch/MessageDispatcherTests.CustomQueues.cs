@@ -43,8 +43,8 @@ namespace Abc.Zebus.Tests.Dispatch
 
             syncHandler.Called.ShouldBeTrue("Sync handler should be run synchronously");
 
-            Wait.Until(() => handler1List.Count == 1 && handler1List[0].HandleStarted, 2.Seconds(), "First handler should be started");
-            Wait.Until(() => handler2List.Count == 1 && handler2List[0].HandleStarted, 2.Seconds(), "second handler should be started");
+            Wait.Until(() => handler1List.Count == 1 && handler1List[0].HandleStarted, 5.Seconds(), "First handler should be started");
+            Wait.Until(() => handler2List.Count == 1 && handler2List[0].HandleStarted, 5.Seconds(), "second handler should be started");
 
             syncHandler.Called = false;
             DispatchFromDefaultDispatchQueue(new DispatchCommand());
@@ -54,18 +54,18 @@ namespace Abc.Zebus.Tests.Dispatch
             handler2List.Count.ShouldEqual(1, "Next handler should not be created yet");
 
             handler1List[0].CalledSignal.Set();
-            Wait.Until(() => handler1List[0].HandleStopped, 2.Seconds(), "First handler should be stopped");
-            Wait.Until(() => handler1List.Count == 2, 2.Seconds(), "Next handler should be created");
-            Wait.Until(() => handler1List[1].HandleStarted, 2.Seconds(), "Next handler should be started");
+            Wait.Until(() => handler1List[0].HandleStopped, 5.Seconds(), "First handler should be stopped");
+            Wait.Until(() => handler1List.Count == 2, 5.Seconds(), "Next handler should be created");
+            Wait.Until(() => handler1List[1].HandleStarted, 5.Seconds(), "Next handler should be started");
 
             handler1List[1].CalledSignal.Set();
-            Wait.Until(() => handler1List[1].HandleStopped, 2.Seconds(), "Next handler should be stopped");
+            Wait.Until(() => handler1List[1].HandleStopped, 5.Seconds(), "Next handler should be stopped");
 
             handler2List[0].CalledSignal.Set();
-            Wait.Until(() => handler2List[0].HandleStopped, 2.Seconds(), "First handler should be stopped");
-            Wait.Until(() => handler2List.Count == 2, 2.Seconds(), "Next handler should be created");
+            Wait.Until(() => handler2List[0].HandleStopped, 5.Seconds(), "First handler should be stopped");
+            Wait.Until(() => handler2List.Count == 2, 5.Seconds(), "Next handler should be created");
             handler2List[1].CalledSignal.Set();
-            Wait.Until(() => handler2List[0].HandleStopped && handler2List[1].HandleStopped, 2.Seconds(), "Both handlers should be run");
+            Wait.Until(() => handler2List[0].HandleStopped && handler2List[1].HandleStopped, 5.Seconds(), "Both handlers should be run");
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(new DispatchCommand());
 
-            Wait.Until(() => handler1.HandleStopped, 2.Seconds());
+            Wait.Until(() => handler1.HandleStopped, 5.Seconds());
 
             handler1.DispatchQueueName.ShouldEqual("DispatchQueue1");
         }
@@ -98,7 +98,7 @@ namespace Abc.Zebus.Tests.Dispatch
                     // should be run synchronously
                     Dispatch(new DispatchCommand());
 
-                    Wait.Until(() => handler2.HandleStopped, 2.Seconds());
+                    Wait.Until(() => handler2.HandleStopped, 5.Seconds());
                 }
             };
             _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler1);
@@ -106,7 +106,7 @@ namespace Abc.Zebus.Tests.Dispatch
             // should be enqueued
             Dispatch(new DispatchCommand());
 
-            Wait.Until(() => handler1.HandleStopped, 2.Seconds());
+            Wait.Until(() => handler1.HandleStopped, 5.Seconds());
         }
 
         [Test]
@@ -123,7 +123,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(new ForwardCommand());
 
-            Wait.Until(() => handler2.HandleStopped, 2.Seconds());
+            Wait.Until(() => handler2.HandleStopped, 5.Seconds());
         }
 
         [Test]
@@ -136,7 +136,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(new DispatchCommand());
 
-            Wait.Until(() => handler.DispatchQueueName != null, 2.Seconds());
+            Wait.Until(() => handler.DispatchQueueName != null, 5.Seconds());
 
             var queueSource = new UseOtherQueue();
             handler.DispatchQueueName.ShouldEqual(queueSource.QueueName);
@@ -151,15 +151,15 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(message);
 
-            message.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
 
-            var stopTask = Task.Run(() => _messageDispatcher.Stop());
+            var stopTask = Task.Run(() => _messageDispatcher.Stop()).WaitForActivation();
 
             Thread.Sleep(200);
             stopTask.IsCompleted.ShouldBeFalse();
 
             message.Unblock();
-            stopTask.Wait(2.Seconds()).ShouldBeTrue();
+            stopTask.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -189,21 +189,21 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(new DispatchCommand());
 
-            Wait.Until(() => handler1.HandleStarted, 2.Seconds());
-            var stopTask = Task.Run(() => _messageDispatcher.Stop());
+            Wait.Until(() => handler1.HandleStarted, 10.Seconds());
+            var stopTask = Task.Run(() => _messageDispatcher.Stop()).WaitForActivation();
 
-            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 2.Seconds());
-            Wait.Until(() => handler2.HandleStopped, 2.Seconds());
+            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 10.Seconds());
+            Wait.Until(() => handler2.HandleStopped, 10.Seconds());
 
             handler1.WaitForSignal = false;
             handler2.HandleStopped = false;
 
             Dispatch(new DispatchCommand(), true);
 
-            Wait.Until(() => handler2.HandleStopped, 2.Seconds());
+            Wait.Until(() => handler2.HandleStopped, 10.Seconds());
             handler1.CalledSignal.Set();
 
-            stopTask.Wait(2.Seconds()).ShouldBeTrue();
+            stopTask.Wait(10.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -226,11 +226,11 @@ namespace Abc.Zebus.Tests.Dispatch
 
             Dispatch(new DispatchCommand());
 
-            Wait.Until(() => handler1.HandleStarted, 2.Seconds());
-            var stopTask = Task.Run(() => _messageDispatcher.Stop());
+            Wait.Until(() => handler1.HandleStarted, 5.Seconds());
+            var stopTask = Task.Run(() => _messageDispatcher.Stop()).WaitForActivation();
 
-            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 2.Seconds());
-            Wait.Until(() => handler2.HandleStopped, 2.Seconds());
+            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 10.Seconds());
+            Wait.Until(() => handler2.HandleStopped, 5.Seconds());
 
             handler1.WaitForSignal = false;
             handler2.HandleStopped = false;
@@ -238,7 +238,7 @@ namespace Abc.Zebus.Tests.Dispatch
             Assert.Throws<InvalidOperationException>(() => Dispatch(new DispatchCommand()));
 
             handler1.CalledSignal.Set();
-            stopTask.Wait(2.Seconds()).ShouldBeTrue();
+            stopTask.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test, Repeat(5)]

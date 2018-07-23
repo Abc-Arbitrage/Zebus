@@ -47,7 +47,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
             EnqueueInvocation(message);
 
-            message.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -57,7 +57,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var task = EnqueueInvocation(new ExecutableEvent());
 
-            task.Wait(2.Seconds()).ShouldBeTrue();
+            task.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -74,7 +74,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var message2 = new ExecutableEvent();
             var task = EnqueueInvocation(message2);
 
-            task.Wait(2.Seconds()).ShouldBeTrue();
+            task.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -85,14 +85,14 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
             EnqueueInvocation(message);
 
-            message.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
 
-            var stopTask = Task.Run(() => _dispatchQueue.Stop());
+            var stopTask = Task.Run(() => _dispatchQueue.Stop()).WaitForActivation();
             Thread.Sleep(100);
             stopTask.IsCompleted.ShouldBeFalse();
 
-            Task.Run(() => message.Unblock());
-            stopTask.Wait(2.Seconds()).ShouldBeTrue();
+            Task.Run(() => message.Unblock()).WaitForActivation();
+            stopTask.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -107,15 +107,15 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
             var invocation = EnqueueAsyncInvocation(message);
 
-            message.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
 
-            var stopTask = Task.Run(() => _dispatchQueue.Stop());
+            var stopTask = Task.Run(() => _dispatchQueue.Stop()).WaitForActivation();
             Thread.Sleep(100);
             stopTask.IsCompleted.ShouldBeFalse();
 
-            Task.Run(() => tcs.SetResult(null));
-            invocation.Wait(2.Seconds()).ShouldBeTrue();
-            stopTask.Wait(2.Seconds()).ShouldBeTrue();
+            Task.Run(() => tcs.SetResult(null)).WaitForActivation();
+            invocation.Wait(10.Seconds()).ShouldBeTrue();
+            stopTask.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -130,9 +130,9 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
             EnqueueAsyncInvocation(message);
 
-            message.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
 
-            var stopTask = Task.Run(() => _dispatchQueue.Stop());
+            var stopTask = Task.Run(() => _dispatchQueue.Stop()).WaitForActivation();
             Thread.Sleep(100);
             stopTask.IsCompleted.ShouldBeFalse();
 
@@ -140,8 +140,8 @@ namespace Abc.Zebus.Tests.Dispatch
             EnqueueInvocation(afterStopMessage);
             Thread.Sleep(100);
 
-            Task.Run(() => tcs.SetResult(null));
-            stopTask.Wait(2.Seconds()).ShouldBeTrue();
+            Task.Run(() => tcs.SetResult(null)).WaitForActivation();
+            stopTask.Wait(5.Seconds()).ShouldBeTrue();
 
             afterStopMessage.HandleStarted.IsSet.ShouldBeFalse();
         }
@@ -154,7 +154,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var message = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(message);
 
-            message.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
 
             EnqueueInvocation(new ExecutableEvent());
             EnqueueInvocation(new ExecutableEvent());
@@ -179,7 +179,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _dispatchQueue.Start();
 
-            message.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test, Repeat(5)]
@@ -199,13 +199,13 @@ namespace Abc.Zebus.Tests.Dispatch
             otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
             otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
 
-            var stopTask = Task.Run(() => _dispatchQueue.Stop());
+            var stopTask = Task.Run(() => _dispatchQueue.Stop()).WaitForActivation();
 
-            Wait.Until(() => _dispatchQueue.IsRunning == false, 2.Seconds());
+            Wait.Until(() => _dispatchQueue.IsRunning == false, 5.Seconds());
 
             firstMessage.Unblock();
 
-            stopTask.Wait(2.Seconds()).ShouldBeTrue();
+            stopTask.Wait(5.Seconds()).ShouldBeTrue();
 
             foreach (var otherMessageTask in otherMessageTasks)
             {
@@ -220,7 +220,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var message0 = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(message0);
-            message0.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            message0.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
 
             var invokedBatches = new List<List<IMessage>>();
 
@@ -235,7 +235,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             message0.Unblock();
 
-            Wait.Until(() => invokedBatches.Count >= 1, 2.Seconds());
+            Wait.Until(() => invokedBatches.Count >= 1, 5.Seconds());
 
             var invokedBatch = invokedBatches.ExpectedSingle();
             invokedBatch.ShouldBeEquivalentTo(messages);
@@ -254,8 +254,8 @@ namespace Abc.Zebus.Tests.Dispatch
 
             firstMessage.Unblock();
 
-            dispatch1.Wait(2.Seconds()).ShouldBeTrue();
-            dispatch2.Wait(2.Seconds()).ShouldBeTrue();
+            dispatch1.Wait(5.Seconds()).ShouldBeTrue();
+            dispatch2.Wait(5.Seconds()).ShouldBeTrue();
         }
 
         [Test]
@@ -265,7 +265,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var firstMessage = new ExecutableEvent { IsBlocking = true };
             var _ = EnqueueInvocation(firstMessage);
-            firstMessage.HandleStarted.Wait(2.Seconds()).ShouldBeTrue();
+            firstMessage.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
 
             var dispatch1 = EnqueueBatchedInvocation(new ExecutableEvent { Callback = x => Throw() });
             var dispatch2 = EnqueueBatchedInvocation(new ExecutableEvent());
@@ -299,7 +299,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var firstTask = EnqueueAsyncInvocation(firstMessage);
             var secondTask = EnqueueAsyncInvocation(secondMessage);
 
-            Task.WhenAll(firstTask, secondTask).Wait(2.Seconds()).ShouldBeTrue();
+            Task.WhenAll(firstTask, secondTask).Wait(5.Seconds()).ShouldBeTrue();
 
             firstMessage.DispatchQueueName.ShouldEqual(_dispatchQueue.Name);
             secondMessage.DispatchQueueName.ShouldEqual(_dispatchQueue.Name);
@@ -352,7 +352,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var allTasks = new[] { firstTask, secondTask, triggerTask };
 
-            Task.WhenAll(allTasks).Wait(2.Seconds()).ShouldBeTrue();
+            Task.WhenAll(allTasks).Wait(20.Seconds()).ShouldBeTrue();
 
             foreach (var task in allTasks)
                 task.Result.Errors.ShouldBeEmpty();
@@ -391,7 +391,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             EnqueueInvocation(new ExecutableEvent { Callback = x => Task.Run(() => tcs.SetResult(null)) });
 
-            Task.WhenAll(firstTask, secondTask).Wait(2.Seconds()).ShouldBeTrue();
+            Task.WhenAll(firstTask, secondTask).Wait(5.Seconds()).ShouldBeTrue();
 
             firstTask.Result.Errors.Count.ShouldEqual(1);
             secondTask.Result.Errors.Count.ShouldEqual(1);
@@ -442,7 +442,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var allTasks = new[] { firstTask, secondTask, thirdTask };
 
-            Task.WhenAll(allTasks).Wait(2.Seconds()).ShouldBeTrue();
+            Task.WhenAll(allTasks).Wait(5.Seconds()).ShouldBeTrue();
 
             foreach (var task in allTasks)
                 task.Result.Errors.ShouldBeEmpty();
@@ -504,7 +504,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var allTasks = new[] { firstTask, secondTask, thirdTask };
 
-            Task.WhenAll(allTasks).Wait(2.Seconds()).ShouldBeTrue();
+            Task.WhenAll(allTasks).Wait(5.Seconds()).ShouldBeTrue();
 
             foreach (var task in allTasks)
                 task.Result.Errors.ShouldBeEmpty();
