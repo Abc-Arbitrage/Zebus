@@ -29,8 +29,8 @@ namespace Abc.Zebus.Directory
             _peerRepository = peerRepository;
         }
 
-        public event Action Registered = delegate { };
-        public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
+        public event Action Registered;
+        public event Action<PeerId, PeerUpdateAction> PeerUpdated;
 
         public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
@@ -76,7 +76,7 @@ namespace Abc.Zebus.Directory
 
             bus.Publish(new PeerStarted(selfDescriptor));
 
-            Registered();
+            Registered?.Invoke();
 
             return Task.CompletedTask;
         }
@@ -110,17 +110,17 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerStarted message)
         {
-            PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Started);
+            PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Started);
         }
 
         public void Handle(PeerStopped message)
         {
-            PeerUpdated(message.PeerId, PeerUpdateAction.Stopped);
+            PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Stopped);
         }
 
         public void Handle(PeerDecommissioned message)
         {
-            PeerUpdated(message.PeerId, PeerUpdateAction.Decommissioned);
+            PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Decommissioned);
         }
 
         public void Handle(PingPeerCommand message)
@@ -131,17 +131,17 @@ namespace Abc.Zebus.Directory
 
         public void Handle(PeerSubscriptionsUpdated message)
         {
-            PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
+            PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
         }
 
         public void Handle(PeerNotResponding message)
         {
-            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
+            PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
         }
 
         public void Handle(PeerResponding message)
         {
-            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
+            PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
         }
     }
 }

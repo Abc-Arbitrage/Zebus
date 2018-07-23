@@ -24,17 +24,14 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             _taskScheduler = taskScheduler;
         }
 
-        public event Action<DeadPeerDetectorEntry, DateTime> PeerTimeoutDetected = delegate { };
-        public event Action<DeadPeerDetectorEntry, DateTime> PeerRespondingDetected = delegate { };
-        public event Action<DeadPeerDetectorEntry, DateTime> PingTimeout = delegate { };
+        public event Action<DeadPeerDetectorEntry, DateTime> PeerTimeoutDetected;
+        public event Action<DeadPeerDetectorEntry, DateTime> PeerRespondingDetected;
+        public event Action<DeadPeerDetectorEntry, DateTime> PingTimeout;
 
         public PeerDescriptor Descriptor { get; set; }
         public DeadPeerStatus Status { get; private set; }
 
-        public bool IsUp
-        {
-            get { return Descriptor.Peer.IsUp; }
-        }
+        public bool IsUp => Descriptor.Peer.IsUp;
 
         public bool WasRestarted
         {
@@ -67,7 +64,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                     _oldestUnansweredPingTimeUtc = timestampUtc;
                 var elapsedTimeSinceFirstPing = SystemDateTime.UtcNow - _oldestUnansweredPingTimeUtc;
                 if (elapsedTimeSinceFirstPing > _configuration.PeerPingInterval)
-                    PingTimeout(this, timestampUtc);
+                    PingTimeout?.Invoke(this, timestampUtc);
             }
 
             SendPingCommand(timestampUtc);
@@ -91,7 +88,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
             _logger.WarnFormat("Peer timeout, PeerId: {0}", descriptor.PeerId);
 
-            PeerTimeoutDetected(this, timeoutTimestampUtc);
+            PeerTimeoutDetected?.Invoke(this, timeoutTimestampUtc);
         }
 
         public void Reset()
@@ -163,7 +160,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
 
             if (peerRespondingDetected)
-                PeerRespondingDetected(this, pingTimestampUtc);
+                PeerRespondingDetected?.Invoke(this, pingTimestampUtc);
 
             Reset();
         }

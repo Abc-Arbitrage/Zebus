@@ -35,9 +35,9 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             TaskScheduler = TaskScheduler.Current;
         }
 
-        public event Action<Exception> Error = delegate { };
-        public event Action PersistenceDownDetected = delegate { };
-        public event Action<PeerId, DateTime> PingTimeout = delegate { };
+        public event Action<Exception> Error;
+        public event Action PersistenceDownDetected;
+        public event Action<PeerId, DateTime> PingTimeout;
 
         public TaskScheduler TaskScheduler { get; set; }
         public IEnumerable<PeerId> KnownPeerIds => _peers.Keys;
@@ -46,7 +46,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             var timestampUtc = SystemDateTime.UtcNow;
             var entries = _peerRepository.GetPeers(loadDynamicSubscriptions: false)
-                                         .Where(peer => !peer.Subscriptions.Any(sub => sub.MessageTypeId == MessageUtil.TypeId<RegisterPeerCommand>()))
+                                         .Where(peer => peer.Subscriptions.All(sub => sub.MessageTypeId != MessageUtil.TypeId<RegisterPeerCommand>()))
                                          .Select(ToPeerEntry)
                                          .ToList();
             
@@ -76,7 +76,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             var entry = new DeadPeerDetectorEntry(descriptor, _configuration, _bus, TaskScheduler);
             entry.PeerTimeoutDetected += OnPeerTimeout;
             entry.PeerRespondingDetected += OnPeerResponding;
-            entry.PingTimeout += (detectorEntry, time) => PingTimeout(detectorEntry.Descriptor.PeerId, time);
+            entry.PingTimeout += (detectorEntry, time) => PingTimeout?.Invoke(detectorEntry.Descriptor.PeerId, time);
 
             return entry;
         }
@@ -86,7 +86,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             var descriptor = entry.Descriptor;
             if (descriptor.PeerId.IsPersistence())
             {
-                PersistenceDownDetected();
+                PersistenceDownDetected?.Invoke();
                 return;
             }
 
@@ -176,7 +176,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
             try
             {
-                Error.Invoke(ex);
+                Error?.Invoke(ex);
             }
             catch (Exception errorException)
             {

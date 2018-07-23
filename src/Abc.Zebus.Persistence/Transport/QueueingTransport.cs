@@ -28,7 +28,7 @@ namespace Abc.Zebus.Persistence.Transport
             _configuration = configuration;
         }
 
-        public event Action<TransportMessage> MessageReceived = delegate { };
+        public event Action<TransportMessage> MessageReceived;
 
         public PeerId PeerId => _transport.PeerId;
 
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Persistence.Transport
             }
 
             if (transportMessage.MessageTypeId.IsInfrastructure())
-                MessageReceived(transportMessage);
+                MessageReceived?.Invoke(transportMessage);
             else
                 _pendingReceives.TryAdd(transportMessage);
         }
@@ -82,7 +82,7 @@ namespace Abc.Zebus.Persistence.Transport
 
             foreach (var transportMessage in _pendingReceives.GetConsumingEnumerable())
             {
-                MessageReceived(transportMessage);
+                MessageReceived?.Invoke(transportMessage);
             }
         }
 

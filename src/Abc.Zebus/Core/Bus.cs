@@ -54,10 +54,10 @@ namespace Abc.Zebus.Core
             _configuration = configuration;
         }
 
-        public event Action Starting = delegate { };
-        public event Action Started = delegate { };
-        public event Action Stopping = delegate { };
-        public event Action Stopped = delegate { };
+        public event Action Starting;
+        public event Action Started;
+        public event Action Stopping;
+        public event Action Stopped;
 
         public PeerId PeerId { get; private set; }
         public string Environment { get; private set; }
@@ -85,7 +85,7 @@ namespace Abc.Zebus.Core
 
             try
             {
-                Starting();
+                Starting?.Invoke();
             }
             catch
             {
@@ -123,7 +123,7 @@ namespace Abc.Zebus.Core
                 throw;
             }
 
-            Started();
+            Started?.Invoke();
         }
 
         private void PerformAutoSubscribe()
@@ -157,7 +157,7 @@ namespace Abc.Zebus.Core
 
             try
             {
-                Stopping();
+                Stopping?.Invoke();
             }
             catch
             {
@@ -167,7 +167,7 @@ namespace Abc.Zebus.Core
 
             InternalStop(true);
 
-            Stopped();
+            Stopped?.Invoke();
         }
 
         private void InternalStop(bool unregister)
@@ -449,7 +449,8 @@ namespace Abc.Zebus.Core
             await _directory.UpdateSubscriptionsAsync(this, subscriptionUpdates).ConfigureAwait(false);
         }
 
-        public void Reply(int errorCode) => Reply(errorCode, null);
+        public void Reply(int errorCode)
+            => Reply(errorCode, null);
 
         public void Reply(int errorCode, string message)
         {
@@ -471,9 +472,7 @@ namespace Abc.Zebus.Core
         }
 
         private void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction)
-        {
-            _transport.OnPeerUpdated(peerId, peerUpdateAction);
-        }
+            => _transport.OnPeerUpdated(peerId, peerUpdateAction);
 
         private void OnTransportMessageReceived(TransportMessage transportMessage)
         {
@@ -489,9 +488,7 @@ namespace Abc.Zebus.Core
         }
 
         public MessageDispatch CreateMessageDispatch(TransportMessage transportMessage)
-        {
-            return CreateMessageDispatch(transportMessage, synchronousDispatch: false, sendAcknowledgment: false);
-        }
+            => CreateMessageDispatch(transportMessage, synchronousDispatch: false, sendAcknowledgment: false);
 
         private MessageDispatch CreateMessageDispatch(TransportMessage transportMessage, bool synchronousDispatch, bool sendAcknowledgment = true)
         {
@@ -593,8 +590,7 @@ namespace Abc.Zebus.Core
         {
             _messageLogger.DebugFormat("RECV: {0}", message);
 
-            TaskCompletionSource<CommandResult> taskCompletionSource;
-            if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out taskCompletionSource))
+            if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out var taskCompletionSource))
                 return;
 
             var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId.Value, new MemoryStream(message.Payload), transportMessage) : null;
@@ -632,9 +628,7 @@ namespace Abc.Zebus.Core
         }
 
         private void SendTransportMessage(MessageId? messageId, IMessage message, Peer peer, bool logEnabled)
-        {
-            SendTransportMessage(messageId, message, new List<Peer>(1) { peer }, logEnabled);
-        }
+            => SendTransportMessage(messageId, message, new[] { peer }, logEnabled);
 
         private void SendTransportMessage(MessageId? messageId, IMessage message, IList<Peer> peers, bool logEnabled, bool locallyHandled = false)
         {
@@ -658,29 +652,19 @@ namespace Abc.Zebus.Core
         }
 
         protected void SendTransportMessage(TransportMessage transportMessage, IList<Peer> peers)
-        {
-            _transport.Send(transportMessage, peers, new SendContext());
-        }
+            => _transport.Send(transportMessage, peers, new SendContext());
 
-        private void LogMessageSend(IMessage message, TransportMessage transportMessage, IList<Peer> peers)
-        {
-            _messageLogger.InfoFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.Content.Length, peers);
-        }
+        private static void LogMessageSend(IMessage message, TransportMessage transportMessage, IList<Peer> peers)
+            => _messageLogger.InfoFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.Content.Length, peers);
 
         protected void AckTransportMessage(TransportMessage transportMessage)
-        {
-            _transport.AckMessage(transportMessage);
-        }
+            => _transport.AckMessage(transportMessage);
 
         protected TransportMessage ToTransportMessage(IMessage message)
-        {
-            return _serializer.ToTransportMessage(message, PeerId, EndPoint);
-        }
+            => _serializer.ToTransportMessage(message, PeerId, EndPoint);
 
         private IMessage ToMessage(TransportMessage transportMessage)
-        {
-            return ToMessage(transportMessage.MessageTypeId, transportMessage.Content, transportMessage);
-        }
+            => ToMessage(transportMessage.MessageTypeId, transportMessage.Content, transportMessage);
 
         private IMessage ToMessage(MessageTypeId messageTypeId, Stream messageStream, TransportMessage transportMessage)
         {

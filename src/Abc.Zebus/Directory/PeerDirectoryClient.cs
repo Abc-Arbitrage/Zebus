@@ -36,7 +36,7 @@ namespace Abc.Zebus.Directory
             _configuration = configuration;
         }
 
-        public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
+        public event Action<PeerId, PeerUpdateAction> PeerUpdated;
 
         public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
@@ -277,7 +277,7 @@ namespace Abc.Zebus.Directory
                 return;
 
             AddOrUpdatePeerEntry(message.PeerDescriptor);
-            PeerUpdated(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
+            PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
         }
 
         private bool EnqueueIfRegistering(IEvent message)
@@ -319,7 +319,7 @@ namespace Abc.Zebus.Directory
             peer.Value.Peer.IsResponding = false;
             peer.Value.TimestampUtc = message.TimestampUtc ?? DateTime.UtcNow;
 
-            PeerUpdated(message.PeerId, PeerUpdateAction.Stopped);
+            PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Stopped);
         }
 
         public void Handle(PeerDecommissioned message)
@@ -332,7 +332,7 @@ namespace Abc.Zebus.Directory
 
             removedPeer.RemoveSubscriptions();
 
-            PeerUpdated(message.PeerId, PeerUpdateAction.Decommissioned);
+            PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Decommissioned);
         }
 
         public void Handle(PeerSubscriptionsUpdated message)
@@ -350,7 +350,7 @@ namespace Abc.Zebus.Directory
             peer.Value.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
             peer.Value.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
-            PeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
+            PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
         }
 
         public void Handle(PeerSubscriptionsForTypesUpdated message)
@@ -367,7 +367,7 @@ namespace Abc.Zebus.Directory
 
             peer.Value.SetSubscriptionsForType(message.SubscriptionsForType ?? Enumerable.Empty<SubscriptionsForType>(), message.TimestampUtc);
 
-            PeerUpdated(message.PeerId, PeerUpdateAction.Updated);
+            PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
         }
 
         private void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
@@ -394,7 +394,7 @@ namespace Abc.Zebus.Directory
 
             peer.Peer.IsResponding = isResponding;
 
-            PeerUpdated(peerId, PeerUpdateAction.Updated);
+            PeerUpdated?.Invoke(peerId, PeerUpdateAction.Updated);
         }
 
         private PeerEntryResult GetPeerCheckTimestamp(PeerId peerId, DateTime? timestampUtc)
