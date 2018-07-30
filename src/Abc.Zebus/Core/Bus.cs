@@ -423,6 +423,8 @@ namespace Abc.Zebus.Core
                         _logger.Error(ex);
                     }
 
+                    previousUnsubscribeTask = null;
+
                     if (!IsRunning || Status == BusStatus.Stopping)
                         return;
 
