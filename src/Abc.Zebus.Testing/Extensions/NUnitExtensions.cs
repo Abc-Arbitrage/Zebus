@@ -313,7 +313,7 @@ namespace Abc.Zebus.Testing.Extensions
         {
             Exception exception = method.GetException();
 
-            Assert.IsNotNull(exception);
+            Assert.IsNotNull(exception, $"{exceptionType.Name} was not thrown");
             Assert.AreEqual(exceptionType, exception.GetType());
 
             return exception;

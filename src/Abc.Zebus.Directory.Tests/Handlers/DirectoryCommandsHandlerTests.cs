@@ -130,6 +130,30 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         }
 
         [Test]
+        public void should_not_throw_if_a_client_with_a_synchronised_clock_tries_to_register()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var registerCommand = new RegisterPeerCommand(peerDescriptor);
+            registerCommand.Peer.TimestampUtc = SystemDateTime.UtcNow + 14.Minutes();
+            _configurationMock.SetupGet(x => x.MaxAllowedClockDifferenceWhenRegistering).Returns(15.Minutes());
+
+            Assert.DoesNotThrow(() => _handler.Handle(registerCommand));
+        }
+
+        [Test]
+        public void should_throw_if_a_client_with_a_more_recent_clock_tries_to_register()
+        {
+            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var registerCommand = new RegisterPeerCommand(peerDescriptor);
+            registerCommand.Peer.TimestampUtc = SystemDateTime.UtcNow + 1.Hour();
+            _configurationMock.SetupGet(x => x.MaxAllowedClockDifferenceWhenRegistering).Returns(15.Minutes());
+
+            var exception = Assert.Throws<InvalidOperationException>(() => _handler.Handle(registerCommand));
+
+            exception.Message.ShouldContain("is too far ahead of the the server's current time");
+        }
+
+        [Test]
         public void should_throw_if_an_existing_peer_tries_to_register()
         {
             var existingPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));

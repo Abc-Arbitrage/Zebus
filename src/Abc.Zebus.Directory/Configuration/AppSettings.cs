@@ -1,23 +1,36 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.Configuration;
 using System.Globalization;
 
 namespace Abc.Zebus.Directory.Configuration
 {
-    internal static class AppSettings
+    internal class AppSettings
     {
-        public static T Get<T>(string key, T defaultValue)
+        private readonly NameValueCollection _appSettings;
+
+        public AppSettings()
+            :this(ConfigurationManager.AppSettings)
         {
-            var value = ConfigurationManager.AppSettings[key];
+        }
+
+        public AppSettings(NameValueCollection appSettings)
+        {
+            _appSettings = appSettings;
+        }
+
+        public T Get<T>(string key, T defaultValue)
+        {
+            var value = _appSettings[key];
             if (value == null)
                 return defaultValue;
 
             return Parser<T>.Parse(value);
         }
 
-        public static string[] GetArray(string key)
+        public string[] GetArray(string key)
         {
-            var value = ConfigurationManager.AppSettings[key];
+            var value = _appSettings[key];
             if (value == null)
                 return new string[0];
 
@@ -35,10 +48,14 @@ namespace Abc.Zebus.Directory.Configuration
 
             static Parser()
             {
-                if (typeof(T) == typeof(TimeSpan))
+                var conversionType = typeof(T);
+                if (conversionType.IsGenericType && conversionType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    conversionType = conversionType.GenericTypeArguments[0];
+
+                if (conversionType == typeof(TimeSpan))
                     _value = s => TimeSpan.Parse(s, CultureInfo.InvariantCulture);
                 else
-                    _value = s => Convert.ChangeType(s, typeof(T));
+                    _value = s => Convert.ChangeType(s, conversionType);
             }
         }
     }

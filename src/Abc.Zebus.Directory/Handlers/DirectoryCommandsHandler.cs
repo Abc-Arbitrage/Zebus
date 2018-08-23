@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
@@ -23,12 +24,14 @@ namespace Abc.Zebus.Directory.Handlers
         private readonly HashSet<string> _blacklistedMachines;
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
+        private readonly IDirectoryConfiguration _configuration;
         private readonly IDirectorySpeedReporter _speedReporter;
 
         public DirectoryCommandsHandler(IBus bus, IPeerRepository peerRepository, IDirectoryConfiguration configuration, IDirectorySpeedReporter speedReporter)
         {
             _bus = bus;
             _peerRepository = peerRepository;
+            _configuration = configuration;
             _speedReporter = speedReporter;
             _blacklistedMachines = configuration.BlacklistedMachines.ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
@@ -45,8 +48,13 @@ namespace Abc.Zebus.Directory.Handlers
             if (_blacklistedMachines.Contains(Context.Originator.SenderMachineName))
                 throw new InvalidOperationException($"Peer {Context.SenderId} on host {Context.Originator.SenderMachineName} is not allowed to register on this directory");
 
-            if (!message.Peer.TimestampUtc.HasValue)
+            var peerTimestampUtc = message.Peer.TimestampUtc;
+            if (!peerTimestampUtc.HasValue)
                 throw new InvalidOperationException("The TimestampUtc must be provided when registering");
+
+            var utcNow = SystemDateTime.UtcNow;
+            if (_configuration.MaxAllowedClockDifferenceWhenRegistering != null && peerTimestampUtc.Value > utcNow + _configuration.MaxAllowedClockDifferenceWhenRegistering)
+                throw new InvalidOperationException($"The client provided timestamp [{peerTimestampUtc}] is too far ahead of the the server's current time [{utcNow}]");
 
             var stopwatch = Stopwatch.StartNew();
             var peerDescriptor = message.Peer;

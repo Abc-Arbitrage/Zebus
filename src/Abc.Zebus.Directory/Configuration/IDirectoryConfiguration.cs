@@ -47,5 +47,10 @@ namespace Abc.Zebus.Directory.Configuration
         /// with massive (> 50 000) amounts of dynamic subscriptions (which is not recommended anyway)
         /// </summary>
         bool DisableDynamicSubscriptionsForDirectoryOutgoingMessages { get; }
+
+        /// <summary>
+        /// Used to evaluate whether to reject register peer commands when the client's clock is ahead of the server's clock.
+        /// </summary>
+        TimeSpan? MaxAllowedClockDifferenceWhenRegistering { get; }
     }
 }

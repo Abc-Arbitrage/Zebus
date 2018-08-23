@@ -6,12 +6,17 @@ namespace Abc.Zebus.Directory.Configuration
     public class AppSettingsBusConfiguration : IBusConfiguration
     {
         public AppSettingsBusConfiguration()
+            : this(new AppSettings())
         {
-            RegistrationTimeout = AppSettings.Get("Bus.Directory.RegistrationTimeout", 30.Seconds());
-            StartReplayTimeout = AppSettings.Get("Bus.Persistence.StartReplayTimeout", 30.Seconds());
-            IsDirectoryPickedRandomly = AppSettings.Get("Bus.Directory.PickRandom", true);
-            IsErrorPublicationEnabled = AppSettings.Get("Bus.IsErrorPublicationEnabled", true);
-            MessagesBatchSize = AppSettings.Get("Bus.MessagesBatchSize", 100);
+        }
+
+        internal AppSettingsBusConfiguration(AppSettings appSettings)
+        {
+            RegistrationTimeout = appSettings.Get("Bus.Directory.RegistrationTimeout", 30.Seconds());
+            StartReplayTimeout = appSettings.Get("Bus.Persistence.StartReplayTimeout", 30.Seconds());
+            IsDirectoryPickedRandomly = appSettings.Get("Bus.Directory.PickRandom", true);
+            IsErrorPublicationEnabled = appSettings.Get("Bus.IsErrorPublicationEnabled", true);
+            MessagesBatchSize = appSettings.Get("Bus.MessagesBatchSize", 100);
         }
 
         public string[] DirectoryServiceEndPoints { get { return new string[0]; } }

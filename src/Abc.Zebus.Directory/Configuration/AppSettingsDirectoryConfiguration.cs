@@ -6,14 +6,20 @@ namespace Abc.Zebus.Directory.Configuration
     public class AppSettingsDirectoryConfiguration : IDirectoryConfiguration
     {
         public AppSettingsDirectoryConfiguration()
+            : this(new AppSettings())
         {
-            PeerPingInterval = AppSettings.Get("Directory.PingPeers.Interval", 1.Minute());
-            TransientPeerPingTimeout = AppSettings.Get("Directory.TransientPeers.PingTimeout", 5.Minutes());
-            PersistentPeerPingTimeout = AppSettings.Get("Directory.PersistentPeers.PingTimeout", 5.Minutes());
-            DebugPeerPingTimeout = AppSettings.Get("Directory.DebugPeers.PingTimeout", 10.Minutes());
-            BlacklistedMachines = AppSettings.GetArray("Directory.BlacklistedMachines");
-            DisableDynamicSubscriptionsForDirectoryOutgoingMessages = AppSettings.Get("Directory.DisableDynamicSubscriptionsForDirectoryOutgoingMessages", false);
+        }
+
+        internal AppSettingsDirectoryConfiguration(AppSettings appSettings)
+        {
+            PeerPingInterval = appSettings.Get("Directory.PingPeers.Interval", 1.Minute());
+            TransientPeerPingTimeout = appSettings.Get("Directory.TransientPeers.PingTimeout", 5.Minutes());
+            PersistentPeerPingTimeout = appSettings.Get("Directory.PersistentPeers.PingTimeout", 5.Minutes());
+            DebugPeerPingTimeout = appSettings.Get("Directory.DebugPeers.PingTimeout", 10.Minutes());
+            BlacklistedMachines = appSettings.GetArray("Directory.BlacklistedMachines");
+            DisableDynamicSubscriptionsForDirectoryOutgoingMessages = appSettings.Get("Directory.DisableDynamicSubscriptionsForDirectoryOutgoingMessages", false);
             WildcardsForPeersNotToDecommissionOnTimeout = new string[0];
+            MaxAllowedClockDifferenceWhenRegistering = appSettings.Get<TimeSpan?>("Directory.MaxAllowedClockDifferenceWhenRegistering", null);
         }
 
         public TimeSpan PeerPingInterval { get; private set; }
@@ -23,5 +29,6 @@ namespace Abc.Zebus.Directory.Configuration
         public string[] BlacklistedMachines { get; private set; }
         public string[] WildcardsForPeersNotToDecommissionOnTimeout { get; private set; }
         public bool DisableDynamicSubscriptionsForDirectoryOutgoingMessages { get; private set; }
+        public TimeSpan? MaxAllowedClockDifferenceWhenRegistering { get; }
     }
 }
