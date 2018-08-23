@@ -1,3 +1,7 @@
+## 3.1.1
+### Bug fixes
+- Handle case where client clock can be ahead of server clock
+
 ## 1.2.1
 ### Bug fixes
  - Fix injection configuration issue in the Directory.Standalone project
