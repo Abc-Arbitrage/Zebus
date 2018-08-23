@@ -76,7 +76,7 @@ On Windows, you will need to have [Microsoft Visual C++ 2017 Redistributable](ht
 
 # Release notes
 
-We try to stick to the [semantic versioning](http://semver.org/) principles and keep the [release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES.md) up to date.
+We try to stick to the [semantic versioning](http://semver.org/) principles and keep the [release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES.md) and [directory release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES_DIRECTORY.md) up to date.
 
 # Copyright
 
