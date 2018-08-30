@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Abc.Zebus.Persistence.Util
+namespace Abc.Zebus.Persistence.CQL.Util
 {
     public static class MessageIdExtensions
     {
