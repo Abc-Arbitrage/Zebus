@@ -18,7 +18,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
     public class CqlStorage : IStorage, IDisposable
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(CqlStorage));
-        private static readonly Task _completedTask = Task.FromResult(false);
+        private static readonly DateTime _unixOrigin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
 
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly IPeerStateRepository _peerStateRepository;
@@ -57,7 +57,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         public Task Write(IList<MatcherEntry> entriesToPersist)
         {
             if (entriesToPersist.Count == 0)
-                return _completedTask;
+                return Task.CompletedTask;
 
             var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageBytes?.Length ?? 0).First();
             _reporter.AddStorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageBytes?.Length ?? 0), fattestMessage.MessageBytes?.Length ?? 0, fattestMessage.MessageTypeName);
@@ -70,7 +70,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                 if (shouldInvestigatePeer)
                     _log.Info($"Storage requested for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}"); 
 
-                var messageDateTime = matcherEntry.MessageId.GetDateTime();
+                var messageDateTime = matcherEntry.MessageId.GetDateTimeForV2OrV3();
                 var rowTimestamp = matcherEntry.IsAck ? messageDateTime.AddTicks(10) : messageDateTime;
                 var insertTask = _parallelPersistor.Insert(_preparedStatement.Bind(matcherEntry.PeerId.ToString(),
                                                                                BucketIdHelper.GetBucketId(messageDateTime),
@@ -109,11 +109,15 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         {
             _log.Info($"Creating message reader for peer {peerId}");
             var peerState = _peerStateRepository.GetPeerStateFor(peerId);
-            var reader = peerState == null ? null : new CqlMessageReader(_dataContext, peerState);
-            if (reader == null)
+            if (peerState == null)
+            {
                 _log.Info($"PeerState for peer {peerId} does not exist, no reader can be created");
-            else
-                _log.Info("CqlMessageReader created");
+                return null;
+            }
+
+            var reader = new CqlMessageReader(_dataContext, peerState);
+            _log.Info("CqlMessageReader created");
+
             return reader;
         }
 
@@ -122,10 +126,9 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             _parallelPersistor.Dispose();
         }
 
-        private long ToUnixMicroSeconds(DateTime timestamp)
+        private static long ToUnixMicroSeconds(DateTime timestamp)
         {
-            var origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-            var diff = timestamp - origin;
+            var diff = timestamp - _unixOrigin;
             var diffInMicroSeconds = diff.Ticks / 10;
             return diffInMicroSeconds;
         }
