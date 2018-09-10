@@ -508,6 +508,7 @@ namespace Abc.Zebus.Core
             var dispatch = CreateMessageDispatch(transportMessage, synchronous);
             if (dispatch == null)
             {
+                _logger.WarnFormat("Received a remote message that could not be deserialized: {0} from {1}", transportMessage.MessageTypeId.FullName, transportMessage.Originator.SenderId);
                 _transport.AckMessage(transportMessage);
                 return;
             }
