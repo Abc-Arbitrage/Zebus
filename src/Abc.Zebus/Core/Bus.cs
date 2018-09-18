@@ -13,8 +13,8 @@ using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
-using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
+using JetBrains.Annotations;
 using log4net;
 using Newtonsoft.Json;
 
@@ -28,6 +28,7 @@ namespace Abc.Zebus.Core
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
         private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new UniqueTimestampProvider();
         private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
+        private readonly HashSet<MessageTypeId> _pendingUnsubscriptions = new HashSet<MessageTypeId>();
         private readonly ITransport _transport;
         private readonly IPeerDirectory _directory;
         private readonly IMessageSerializer _serializer;
@@ -36,7 +37,10 @@ namespace Abc.Zebus.Core
         private readonly IStoppingStrategy _stoppingStrategy;
         private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private readonly IBusConfiguration _configuration;
-        private Task _unsubscribeTask = Task.CompletedTask;
+
+        [CanBeNull]
+        private Task _processPendingUnsubscriptionsTask;
+
         private int _subscriptionsVersion;
         private int _status;
 
@@ -180,7 +184,8 @@ namespace Abc.Zebus.Core
             lock (_subscriptions)
             {
                 _subscriptions.Clear();
-                _unsubscribeTask = Task.CompletedTask;
+                _pendingUnsubscriptions.Clear();
+                _processPendingUnsubscriptionsTask = null;
 
                 unchecked
                 {
@@ -384,15 +389,32 @@ namespace Abc.Zebus.Core
             }
         }
 
-        internal Task WhenUnsubscribeCompletedAsync()
-            => _unsubscribeTask;
+        internal async Task WhenUnsubscribeCompletedAsync()
+        {
+            Task task;
+
+            lock (_subscriptions)
+            {
+                task = _processPendingUnsubscriptionsTask;
+            }
+
+            if (task == null)
+                return;
+
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
+            }
+        }
 
         private void RemoveSubscriptions(SubscriptionRequest request)
         {
             if (!IsRunning)
                 return;
-
-            var updatedTypes = new HashSet<MessageTypeId>();
 
             lock (_subscriptions)
             {
@@ -401,7 +423,7 @@ namespace Abc.Zebus.Core
 
                 foreach (var subscription in request.Subscriptions)
                 {
-                    updatedTypes.Add(subscription.MessageTypeId);
+                    _pendingUnsubscriptions.Add(subscription.MessageTypeId);
 
                     var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
                     if (subscriptionCount <= 1)
@@ -410,32 +432,47 @@ namespace Abc.Zebus.Core
                         _subscriptions[subscription] = subscriptionCount - 1;
                 }
 
-                var previousUnsubscribeTask = _unsubscribeTask;
-
-                _unsubscribeTask = Task.Run(async () =>
+                if (_pendingUnsubscriptions.Count != 0 && _processPendingUnsubscriptionsTask?.IsCompleted != false)
                 {
-                    try
-                    {
-                        await previousUnsubscribeTask.ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error(ex);
-                    }
+                    var subscriptionsVersion = _subscriptionsVersion;
+                    _processPendingUnsubscriptionsTask = Task.Run(() => ProcessPendingUnsubscriptions(subscriptionsVersion));
+                }
+            }
+        }
 
-                    previousUnsubscribeTask = null;
+        private async Task ProcessPendingUnsubscriptions(int subscriptionsVersion)
+        {
+            try
+            {
+                var updatedTypes = new HashSet<MessageTypeId>();
 
-                    if (!IsRunning || Status == BusStatus.Stopping)
-                        return;
+                while (true)
+                {
+                    updatedTypes.Clear();
 
                     lock (_subscriptions)
                     {
-                        if (request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                        updatedTypes.UnionWith(_pendingUnsubscriptions);
+                        _pendingUnsubscriptions.Clear();
+
+                        if (updatedTypes.Count == 0 || !IsRunning || Status == BusStatus.Stopping || subscriptionsVersion != _subscriptionsVersion)
+                        {
+                            _processPendingUnsubscriptionsTask = null;
                             return;
+                        }
                     }
 
-                    await UpdateDirectorySubscriptionsAsync(updatedTypes);
-                });
+                    await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
+
+                lock (_subscriptions)
+                {
+                    _processPendingUnsubscriptionsTask = null;
+                }
             }
         }
 

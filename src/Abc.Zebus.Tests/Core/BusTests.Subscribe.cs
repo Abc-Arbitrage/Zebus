@@ -385,6 +385,41 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
+            public async Task should_not_fail_subscribe_if_previous_unsubscribe_failed()
+            {
+                _bus.Start();
+
+                _directoryMock.Setup(i => i.UpdateSubscriptionsAsync(It.IsAny<IBus>(), It.IsAny<IEnumerable<SubscriptionsForType>>()))
+                              .Returns(Task.CompletedTask);
+
+                var subA = await _bus.SubscribeAsync(Subscription.Any<FakeCommand>(), msg => { }).ConfigureAwait(true);
+
+                var unsubscribeTcs = new TaskCompletionSource<object>();
+                var unsubscribeSent = false;
+                _directoryMock.Setup(i => i.UpdateSubscriptionsAsync(It.IsAny<IBus>(), It.IsAny<IEnumerable<SubscriptionsForType>>()))
+                              .Callback(() => unsubscribeSent = true)
+                              .Returns(unsubscribeTcs.Task);
+
+                subA.Dispose();
+                Wait.Until(() => unsubscribeSent, 2.Seconds());
+
+                var newSubscribeSent = false;
+                _directoryMock.Setup(i => i.UpdateSubscriptionsAsync(It.IsAny<IBus>(), It.IsAny<IEnumerable<SubscriptionsForType>>()))
+                              .Callback(() => newSubscribeSent = true)
+                              .Returns(Task.CompletedTask);
+
+                var subBTask = _bus.SubscribeAsync(Subscription.Any<FakeCommand>(), msg => { });
+
+                Thread.Sleep(200);
+                newSubscribeSent.ShouldBeFalse();
+
+                unsubscribeTcs.SetException(new InvalidOperationException("Test"));
+                Wait.Until(() => newSubscribeSent, 2.Seconds());
+
+                await subBTask.ConfigureAwait(true);
+            }
+
+            [Test]
             [Explicit("The implementation is non trivial and will be dealt with later")]
             public void subscriptions_sent_to_the_directory_should_always_be_more_recent_than_the_previous()
             {

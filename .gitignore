@@ -29,6 +29,7 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 output/**
 .vs/
+.idea/
 local-*
 
 src/_NCrunch_Abc.Zebus/**
