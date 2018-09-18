@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net471</TargetFramework>
+    <Version>$(ZebusDirectoryVersion)</Version>
   </PropertyGroup>
 
   <Import Project="..\Abc.Zebus.Tests.props" />

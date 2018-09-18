@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net471;netcoreapp2.1</TargetFrameworks>
+    <Version>$(ZebusVersion)</Version>
   </PropertyGroup>
 
   <Import Project="..\Abc.Zebus.Tests.props" />

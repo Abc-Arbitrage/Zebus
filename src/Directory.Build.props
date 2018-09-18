@@ -16,8 +16,14 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Zebus.Contracts is versioned independently -->
-    <Version>3.1.1</Version>
+    <ZebusVersion>3.1.3</ZebusVersion>
+    <ZebusContractsVersion>3.0.0</ZebusContractsVersion>
+    <ZebusDirectoryVersion>3.1.3</ZebusDirectoryVersion>
+    <ZebusPersistenceVersion>3.1.3</ZebusPersistenceVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Version>$(ZebusVersion)</Version>
     <Authors>ABC arbitrage</Authors>
     <Description>A lightweight Peer to Peer Service Bus</Description>
     <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>
@@ -32,9 +38,6 @@
   <PropertyGroup Condition="$(ContinuousIntegrationBuild)">
     <Deterministic>true</Deterministic>
     <DeterministicSourcePaths>true</DeterministicSourcePaths>
-    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
-    <PackageVersion Condition="'$(APPVEYOR_REPO_TAG)' == 'false' and '$(APPVEYOR_BUILD_NUMBER)' != ''">$(PackageVersion)-pre$(APPVEYOR_BUILD_NUMBER)</PackageVersion>
-    <PackageVersion Condition="'$(TEAMCITY_VERSION)' != '' and '$(BUILD_NUMBER)' != ''">$(PackageVersion)-pre$(BUILD_NUMBER)</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(NCrunch)' == '1'">

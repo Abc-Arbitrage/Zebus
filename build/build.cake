@@ -75,7 +75,7 @@ Task("Nuget")
         Information("   Nuget package is now ready at location: {0}.", paths.nugetOutput);
         Warning("   Please remember to create and push a tag based on the currently built version.");
         Information("   You can do so by copying/pasting the following commands:");
-        Information("       git tag v{0}", XmlPeek(paths.props, @"/Project/PropertyGroup/PackageVersion/text()"));
+        Information("       git tag v{0}", XmlPeek(paths.props, @"/Project/PropertyGroup/ZebusVersion/text()"));
         Information("       git push origin --tags");
     });
 
