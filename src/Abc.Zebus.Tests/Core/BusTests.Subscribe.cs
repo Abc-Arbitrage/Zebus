@@ -69,6 +69,49 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
+            public async Task should_not_send_update_to_directory_unnecessarily()
+            {
+                AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+                await TestUnnecessaryDirectoryUpdatesAsync(Subscription.Any<FakeCommand>());
+            }
+
+            [Test]
+            public async Task should_not_send_update_to_directory_unnecessarily_for_routable_messages()
+            {
+                AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
+                await TestUnnecessaryDirectoryUpdatesAsync(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
+            }
+
+            private async Task TestUnnecessaryDirectoryUpdatesAsync(Subscription subscription)
+            {
+                _bus.Start();
+
+                var updates = new List<SubscriptionsForType>();
+
+                _directoryMock.Setup(i => i.UpdateSubscriptionsAsync(_bus, It.IsAny<IEnumerable<SubscriptionsForType>>()))
+                              .Callback((IBus _, IEnumerable<SubscriptionsForType> items) => updates.AddRange(items))
+                              .Returns(async () => await Task.Yield()); // Make sure the returned task is asynchronous
+
+                var firstSubscription = await _bus.SubscribeAsync(subscription);
+                updates.ExpectedSingle();
+                updates.Clear();
+
+                var secondSubscriptionTask = _bus.SubscribeAsync(subscription);
+                secondSubscriptionTask.IsCompleted.ShouldBeTrue();
+
+                var secondSubscription = await secondSubscriptionTask;
+                updates.ShouldBeEmpty();
+
+                firstSubscription.Dispose();
+                _bus.WhenUnsubscribeCompletedAsync().IsCompleted.ShouldBeTrue();
+                updates.ShouldBeEmpty();
+
+                secondSubscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+                updates.ExpectedSingle();
+            }
+
+            [Test]
             public void can_batch_subscribe()
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);

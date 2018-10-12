@@ -377,15 +377,20 @@ namespace Abc.Zebus.Core
                 {
                     foreach (var subscription in subscriptions)
                     {
-                        updatedTypes.Add(subscription.MessageTypeId);
-                        _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                        var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
+                        _subscriptions[subscription] = subscriptionCount + 1;
+
+                        if (subscriptionCount <= 0)
+                            updatedTypes.Add(subscription.MessageTypeId);
                     }
                 }
 
-                // Wait until all unsubscriptions are completed to prevent race conditions
-                await WhenUnsubscribeCompletedAsync().ConfigureAwait(false);
-
-                await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
+                if (updatedTypes.Count != 0)
+                {
+                    // Wait until all unsubscriptions are completed to prevent race conditions
+                    await WhenUnsubscribeCompletedAsync().ConfigureAwait(false);
+                    await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
+                }
             }
         }
 
@@ -423,13 +428,16 @@ namespace Abc.Zebus.Core
 
                 foreach (var subscription in request.Subscriptions)
                 {
-                    _pendingUnsubscriptions.Add(subscription.MessageTypeId);
-
                     var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
                     if (subscriptionCount <= 1)
+                    {
                         _subscriptions.Remove(subscription);
+                        _pendingUnsubscriptions.Add(subscription.MessageTypeId);
+                    }
                     else
+                    {
                         _subscriptions[subscription] = subscriptionCount - 1;
+                    }
                 }
 
                 if (_pendingUnsubscriptions.Count != 0 && _processPendingUnsubscriptionsTask?.IsCompleted != false)
