@@ -247,7 +247,7 @@ namespace Abc.Zebus.Core
             if (!IsRunning)
                 throw new InvalidOperationException("Unable to send message, the bus is not running");
 
-            var taskCompletionSource = new TaskCompletionSource<CommandResult>();
+            var taskCompletionSource = new TaskCompletionSource<CommandResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             if (LocalDispatch.Enabled && peer.Id == PeerId)
             {
@@ -644,7 +644,7 @@ namespace Abc.Zebus.Core
             var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId.Value, new MemoryStream(message.Payload), transportMessage) : null;
             var commandResult = new CommandResult(message.ErrorCode, message.ResponseMessage, response);
 
-            Task.Run(() => taskCompletionSource.SetResult(commandResult));
+            taskCompletionSource.SetResult(commandResult);
         }
 
         protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
