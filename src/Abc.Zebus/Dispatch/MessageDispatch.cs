@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using Abc.Zebus.Serialization;
 
 namespace Abc.Zebus.Dispatch
 {
@@ -11,6 +12,7 @@ namespace Abc.Zebus.Dispatch
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
         private Dictionary<Type, Exception> _exceptions;
         private int _remainingHandlerCount;
+        private bool _isCloned;
 
         public MessageDispatch(MessageContext context, IMessage message, Action<MessageDispatch, DispatchResult> continuation, bool shouldRunSynchronously = false)
         {
@@ -24,7 +26,7 @@ namespace Abc.Zebus.Dispatch
         public bool IsLocal { get; set; }
         public bool ShouldRunSynchronously { get; }
         public MessageContext Context { get; }
-        public IMessage Message { get; }
+        public IMessage Message { get; private set; }
 
         public void SetIgnored()
         {
@@ -54,6 +56,15 @@ namespace Abc.Zebus.Dispatch
         public void SetHandlerCount(int handlerCount)
         {
             _remainingHandlerCount = handlerCount;
+        }
+
+        internal void BeforeEnqueue()
+        {
+            if (!IsLocal || _isCloned)
+                return;
+
+            Message = Serializer.TryClone(Message) ?? Message;
+            _isCloned = true;
         }
     }
 }

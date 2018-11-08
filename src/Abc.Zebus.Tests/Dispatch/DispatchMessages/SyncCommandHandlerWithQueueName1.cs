@@ -13,11 +13,13 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
         public bool HandleStopped;
         public string DispatchQueueName { get; set; }
         public Action Callback;
+        public DispatchCommand ReceivedMessage;
 
         public void Handle(DispatchCommand message)
         {
             HandleStarted = true;
             DispatchQueueName = DispatchQueue.GetCurrentDispatchQueueName();
+            ReceivedMessage = message;
 
             Callback?.Invoke();
 

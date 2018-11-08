@@ -44,6 +44,15 @@ namespace Abc.Zebus.Serialization
             return RuntimeTypeModel.Default.Deserialize(stream, obj, messageType);
         }
 
+        public static T TryClone<T>(T message)
+            where T : class
+        {
+            if (message != null && RuntimeTypeModel.Default.CanSerialize(message.GetType()))
+                return (T)RuntimeTypeModel.Default.DeepClone(message);
+
+            return message;
+        }
+
         private bool HasParameterLessConstructor(Type messageType)
         {
             return _hasParameterLessConstructorByType.GetOrAdd(messageType, type => ComputeHasParameterLessConstructor(type));

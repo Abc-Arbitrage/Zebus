@@ -3,9 +3,11 @@
     public class SyncCommandHandler : IMessageHandler<DispatchCommand>
     {
         public bool Called;
+        public DispatchCommand ReceivedMessage;
 
         public void Handle(DispatchCommand message)
         {
+            ReceivedMessage = message;
             Called = true;
         }
     }

@@ -266,9 +266,14 @@ namespace Abc.Zebus.Dispatch
         public void RunOrEnqueue(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
             if (dispatch.ShouldRunSynchronously || IsCurrentDispatchQueue)
+            {
                 RunSingle(dispatch, invoker);
+            }
             else
+            {
+                dispatch.BeforeEnqueue();
                 Enqueue(dispatch, invoker);
+            }
         }
 
         // for unit tests
