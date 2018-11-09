@@ -8,7 +8,6 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages.Namespace1;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages.Namespace1.Namespace2;
-using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 
@@ -282,6 +281,23 @@ namespace Abc.Zebus.Tests.Dispatch
             handler.ReceivedMessage.ShouldNotBeNull();
             handler.ReceivedMessage.ShouldNotBeTheSameAs(command);
             handler.ReceivedMessage.Guid.ShouldEqual(command.Guid);
+        }
+
+        [Test]
+        public void should_not_clone_message_when_dispatching_a_remote_message()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var handler = new SyncCommandHandler();
+            _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandler))).Returns(handler);
+
+            var command = new DispatchCommand();
+            Dispatch(command);
+
+            Wait.Until(() => handler.Called, 5.Seconds());
+
+            handler.ReceivedMessage.ShouldNotBeNull();
+            handler.ReceivedMessage.ShouldBeTheSameAs(command);
         }
 
         [Test]
