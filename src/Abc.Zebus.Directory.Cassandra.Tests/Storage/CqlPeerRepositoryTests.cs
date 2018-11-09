@@ -35,10 +35,9 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
                 Assert.Ignore("We need a cassandra node for this");
         }
 
-        protected override string Hosts { get { return "cassandra-test-host"; } }
+        protected override string Hosts => "cassandra-test";
+        protected override string LocalDataCenter => "Paris-ABC";
 
-        protected override string LocalDataCenter { get { return "Paris-ABC"; } }
-        
         [SetUp]
         protected void Setup()
         {

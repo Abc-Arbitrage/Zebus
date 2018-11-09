@@ -16,7 +16,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests.Cql
         where TDataContext : CqlDataContext<TConfig>
         where TConfig : class, ICassandraConfiguration
     {
-        protected string Hosts => "cassandra-test-host";
+        protected string Hosts => "cassandra-test";
         protected string LocalDataCenter => "Paris-ABC";
 
         private readonly string _keySpace = "UnitTesting_" + Guid.NewGuid().ToString().Substring(0, 8);

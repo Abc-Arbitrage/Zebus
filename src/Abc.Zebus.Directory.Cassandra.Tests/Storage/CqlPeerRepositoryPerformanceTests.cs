@@ -17,15 +17,8 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
     [Ignore("Performance tests")]
     public class CqlPeerRepositoryPerformanceTests : CqlTestFixture<DirectoryDataContext, ICassandraConfiguration>
     {
-        protected override string Hosts
-        {
-            get { return "cassandra-test-host"; }
-        }
-
-        protected override string LocalDataCenter
-        {
-            get { return "Paris-ABC"; }
-        }
+        protected override string Hosts => "cassandra-test";
+        protected override string LocalDataCenter => "Paris-ABC";
 
         [Test]
         public void insert_30_peers_with_8000_subscriptions_each()
