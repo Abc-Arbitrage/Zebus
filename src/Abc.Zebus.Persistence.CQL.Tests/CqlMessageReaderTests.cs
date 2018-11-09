@@ -15,8 +15,6 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 {
     public class CqlMessageReaderTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
-        private readonly Serializer _serializer = new Serializer();
-
         public override void CreateSchema()
         {
             IgnoreOnAppVeyor();
@@ -71,7 +69,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             return x =>
             {
                 x.IsAcked = false;
-                x.TransportMessage = _serializer.Serialize(transportMessage).ToArray();
+                x.TransportMessage = Serializer.Serialize(transportMessage).ToArray();
             };
         }
 

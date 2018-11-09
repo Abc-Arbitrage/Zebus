@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -7,18 +8,18 @@ using ProtoBuf.Meta;
 
 namespace Abc.Zebus.Serialization
 {
-    internal class Serializer
+    internal static class Serializer
     {
-        private readonly ConcurrentDictionary<Type, bool> _hasParameterLessConstructorByType = new ConcurrentDictionary<Type, bool>();
+        private static readonly ConcurrentDictionary<Type, bool> _hasParameterLessConstructorByType = new ConcurrentDictionary<Type, bool>();
 
-        public MemoryStream Serialize(object message)
+        public static MemoryStream Serialize(object message)
         {
             var stream = new MemoryStream();
             Serialize(stream, message);
             return stream;
         }
 
-        public void Serialize(Stream stream, object message)
+        public static void Serialize(Stream stream, object message)
         {
             try
             {
@@ -30,7 +31,7 @@ namespace Abc.Zebus.Serialization
             }
         }
 
-        public object Deserialize(Type messageType, Stream stream)
+        public static object Deserialize(Type messageType, Stream stream)
         {
             if (messageType == null)
                 return null;
@@ -47,9 +48,18 @@ namespace Abc.Zebus.Serialization
         public static bool TryClone<T>(T message, out T clone)
             where T : class
         {
-            if (message != null && RuntimeTypeModel.Default.CanSerialize(message.GetType()))
+            var messageType = message?.GetType();
+            if (messageType!= null && RuntimeTypeModel.Default.CanSerialize(messageType))
             {
-                clone = (T)RuntimeTypeModel.Default.DeepClone(message);
+                // Cannot use the DeepClone method as it doesn't handle classes without a parameterless constructor
+
+                using (var ms = new MemoryStream())
+                {
+                    Serialize(ms, message);
+                    ms.Position = 0;
+                    clone = (T)Deserialize(messageType, ms);
+                }
+
                 return true;
             }
 
@@ -57,14 +67,11 @@ namespace Abc.Zebus.Serialization
             return false;
         }
 
-        private bool HasParameterLessConstructor(Type messageType)
-        {
-            return _hasParameterLessConstructorByType.GetOrAdd(messageType, type => ComputeHasParameterLessConstructor(type));
-        }
+        [SuppressMessage("ReSharper", "ConvertClosureToMethodGroup")]
+        private static bool HasParameterLessConstructor(Type messageType)
+            => _hasParameterLessConstructorByType.GetOrAdd(messageType, type => ComputeHasParameterLessConstructor(type));
 
         private static bool ComputeHasParameterLessConstructor(Type type)
-        {
-            return type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[0], null) != null;
-        }
+            => type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null) != null;
     }
 }

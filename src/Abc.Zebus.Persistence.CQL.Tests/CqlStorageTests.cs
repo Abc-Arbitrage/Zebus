@@ -21,7 +21,6 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 {
     public class CqlStorageTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
-        private readonly Serialization.Serializer _serializer = new Serialization.Serializer();
         private CqlStorage _storage;
         private FakePeerStateRepository _peerStateRepository;
         private Mock<IPersistenceConfiguration> _configurationMock;
@@ -340,7 +339,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                 var expectedTransportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
                 var messages = expectedTransportMessages.SelectMany(x =>
                                                         {
-                                                            var transportMessageBytes = _serializer.Serialize(x).ToArray();
+                                                            var transportMessageBytes = Serialization.Serializer.Serialize(x).ToArray();
                                                             return new[]
                                                             {
                                                                 MatcherEntry.Message(firstPeer, x.Id, x.MessageTypeId, transportMessageBytes),

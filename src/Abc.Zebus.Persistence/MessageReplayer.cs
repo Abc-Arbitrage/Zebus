@@ -20,7 +20,6 @@ namespace Abc.Zebus.Persistence
         private static readonly ILog _logger = LogManager.GetLogger(typeof(MessageReplayer));
         private readonly BlockingCollection<TransportMessage> _liveMessages = new BlockingCollection<TransportMessage>();
         private readonly ConcurrentSet<MessageId> _unackedIds = new ConcurrentSet<MessageId>();
-        private readonly Serializer _serializer = new Serializer();
         private readonly IPersistenceConfiguration _persistenceConfiguration;
         private readonly IStorage _storage;
         private readonly IBus _bus;
@@ -215,7 +214,7 @@ namespace Abc.Zebus.Persistence
 
         private TransportMessage ToTransportMessage(IMessage message, bool wasPersisted = false)
         {
-            return new TransportMessage(message.TypeId(), _serializer.Serialize(message), _self) {  WasPersisted = wasPersisted };
+            return new TransportMessage(message.TypeId(), Serializer.Serialize(message), _self) {  WasPersisted = wasPersisted };
         }
 
         public void Handle(MessageHandled messageHandled)

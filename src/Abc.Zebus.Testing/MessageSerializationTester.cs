@@ -16,7 +16,6 @@ namespace Abc.Zebus.Testing
     {
         private static readonly MethodInfo _createMethod = typeof(SpecimenFactory).GetMethod("Create", new[] { typeof(ISpecimenBuilder) });
         private static readonly MethodInfo _injectMethod = typeof(FixtureRegistrar).GetMethod("Inject");
-        private static readonly Serializer _serializer = new Serializer();
 
         public static void CheckSerializationForTypesInSameAssemblyAs<T>(params object[] prebuiltObjects)
         {
@@ -82,8 +81,8 @@ namespace Abc.Zebus.Testing
 
             Console.WriteLine("{{{0}}}", message);
 
-            var bytes = _serializer.Serialize(message);
-            var messageCopy = _serializer.Deserialize(messageType, bytes);
+            var bytes = Serializer.Serialize(message);
+            var messageCopy = Serializer.Deserialize(messageType, bytes);
 
             messageCopy.ShouldNotBeNull();
 
