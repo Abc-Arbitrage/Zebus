@@ -14,7 +14,7 @@ namespace Abc.Zebus.Directory
         public readonly MessageTypeId MessageTypeId;
 
         [ProtoMember(2, IsRequired = true)]
-        public readonly BindingKey[] BindingKeys;
+        public readonly BindingKey[] BindingKeys = Array.Empty<BindingKey>();
 
         public SubscriptionsForType(MessageTypeId messageTypeId, params BindingKey[] bindingKeys)
         {

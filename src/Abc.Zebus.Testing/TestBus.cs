@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
@@ -78,6 +79,9 @@ namespace Abc.Zebus.Testing
 
         public void Publish(IEvent message)
         {
+            if (Serializer.TryClone(message, out var clone))
+                message = clone;
+
             lock (_events)
             {
                 _events.Add(message);
@@ -94,6 +98,9 @@ namespace Abc.Zebus.Testing
 
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
+            if (Serializer.TryClone(message, out var clone))
+                message = clone;
+
             lock (_commands)
             {
                 _commands.Add(message);
