@@ -44,13 +44,17 @@ namespace Abc.Zebus.Serialization
             return RuntimeTypeModel.Default.Deserialize(stream, obj, messageType);
         }
 
-        public static T TryClone<T>(T message)
+        public static bool TryClone<T>(T message, out T clone)
             where T : class
         {
             if (message != null && RuntimeTypeModel.Default.CanSerialize(message.GetType()))
-                return (T)RuntimeTypeModel.Default.DeepClone(message);
+            {
+                clone = (T)RuntimeTypeModel.Default.DeepClone(message);
+                return true;
+            }
 
-            return message;
+            clone = null;
+            return false;
         }
 
         private bool HasParameterLessConstructor(Type messageType)

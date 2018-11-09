@@ -63,7 +63,9 @@ namespace Abc.Zebus.Dispatch
             if (!IsLocal || _isCloned)
                 return;
 
-            Message = Serializer.TryClone(Message) ?? Message;
+            if (Serializer.TryClone(Message, out var clone))
+                Message = clone;
+
             _isCloned = true;
         }
     }
