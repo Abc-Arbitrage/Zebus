@@ -13,7 +13,7 @@ namespace Abc.Zebus.Transport
             SendRetriesBeforeSwitchingToClosedState = 2;
             ClosedStateDurationAfterSendFailure = 15.Seconds();
             ClosedStateDurationAfterConnectFailure = 2.Minutes();
-            ReceiveHighWaterMark = 20000;
+            ReceiveHighWaterMark = 40000;
         }
 
         public TimeSpan ReadTimeout { set; get; }
