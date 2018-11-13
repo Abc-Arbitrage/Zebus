@@ -10,9 +10,10 @@ namespace Abc.Zebus.Persistence.Runner
         {
             Hosts = AppSettings.Get("Cassandra.Hosts", "");
             KeySpace = AppSettings.Get("Cassandra.KeySpace", "");
-            QueryTimeout = AppSettings.Get("Casasndray.QueryTimeout", 5.Seconds());
-            LocalDataCenter = AppSettings.Get("Casasndray.LocalDataCenter", "");
-            OldestMessagePerPeerCheckPeriod = AppSettings.Get("Casasndray.OldestMessagePerPeerCheckPeriod", 1.Minutes());
+            QueryTimeout = AppSettings.Get("Cassandra.QueryTimeout", 5.Seconds());
+            LocalDataCenter = AppSettings.Get("Cassandra.LocalDataCenter", "");
+            OldestMessagePerPeerCheckPeriod = AppSettings.Get("Cassandra.OldestMessagePerPeerCheckPeriod", 1.Minutes());
+            OldestMessagePerPeerGlobalCheckPeriod = AppSettings.Get("Cassandra.OldestMessagePerPeerCheckPeriod", 1.Hours());
         }
 
         public string Hosts { get; }
@@ -20,5 +21,6 @@ namespace Abc.Zebus.Persistence.Runner
         public TimeSpan QueryTimeout { get; }
         public string LocalDataCenter { get; }
         public TimeSpan OldestMessagePerPeerCheckPeriod { get; set; }
+        public TimeSpan OldestMessagePerPeerGlobalCheckPeriod { get; set; }
     }
 }

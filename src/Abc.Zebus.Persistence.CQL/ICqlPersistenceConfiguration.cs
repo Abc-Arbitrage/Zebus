@@ -6,5 +6,6 @@ namespace Abc.Zebus.Persistence.CQL
     public interface ICqlPersistenceConfiguration : ICassandraConfiguration
     {
         TimeSpan OldestMessagePerPeerCheckPeriod { get; set; }
+        TimeSpan OldestMessagePerPeerGlobalCheckPeriod { get; set; }
     }
 }

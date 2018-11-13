@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Hosting;
@@ -14,46 +15,50 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
     {
         private readonly IPeerStateRepository _peerStateRepository;
         private readonly PersistenceCqlDataContext _dataContext;
+        private readonly ICqlPersistenceConfiguration _configuration;
         private DateTime _lastCheck;
+        private DateTime _lastGlobalCheck;
 
         public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, IPeerStateRepository peerStateRepository, PersistenceCqlDataContext dataContext, ICqlPersistenceConfiguration configuration) 
             : base(bus, configuration.OldestMessagePerPeerCheckPeriod)
         {
             _peerStateRepository = peerStateRepository;
             _dataContext = dataContext;
+            _configuration = configuration;
         }
 
         public override void DoPeriodicAction()
         {
-            var peersToCheck = _peerStateRepository.Where(x => x.LastNonAckedMessageCountChanged > _lastCheck).ToList();
+            var isGlobalCheck = SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
+            var peersToCheck = isGlobalCheck ? _peerStateRepository : _peerStateRepository.Where(x => x.LastNonAckedMessageCountChanged > _lastCheck);
 
             Parallel.ForEach(peersToCheck, new ParallelOptions { MaxDegreeOfParallelism = 10 }, UpdateOldestNonAckedMessage);
-            
-            _lastCheck = SystemDateTime.UtcNow;
 
             _peerStateRepository.Save();
+
+            _lastCheck = SystemDateTime.UtcNow;
+            _lastGlobalCheck = isGlobalCheck ? SystemDateTime.UtcNow : _lastGlobalCheck;
         }
 
         private void UpdateOldestNonAckedMessage(PeerState peer)
         {
-            var newOldest = GetOldestNonAckedMessageTimestamp(peer);
-
-            if (newOldest == null)
+            if (peer.HasBeenPurged)
                 return;
 
-            CleanBuckets(peer.PeerId, peer.OldestNonAckedMessageTimestampInTicks, newOldest.Value);
-            peer.UpdateOldestNonAckedMessageTimestamp(newOldest.Value);
+            var newOldest = GetOldestNonAckedMessageTimestamp(peer);
+
+            CleanBuckets(peer.PeerId, peer.OldestNonAckedMessageTimestampInTicks, newOldest);
+
+            peer.UpdateOldestNonAckedMessageTimestamp(newOldest);
         }
 
-        private long? GetOldestNonAckedMessageTimestamp(PeerState peer)
+        private long GetOldestNonAckedMessageTimestamp(PeerState peer)
         {
             var peerId = peer.PeerId.ToString();
-            var lastMessageTimestamp = 0L;
+            var lastAckedMessageTimestamp = 0L;
+
             foreach (var currentBucketId in BucketIdHelper.GetBucketsCollection(peer.OldestNonAckedMessageTimestampInTicks))
             {
-                if (peer.HasBeenPurged)
-                    return null;
-
                 var messagesInBucket = _dataContext.PersistentMessages
                                                    .Where(x => x.PeerId == peerId
                                                                && x.BucketId == currentBucketId
@@ -64,15 +69,15 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
 
                 foreach (var message in messagesInBucket)
                 {
-                    lastMessageTimestamp = message.UniqueTimestampInTicks;
                     if (!message.IsAcked)
-                    {
-                        return lastMessageTimestamp;
-                    }
+                        return message.UniqueTimestampInTicks;
+
+                    lastAckedMessageTimestamp = message.UniqueTimestampInTicks;
+                    
                 }
             }
 
-            return lastMessageTimestamp == 0 ? SystemDateTime.UtcNow.Ticks : lastMessageTimestamp + 1;
+            return lastAckedMessageTimestamp == 0 ? SystemDateTime.UtcNow.Ticks : lastAckedMessageTimestamp + 1;
         }
 
         private void CleanBuckets(PeerId peerId, long previousOldestMessageTimestamp, long newOldestMessageTimestamp)
