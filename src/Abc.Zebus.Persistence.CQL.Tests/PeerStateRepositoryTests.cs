@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
 using Abc.Zebus.Persistence.Messages;
-using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
 using NUnit.Framework;
@@ -13,7 +14,6 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 {
     public class PeerStateRepositoryTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
-        private TestBus _bus;
         private PeerStateRepository _peerStateRepository;
 
         public override void CreateSchema()
@@ -33,8 +33,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         [SetUp]
         public void SetUp()
         {
-            _bus = new TestBus();
-            _peerStateRepository = new PeerStateRepository(DataContext, _bus);
+            _peerStateRepository = new PeerStateRepository(DataContext);
         }
 
         [Test]
@@ -57,32 +56,31 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         [Test]
         public void should_update_last_count_change_when_changing_count()
         {
-            using (SystemDateTime.PauseTime())
-            {
-                _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 10);
+            _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 10);
 
-                _peerStateRepository[new PeerId("PeerId")].LastNonAckedMessageCountChanged.ShouldEqual(SystemDateTime.UtcNow);
-            }
+            _peerStateRepository[new PeerId("PeerId")].LastNonAckedMessageCountVersion.ShouldBeGreaterThan(0);
         }
 
         [Test]
-        public void peer_state_should_be_deleted_from_repository_when_purged()
+        public void peer_state_should_be_deleted_from_repository_when_removed()
         {
             var peerId = new PeerId("PeerId");
             _peerStateRepository.UpdateNonAckMessageCount(peerId, 10);
-            _peerStateRepository.Purge(peerId);
+            _peerStateRepository.RemovePeer(peerId);
 
             _peerStateRepository.ShouldBeEmpty();
-            _peerStateRepository.Any(x=>x.PeerId==peerId).ShouldBeFalse();
+            _peerStateRepository.Any(x => x.PeerId == peerId).ShouldBeFalse();
         }
-        
+
         [Test]
-        public void should_save_state_to_cassandra()
+        public async Task should_save_state_to_cassandra()
         {
             using (SystemDateTime.PauseTime())
             {
                 _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 10);
-                _peerStateRepository.Save().Wait();
+
+                await _peerStateRepository.Save();
+
                 var oldestNonAckedMessageTimestampCaptured = SystemDateTime.UtcNow - CqlStorage.PersistentMessagesTimeToLive;
 
                 var cassandraState = DataContext.PeerStates.Execute().ExpectedSingle();
@@ -93,17 +91,19 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_reload_state_from_cassandra_on_initialize()
+        public async Task should_reload_state_from_cassandra_on_initialize()
         {
             using (SystemDateTime.PauseTime())
             {
                 _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 10);
-                _peerStateRepository.Save().Wait();
+
+                await _peerStateRepository.Save();
+
                 var oldestNonAckedMessageTimestampCaptured = SystemDateTime.UtcNow - CqlStorage.PersistentMessagesTimeToLive;
 
                 using (SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(2.Hours())))
                 {
-                    var newRepo = new PeerStateRepository(DataContext, _bus);
+                    var newRepo = new PeerStateRepository(DataContext);
                     newRepo.Initialize();
 
                     var cassandraState = newRepo.ExpectedSingle();
@@ -115,64 +115,40 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_delete_peer_from_cassandra_when_purged()
+        public async Task should_delete_peer_from_cassandra_when_removed()
         {
             using (SystemDateTime.PauseTime())
             {
                 _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 10);
-                _peerStateRepository.Save().Wait();
+                await _peerStateRepository.Save();
 
                 DataContext.PeerStates.Execute().ShouldNotBeEmpty();
 
-                _peerStateRepository.Purge(new PeerId("PeerId")).Wait();
+                await _peerStateRepository.RemovePeer(new PeerId("PeerId"));
 
                 DataContext.PeerStates.Execute().ShouldBeEmpty();
             }
         }
 
         [Test]
-        public void should_publish_non_acked_message_count_to_zero_when_peer_has_been_purged()
+        public void should_get_updated_peers_only_for_the_peers_that_actually_changed_since_the_last_publication()
         {
-            _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 10);
-            _peerStateRepository.Purge(new PeerId("PeerId"));
+            var version = 0L;
 
-            _bus.Expect(new NonAckMessagesCountChanged(new[] { new NonAckMessage("PeerId", 0), }));
+            _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId.1"), 10);
+            _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId.2"), 20);
+
+            var peers1 = _peerStateRepository.GetUpdatedPeers(ref version).Select(x => x.PeerId.ToString()).ToList();
+            peers1.ShouldBeEquivalentTo(new[] { "PeerId.1", "PeerId.2" });
+
+            _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId.1"), 2);
+
+            var peers2 = _peerStateRepository.GetUpdatedPeers(ref version).Select(x => x.PeerId.ToString()).ToList();
+            peers2.ShouldBeEquivalentTo(new[] { "PeerId.1" });
         }
 
         [Test]
-        public void should_publish_non_acked_message_count_when_required()
-        {
-            _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 10);
-            _peerStateRepository.Handle(new PublishNonAckMessagesCountCommand());
-
-            _bus.Expect(new NonAckMessagesCountChanged(new[] { new NonAckMessage("PeerId", 10), }));
-        }
-
-        [Test]
-        public void should_publish_non_acked_message_count_only_for_the_peers_that_actually_changed_since_the_last_publication()
-        {
-            using (SystemDateTime.PauseTime())
-            {
-                _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId.1"), 10);
-                _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId.2"), 20);
-
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(1.Second()));
-
-                _peerStateRepository.Handle(new PublishNonAckMessagesCountCommand());
-
-                _bus.ClearMessages();
-
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(1.Second()));
-
-                _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId.1"), 2);
-                _peerStateRepository.Handle(new PublishNonAckMessagesCountCommand());
-
-                _bus.Expect(new NonAckMessagesCountChanged(new[] { new NonAckMessage("PeerId.1", 12), }));
-            }
-        }
-
-        [Test]
-        public void should_delete_all_buckets_for_peer_when_purged()
+        public async Task should_delete_all_buckets_for_peer_when_removed()
         {
             var now = SystemDateTime.UtcNow;
             _peerStateRepository.UpdateNonAckMessageCount(new PeerId("PeerId"), 0);
@@ -187,9 +163,9 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             DataContext.PersistentMessages.Execute().Count().ShouldEqual(1);
 
-            _peerStateRepository.Purge(new PeerId("PeerId"));
+            await _peerStateRepository.RemovePeer(new PeerId("PeerId"));
 
-            Wait.Until(() => !DataContext.PersistentMessages.Execute().Any(), 1.Second());
+            DataContext.PersistentMessages.Execute().Any().ShouldBeFalse();
         }
     }
 }

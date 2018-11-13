@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Storage;
-using Abc.Zebus.Persistence.Messages;
 
 namespace Abc.Zebus.Persistence.CQL
 {
-    public interface IPeerStateRepository : IEnumerable<PeerState>, IMessageHandler<PublishNonAckMessagesCountCommand>
+    public interface IPeerStateRepository : IEnumerable<PeerState>
     {
         void Initialize();
 
@@ -13,8 +12,9 @@ namespace Abc.Zebus.Persistence.CQL
 
         void UpdateNonAckMessageCount(PeerId peerId, int delta);
 
-        Task Purge(PeerId peerId);
+        List<PeerState> GetUpdatedPeers(ref long version);
 
         Task Save();
+        Task RemovePeer(PeerId peerId);
     }
 }

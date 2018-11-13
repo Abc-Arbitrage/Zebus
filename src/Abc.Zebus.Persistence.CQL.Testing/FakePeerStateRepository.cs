@@ -1,14 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Storage;
-using Abc.Zebus.Persistence.Messages;
 
 namespace Abc.Zebus.Persistence.CQL.Testing
 {
     public class FakePeerStateRepository : IPeerStateRepository
     {
         private readonly Dictionary<PeerId, PeerState> _peerStatesByPeerId = new Dictionary<PeerId, PeerState>();
+        private long _version;
 
         public bool IsInitialized { get; set; }
         public bool HasBeenSaved { get; set; }
@@ -21,10 +23,6 @@ namespace Abc.Zebus.Persistence.CQL.Testing
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
-        }
-
-        public void Handle(PublishNonAckMessagesCountCommand message)
-        {
         }
 
         public void Initialize()
@@ -45,11 +43,6 @@ namespace Abc.Zebus.Persistence.CQL.Testing
             _peerStatesByPeerId.Add(state.PeerId, state);
         }
 
-        public void Remove(PeerId peerId)
-        {
-            _peerStatesByPeerId.Remove(peerId);
-        }
-
         public void UpdateNonAckMessageCount(PeerId peerId, int delta)
         {
             PeerState peerState;
@@ -58,15 +51,27 @@ namespace Abc.Zebus.Persistence.CQL.Testing
                 peerState = new PeerState(peerId);
                 _peerStatesByPeerId.Add(peerId, peerState);
             }
-            peerState.UpdateNonAckedMessageCount(delta);
+
+            peerState.NonAckedMessageCount += delta;
+            peerState.LastNonAckedMessageCountVersion = Interlocked.Increment(ref _version);
         }
 
-        public Task Purge(PeerId peerId)
+        public List<PeerState> GetUpdatedPeers(ref long version)
+        {
+            var previousVersion = version;
+            version = Interlocked.Increment(ref _version);
+
+            return _peerStatesByPeerId.Values
+                                      .Where(x => x.LastNonAckedMessageCountVersion >= previousVersion)
+                                      .ToList();
+        }
+
+        public Task RemovePeer(PeerId peerId)
         {
             var state = GetPeerStateFor(peerId);
             if (state != null)
             {
-                state.Purge();
+                state.MarkAsRemoved();
                 _peerStatesByPeerId.Remove(peerId);
             }
 

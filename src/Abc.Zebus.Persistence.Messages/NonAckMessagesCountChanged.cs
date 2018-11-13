@@ -7,8 +7,8 @@ namespace Abc.Zebus.Persistence.Messages
     public class NonAckMessagesCountChanged : IEvent
     {
         [ProtoMember(1, IsRequired = false)] public readonly NonAckMessage[] NonAckMessages;
-        
-        private NonAckMessagesCountChanged()
+
+        public NonAckMessagesCountChanged()
         {
             NonAckMessages = new NonAckMessage[0];
         }

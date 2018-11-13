@@ -26,6 +26,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         private readonly IReporter _reporter;
         private readonly ParallelPersistor _parallelPersistor;
         private readonly PreparedStatement _preparedStatement;
+        private long _lastNonAckedMessageCountsVersion;
 
         public CqlStorage(PersistenceCqlDataContext dataContext, IPeerStateRepository peerStateRepository, IPersistenceConfiguration configuration, IReporter reporter)
         {
@@ -41,6 +42,12 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         public static TimeSpan PersistentMessagesTimeToLive => 30.Days();
 
         public int PersistenceQueueSize => _parallelPersistor.QueueSize;
+
+        public Dictionary<PeerId, int> GetNonAckedMessageCountsForUpdatedPeers()
+        {
+            return _peerStateRepository.GetUpdatedPeers(ref _lastNonAckedMessageCountsVersion)
+                                       .ToDictionary(x => x.PeerId, x => x.NonAckedMessageCount);
+        }
 
         public void Start()
         {
@@ -100,9 +107,9 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             return Task.WhenAll(insertTasks);
         }
 
-        public void PurgeMessagesAndAcksForPeer(PeerId peerId)
+        public void RemovePeer(PeerId peerId)
         {
-            _peerStateRepository.Purge(peerId);
+            _peerStateRepository.RemovePeer(peerId);
         }
 
         public IMessageReader CreateMessageReader(PeerId peerId)

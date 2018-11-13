@@ -11,6 +11,8 @@ namespace Abc.Zebus.Persistence.Storage
     /// </summary>
     public interface IStorage
     {
+        int PersistenceQueueSize { get; }
+
         /// <summary>
         /// Stores a batch of entries (messages or acks) into the storage
         /// </summary>
@@ -25,15 +27,14 @@ namespace Abc.Zebus.Persistence.Storage
         IMessageReader CreateMessageReader(PeerId peerId);
 
         /// <summary>
-        /// Purges the message queue for a given peer
+        /// Remove the specified peer.
         /// </summary>
-        /// <param name="peerId">The concerned PeerId</param>
-        void PurgeMessagesAndAcksForPeer(PeerId peerId);
+        void RemovePeer(PeerId peerId);
+
+        Dictionary<PeerId, int> GetNonAckedMessageCountsForUpdatedPeers();
 
         void Start();
 
         void Stop();
-
-        int PersistenceQueueSize { get; }
     }
 }

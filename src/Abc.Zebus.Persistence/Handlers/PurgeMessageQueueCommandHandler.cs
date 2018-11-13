@@ -6,15 +6,20 @@ namespace Abc.Zebus.Persistence.Handlers
     public class PurgeMessageQueueCommandHandler : IMessageHandler<PurgeMessageQueueCommand>
     {
         private readonly IStorage _storage;
+        private readonly IBus _bus;
 
-        public PurgeMessageQueueCommandHandler(IStorage storage)
+        public PurgeMessageQueueCommandHandler(IStorage storage, IBus bus)
         {
             _storage = storage;
+            _bus = bus;
         }
 
         public void Handle(PurgeMessageQueueCommand message)
         {
-            _storage.PurgeMessagesAndAcksForPeer(new PeerId(message.InstanceName));
+            var peerId = new PeerId(message.InstanceName);
+            _storage.RemovePeer(peerId);
+
+            _bus.Publish(new NonAckMessagesCountChanged(new[] { new NonAckMessage(peerId.ToString(), 0) }));
         }
     }
 }

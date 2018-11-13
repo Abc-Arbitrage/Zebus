@@ -225,15 +225,16 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public void should_call_peer_state_repository_when_asked_to_purge_peer()
+        public void should_call_peer_state_repository_when_asked_to_remove_peer()
         {
             var peerId = new PeerId("PeerId");
             _peerStateRepository.Add(new PeerState(peerId));
             var peerState =_peerStateRepository[peerId];
 
-            _storage.PurgeMessagesAndAcksForPeer(peerId);
+            _storage.RemovePeer(peerId);
             
-            peerState.HasBeenPurged.ShouldBeTrue();
+            peerState.Removed.ShouldBeTrue();
+            _peerStateRepository.GetPeerStateFor(peerId).ShouldBeNull();
         }
 
         [Test]

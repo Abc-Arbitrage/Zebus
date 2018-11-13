@@ -15,7 +15,7 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
         private readonly IPeerStateRepository _peerStateRepository;
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly ICqlPersistenceConfiguration _configuration;
-        private DateTime _lastCheck;
+        private long _lastCheckVersion;
         private DateTime _lastGlobalCheck;
 
         public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, IPeerStateRepository peerStateRepository, PersistenceCqlDataContext dataContext, ICqlPersistenceConfiguration configuration) 
@@ -29,19 +29,22 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
         public override void DoPeriodicAction()
         {
             var isGlobalCheck = SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
-            var peersToCheck = isGlobalCheck ? _peerStateRepository : _peerStateRepository.Where(x => x.LastNonAckedMessageCountChanged > _lastCheck);
+            if (isGlobalCheck)
+            {
+                _lastCheckVersion = 0;
+                _lastGlobalCheck = SystemDateTime.UtcNow;
+            }
+
+            var peersToCheck = _peerStateRepository.GetUpdatedPeers(ref _lastCheckVersion);
 
             Parallel.ForEach(peersToCheck, new ParallelOptions { MaxDegreeOfParallelism = 10 }, UpdateOldestNonAckedMessage);
 
             _peerStateRepository.Save();
-
-            _lastCheck = SystemDateTime.UtcNow;
-            _lastGlobalCheck = isGlobalCheck ? SystemDateTime.UtcNow : _lastGlobalCheck;
         }
 
         private void UpdateOldestNonAckedMessage(PeerState peer)
         {
-            if (peer.HasBeenPurged)
+            if (peer.Removed)
                 return;
 
             var newOldest = GetOldestNonAckedMessageTimestamp(peer);
