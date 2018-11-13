@@ -17,15 +17,13 @@ namespace Abc.Zebus.Persistence.CQL.Data
         {
         }
 
-        [PartitionKey(0)]
+        [PartitionKey]
         [Column("PeerId")]
         public string PeerId { get; set; }
 
-        [ClusteringKey]
         [Column("NonAckedMessageCount")]
         public int NonAckedMessageCount { get; set; }
 
-        [ClusteringKey]
         [Column("OldestNonAckedMessageTimestamp")]
         public long OldestNonAckedMessageTimestamp { get; set; }
     }
