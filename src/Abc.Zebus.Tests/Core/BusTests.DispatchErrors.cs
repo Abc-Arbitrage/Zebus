@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Linq;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
+using Moq;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -38,6 +40,32 @@ namespace Abc.Zebus.Tests.Core
 
                     var transportMessageReceived = command.ToTransportMessage(_peerUp);
                     _transport.RaiseMessageReceived(transportMessageReceived);
+
+                    var commandJson = JsonConvert.SerializeObject(command);
+                    var expectedTransportMessage = new MessageProcessingFailed(transportMessageReceived, commandJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
+                    _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
+                }
+            }
+
+            [Test]
+            public void should_send_a_MessageProcessingFailed_on_dispatch_error()
+            {
+                SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+
+                _bus.Start();
+
+                using (SystemDateTime.PauseTime())
+                using (MessageId.PauseIdGeneration())
+                {
+                    var command = new FakeCommand(123);
+                    var transportMessageReceived = command.ToTransportMessage(_peerUp);
+                    var dispatch = _bus.CreateMessageDispatch(transportMessageReceived);
+                    var exception = new Exception("Test error");
+
+                    dispatch.SetHandlerCount(1);
+                    var invokerMock = new Mock<IMessageHandlerInvoker>();
+                    invokerMock.SetupGet(x => x.MessageHandlerType).Returns(typeof(FakeMessageHandler));
+                    dispatch.SetHandled(invokerMock.Object, exception);
 
                     var commandJson = JsonConvert.SerializeObject(command);
                     var expectedTransportMessage = new MessageProcessingFailed(transportMessageReceived, commandJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);

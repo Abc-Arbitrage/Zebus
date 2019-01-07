@@ -544,7 +544,7 @@ namespace Abc.Zebus.Core
                 return null;
 
             var context = MessageContext.CreateNew(transportMessage);
-            var continuation = sendAcknowledgment ? GetOnRemoteMessageDispatchedContinuation(transportMessage) : ((dispatch, result) => { });
+            var continuation = GetOnRemoteMessageDispatchedContinuation(transportMessage, sendAcknowledgment);
             return new MessageDispatch(context, message, continuation, synchronousDispatch);
         }
 
@@ -562,11 +562,14 @@ namespace Abc.Zebus.Core
             _messageDispatcher.Dispatch(dispatch);
         }
 
-        private Action<MessageDispatch, DispatchResult> GetOnRemoteMessageDispatchedContinuation(TransportMessage transportMessage)
+        private Action<MessageDispatch, DispatchResult> GetOnRemoteMessageDispatchedContinuation(TransportMessage transportMessage, bool sendAcknowledgment)
         {
             return (dispatch, dispatchResult) =>
             {
                 HandleDispatchErrors(dispatch, dispatchResult, transportMessage);
+
+                if (!sendAcknowledgment)
+                    return;
 
                 if (dispatch.Message is ICommand && !(dispatch.Message is PersistMessageCommand))
                 {
