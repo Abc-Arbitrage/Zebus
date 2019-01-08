@@ -16,10 +16,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ZebusVersion>3.1.5</ZebusVersion>
+    <ZebusVersion>3.2.0</ZebusVersion>
     <ZebusContractsVersion>3.0.0</ZebusContractsVersion>
     <ZebusDirectoryVersion>$(ZebusVersion)</ZebusDirectoryVersion>
-    <ZebusPersistenceVersion>3.1.6</ZebusPersistenceVersion>
+    <ZebusPersistenceVersion>$(ZebusVersion)</ZebusPersistenceVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -28,7 +28,7 @@
     <Description>A lightweight Peer to Peer Service Bus</Description>
     <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</PackageLicenseUrl>
-    <Copyright>Copyright © ABC arbitrage 2018</Copyright>
+    <Copyright>Copyright © ABC arbitrage 2019</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <ContinuousIntegrationBuild Condition="'$(ContinuousIntegrationBuild)' == ''">false</ContinuousIntegrationBuild>
     <ContinuousIntegrationBuild Condition="'$(APPVEYOR)' == 'True'">true</ContinuousIntegrationBuild>
