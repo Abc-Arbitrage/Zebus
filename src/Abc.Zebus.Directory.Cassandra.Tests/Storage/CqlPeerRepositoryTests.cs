@@ -23,15 +23,15 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 
         public override void CreateSchema()
         {
-            IgnoreOnAppVeyor();
+            IgnoreWhenSet("APPVEYOR");
+            IgnoreWhenSet("AZURE_PIPELINES");
             base.CreateSchema();
         }
 
-        private void IgnoreOnAppVeyor()
+        private void IgnoreWhenSet(string environmentVariable)
         {
-            var env = Environment.GetEnvironmentVariable("APPVEYOR");
-            bool isUnderAppVeyor;
-            if (!string.IsNullOrEmpty(env) && bool.TryParse(env, out isUnderAppVeyor) && isUnderAppVeyor)
+            var env = Environment.GetEnvironmentVariable(environmentVariable);
+            if (!string.IsNullOrEmpty(env) && bool.TryParse(env, out var isSet) && isSet)
                 Assert.Ignore("We need a cassandra node for this");
         }
 
