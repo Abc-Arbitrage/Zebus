@@ -1,7 +1,12 @@
 <Project>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)\..\lib\native\**\*.*">
-      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <None Include="$(MSBuildThisFileDirectory)\..\runtimes\win-x64\native\Abc.Zebus.libzmq.dll">
+      <Link>Abc.Zebus.libzmq.x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)\..\runtimes\win-x86\native\Abc.Zebus.libzmq.dll">
+      <Link>Abc.Zebus.libzmq.x86.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
     </None>

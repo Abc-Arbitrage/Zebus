@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Abc.Zebus.Transport.Zmq
 {
@@ -6,9 +7,24 @@ namespace Abc.Zebus.Transport.Zmq
     {
         private static readonly LibImpl _impl = GetLibImpl();
 
-        private static LibImpl GetLibImpl()
-            => Environment.Is64BitProcess
-                ? (LibImpl)new Win64Impl()
-                : new Win32Impl();
+        private static unsafe LibImpl GetLibImpl()
+        {
+            try
+            {
+                var impl = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? new WinCoreImpl()
+                    : (LibImpl)new LinuxCoreImpl();
+
+                int dummy;
+                impl.version(&dummy, &dummy, &dummy);
+                return impl;
+            }
+            catch (DllNotFoundException) when (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return Environment.Is64BitProcess
+                    ? (LibImpl)new WinFramework64Impl()
+                    : new WinFramework32Impl();
+            }
+        }
     }
 }

@@ -36,8 +36,10 @@ var funcs = ParseFuncs(@"
 ").ToList();
 
 var platforms = new[] {
-    new PlatformDef("Win32", "Abc.Zebus.libzmq.x86.dll"),
-    new PlatformDef("Win64", "Abc.Zebus.libzmq.x64.dll")
+    new PlatformDef("WinCore", "Abc.Zebus.libzmq.dll"),
+    new PlatformDef("LinuxCore", "Abc.Zebus.libzmq.so"),
+    new PlatformDef("WinFramework32", "Abc.Zebus.libzmq.x86.dll"),
+    new PlatformDef("WinFramework64", "Abc.Zebus.libzmq.x64.dll")
 };
         
 #>
