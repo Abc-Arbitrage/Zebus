@@ -1,5 +1,6 @@
-﻿using System;
+﻿using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
 namespace Abc.Zebus.Util
@@ -17,17 +18,9 @@ namespace Abc.Zebus.Util
 
         public static bool IsPortUnused(int port)
         {
-            var listener = new TcpListener(IPAddress.Any, port);
-            try
-            {
-                listener.Start();
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-            listener.Stop();
-            return true;
+            var ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+            var activeTcpListeners = ipGlobalProperties.GetActiveTcpListeners();
+            return activeTcpListeners.All(endpoint => endpoint.Port != port);
         }
     }
 }
