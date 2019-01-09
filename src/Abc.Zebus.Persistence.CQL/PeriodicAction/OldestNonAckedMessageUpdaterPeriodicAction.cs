@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Abc.Zebus.Hosting;
-using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Util;
 
@@ -15,7 +14,7 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
         private long _lastCheckVersion;
         private DateTime _lastGlobalCheck;
 
-        public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, IPeerStateRepository peerStateRepository, PersistenceCqlDataContext dataContext, ICqlPersistenceConfiguration configuration, ICqlStorage cqlStorage) 
+        public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, IPeerStateRepository peerStateRepository, ICqlPersistenceConfiguration configuration, ICqlStorage cqlStorage) 
             : base(bus, configuration.OldestMessagePerPeerCheckPeriod)
         {
             _peerStateRepository = peerStateRepository;

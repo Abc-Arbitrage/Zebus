@@ -39,7 +39,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         {
             _peerStateRepo = new FakePeerStateRepository();
             _testBus = new TestBus();
-            _oldestMessageUpdater = new OldestNonAckedMessageUpdaterPeriodicAction(_testBus, _peerStateRepo, DataContext, new Mock<ICqlPersistenceConfiguration>().Object, new CqlStorage(DataContext, _peerStateRepo, null, null));
+            _oldestMessageUpdater = new OldestNonAckedMessageUpdaterPeriodicAction(_testBus, _peerStateRepo, new Mock<ICqlPersistenceConfiguration>().Object, new CqlStorage(DataContext, _peerStateRepo, null, null));
         }
 
         [Test]
