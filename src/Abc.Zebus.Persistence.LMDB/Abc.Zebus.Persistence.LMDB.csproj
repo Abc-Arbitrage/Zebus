@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LightningDB" Version="0.10.0" />
+    <PackageReference Include="System.Memory" Version="4.5.2" />
+    <PackageReference Include="System.Runtime" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj" />
+    <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
+  </ItemGroup>
+
+</Project>
