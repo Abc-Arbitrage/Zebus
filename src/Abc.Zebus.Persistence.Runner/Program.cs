@@ -86,6 +86,7 @@ namespace Abc.Zebus.Persistence.Runner
 
                 // TODO: Add InMemoryStorage
                 c.ForSingletonOf<IStorage>().Use<CqlStorage>();
+                c.ForSingletonOf<ICqlStorage>().Use<CqlStorage>();
 
                 c.ForSingletonOf<IMessageReplayerRepository>().Use<MessageReplayerRepository>();
                 c.ForSingletonOf<IMessageReplayer>().Use<MessageReplayer>();
