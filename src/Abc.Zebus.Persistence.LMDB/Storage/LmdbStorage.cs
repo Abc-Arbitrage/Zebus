@@ -38,7 +38,7 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
         {
             _environment = new LightningEnvironment(_outputPath) { MaxDatabases = 10 };
             _environment.Open();
-            EnsureDatabaseIsCreated();
+            EnsureDatabasesAreCreated();
             ReadAllOutOfOrderAcks();
         }
 
@@ -85,7 +85,7 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
                 {
                     foreach (var entry in entriesToPersist.GroupBy(x => x.PeerId))
                     {
-                        _updatedPeers.Add(entry.Key); 
+                        _updatedPeers.Add(entry.Key);
                         UpdateNonAckedCounts(entry, transaction, peersDb);
                     }
                 }
@@ -133,24 +133,26 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
         {
             using (var transaction = _environment.BeginTransaction())
             using (var db = transaction.OpenDatabase(GetMessagesDbName()))
+            using (var peersDb = transaction.OpenDatabase(GetPeersDbName()))
             {
                 var key = CreateKeyBuffer(peerId);
                 FillKey(key, peerId, 0, Guid.Empty);
 
                 using (var cursor = transaction.CreateCursor(db))
                 {
-                    var found = cursor.MoveToFirstAfter(key);
-                    if (!found)
+                    if (!cursor.MoveToFirstAfter(key))
                         return;
 
                     var currentKey = cursor.Current.Key;
-                    var length = peerId.ToString().Length;
+                    var peerIdLength = peerId.ToString().Length;
                     do
                     {
                         cursor.Delete();
 
-                    } while (cursor.MoveNext() && CompareStart(currentKey, key, length));
+                    } while (cursor.MoveNext() && CompareStart(currentKey, key, peerIdLength));
                 }
+
+                transaction.Delete(peersDb, GetPeerKey(peerId));
 
                 // TODO: remove out of order acks
 
@@ -194,7 +196,7 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
         private string GetPendingAcksDbName() => _dbName + "-acks";
         private string GetPeersDbName() => _dbName + "-peers";
 
-        private void EnsureDatabaseIsCreated()
+        private void EnsureDatabasesAreCreated()
         {
             using (var transaction = _environment.BeginTransaction())
             using (var db = transaction.OpenDatabase(GetMessagesDbName(), new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))

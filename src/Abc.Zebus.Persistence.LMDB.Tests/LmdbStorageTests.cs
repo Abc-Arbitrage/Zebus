@@ -67,8 +67,7 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
             var messageId = MessageId.NextId();
 
             var peerId = new PeerId("Abc.Peer.0");
-            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(peerId, messageId, MessageTypeId.PersistenceStopping, messageBytes) });
-
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(peerId, messageId, MessageTypeId.PersistenceStopping, messageBytes) }); 
 
             var messages = _storage.CreateMessageReader(peerId).GetUnackedMessages();
             var retrievedMessage = messages.Single();
@@ -115,6 +114,22 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
         public void should_return_null_when_asked_for_a_message_reader_for_an_unknown_peer_id()
         {
             _storage.CreateMessageReader(new PeerId("UnknownPeerId")).ShouldBeNull();
+        }
+
+        [Test]
+        public async Task should_remove_peer()
+        {
+            var inputMessage = CreateTestTransportMessage(1); 
+            var messageBytes = Serialization.Serializer.Serialize(inputMessage).ToArray();
+            var messageId = MessageId.NextId();
+
+            var peerId = new PeerId("Abc.Peer.0");
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(peerId, messageId, MessageTypeId.PersistenceStopping, messageBytes) }); 
+
+            _storage.RemovePeer(peerId);
+            
+            _storage.CreateMessageReader(peerId).ShouldBeNull();
+            _storage.GetNonAckedMessageCountsForUpdatedPeers().ContainsKey(peerId).ShouldBeFalse();
         }
 
         [Test]
