@@ -21,17 +21,6 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
             _db = _transaction.OpenDatabase(dbName);
         }
 
-        public bool PeerExists()
-        {
-            using (var cursor = _transaction.CreateCursor(_db))
-            {
-                var key = LmdbStorage.CreateKeyBuffer(_peerId);
-                LmdbStorage.FillKey(key, _peerId, 0, Guid.Empty);
-                var peerExists = cursor.MoveToFirstAfter(key) && LmdbStorage.CompareStart(cursor.Current.Key, key, GetPeerPartLength(_peerId));
-                return peerExists;
-            }
-        }
-
         public IEnumerable<TransportMessage> GetUnackedMessages()
         {
             var key = LmdbStorage.CreateKeyBuffer(_peerId);

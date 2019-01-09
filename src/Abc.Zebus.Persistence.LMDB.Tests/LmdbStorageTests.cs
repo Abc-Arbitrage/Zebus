@@ -9,7 +9,6 @@ using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
-using LightningDB;
 using Moq;
 using NUnit.Framework;
 using ProtoBuf;
@@ -19,8 +18,6 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
     public class LmdbStorageTests
     {
         private LmdbStorage _storage;
-        // private FakePeerStateRepository _peerStateRepository;
-        private Mock<IPersistenceConfiguration> _configurationMock;
         private Mock<IReporter> _reporterMock;
         private string _dbName;
 
@@ -28,22 +25,8 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
         public void SetUp()
         {
             _dbName = Guid.NewGuid().ToString();
-            /*
-            using (var environment = new LightningEnvironment(LmdbStorage.OutputPath, new EnvironmentConfiguration{MaxDatabases = 2}))
-            {
-                environment.Open();
-                using (var transaction = environment.BeginTransaction())
-                using (var database = transaction.OpenDatabase(_dbName, new DatabaseConfiguration{Flags = DatabaseOpenFlags.Create}))
-                {
-                    database.Drop(transaction);
-                    transaction.Commit();
-                }
-            }
-            */
 
-            _configurationMock = new Mock<IPersistenceConfiguration>();
             _reporterMock = new Mock<IReporter>();
-            // _peerStateRepository = new FakePeerStateRepository();
             _storage = new LmdbStorage(_dbName);
             _storage.Start();
         }
@@ -51,7 +34,6 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
         [TearDown]
         public void Teardown()
         {
-            Console.WriteLine("Tearing down");
             _storage.Stop();
         }
 
@@ -80,70 +62,35 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
         [Test]
         public async Task should_write_message_entry_fields_to_cassandra()
         {
-            var messageBytes = new byte[512];
-            new Random().NextBytes(messageBytes);
+            var inputMessage = CreateTestTransportMessage(1); 
+            var messageBytes = Serialization.Serializer.Serialize(inputMessage).ToArray();
             var messageId = MessageId.NextId();
-            var peerId = "Abc.Peer.0";
 
-            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
+            var peerId = new PeerId("Abc.Peer.0");
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(peerId, messageId, MessageTypeId.PersistenceStopping, messageBytes) });
 
-            /*
-            var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
-            retrievedMessage.TransportMessage.ShouldBeEquivalentTo(messageBytes, true);
-            retrievedMessage.BucketId.ShouldEqual(GetBucketIdFromMessageId(messageId));
-            retrievedMessage.IsAcked.ShouldBeFalse();
-            retrievedMessage.PeerId.ShouldEqual(peerId);
-            retrievedMessage.UniqueTimestampInTicks.ShouldEqual(messageId.GetDateTime().Ticks);
-            var writeTimeRow = DataContext.Session.Execute("SELECT WRITETIME(\"IsAcked\") FROM \"PersistentMessage\";").ExpectedSingle();
-            writeTimeRow.GetValue<long>(0).ShouldEqual(ToUnixMicroSeconds(messageId.GetDateTime()));
-        */
+
+            var messages = _storage.CreateMessageReader(peerId).GetUnackedMessages();
+            var retrievedMessage = messages.Single();
+            retrievedMessage.ShouldEqualDeeply(inputMessage);
         }
 
         [Test]
         public async Task should_not_overwrite_messages_with_same_time_component_and_different_message_id()
         {
-            var messageBytes = new byte[512];
-            new Random().NextBytes(messageBytes);
+            var messageBytes = Serialization.Serializer.Serialize(CreateTestTransportMessage(1)).ToArray();
             var messageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9706-ae1ea5dcf365"));      // Time component @2016-01-01 00:00:00Z
             var otherMessageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9806-f1ef55aac8e9")); // Time component @2016-01-01 00:00:00Z
-            var peerId = "Abc.Peer.0";
 
+            var peerId = new PeerId("Abc.Peer.0");
             await _storage.Write(new List<MatcherEntry>
             {
-                MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes),
-                MatcherEntry.Message(new PeerId(peerId), otherMessageId, MessageTypeId.PersistenceStopping, messageBytes),
+                MatcherEntry.Message(peerId, messageId, MessageTypeId.PersistenceStopping, messageBytes),
+                MatcherEntry.Message(peerId, otherMessageId, MessageTypeId.PersistenceStopping, messageBytes),
             });
 
-            // var retrievedMessages = DataContext.PersistentMessages.Execute().ToList();
-            // retrievedMessages.Count.ShouldEqual(2);
-        }
-
-        private static long ToUnixMicroSeconds(DateTime timestamp)
-        {
-            var origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-            var diff = timestamp - origin;
-            var diffInMicroSeconds = diff.Ticks / 10;
-            return diffInMicroSeconds;
-        }
-
-        [Test]
-        public async Task should_write_ack_entry_fields_to_cassandra()
-        {
-            var messageId = MessageId.NextId();
-            var peerId = "Abc.Peer.0";
-
-            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Ack(new PeerId(peerId), messageId) });
-
-            /*
-            var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
-            retrievedMessage.TransportMessage.ShouldBeNull();
-            retrievedMessage.BucketId.ShouldEqual(GetBucketIdFromMessageId(messageId));
-            retrievedMessage.IsAcked.ShouldBeTrue();
-            retrievedMessage.PeerId.ShouldEqual(peerId);
-            retrievedMessage.UniqueTimestampInTicks.ShouldEqual(messageId.GetDateTime().Ticks);
-            var writeTimeRow = DataContext.Session.Execute("SELECT WRITETIME(\"IsAcked\") FROM \"PersistentMessage\";").ExpectedSingle();
-            writeTimeRow.GetValue<long>(0).ShouldEqual(ToUnixMicroSeconds(messageId.GetDateTime()) + 1);
-        */
+            var messages = _storage.CreateMessageReader(peerId).GetUnackedMessages();
+            messages.ToList().Count.ShouldEqual(2);
         }
 
         [Test]
@@ -152,45 +99,16 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
             var messageBytes = new byte[512];
             new Random().NextBytes(messageBytes);
             var messageId = MessageId.NextId();
-            var peerId = "Abc.Peer.0";
 
-            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Ack(new PeerId(peerId), messageId) });
+            var peerId = new PeerId("Abc.Peer.0");
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Ack(peerId, messageId) });
             await Task.Delay(50);
-            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(peerId, messageId, MessageTypeId.PersistenceStopping, messageBytes) });
 
-            /*
-            var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
-            retrievedMessage.TransportMessage.ShouldBeNull();
-            retrievedMessage.BucketId.ShouldEqual(GetBucketIdFromMessageId(messageId));
-            retrievedMessage.IsAcked.ShouldBeTrue();
-            retrievedMessage.PeerId.ShouldEqual(peerId);
-            retrievedMessage.UniqueTimestampInTicks.ShouldEqual(messageId.GetDateTime().Ticks);
-        */
-        }
-
-        [Test]
-        public void should_call_peer_state_repository_when_asked_to_remove_peer()
-        {
-            var peerId = new PeerId("PeerId");
-            // _peerStateRepository.Add(new PeerState(peerId));
-            // var peerState =_peerStateRepository[peerId];
-
-            _storage.RemovePeer(peerId);
-            
-            // peerState.Removed.ShouldBeTrue();
-            // _peerStateRepository.GetPeerStateFor(peerId).ShouldBeNull();
-        }
-
-        [Test]
-        public void should_return_message_reader()
-        {
-            var peerId = new PeerId("PeerId");
-            // _peerStateRepository.Add(new PeerState(peerId));
-
-            using (var messageReader = _storage.CreateMessageReader(peerId))
-            {
-                messageReader.ShouldNotBeNull();
-            }
+            var messageReader = _storage.CreateMessageReader(peerId);
+            messageReader.ShouldNotBeNull();
+            var messages = messageReader.GetUnackedMessages().ToList();
+            messages.ShouldBeEmpty();
         }
 
         [Test]
@@ -199,63 +117,6 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
             _storage.CreateMessageReader(new PeerId("UnknownPeerId")).ShouldBeNull();
         }
 
-        private static long GetBucketIdFromMessageId(MessageId message)
-        {
-            return GetBucketIdFromDateTime(message.GetDateTime());
-        }
-
-        private static long GetBucketIdFromDateTime(DateTime timestamp)
-        {
-            return new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hour, 0, 0).Ticks;
-        }
-
-        [Test]
-        public async Task should_store_messages_in_different_buckets()
-        {
-            MessageId.ResetLastTimestamp();
-
-            var firstTime = DateTime.Now;
-            using (SystemDateTime.Set(firstTime))
-            using (MessageId.PauseIdGenerationAtDate(firstTime))
-            {
-                var peerId = new PeerId("Abc.Testing.Target");
-
-                var firstMessageId = MessageId.NextId();
-                await _storage.Write(new[] { MatcherEntry.Message(peerId, firstMessageId, new MessageTypeId("Abc.Message"), new byte[] { 0x01, 0x02, 0x03 }) });
-
-                var secondTime = firstTime.AddHours(1);
-                SystemDateTime.Set(secondTime);
-                MessageId.PauseIdGenerationAtDate(secondTime);
-
-                var secondMessageId = MessageId.NextId();
-                await _storage.Write(new[] { MatcherEntry.Message(peerId, secondMessageId, new MessageTypeId("Abc.OtherMessage"), new byte[] { 0x04, 0x05, 0x06 }) });
-
-                /*
-                var persistedMessages = DataContext.PersistentMessages.Execute().OrderBy(x => x.UniqueTimestampInTicks).ToList(); // Results are only ordered withing a partition
-                persistedMessages.Count.ShouldEqual(2);
-
-                persistedMessages.First().ShouldHaveSamePropertiesAs(new PersistentMessage
-                {
-                    BucketId = BucketIdHelper.GetBucketId(firstTime),
-                    PeerId = peerId.ToString(),
-                    IsAcked = false,
-                    MessageId = firstMessageId.Value,
-                    TransportMessage = new byte[] { 0x01, 0x02, 0x03 },
-                    UniqueTimestampInTicks = firstTime.Ticks
-                });
-                persistedMessages.Last().ShouldHaveSamePropertiesAs(new PersistentMessage
-                {
-                    BucketId = BucketIdHelper.GetBucketId(secondTime),
-                    PeerId = peerId.ToString(),
-                    IsAcked = false,
-                    MessageId = secondMessageId.Value,
-                    TransportMessage = new byte[] { 0x04, 0x05, 0x06 },
-                    UniqueTimestampInTicks = secondTime.Ticks
-                });
-            */
-            }
-        }
-        
         [Test]
         public void should_update_non_ack_message_count()
         {
@@ -266,13 +127,15 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
             _storage.Write(new[] { MatcherEntry.Message(secondPeer, MessageId.NextId(), new MessageTypeId("Abc.Message"), new byte[] { 0x04, 0x05, 0x06 }) });
             _storage.Write(new[] { MatcherEntry.Message(firstPeer, MessageId.NextId(), new MessageTypeId("Abc.Message"), new byte[] { 0x07, 0x08, 0x09 }) });
 
-            // _peerStateRepository[firstPeer].NonAckedMessageCount.ShouldEqual(2);
-            // _peerStateRepository[secondPeer].NonAckedMessageCount.ShouldEqual(1);
+            var nonAckedMessageCounts = _storage.GetNonAckedMessageCountsForUpdatedPeers();
+            nonAckedMessageCounts[firstPeer].ShouldEqual(2);
+            nonAckedMessageCounts[secondPeer].ShouldEqual(1);
 
             _storage.Write(new[] { MatcherEntry.Ack(firstPeer, MessageId.NextId()) });
 
-            // _peerStateRepository[firstPeer].NonAckedMessageCount.ShouldEqual(1);
-            // _peerStateRepository[secondPeer].NonAckedMessageCount.ShouldEqual(1);
+            nonAckedMessageCounts = _storage.GetNonAckedMessageCountsForUpdatedPeers();
+            nonAckedMessageCounts[firstPeer].ShouldEqual(1);
+            nonAckedMessageCounts.ContainsKey(secondPeer).ShouldBeFalse();
         }
 
         [Test]
@@ -280,8 +143,6 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
         {
             var firstPeer = new PeerId("Abc.Testing.Target");
             var secondPeer = new PeerId("Abc.Testing.OtherTarget");
-            // _peerStateRepository.Add(new PeerState(firstPeer, 0, SystemDateTime.UtcNow.Date.Ticks));
-            // _peerStateRepository.Add(new PeerState(secondPeer, 0, SystemDateTime.UtcNow.Date.Ticks));
 
             using (MessageId.PauseIdGeneration())
             using (SystemDateTime.PauseTime())
@@ -300,9 +161,6 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
 
                 await _storage.Write(messages);
 
-                // _peerStateRepository[firstPeer].NonAckedMessageCount.ShouldEqual(100);
-                // _peerStateRepository[secondPeer].NonAckedMessageCount.ShouldEqual(100);
-
                 using (var readerForFirstPeer = (LmdbMessageReader)_storage.CreateMessageReader(firstPeer))
                 {
                     readerForFirstPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
@@ -315,7 +173,7 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
             }
         }
 
-        [Test]
+        [Test, Explicit]
         public void should_report_storage_informations()
         {
             var peer = new PeerId("peer");

@@ -18,23 +18,25 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
     /// </summary>
     public class LmdbStorage : IStorage, IDisposable
     {
-        private readonly string _dbName;
-        public const string OutputPath = "data";
-
-        private LightningEnvironment _environment;
-        private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
         private static readonly int _guidLength = Guid.Empty.ToByteArray().Length;
+        private const string _outputPath = "data";
 
-        public int PersistenceQueueSize { get; } = 0;
+        private readonly string _dbName;
+        private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
+
+        private readonly HashSet<PeerId> _updatedPeers = new HashSet<PeerId>();
+        private LightningEnvironment _environment;
 
         public LmdbStorage(string dbName)
         {
             _dbName = dbName;
         }
 
+        public int PersistenceQueueSize { get; } = 0;
+
         public void Start()
         {
-            _environment = new LightningEnvironment(OutputPath) { MaxDatabases = 10 };
+            _environment = new LightningEnvironment(_outputPath) { MaxDatabases = 10 };
             _environment.Open();
             EnsureDatabaseIsCreated();
             ReadAllOutOfOrderAcks();
@@ -50,6 +52,7 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
             using (var transaction = _environment.BeginTransaction())
             using (var db = transaction.OpenDatabase(GetMessagesDbName()))
             using (var acksDb = transaction.OpenDatabase(GetPendingAcksDbName()))
+            using (var peersDb = transaction.OpenDatabase(GetPeersDbName()))
             using (var cursor = transaction.CreateCursor(db))
             {
                 foreach (var (entry, ticks) in entriesToPersist.Select(x => (x, x.MessageId.GetDateTime().Ticks)))
@@ -77,10 +80,28 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
                         // Otherwise ignore the message as it has already been acked
                     }
                 }
+
+                lock (_updatedPeers)
+                {
+                    foreach (var entry in entriesToPersist.GroupBy(x => x.PeerId))
+                    {
+                        _updatedPeers.Add(entry.Key); 
+                        UpdateNonAckedCounts(entry, transaction, peersDb);
+                    }
+                }
                 transaction.Commit();
             }
 
             return Task.CompletedTask;
+        }
+
+        private static void UpdateNonAckedCounts(IGrouping<PeerId, MatcherEntry> entry, LightningTransaction transaction, LightningDatabase peersDb)
+        {
+            var nonAcked = entry.Aggregate(0, (s, e) => s + (e.IsAck ? -1 : 1));
+            var peerKey = GetPeerKey(entry.Key);
+            var alreadyExists = transaction.TryGet(peersDb, peerKey, out var currentNonAckedBytes);
+            var currentNonAcked = alreadyExists ? BitConverter.ToInt32(currentNonAckedBytes, 0) : 0;
+            transaction.Put(peersDb, peerKey, BitConverter.GetBytes(currentNonAcked + nonAcked));
         }
 
         public static void FillKey(byte[] key, PeerId peerId, long ticks, Guid messageId)
@@ -98,13 +119,14 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
 
         public IMessageReader CreateMessageReader(PeerId peerId)
         {
-            var messageReader = new LmdbMessageReader(_environment, peerId, GetMessagesDbName());
-            if (!messageReader.PeerExists())
+            using (var transaction = _environment.BeginTransaction())
+            using (var peersDb = transaction.OpenDatabase(GetPeersDbName()))
             {
-                messageReader.Dispose();
-                return null;
+                if (!transaction.TryGet(peersDb, GetPeerKey(peerId), out _))
+                    return null;
             }
-            return messageReader;
+
+            return new LmdbMessageReader(_environment, peerId, GetMessagesDbName());
         }
 
         public void RemovePeer(PeerId peerId)
@@ -130,13 +152,35 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
                     } while (cursor.MoveNext() && CompareStart(currentKey, key, length));
                 }
 
+                // TODO: remove out of order acks
+
                 transaction.Commit();
             }
         }
 
         public Dictionary<PeerId, int> GetNonAckedMessageCountsForUpdatedPeers()
         {
-            throw new NotImplementedException();
+            PeerId[] updatedPeers;
+            lock (_updatedPeers)
+            {
+                updatedPeers = _updatedPeers.ToArray();
+                _updatedPeers.Clear();
+            }
+
+            var nonAckedCounts = new Dictionary<PeerId, int>(updatedPeers.Length);
+            using (var transaction = _environment.BeginTransaction())
+            using (var peersDb = transaction.OpenDatabase(GetPeersDbName()))
+            using (var cursor = transaction.CreateCursor(peersDb))
+            {
+                foreach (var updatedPeer in updatedPeers)
+                {
+                    var key = GetPeerKey(updatedPeer);
+                    if (cursor.MoveTo(key))
+                        nonAckedCounts[updatedPeer] = BitConverter.ToInt32(cursor.Current.Value, 0);
+                }
+            }
+
+            return nonAckedCounts;
         }
 
         public void Dispose()
@@ -146,14 +190,16 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
         }
 
         public static byte[] CreateKeyBuffer(PeerId entryPeerId) => new byte[Encoding.UTF8.GetByteCount(entryPeerId.ToString()) + sizeof(long) + _guidLength];
-        private string GetMessagesDbName() => _dbName + "-messages"; 
-        private string GetPendingAcksDbName() => _dbName + "-acks"; 
+        private string GetMessagesDbName() => _dbName + "-messages";
+        private string GetPendingAcksDbName() => _dbName + "-acks";
+        private string GetPeersDbName() => _dbName + "-peers";
 
         private void EnsureDatabaseIsCreated()
         {
             using (var transaction = _environment.BeginTransaction())
             using (var db = transaction.OpenDatabase(GetMessagesDbName(), new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
             using (var acksDb = transaction.OpenDatabase(GetPendingAcksDbName(), new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
+            using (var peersDb = transaction.OpenDatabase(GetPeersDbName(), new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
             {
                 transaction.Commit();
             }
@@ -170,12 +216,12 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
                     var messageId = ExtractMessageId(cursor.Current.Key);
                     _outOfOrderAcks.TryAdd(messageId, default);
                 }
-            } 
+            }
         }
 
         public static bool CompareStart(byte[] x, byte[] y, int length)
         {
-            for (int index = length - 1; index >= 0; index--)
+            for (var index = length - 1; index >= 0; index--)
             {
                 if (x[index] != y[index])
                     return false;
@@ -184,6 +230,7 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
             return true;
         }
 
+        private static byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
         private static MessageId ExtractMessageId(byte[] key) => new MessageId(new Guid(key.AsSpan(key.Length - _guidLength).ToArray()));
     }
 }
