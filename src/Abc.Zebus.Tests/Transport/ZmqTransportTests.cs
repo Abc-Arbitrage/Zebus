@@ -589,17 +589,14 @@ namespace Abc.Zebus.Tests.Transport
             
             transport2.Stop();
 
-            using (SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(30.Seconds())))
-            {
-                Wait.Until(() => transport1.OutboundSocketCount == 0, 10.Seconds());
-            }
+            Wait.Until(() => transport1.OutboundSocketCount == 0, 10.Seconds());
         }
 
         private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment)
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
             configurationMock.SetupGet(x => x.InboundEndPoint).Returns(endPoint);
-            configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(100.Milliseconds());
+            configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(1.Second());
 
             if (peerId == null)
                 peerId = $"Abc.Testing.{Guid.NewGuid():N}";
