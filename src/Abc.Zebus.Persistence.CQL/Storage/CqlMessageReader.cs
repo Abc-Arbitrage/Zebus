@@ -54,7 +54,8 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         private IEnumerable<TransportMessage> GetNonAckedMessagesInBucket(long oldestNonAckedMessageTimestampInTicks, long bucketId)
         {
-            return _dataContext.Session.Execute(_preparedStatement.Bind(_peerState.PeerId.ToString(), bucketId, oldestNonAckedMessageTimestampInTicks).SetPageSize(10 * 1000))
+            return _dataContext.Session
+                               .Execute(_preparedStatement.Bind(_peerState.PeerId.ToString(), bucketId, oldestNonAckedMessageTimestampInTicks).SetPageSize(10 * 1000))
                                .Where(x => !x.GetValue<bool>("IsAcked"))
                                .Select(CreatePersistentMessageFromRow);
         }
