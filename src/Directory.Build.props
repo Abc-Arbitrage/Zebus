@@ -27,7 +27,7 @@
     <Authors>ABC arbitrage</Authors>
     <Description>A lightweight Peer to Peer Service Bus</Description>
     <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/Abc-Arbitrage/Zebus/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Copyright © ABC arbitrage 2019</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <ContinuousIntegrationBuild Condition="'$(ContinuousIntegrationBuild)' == ''">false</ContinuousIntegrationBuild>
