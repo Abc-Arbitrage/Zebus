@@ -153,14 +153,18 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
 
                 await _storage.Write(messages);
 
-                using (var readerForFirstPeer = (RocksDbMessageReader)_storage.CreateMessageReader(firstPeer))
+                using (var readerForFirstPeer = _storage.CreateMessageReader(firstPeer))
                 {
-                    readerForFirstPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
+                    var transportMessages = readerForFirstPeer.GetUnackedMessages().ToList();
+                    transportMessages.Count.ShouldEqual(100);
+                    transportMessages.Last().ShouldEqualDeeply(expectedTransportMessages.Last());
                 }
 
-                using (var readerForSecondPeer = (RocksDbMessageReader)_storage.CreateMessageReader(secondPeer))
+                using (var readerForSecondPeer = _storage.CreateMessageReader(secondPeer))
                 {
-                    readerForSecondPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
+                    var transportMessages = readerForSecondPeer.GetUnackedMessages().ToList();
+                    transportMessages.Count.ShouldEqual(100);
+                    transportMessages.Last().ShouldEqualDeeply(expectedTransportMessages.Last());
                 }
             }
         }

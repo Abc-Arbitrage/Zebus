@@ -38,28 +38,6 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
         }
 
         [Test]
-        public void should_initialize_peer_state_repository_on_start()
-        {
-            // var peerStateRepository = new FakePeerStateRepository();
-            var storage = new LmdbStorage(_dbName);
-            storage.Start();
-
-            // peerStateRepository.IsInitialized.ShouldBeTrue();
-        }
-
-        [Test]
-        public void should_save_peer_state_repository_on_stop()
-        {
-            // var peerStateRepository = new FakePeerStateRepository();
-            var storage = new LmdbStorage(_dbName);
-            storage.Start();
-            storage.Stop();
-
-            // peerStateRepository.IsInitialized.ShouldBeTrue();
-            // peerStateRepository.HasBeenSaved.ShouldBeTrue();
-        }
-
-        [Test]
         public async Task should_write_message_entry_fields_to_cassandra()
         {
             var inputMessage = CreateTestTransportMessage(1); 
@@ -176,14 +154,18 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
 
                 await _storage.Write(messages);
 
-                using (var readerForFirstPeer = (LmdbMessageReader)_storage.CreateMessageReader(firstPeer))
+                using (var readerForFirstPeer = _storage.CreateMessageReader(firstPeer))
                 {
-                    readerForFirstPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
+                    var transportMessages = readerForFirstPeer.GetUnackedMessages().ToList();
+                    transportMessages.Count.ShouldEqual(100);
+                    transportMessages.Last().ShouldEqualDeeply(expectedTransportMessages.Last());
                 }
 
-                using (var readerForSecondPeer = (LmdbMessageReader)_storage.CreateMessageReader(secondPeer))
+                using (var readerForSecondPeer = _storage.CreateMessageReader(secondPeer))
                 {
-                    readerForSecondPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
+                    var transportMessages = readerForSecondPeer.GetUnackedMessages().ToList();
+                    transportMessages.Count.ShouldEqual(100);
+                    transportMessages.Last().ShouldEqualDeeply(expectedTransportMessages.Last());
                 }
             }
         }
