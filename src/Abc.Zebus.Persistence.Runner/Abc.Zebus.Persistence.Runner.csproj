@@ -4,14 +4,27 @@
     <TargetFramework>net471</TargetFramework>
     <Version>$(ZebusPersistenceVersion)</Version>
     <IsPackable>false</IsPackable>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Persistence.CQL\Abc.Zebus.Persistence.CQL.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.RocksDb\Abc.Zebus.Persistence.RocksDb.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentDateTime" Version="1.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Abc.Zebus.libzmq.x86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

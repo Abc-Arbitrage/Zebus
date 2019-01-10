@@ -13,6 +13,7 @@ using Abc.Zebus.Persistence.CQL.Util;
 using Abc.Zebus.Persistence.Initialization;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
+using Abc.Zebus.Persistence.RocksDb;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Transport;
 using Abc.Zebus.Transport;
@@ -38,15 +39,14 @@ namespace Abc.Zebus.Persistence.Runner
             XmlConfigurator.ConfigureAndWatch(new FileInfo(InBaseDirectory("log4net.config")));
             _log.Info("Starting persistence");
 
-            var busFactory = new BusFactory();
             var appSettingsConfiguration = new AppSettingsConfiguration();
-            InjectPersistenceServiceSpecificConfiguration(busFactory, appSettingsConfiguration);
-
-            busFactory
-                .WithConfiguration(appSettingsConfiguration, ConfigurationManager.AppSettings["Environment"])
-                .WithScan()
-                .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"])
-                .WithPeerId(ConfigurationManager.AppSettings["PeerId"]);
+            var useCassandraStorage = ConfigurationManager.AppSettings["PersistenceStorage"] == "Cassandra";
+            var busFactory = new BusFactory().WithConfiguration(appSettingsConfiguration, ConfigurationManager.AppSettings["Environment"])
+                                             .WithScan()
+                                             .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"])
+                                             .WithPeerId(ConfigurationManager.AppSettings["PeerId"]);
+            
+            InjectPersistenceServiceSpecificConfiguration(busFactory, appSettingsConfiguration, useCassandraStorage);
 
             using (busFactory.CreateAndStartBus())
             {
@@ -54,16 +54,20 @@ namespace Abc.Zebus.Persistence.Runner
                 var inMemoryMessageMatcherInitializer = busFactory.Container.GetInstance<InMemoryMessageMatcherInitializer>();
                 inMemoryMessageMatcherInitializer.BeforeStart();
 
-                var oldestNonAckedMessageUpdaterPeriodicAction = busFactory.Container.GetInstance<OldestNonAckedMessageUpdaterPeriodicAction>();
-                oldestNonAckedMessageUpdaterPeriodicAction.AfterStart();
+                OldestNonAckedMessageUpdaterPeriodicAction oldestNonAckedMessageUpdaterPeriodicAction = null;
+                if (useCassandraStorage)
+                {
+                    oldestNonAckedMessageUpdaterPeriodicAction = busFactory.Container.GetInstance<OldestNonAckedMessageUpdaterPeriodicAction>();
+                    oldestNonAckedMessageUpdaterPeriodicAction.AfterStart();
+                }
 
                 _log.Info("Persistence started");
-                
+
                 _cancelKeySignal.WaitOne();
 
                 _log.Info("Stopping initialisers");
-                oldestNonAckedMessageUpdaterPeriodicAction.BeforeStop();
-                
+                oldestNonAckedMessageUpdaterPeriodicAction?.BeforeStop();
+
                 var messageReplayerInitializer = busFactory.Container.GetInstance<MessageReplayerInitializer>();
                 messageReplayerInitializer.BeforeStop();
 
@@ -78,19 +82,17 @@ namespace Abc.Zebus.Persistence.Runner
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
         }
 
-        private static void InjectPersistenceServiceSpecificConfiguration(BusFactory busFactory, AppSettingsConfiguration configuration)
+        private static void InjectPersistenceServiceSpecificConfiguration(BusFactory busFactory, AppSettingsConfiguration configuration, bool useCassandraStorage)
         {
             busFactory.ConfigureContainer(c =>
             {
                 c.ForSingletonOf<IPersistenceConfiguration>().Use(configuration);
 
-                // TODO: Add InMemoryStorage
-                c.ForSingletonOf<IStorage>().Use<CqlStorage>();
-                c.ForSingletonOf<ICqlStorage>().Use<CqlStorage>();
+                c.ForSingletonOf<IStorage>().Use(ctx => useCassandraStorage ? (IStorage)ctx.GetInstance<CqlStorage>() : ctx.GetInstance<RocksDbStorage>());
 
                 c.ForSingletonOf<IMessageReplayerRepository>().Use<MessageReplayerRepository>();
                 c.ForSingletonOf<IMessageReplayer>().Use<MessageReplayer>();
-                
+
                 c.ForSingletonOf<IMessageDispatcher>().Use(typeof(Func<IContext, MessageDispatcher>).Name,
                                                            ctx =>
                                                            {
@@ -108,10 +110,14 @@ namespace Abc.Zebus.Persistence.Runner
                 c.ForSingletonOf<IReporter>().Use<NoopReporter>();
 
                 // Cassandra specific
-                c.ForSingletonOf<PeerStateRepository>().Use<PeerStateRepository>();
-                c.ForSingletonOf<CassandraCqlSessionManager>().Use(() => CassandraCqlSessionManager.Create());
-                c.Forward<PeerStateRepository, IPeerStateRepository>();
-                c.ForSingletonOf<ICqlPersistenceConfiguration>().Use<CassandraAppSettingsConfiguration>();
+                if (useCassandraStorage)
+                {
+                    c.ForSingletonOf<ICqlStorage>().Use<CqlStorage>();
+                    c.ForSingletonOf<PeerStateRepository>().Use<PeerStateRepository>();
+                    c.ForSingletonOf<CassandraCqlSessionManager>().Use(() => CassandraCqlSessionManager.Create());
+                    c.Forward<PeerStateRepository, IPeerStateRepository>();
+                    c.ForSingletonOf<ICqlPersistenceConfiguration>().Use<CassandraAppSettingsConfiguration>();
+                }
             });
         }
     }

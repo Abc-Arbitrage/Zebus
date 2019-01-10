@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Storage;
 using RocksDbSharp;
+using StructureMap;
 
 namespace Abc.Zebus.Persistence.RocksDb
 {
@@ -22,6 +23,12 @@ namespace Abc.Zebus.Persistence.RocksDb
         private ColumnFamilyHandle _messagesColumnFamily;
         private ColumnFamilyHandle _peersColumnFamily;
         private ColumnFamilyHandle _acksColumnFamily;
+
+        [DefaultConstructor]
+        public RocksDbStorage()
+            : this("zebus-persistence")
+        {
+        }
 
         public RocksDbStorage(string dbName)
         {
@@ -49,7 +56,7 @@ namespace Abc.Zebus.Persistence.RocksDb
 
             ColumnFamilyOptions ColumnFamilyOptions() => new ColumnFamilyOptions().SetCompression(CompressionTypeEnum.rocksdb_no_compression)
                                                                                   .SetLevelCompactionDynamicLevelBytes(true)
-                                                                                  .SetArenaBlockSize(16*1024);
+                                                                                  .SetArenaBlockSize(16 * 1024);
         }
 
         public void Stop() => Dispose();
