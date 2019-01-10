@@ -143,12 +143,12 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
                     if (!cursor.MoveToFirstAfter(key))
                         return;
 
-                    var currentKey = cursor.Current.Key;
+                    byte[] currentKey;
                     var peerIdLength = peerId.ToString().Length;
                     do
                     {
                         cursor.Delete();
-
+                        currentKey = cursor.Current.Key; 
                     } while (cursor.MoveNext() && CompareStart(currentKey, key, peerIdLength));
                 }
 

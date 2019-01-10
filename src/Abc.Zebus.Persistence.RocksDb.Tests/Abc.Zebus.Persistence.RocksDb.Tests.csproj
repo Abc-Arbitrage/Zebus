@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B005F4E5-93BE-4D95-83B9-2F2B05A6F524}</ProjectGuid>
+    <ProjectGuid>{123C2076-DE3C-4F41-AC58-1AC5210F1CCD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Abc.Zebus.Persistence.LMDB.Tests</RootNamespace>
-    <AssemblyName>Abc.Zebus.Persistence.LMDB.Tests</AssemblyName>
+    <RootNamespace>Abc.Zebus.Persistence.RocksDb.Tests</RootNamespace>
+    <AssemblyName>Abc.Zebus.Persistence.RocksDb.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -41,8 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LmdbStorageTests.cs" />
     <Compile Include="PerformanceTests.cs" />
+    <Compile Include="RocksDbStorageTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -50,12 +50,12 @@
       <Project>{507a4411-db8a-4663-a491-cca29854b890}</Project>
       <Name>Abc.Zebus.Contracts</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Abc.Zebus.Persistence.LMDB\Abc.Zebus.Persistence.LMDB.csproj">
-      <Project>{b4f6e4e0-feee-4597-84c2-1e0fda9a94ca}</Project>
-      <Name>Abc.Zebus.Persistence.LMDB</Name>
+    <ProjectReference Include="..\Abc.Zebus.Persistence.RocksDb\Abc.Zebus.Persistence.RocksDb.csproj">
+      <Project>{03c805d6-0217-4e94-8df5-1c0acd4cf82a}</Project>
+      <Name>Abc.Zebus.Persistence.RocksDb</Name>
     </ProjectReference>
     <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj">
-      <Project>{a8117c95-b3ca-447c-bcdf-9b6f7a17f290}</Project>
+      <Project>{A8117C95-B3CA-447C-BCDF-9B6F7A17F290}</Project>
       <Name>Abc.Zebus.Persistence</Name>
     </ProjectReference>
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj">
@@ -68,9 +68,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Moq">
-      <Version>4.9.0</Version>
-    </PackageReference>
     <PackageReference Include="NUnit">
       <Version>3.11.0</Version>
     </PackageReference>
