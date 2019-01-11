@@ -113,9 +113,7 @@ namespace Abc.Zebus.Persistence.Runner
                 if (useCassandraStorage)
                 {
                     c.ForSingletonOf<ICqlStorage>().Use<CqlStorage>();
-                    c.ForSingletonOf<PeerStateRepository>().Use<PeerStateRepository>();
                     c.ForSingletonOf<CassandraCqlSessionManager>().Use(() => CassandraCqlSessionManager.Create());
-                    c.Forward<PeerStateRepository, IPeerStateRepository>();
                     c.ForSingletonOf<ICqlPersistenceConfiguration>().Use<CassandraAppSettingsConfiguration>();
                 }
             });

@@ -1,23 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Hosting;
 using Abc.Zebus.Persistence.CQL.Storage;
+using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Persistence.CQL.PeriodicAction
 {
     public class OldestNonAckedMessageUpdaterPeriodicAction : PeriodicActionHostInitializer
     {
-        private readonly IPeerStateRepository _peerStateRepository;
         private readonly ICqlPersistenceConfiguration _configuration;
         private readonly ICqlStorage _cqlStorage;
-        private long _lastCheckVersion;
         private DateTime _lastGlobalCheck;
+        private readonly NonAckedCountCache _nonAckedCountCache = new NonAckedCountCache();
 
-        public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, IPeerStateRepository peerStateRepository, ICqlPersistenceConfiguration configuration, ICqlStorage cqlStorage) 
+        public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, ICqlPersistenceConfiguration configuration, ICqlStorage cqlStorage)
             : base(bus, configuration.OldestMessagePerPeerCheckPeriod)
         {
-            _peerStateRepository = peerStateRepository;
             _configuration = configuration;
             _cqlStorage = cqlStorage;
         }
@@ -25,17 +26,19 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
         public override void DoPeriodicAction()
         {
             var isGlobalCheck = SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
+            var allPeersDictionary = _cqlStorage.GetAllKnownPeers().ToDictionary(state => state.PeerId);
+            IEnumerable<PeerState> peersToCheck = allPeersDictionary.Values;
+            var updatedPeers = _nonAckedCountCache.GetForUpdatedPeers(peersToCheck.Select(x => (x.PeerId, x.NonAckedMessageCount)).ToList());
             if (isGlobalCheck)
             {
-                _lastCheckVersion = 0;
                 _lastGlobalCheck = SystemDateTime.UtcNow;
             }
-
-            var peersToCheck = _peerStateRepository.GetUpdatedPeers(ref _lastCheckVersion);
+            else
+            {
+                peersToCheck = updatedPeers.Select(x => allPeersDictionary[x.PeerId]);
+            }
 
             Parallel.ForEach(peersToCheck, new ParallelOptions { MaxDegreeOfParallelism = 10 }, UpdateOldestNonAckedMessage);
-
-            _peerStateRepository.Save();
         }
 
         private void UpdateOldestNonAckedMessage(PeerState peer)
@@ -43,11 +46,8 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
             if (peer.Removed)
                 return;
 
-            var newOldest = _cqlStorage.GetOldestNonAckedMessageTimestamp(peer);
-
-            _cqlStorage.CleanBuckets(peer.PeerId, peer.OldestNonAckedMessageTimestampInTicks, newOldest);
-
-            peer.UpdateOldestNonAckedMessageTimestamp(newOldest);
+            _cqlStorage.CleanBuckets(peer)
+                       .Wait(_configuration.OldestMessagePerPeerCheckPeriod);
         }
     }
 }

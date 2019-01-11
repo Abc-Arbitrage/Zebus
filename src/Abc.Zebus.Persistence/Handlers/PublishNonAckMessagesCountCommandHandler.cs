@@ -8,6 +8,7 @@ namespace Abc.Zebus.Persistence.Handlers
     {
         private readonly IStorage _storage;
         private readonly IBus _bus;
+        private readonly NonAckedCountCache _nonAckedCountCache = new NonAckedCountCache();
 
         public PublishNonAckMessagesCountCommandHandler(IStorage storage, IBus bus)
         {
@@ -17,9 +18,10 @@ namespace Abc.Zebus.Persistence.Handlers
 
         public void Handle(PublishNonAckMessagesCountCommand message)
         {
-            var messagesCount = _storage.GetNonAckedMessageCountsForUpdatedPeers()
-                                        .Select(x => new NonAckMessage(x.Key.ToString(), x.Value))
-                                        .ToArray();
+            var allNonAckedCounts = _storage.GetNonAckedMessageCounts();
+            var updatedNonAckedCounts = _nonAckedCountCache.GetForUpdatedPeers(allNonAckedCounts.Select(x => (x.Key, x.Value)).ToList());
+            var messagesCount = updatedNonAckedCounts.Select(x => new NonAckMessage(x.PeerId.ToString(), x.Count))
+                                                     .ToArray();
 
             _bus.Publish(new NonAckMessagesCountChanged(messagesCount));
         }

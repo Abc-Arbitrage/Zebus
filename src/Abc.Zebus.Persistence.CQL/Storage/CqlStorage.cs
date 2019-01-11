@@ -22,17 +22,16 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         private static readonly DateTime _unixOrigin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
 
         private readonly PersistenceCqlDataContext _dataContext;
-        private readonly IPeerStateRepository _peerStateRepository;
+        private readonly PeerStateRepository _peerStateRepository;
         private readonly IPersistenceConfiguration _configuration;
         private readonly IReporter _reporter;
         private readonly ParallelPersistor _parallelPersistor;
         private readonly PreparedStatement _preparedStatement;
-        private long _lastNonAckedMessageCountsVersion;
 
-        public CqlStorage(PersistenceCqlDataContext dataContext, IPeerStateRepository peerStateRepository, IPersistenceConfiguration configuration, IReporter reporter)
+        public CqlStorage(PersistenceCqlDataContext dataContext, IPersistenceConfiguration configuration, IReporter reporter)
         {
             _dataContext = dataContext;
-            _peerStateRepository = peerStateRepository;
+            _peerStateRepository = new PeerStateRepository(dataContext);
             _configuration = configuration;
             _reporter = reporter;
 
@@ -44,9 +43,9 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public int PersistenceQueueSize => _parallelPersistor.QueueSize;
 
-        public Dictionary<PeerId, int> GetNonAckedMessageCountsForUpdatedPeers()
+        public Dictionary<PeerId, int> GetNonAckedMessageCounts()
         {
-            return _peerStateRepository.GetUpdatedPeers(ref _lastNonAckedMessageCountsVersion)
+            return _peerStateRepository.GetAllKnownPeers()
                                        .ToDictionary(x => x.PeerId, x => x.NonAckedMessageCount);
         }
 
@@ -59,7 +58,6 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         public void Stop()
         {
             Dispose();
-            _peerStateRepository.Save().Wait(2.Seconds());
         }
 
         public Task Write(IList<MatcherEntry> entriesToPersist)
@@ -76,7 +74,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             {
                 var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
                 if (shouldInvestigatePeer)
-                    _log.Info($"Storage requested for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}"); 
+                    _log.Info($"Storage requested for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}");
 
                 var messageDateTime = matcherEntry.MessageId.GetDateTimeForV2OrV3();
                 var rowTimestamp = matcherEntry.IsAck ? messageDateTime.AddTicks(10) : messageDateTime;
@@ -100,17 +98,18 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                     _log.Info($"Count delta computed for peer {matcherEntry.PeerId}, will increment: {countDelta}");
             }
 
+            var updateNonAckedCountTasks = new List<Task>();
             foreach (var countForPeer in countByPeer)
             {
-                _peerStateRepository.UpdateNonAckMessageCount(countForPeer.Key, countForPeer.Value);
+                updateNonAckedCountTasks.Add(_peerStateRepository.UpdateNonAckMessageCount(countForPeer.Key, countForPeer.Value));
             }
 
-            return Task.WhenAll(insertTasks);
+            return Task.WhenAll(insertTasks.Concat(updateNonAckedCountTasks));
         }
 
-        public void RemovePeer(PeerId peerId)
+        public Task RemovePeer(PeerId peerId)
         {
-            _peerStateRepository.RemovePeer(peerId);
+            return _peerStateRepository.RemovePeer(peerId);
         }
 
         public IMessageReader CreateMessageReader(PeerId peerId)
@@ -134,7 +133,27 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             _parallelPersistor.Dispose();
         }
 
-        public long GetOldestNonAckedMessageTimestamp(PeerState peer)
+        public Task CleanBuckets(PeerState peer)
+        {
+            var peerId = peer.PeerId;
+            var newOldestMessageTimestamp = GetOldestNonAckedMessageTimestampInTicks(peer);
+
+            var firstBucketToDelete = BucketIdHelper.GetBucketId(peer.OldestNonAckedMessageTimestampInTicks);
+            var lastBucketToDelete = BucketIdHelper.GetPreviousBucketId(newOldestMessageTimestamp);
+            if (firstBucketToDelete == lastBucketToDelete)
+                return Task.CompletedTask;
+
+            var bucketsToDelete = BucketIdHelper.GetBucketsCollection(firstBucketToDelete, lastBucketToDelete).ToArray();
+            var peerIdString = peerId.ToString();
+            _dataContext.PersistentMessages
+                        .Where(x => x.PeerId == peerIdString && bucketsToDelete.Contains(x.BucketId))
+                        .Delete()
+                        .ExecuteAsync();
+
+            return _peerStateRepository.UpdateNewOldestMessageTimestamp(peer, newOldestMessageTimestamp);
+        }
+
+        private long GetOldestNonAckedMessageTimestampInTicks(PeerState peer)
         {
             var peerId = peer.PeerId.ToString();
             var lastAckedMessageTimestamp = 0L;
@@ -142,9 +161,9 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             foreach (var currentBucketId in BucketIdHelper.GetBucketsCollection(peer.OldestNonAckedMessageTimestampInTicks))
             {
                 var messagesInBucket = _dataContext.PersistentMessages
-                                                   .Where(x => x.PeerId == peerId
-                                                               && x.BucketId == currentBucketId
-                                                               && x.UniqueTimestampInTicks >= peer.OldestNonAckedMessageTimestampInTicks)
+                                                   .Where(x => x.PeerId == peerId &&
+                                                               x.BucketId == currentBucketId &&
+                                                               x.UniqueTimestampInTicks >= peer.OldestNonAckedMessageTimestampInTicks)
                                                    .OrderBy(x => x.UniqueTimestampInTicks)
                                                    .Select(x => new { x.IsAcked, x.UniqueTimestampInTicks })
                                                    .Execute();
@@ -155,25 +174,15 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                         return message.UniqueTimestampInTicks;
 
                     lastAckedMessageTimestamp = message.UniqueTimestampInTicks;
-                    
                 }
             }
 
             return lastAckedMessageTimestamp == 0 ? SystemDateTime.UtcNow.Ticks : lastAckedMessageTimestamp + 1;
         }
 
-        public void CleanBuckets(PeerId peerId, long previousOldestMessageTimestamp, long newOldestMessageTimestamp)
+        public IEnumerable<PeerState> GetAllKnownPeers()
         {
-            var firstBucketToDelete = BucketIdHelper.GetBucketId(previousOldestMessageTimestamp);
-            var lastBucketToDelete = BucketIdHelper.GetPreviousBucketId(newOldestMessageTimestamp);
-            if (firstBucketToDelete == lastBucketToDelete)
-                return;
-
-            var bucketsToDelete = BucketIdHelper.GetBucketsCollection(firstBucketToDelete, lastBucketToDelete).ToArray();
-            _dataContext.PersistentMessages
-                        .Where(x => x.PeerId == peerId.ToString() && bucketsToDelete.Contains(x.BucketId))
-                        .Delete()
-                        .ExecuteAsync();
+            return _peerStateRepository.GetAllKnownPeers();
         }
 
         private static long ToUnixMicroSeconds(DateTime timestamp)

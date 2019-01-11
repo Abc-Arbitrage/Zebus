@@ -11,12 +11,17 @@ using StructureMap;
 
 namespace Abc.Zebus.Persistence.RocksDb
 {
+    /// <summary>
+    /// Key structure:
+    /// -------------------------------------------------------------------
+    /// |  PeerId (n bytes)  |  Ticks (8 bytes)  |  MessageId (16 bytes)  | 
+    /// -------------------------------------------------------------------
+    /// </summary>
     public class RocksDbStorage : IStorage, IDisposable
     {
         private static readonly int _guidLength = Guid.Empty.ToByteArray().Length;
 
         private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
-        private readonly HashSet<PeerId> _updatedPeers = new HashSet<PeerId>();
 
         private RocksDbSharp.RocksDb _db;
         private readonly string _dbName;
@@ -91,13 +96,9 @@ namespace Abc.Zebus.Persistence.RocksDb
                 }
             }
 
-            lock (_updatedPeers)
+            foreach (var entry in entriesToPersist.GroupBy(x => x.PeerId))
             {
-                foreach (var entry in entriesToPersist.GroupBy(x => x.PeerId))
-                {
-                    _updatedPeers.Add(entry.Key);
-                    UpdateNonAckedCounts(entry);
-                }
+                UpdateNonAckedCounts(entry);
             }
 
             return Task.CompletedTask;
@@ -109,7 +110,7 @@ namespace Abc.Zebus.Persistence.RocksDb
             var peerKey = GetPeerKey(entry.Key);
             using (var iterator = _db.NewIterator(_peersColumnFamily))//, new ReadOptions().SetTotalOrderSeek(true)))
             {
-                // TODO: figure out why seeks return true for a different key
+                // TODO: figure out why Seek() returns true for a different key
                 var alreadyExists = iterator.Seek(peerKey).Valid() && CompareStart(iterator.Key(), peerKey, peerKey.Length);
                 var currentNonAcked = alreadyExists ? BitConverter.ToInt32(iterator.Value(), 0) : 0;
 
@@ -117,8 +118,6 @@ namespace Abc.Zebus.Persistence.RocksDb
                 _db.Put(peerKey, BitConverter.GetBytes(value), _peersColumnFamily);
             }
         }
-
-        private static byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
 
         public IMessageReader CreateMessageReader(PeerId peerId)
         {
@@ -131,7 +130,7 @@ namespace Abc.Zebus.Persistence.RocksDb
             return new RocksDbMessageReader(_db, peerId, _messagesColumnFamily);
         }
 
-        public void RemovePeer(PeerId peerId)
+        public Task RemovePeer(PeerId peerId)
         {
             var key = CreateKeyBuffer(peerId);
             FillKey(key, peerId, 0, Guid.Empty);
@@ -139,7 +138,7 @@ namespace Abc.Zebus.Persistence.RocksDb
             using (var cursor = _db.NewIterator(_messagesColumnFamily))
             {
                 if (!cursor.Seek(key).Valid())
-                    return;
+                    return Task.CompletedTask;
 
                 var peerIdLength = peerId.ToString().Length;
                 byte[] currentKey;
@@ -154,25 +153,18 @@ namespace Abc.Zebus.Persistence.RocksDb
             _db.Remove(GetPeerKey(peerId), _peersColumnFamily);
 
             // TODO: remove out of order acks
+            return Task.CompletedTask;
         }
 
-        public Dictionary<PeerId, int> GetNonAckedMessageCountsForUpdatedPeers()
+        public Dictionary<PeerId, int> GetNonAckedMessageCounts()
         {
-            PeerId[] updatedPeers;
-            lock (_updatedPeers)
-            {
-                updatedPeers = _updatedPeers.ToArray();
-                _updatedPeers.Clear();
-            }
-
-            var nonAckedCounts = new Dictionary<PeerId, int>(updatedPeers.Length);
+            var nonAckedCounts = new Dictionary<PeerId, int>();
             using (var cursor = _db.NewIterator(_peersColumnFamily))
             {
-                foreach (var updatedPeer in updatedPeers)
+                for (cursor.SeekToFirst(); cursor.Valid(); cursor.Next())
                 {
-                    var key = GetPeerKey(updatedPeer);
-                    if (cursor.Seek(key).Valid())
-                        nonAckedCounts[updatedPeer] = BitConverter.ToInt32(cursor.Value(), 0);
+                    var peerId = ReadPeerKey(cursor.Key());
+                    nonAckedCounts[peerId] = BitConverter.ToInt32(cursor.Value(), 0);
                 }
             }
 
@@ -192,6 +184,8 @@ namespace Abc.Zebus.Persistence.RocksDb
             Buffer.BlockCopy(messageIdPart, 0, key, peerPart.Length + sizeof(long), _guidLength);
         }
 
+        private static PeerId ReadPeerKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes));
+        private static byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
         public static byte[] CreateKeyBuffer(PeerId entryPeerId) => new byte[Encoding.UTF8.GetByteCount(entryPeerId.ToString()) + sizeof(long) + _guidLength];
 
         public static bool CompareStart(byte[] x, byte[] y, int length)

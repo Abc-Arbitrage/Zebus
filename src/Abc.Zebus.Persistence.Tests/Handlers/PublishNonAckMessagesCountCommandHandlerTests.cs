@@ -26,12 +26,32 @@ namespace Abc.Zebus.Persistence.Tests.Handlers
         [Test]
         public void should_publish_messages_count()
         {
-            _storage.Setup(x => x.GetNonAckedMessageCountsForUpdatedPeers())
+            _storage.Setup(x => x.GetNonAckedMessageCounts())
                     .Returns(new Dictionary<PeerId, int> { { new PeerId("Abc.Peer.0"), 42 } });
 
             _handler.Handle(new PublishNonAckMessagesCountCommand());
 
             _bus.ExpectExactly(new NonAckMessagesCountChanged(new[] { new NonAckMessage("Abc.Peer.0", 42) }));
+        }
+
+        [Test]
+        public void should_publish_messages_for_updated_peers()
+        {
+            _storage.Setup(x => x.GetNonAckedMessageCounts())
+                    .Returns(new Dictionary<PeerId, int>());
+            _handler.Handle(new PublishNonAckMessagesCountCommand());
+
+            _storage.Setup(x => x.GetNonAckedMessageCounts())
+                    .Returns(new Dictionary<PeerId, int> { { new PeerId("Abc.Peer.0"), 42 } }); 
+            _handler.Handle(new PublishNonAckMessagesCountCommand());
+
+            _storage.Setup(x => x.GetNonAckedMessageCounts())
+                    .Returns(new Dictionary<PeerId, int> { { new PeerId("Abc.Peer.0"), 43 } }); 
+            _handler.Handle(new PublishNonAckMessagesCountCommand());
+
+            _bus.ExpectExactly(new NonAckMessagesCountChanged(new NonAckMessage[0]),
+                               new NonAckMessagesCountChanged(new[] { new NonAckMessage("Abc.Peer.0", 42) }),
+                               new NonAckMessagesCountChanged(new[] { new NonAckMessage("Abc.Peer.0", 43) }));
         }
     }
 }

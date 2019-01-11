@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.Messages;
@@ -14,13 +13,12 @@ using log4net;
 
 namespace Abc.Zebus.Persistence.CQL.Storage
 {
-    public class PeerStateRepository : IPeerStateRepository
+    public class PeerStateRepository
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(PeerStateRepository));
 
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly ConcurrentDictionary<PeerId, PeerState> _statesByPeerId = new ConcurrentDictionary<PeerId, PeerState>();
-        private long _version;
 
         public PeerStateRepository(PersistenceCqlDataContext dataContext)
         {
@@ -45,32 +43,17 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             return _statesByPeerId.GetValueOrDefault(peerId);
         }
 
-        public PeerState this[PeerId peerId] => _statesByPeerId[peerId];
-
-        public void UpdateNonAckMessageCount(PeerId peerId, int delta)
+        public Task UpdateNonAckMessageCount(PeerId peerId, int delta)
         {
-            var peerState = _statesByPeerId.GetOrAdd(peerId, p =>
-            {
-                _log.Info($"Create new state for peer {p}");
-                return new PeerState(p);
-            });
+            var peerState = _statesByPeerId.AddOrUpdate(peerId,
+                                                          p =>
+                                                          {
+                                                              _log.Info($"Created new state for peer {p}");
+                                                              return new PeerState(p, delta);
+                                                          },
+                                                          (id, state) => new PeerState(state.PeerId, state.NonAckedMessageCount + delta, state.OldestNonAckedMessageTimestampInTicks));
 
-            peerState.NonAckedMessageCount += delta;
-            peerState.LastNonAckedMessageCountVersion = Interlocked.Increment(ref _version);
-        }
-
-        public List<PeerState> GetUpdatedPeers(ref long version)
-        {
-            var previousVersion = version;
-            var nextVersion = Interlocked.Increment(ref _version);
-
-            var peers = _statesByPeerId.Values
-                                       .Where(x => x.LastNonAckedMessageCountVersion >= previousVersion)
-                                       .ToList();
-
-            version = nextVersion;
-
-            return peers;
+            return UpdatePeerState(peerState);
         }
 
         public Task RemovePeer(PeerId peerId)
@@ -91,6 +74,20 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             return removeTask;
         }
 
+        public IEnumerable<PeerState> GetAllKnownPeers()
+        {
+            return _statesByPeerId.Values;
+        }
+
+        public Task UpdateNewOldestMessageTimestamp(PeerState peer, long newOldestMessageTimestamp)
+        {
+            var updatedPeer = _statesByPeerId.AddOrUpdate(peer.PeerId,
+                                                          id => new PeerState(id, 0, newOldestMessageTimestamp),
+                                                          (id, state) => new PeerState(id, state.NonAckedMessageCount, newOldestMessageTimestamp));
+
+            return UpdatePeerState(updatedPeer);
+        }
+
         private Task<RowSet> DeletePeerState(PeerId peerId)
         {
             return _dataContext.PeerStates.Where(x => x.PeerId == peerId.ToString()).Delete().ExecuteAsync();
@@ -106,24 +103,9 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                .ExecuteAsync();
         }
 
-        public Task Save()
+        private Task<RowSet> UpdatePeerState(PeerState p)
         {
-            _log.Info("Saving state");
-            var tasks = _statesByPeerId.Values
-                                       .Select(p => _dataContext.PeerStates.Insert(new CassandraPeerState(p)).ExecuteAsync())
-                                       .ToArray();
-
-            return Task.WhenAll(tasks).ContinueWith(t => _log.Info("State saved"));
-        }
-
-        public IEnumerator<PeerState> GetEnumerator()
-        {
-            return _statesByPeerId.Values.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+            return _dataContext.PeerStates.Insert(new CassandraPeerState(p)).ExecuteAsync();
         }
     }
 }

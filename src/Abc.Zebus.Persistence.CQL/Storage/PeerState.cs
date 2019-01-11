@@ -15,16 +15,9 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public bool Removed { get; private set; }
         
-        public long OldestNonAckedMessageTimestampInTicks { get; private set; }
+        public long OldestNonAckedMessageTimestampInTicks { get; }
 
-        public long LastNonAckedMessageCountVersion { get; internal set; }
-
-        public int NonAckedMessageCount { get; internal set; }
-
-        public void UpdateOldestNonAckedMessageTimestamp(long uniqueTimestampInTicks)
-        {
-            OldestNonAckedMessageTimestampInTicks = uniqueTimestampInTicks;
-        }
+        public int NonAckedMessageCount { get; protected internal set; }
 
         public void MarkAsRemoved()
         {

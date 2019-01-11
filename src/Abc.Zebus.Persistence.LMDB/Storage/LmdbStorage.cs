@@ -24,7 +24,6 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
         private readonly string _dbName;
         private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
 
-        private readonly HashSet<PeerId> _updatedPeers = new HashSet<PeerId>();
         private LightningEnvironment _environment;
 
         public LmdbStorage(string dbName)
@@ -81,14 +80,11 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
                     }
                 }
 
-                lock (_updatedPeers)
+                foreach (var entry in entriesToPersist.GroupBy(x => x.PeerId))
                 {
-                    foreach (var entry in entriesToPersist.GroupBy(x => x.PeerId))
-                    {
-                        _updatedPeers.Add(entry.Key);
-                        UpdateNonAckedCounts(entry, transaction, peersDb);
-                    }
+                    UpdateNonAckedCounts(entry, transaction, peersDb);
                 }
+
                 transaction.Commit();
             }
 
@@ -129,7 +125,7 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
             return new LmdbMessageReader(_environment, peerId, GetMessagesDbName());
         }
 
-        public void RemovePeer(PeerId peerId)
+        public Task RemovePeer(PeerId peerId)
         {
             using (var transaction = _environment.BeginTransaction())
             using (var db = transaction.OpenDatabase(GetMessagesDbName()))
@@ -141,14 +137,14 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
                 using (var cursor = transaction.CreateCursor(db))
                 {
                     if (!cursor.MoveToFirstAfter(key))
-                        return;
+                        return Task.CompletedTask;
 
                     byte[] currentKey;
                     var peerIdLength = peerId.ToString().Length;
                     do
                     {
                         cursor.Delete();
-                        currentKey = cursor.Current.Key; 
+                        currentKey = cursor.Current.Key;
                     } while (cursor.MoveNext() && CompareStart(currentKey, key, peerIdLength));
                 }
 
@@ -158,27 +154,20 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
 
                 transaction.Commit();
             }
+            return Task.CompletedTask;
         }
 
-        public Dictionary<PeerId, int> GetNonAckedMessageCountsForUpdatedPeers()
+        public Dictionary<PeerId, int> GetNonAckedMessageCounts()
         {
-            PeerId[] updatedPeers;
-            lock (_updatedPeers)
-            {
-                updatedPeers = _updatedPeers.ToArray();
-                _updatedPeers.Clear();
-            }
-
-            var nonAckedCounts = new Dictionary<PeerId, int>(updatedPeers.Length);
+            var nonAckedCounts = new Dictionary<PeerId, int>();
             using (var transaction = _environment.BeginTransaction())
             using (var peersDb = transaction.OpenDatabase(GetPeersDbName()))
             using (var cursor = transaction.CreateCursor(peersDb))
             {
-                foreach (var updatedPeer in updatedPeers)
+                while (cursor.MoveNext())
                 {
-                    var key = GetPeerKey(updatedPeer);
-                    if (cursor.MoveTo(key))
-                        nonAckedCounts[updatedPeer] = BitConverter.ToInt32(cursor.Current.Value, 0);
+                    var peerId = ReadPeerKey(cursor.Current.Key); 
+                    nonAckedCounts[peerId] = BitConverter.ToInt32(cursor.Current.Value, 0);
                 }
             }
 
@@ -232,6 +221,7 @@ namespace Abc.Zebus.Persistence.LMDB.Storage
             return true;
         }
 
+        private static PeerId ReadPeerKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes));
         private static byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
         private static MessageId ExtractMessageId(byte[] key) => new MessageId(new Guid(key.AsSpan(key.Length - _guidLength).ToArray()));
     }

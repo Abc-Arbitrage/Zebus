@@ -103,10 +103,10 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             var peerId = new PeerId("Abc.Peer.0");
             await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(peerId, messageId, MessageTypeId.PersistenceStopping, messageBytes) });
 
-            _storage.RemovePeer(peerId);
+            await _storage.RemovePeer(peerId);
 
             _storage.CreateMessageReader(peerId).ShouldBeNull();
-            _storage.GetNonAckedMessageCountsForUpdatedPeers().ContainsKey(peerId).ShouldBeFalse();
+            _storage.GetNonAckedMessageCounts().ContainsKey(peerId).ShouldBeFalse();
         }
 
         [Test]
@@ -119,15 +119,15 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             _storage.Write(new[] { MatcherEntry.Message(secondPeer, MessageId.NextId(), new MessageTypeId("Abc.Message"), new byte[] { 0x04, 0x05, 0x06 }) });
             _storage.Write(new[] { MatcherEntry.Message(firstPeer, MessageId.NextId(), new MessageTypeId("Abc.Message"), new byte[] { 0x07, 0x08, 0x09 }) });
 
-            var nonAckedMessageCounts = _storage.GetNonAckedMessageCountsForUpdatedPeers();
+            var nonAckedMessageCounts = _storage.GetNonAckedMessageCounts();
             nonAckedMessageCounts[firstPeer].ShouldEqual(2);
             nonAckedMessageCounts[secondPeer].ShouldEqual(1);
 
             _storage.Write(new[] { MatcherEntry.Ack(firstPeer, MessageId.NextId()) });
 
-            nonAckedMessageCounts = _storage.GetNonAckedMessageCountsForUpdatedPeers();
+            nonAckedMessageCounts = _storage.GetNonAckedMessageCounts();
             nonAckedMessageCounts[firstPeer].ShouldEqual(1);
-            nonAckedMessageCounts.ContainsKey(secondPeer).ShouldBeFalse();
+            nonAckedMessageCounts[secondPeer].ShouldEqual(1);
         }
 
         [Test]

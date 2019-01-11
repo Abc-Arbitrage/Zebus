@@ -63,7 +63,7 @@ namespace Abc.Zebus.Persistence.LMDB.Tests
                 var count = 0;
                 while (DateTime.UtcNow - startTime < testDuration)
                 {
-                    _storage.GetNonAckedMessageCountsForUpdatedPeers();
+                    _storage.GetNonAckedMessageCounts();
                     count++;
                     // Thread.Sleep(1.Second());
                 }

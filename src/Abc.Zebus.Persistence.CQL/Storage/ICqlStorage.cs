@@ -1,10 +1,12 @@
-﻿using Abc.Zebus.Persistence.Storage;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Abc.Zebus.Persistence.Storage;
 
 namespace Abc.Zebus.Persistence.CQL.Storage
 {
     public interface ICqlStorage : IStorage
     {
-        long GetOldestNonAckedMessageTimestamp(PeerState peer);
-        void CleanBuckets(PeerId peerId, long previousOldestMessageTimestamp, long newOldestMessageTimestamp);
+        Task CleanBuckets(PeerState peer);
+        IEnumerable<PeerState> GetAllKnownPeers();
     }
 }
