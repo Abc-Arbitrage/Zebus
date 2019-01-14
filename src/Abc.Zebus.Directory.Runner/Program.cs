@@ -13,7 +13,7 @@ using log4net;
 using log4net.Config;
 using StructureMap;
 
-namespace Abc.Zebus.Directory
+namespace Abc.Zebus.Directory.Runner
 {
     internal class Program
     {
@@ -28,7 +28,7 @@ namespace Abc.Zebus.Directory
                 _cancelKeySignal.Set();
             };
 
-            XmlConfigurator.ConfigureAndWatch(new FileInfo(PathUtil.InBaseDirectory("log4net.config")));
+            XmlConfigurator.ConfigureAndWatch(LogManager.GetRepository(typeof(Program).Assembly), new FileInfo(PathUtil.InBaseDirectory("log4net.config")));
             _log.Info("Starting in memory directory");
 
             var busFactory = new BusFactory();

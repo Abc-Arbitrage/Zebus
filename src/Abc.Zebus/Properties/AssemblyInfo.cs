@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory.Runner")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Cassandra.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Testing")]

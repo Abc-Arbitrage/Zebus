@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <StartupObject>Abc.Zebus.Directory.Runner.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="system.Configuration.ConfigurationManager" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Contracts\Abc.Zebus.Contracts.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Directory.Cassandra\Abc.Zebus.Directory.Cassandra.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj" />
+    <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
