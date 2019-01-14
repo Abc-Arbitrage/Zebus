@@ -1,3 +1,10 @@
+## 3.2.0
+- Update libzmq to 4.3.1
+- Add Linux support
+
+## 3.1.0
+- Add `IPeerDirectory.TimeSinceLastPing` to help detect decommissions. This property will return `TimeSpan.MaxValue` when the bus is stopped.
+
 ## 3.0.0
 - Breaking changes
     - Moved contract types to Abc.Zebus.Contracts
