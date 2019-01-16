@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Text;
-using System.Threading;
 using Abc.Zebus.Transport.Zmq;
 using log4net;
 
@@ -116,30 +115,16 @@ namespace Abc.Zebus.Transport
             if (!CanSendOrConnect(message))
                 return;
 
-            var stopwatch = Stopwatch.StartNew();
-            var spinWait = new SpinWait();
-
-            ZmqErrorCode error;
-
-            while (true)
+            if (_socket.TrySend(buffer, 0, length, out var error))
             {
-                if (_socket.TrySend(buffer, 0, length, out error))
-                {
-                    _failedSendCount = 0;
-                    return;
-                }
-
-                // EAGAIN: Non-blocking mode was requested and the message cannot be sent at the moment.
-                if (error == ZmqErrorCode.EAGAIN && stopwatch.Elapsed < _options.SendTimeout)
-                {
-                    spinWait.SpinOnce();
-                    continue;
-                }
-
-                break;
+                _failedSendCount = 0;
+                return;
             }
 
-            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}, Error: {3}", PeerId, message.MessageTypeId, message.Id, error.ToErrorMessage());
+            var hasReachedHighWaterMark = error == ZmqErrorCode.EAGAIN;
+            var errorMesage = hasReachedHighWaterMark ? "High water mark reached" : error.ToErrorMessage();
+
+            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}, Error: {3}", PeerId, message.MessageTypeId, message.Id, errorMesage);
             _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
 
             if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)
