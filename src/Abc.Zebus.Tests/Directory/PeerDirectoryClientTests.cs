@@ -125,7 +125,7 @@ namespace Abc.Zebus.Tests.Directory
             _bus.Commands.OfType<RegisterPeerCommand>().ExpectedSingle();
             _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ShouldBeEmpty();
         }
-        
+
         [Test]
         public async Task should_timestamp_updatesubscriptions_with_a_minimum_ten_ticks_granularity()
         {
@@ -195,7 +195,7 @@ namespace Abc.Zebus.Tests.Directory
             var descriptor2 = _otherPeer.ToPeerDescriptor(true, typeof(FakeCommand));
             descriptor2.TimestampUtc = DateTime.UtcNow;
             _directory.Handle(new PeerSubscriptionsUpdated(descriptor2));
-            
+
             descriptor2.TimestampUtc = default(DateTime);
             _directory.Handle(new PeerSubscriptionsUpdated(descriptor2));
 
@@ -571,8 +571,8 @@ namespace Abc.Zebus.Tests.Directory
 
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldNotBeEmpty();
         }
-        
-        
+
+
         [Test]
         public void should_ignore_old_subscription_update_on_PeerSubscriptionsForTypesUpdated()
         {
@@ -611,7 +611,7 @@ namespace Abc.Zebus.Tests.Directory
             var anotherPeer = new Peer(new PeerId("Abc.Testing.2"), "tcp://abctest:987");
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
             _directory.Handle(new PeerStarted(anotherPeer.ToPeerDescriptor(true, typeof(FakeEvent))));
-            
+
             _directory.Handle(new PeerDecommissioned(anotherPeer.Id));
 
             var peers = _directory.GetPeersHandlingMessage(new FakeEvent(0));
@@ -835,7 +835,7 @@ namespace Abc.Zebus.Tests.Directory
 
             await Task.Delay(200.Milliseconds());
 
-            _directory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(time + 200.Milliseconds());
+            _directory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(time + 180.Milliseconds());
 
             _directory.Handle(new PingPeerCommand());
             _directory.TimeSinceLastPing.ShouldBeLessThan(time);

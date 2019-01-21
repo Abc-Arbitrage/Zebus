@@ -307,7 +307,7 @@ namespace Abc.Zebus.Directory.Tests
 
             await Task.Delay(200.Milliseconds());
 
-            _peerDirectory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(time + 200.Milliseconds());
+            _peerDirectory.TimeSinceLastPing.ShouldBeGreaterOrEqualThan(time + 180.Milliseconds());
 
             _peerDirectory.Handle(new PingPeerCommand());
             _peerDirectory.TimeSinceLastPing.ShouldBeLessThan(time);
