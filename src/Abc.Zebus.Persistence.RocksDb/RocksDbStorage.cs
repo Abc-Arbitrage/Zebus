@@ -84,7 +84,7 @@ namespace Abc.Zebus.Persistence.RocksDb
                     else
                     {
                         _outOfOrderAcks.TryAdd(entry.MessageId, default);
-                        _db.Put(key, new byte[0], _acksColumnFamily);
+                        _db.Put(key, Array.Empty<byte>(), _acksColumnFamily);
                     }
                 }
                 else
