@@ -7,7 +7,6 @@ var target = Argument("target", "Default");
 var paths = new {
     src = MakeAbsolute(Directory("./../src")).FullPath,
     solution = MakeAbsolute(File("./../src/Abc.Zebus.sln")).FullPath,
-    props = MakeAbsolute(File("./../src/Directory.Build.props")).FullPath,
     nugetOutput = MakeAbsolute(Directory("./../output/nuget")).FullPath,
 };
 
@@ -21,12 +20,13 @@ Task("Clean").Does(() =>
     CleanDirectory(paths.nugetOutput);
 });
 
-Task("Restore-NuGet-Packages").Does(() => NuGetRestore(paths.solution));
-
-Task("MSBuild").Does(() => MSBuild(paths.solution, settings => settings
+Task("Compile").Does(() => DotNetCoreMSBuild(paths.solution, new DotNetCoreMSBuildSettings()
+    .WithTarget("Restore")
     .WithTarget("Rebuild")
+    .WithTarget("Pack")
     .SetConfiguration("Release")
-    .SetVerbosity(Verbosity.Minimal)
+    .WithProperty("PackageOutputPath", paths.nugetOutput)
+    .SetMaxCpuCount(0)
 ));
 
 Task("Run-Unit-Tests").Does(() =>
@@ -44,23 +44,13 @@ Task("Run-Unit-Tests").Does(() =>
     }
 });
 
-Task("NuGet-Pack").Does(() => MSBuild(paths.solution, settings => settings
-    .WithTarget("Pack")
-    .SetConfiguration("Release")
-    .SetPlatformTarget(PlatformTarget.MSIL)
-    .SetVerbosity(Verbosity.Minimal)
-    .WithProperty("PackageOutputPath", paths.nugetOutput)
-));
-
 //////////////////////////////////////////////////////////////////////
 // TASK TARGETS
 //////////////////////////////////////////////////////////////////////
 
 Task("Build")
     .IsDependentOn("Clean")
-    .IsDependentOn("Restore-NuGet-Packages")
-    .IsDependentOn("MSBuild")
-    .IsDependentOn("NuGet-Pack");
+    .IsDependentOn("Compile");
 
 Task("Test")
     .IsDependentOn("Build")
