@@ -96,7 +96,7 @@ namespace Abc.Zebus.Transport.Zmq
         }
 
         [SuppressUnmanagedCodeSecurity]
-        private class WinCoreImpl : LibImpl
+        private class WinImpl : LibImpl
         {
             public override IntPtr ctx_new()
                 => zmq_ctx_new();
@@ -215,126 +215,7 @@ namespace Abc.Zebus.Transport.Zmq
         }
 
         [SuppressUnmanagedCodeSecurity]
-        private class LinuxCoreImpl : LibImpl
-        {
-            public override IntPtr ctx_new()
-                => zmq_ctx_new();
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern IntPtr zmq_ctx_new();
-
-            public override int ctx_term(IntPtr context)
-                => zmq_ctx_term(context);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_ctx_term(IntPtr context);
-
-            public override IntPtr socket(IntPtr context, int type)
-                => zmq_socket(context, type);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern IntPtr zmq_socket(IntPtr context, int type);
-
-            public override int close(IntPtr socket)
-                => zmq_close(socket);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_close(IntPtr socket);
-
-            public override int getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len)
-                => zmq_getsockopt(socket, option_name, option_value, option_len);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len);
-
-            public override int setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len)
-                => zmq_setsockopt(socket, option_name, option_value, option_len);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len);
-
-            public override int bind(IntPtr socket, string endpoint)
-                => zmq_bind(socket, endpoint);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_bind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
-
-            public override int unbind(IntPtr socket, string endpoint)
-                => zmq_unbind(socket, endpoint);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_unbind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
-
-            public override int connect(IntPtr socket, string endpoint)
-                => zmq_connect(socket, endpoint);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_connect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
-
-            public override int disconnect(IntPtr socket, string endpoint)
-                => zmq_disconnect(socket, endpoint);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_disconnect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
-
-            public override int send(IntPtr socket, void* buf, IntPtr len, int flags)
-                => zmq_send(socket, buf, len, flags);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_send(IntPtr socket, void* buf, IntPtr len, int flags);
-
-            public override int msg_init(ZmqMessage* msg)
-                => zmq_msg_init(msg);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_msg_init(ZmqMessage* msg);
-
-            public override int msg_recv(ZmqMessage* msg, IntPtr socket, int flags)
-                => zmq_msg_recv(msg, socket, flags);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_msg_recv(ZmqMessage* msg, IntPtr socket, int flags);
-
-            public override int msg_close(ZmqMessage* msg)
-                => zmq_msg_close(msg);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int zmq_msg_close(ZmqMessage* msg);
-
-            public override void* msg_data(ZmqMessage* msg)
-                => zmq_msg_data(msg);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern void* zmq_msg_data(ZmqMessage* msg);
-
-            public override IntPtr msg_size(ZmqMessage* msg)
-                => zmq_msg_size(msg);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern IntPtr zmq_msg_size(ZmqMessage* msg);
-
-            public override ZmqErrorCode errno()
-                => zmq_errno();
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern ZmqErrorCode zmq_errno();
-
-            public override byte* strerror(int errnum)
-                => zmq_strerror(errnum);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern byte* zmq_strerror(int errnum);
-
-            public override void version(int* major, int* minor, int* patch)
-                => zmq_version(major, minor, patch);
-
-            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
-            private static extern void zmq_version(int* major, int* minor, int* patch);
-
-        }
-
-        [SuppressUnmanagedCodeSecurity]
-        private class WinFramework32Impl : LibImpl
+        private class Win32Impl : LibImpl
         {
             public override IntPtr ctx_new()
                 => zmq_ctx_new();
@@ -453,7 +334,7 @@ namespace Abc.Zebus.Transport.Zmq
         }
 
         [SuppressUnmanagedCodeSecurity]
-        private class WinFramework64Impl : LibImpl
+        private class Win64Impl : LibImpl
         {
             public override IntPtr ctx_new()
                 => zmq_ctx_new();
@@ -567,6 +448,363 @@ namespace Abc.Zebus.Transport.Zmq
                 => zmq_version(major, minor, patch);
 
             [DllImport("Abc.Zebus.libzmq.x64.dll", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void zmq_version(int* major, int* minor, int* patch);
+
+        }
+
+        [SuppressUnmanagedCodeSecurity]
+        private class LinuxImpl : LibImpl
+        {
+            public override IntPtr ctx_new()
+                => zmq_ctx_new();
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_ctx_new();
+
+            public override int ctx_term(IntPtr context)
+                => zmq_ctx_term(context);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_ctx_term(IntPtr context);
+
+            public override IntPtr socket(IntPtr context, int type)
+                => zmq_socket(context, type);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_socket(IntPtr context, int type);
+
+            public override int close(IntPtr socket)
+                => zmq_close(socket);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_close(IntPtr socket);
+
+            public override int getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len)
+                => zmq_getsockopt(socket, option_name, option_value, option_len);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len);
+
+            public override int setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len)
+                => zmq_setsockopt(socket, option_name, option_value, option_len);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len);
+
+            public override int bind(IntPtr socket, string endpoint)
+                => zmq_bind(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_bind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int unbind(IntPtr socket, string endpoint)
+                => zmq_unbind(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_unbind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int connect(IntPtr socket, string endpoint)
+                => zmq_connect(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_connect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int disconnect(IntPtr socket, string endpoint)
+                => zmq_disconnect(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_disconnect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int send(IntPtr socket, void* buf, IntPtr len, int flags)
+                => zmq_send(socket, buf, len, flags);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_send(IntPtr socket, void* buf, IntPtr len, int flags);
+
+            public override int msg_init(ZmqMessage* msg)
+                => zmq_msg_init(msg);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_init(ZmqMessage* msg);
+
+            public override int msg_recv(ZmqMessage* msg, IntPtr socket, int flags)
+                => zmq_msg_recv(msg, socket, flags);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_recv(ZmqMessage* msg, IntPtr socket, int flags);
+
+            public override int msg_close(ZmqMessage* msg)
+                => zmq_msg_close(msg);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_close(ZmqMessage* msg);
+
+            public override void* msg_data(ZmqMessage* msg)
+                => zmq_msg_data(msg);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void* zmq_msg_data(ZmqMessage* msg);
+
+            public override IntPtr msg_size(ZmqMessage* msg)
+                => zmq_msg_size(msg);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_msg_size(ZmqMessage* msg);
+
+            public override ZmqErrorCode errno()
+                => zmq_errno();
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern ZmqErrorCode zmq_errno();
+
+            public override byte* strerror(int errnum)
+                => zmq_strerror(errnum);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern byte* zmq_strerror(int errnum);
+
+            public override void version(int* major, int* minor, int* patch)
+                => zmq_version(major, minor, patch);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void zmq_version(int* major, int* minor, int* patch);
+
+        }
+
+        [SuppressUnmanagedCodeSecurity]
+        private class Linux32Impl : LibImpl
+        {
+            public override IntPtr ctx_new()
+                => zmq_ctx_new();
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_ctx_new();
+
+            public override int ctx_term(IntPtr context)
+                => zmq_ctx_term(context);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_ctx_term(IntPtr context);
+
+            public override IntPtr socket(IntPtr context, int type)
+                => zmq_socket(context, type);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_socket(IntPtr context, int type);
+
+            public override int close(IntPtr socket)
+                => zmq_close(socket);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_close(IntPtr socket);
+
+            public override int getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len)
+                => zmq_getsockopt(socket, option_name, option_value, option_len);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len);
+
+            public override int setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len)
+                => zmq_setsockopt(socket, option_name, option_value, option_len);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len);
+
+            public override int bind(IntPtr socket, string endpoint)
+                => zmq_bind(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_bind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int unbind(IntPtr socket, string endpoint)
+                => zmq_unbind(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_unbind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int connect(IntPtr socket, string endpoint)
+                => zmq_connect(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_connect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int disconnect(IntPtr socket, string endpoint)
+                => zmq_disconnect(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_disconnect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int send(IntPtr socket, void* buf, IntPtr len, int flags)
+                => zmq_send(socket, buf, len, flags);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_send(IntPtr socket, void* buf, IntPtr len, int flags);
+
+            public override int msg_init(ZmqMessage* msg)
+                => zmq_msg_init(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_init(ZmqMessage* msg);
+
+            public override int msg_recv(ZmqMessage* msg, IntPtr socket, int flags)
+                => zmq_msg_recv(msg, socket, flags);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_recv(ZmqMessage* msg, IntPtr socket, int flags);
+
+            public override int msg_close(ZmqMessage* msg)
+                => zmq_msg_close(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_close(ZmqMessage* msg);
+
+            public override void* msg_data(ZmqMessage* msg)
+                => zmq_msg_data(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void* zmq_msg_data(ZmqMessage* msg);
+
+            public override IntPtr msg_size(ZmqMessage* msg)
+                => zmq_msg_size(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_msg_size(ZmqMessage* msg);
+
+            public override ZmqErrorCode errno()
+                => zmq_errno();
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern ZmqErrorCode zmq_errno();
+
+            public override byte* strerror(int errnum)
+                => zmq_strerror(errnum);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern byte* zmq_strerror(int errnum);
+
+            public override void version(int* major, int* minor, int* patch)
+                => zmq_version(major, minor, patch);
+
+            [DllImport("Abc.Zebus.libzmq.x86.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void zmq_version(int* major, int* minor, int* patch);
+
+        }
+
+        [SuppressUnmanagedCodeSecurity]
+        private class Linux64Impl : LibImpl
+        {
+            public override IntPtr ctx_new()
+                => zmq_ctx_new();
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_ctx_new();
+
+            public override int ctx_term(IntPtr context)
+                => zmq_ctx_term(context);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_ctx_term(IntPtr context);
+
+            public override IntPtr socket(IntPtr context, int type)
+                => zmq_socket(context, type);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_socket(IntPtr context, int type);
+
+            public override int close(IntPtr socket)
+                => zmq_close(socket);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_close(IntPtr socket);
+
+            public override int getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len)
+                => zmq_getsockopt(socket, option_name, option_value, option_len);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len);
+
+            public override int setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len)
+                => zmq_setsockopt(socket, option_name, option_value, option_len);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_setsockopt(IntPtr socket, int option_name, void* option_value, IntPtr option_len);
+
+            public override int bind(IntPtr socket, string endpoint)
+                => zmq_bind(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_bind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int unbind(IntPtr socket, string endpoint)
+                => zmq_unbind(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_unbind(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int connect(IntPtr socket, string endpoint)
+                => zmq_connect(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_connect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int disconnect(IntPtr socket, string endpoint)
+                => zmq_disconnect(socket, endpoint);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_disconnect(IntPtr socket, [In, MarshalAs(UnmanagedType.LPStr)] string endpoint);
+
+            public override int send(IntPtr socket, void* buf, IntPtr len, int flags)
+                => zmq_send(socket, buf, len, flags);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_send(IntPtr socket, void* buf, IntPtr len, int flags);
+
+            public override int msg_init(ZmqMessage* msg)
+                => zmq_msg_init(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_init(ZmqMessage* msg);
+
+            public override int msg_recv(ZmqMessage* msg, IntPtr socket, int flags)
+                => zmq_msg_recv(msg, socket, flags);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_recv(ZmqMessage* msg, IntPtr socket, int flags);
+
+            public override int msg_close(ZmqMessage* msg)
+                => zmq_msg_close(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_msg_close(ZmqMessage* msg);
+
+            public override void* msg_data(ZmqMessage* msg)
+                => zmq_msg_data(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern void* zmq_msg_data(ZmqMessage* msg);
+
+            public override IntPtr msg_size(ZmqMessage* msg)
+                => zmq_msg_size(msg);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern IntPtr zmq_msg_size(ZmqMessage* msg);
+
+            public override ZmqErrorCode errno()
+                => zmq_errno();
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern ZmqErrorCode zmq_errno();
+
+            public override byte* strerror(int errnum)
+                => zmq_strerror(errnum);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern byte* zmq_strerror(int errnum);
+
+            public override void version(int* major, int* minor, int* patch)
+                => zmq_version(major, minor, patch);
+
+            [DllImport("Abc.Zebus.libzmq.x64.so", CallingConvention = CallingConvention.Cdecl)]
             private static extern void zmq_version(int* major, int* minor, int* patch);
 
         }
