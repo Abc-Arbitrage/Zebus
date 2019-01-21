@@ -5,3 +5,5 @@ test_script:
 deploy: off
 artifacts:
 - path: output\**\*.nupkg
+platform:
+  - x64
