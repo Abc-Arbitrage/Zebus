@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
@@ -23,7 +24,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         [SetUp]
         public void SetUp()
         {
-            _dbName = Guid.NewGuid().ToString();
+            _dbName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
             _reporterMock = new Mock<IReporter>();
             _storage = new RocksDbStorage(_dbName);
@@ -34,6 +35,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         public void Teardown()
         {
             _storage.Stop();
+            System.IO.Directory.Delete(_dbName, true);
         }
 
         [Test]
