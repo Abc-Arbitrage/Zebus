@@ -4,6 +4,7 @@
     <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
     <PackageVersion Condition="'$(APPVEYOR_REPO_TAG)' == 'false' and '$(APPVEYOR_BUILD_NUMBER)' != ''">$(PackageVersion)-pre$(APPVEYOR_BUILD_NUMBER)</PackageVersion>
     <PackageVersion Condition="'$(TEAMCITY_VERSION)' != '' and '$(BUILD_NUMBER)' != ''">$(PackageVersion)-pre$(BUILD_NUMBER)</PackageVersion>
+    <PackageVersion Condition="'$(AZURE_PIPELINES)' != '' and '$(BUILD_BRANCH)' != '' and !$(BUILD_BRANCH.StartsWith('refs/tags/'))">$(PackageVersion)-pre$(BUILD_NUMBER)</PackageVersion>
   </PropertyGroup>
 
 </Project>
