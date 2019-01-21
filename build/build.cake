@@ -1,5 +1,3 @@
-#tool "nuget:?package=NUnit.ConsoleRunner"
-#tool "nuget:?package=NuGet.CommandLine"
 
 //////////////////////////////////////////////////////////////////////
 // ARGUMENTS
@@ -46,12 +44,12 @@ Task("Run-Unit-Tests").Does(() =>
     }
 });
 
-Task("Nuget-Pack").Does(() => MSBuild(paths.solution, settings => settings
-        .WithTarget("Pack")
-        .SetConfiguration("Release")
-        .SetPlatformTarget(PlatformTarget.MSIL)
-        .SetVerbosity(Verbosity.Minimal)
-        .WithProperty("PackageOutputPath", paths.nugetOutput)
+Task("NuGet-Pack").Does(() => MSBuild(paths.solution, settings => settings
+    .WithTarget("Pack")
+    .SetConfiguration("Release")
+    .SetPlatformTarget(PlatformTarget.MSIL)
+    .SetVerbosity(Verbosity.Minimal)
+    .WithProperty("PackageOutputPath", paths.nugetOutput)
 ));
 
 //////////////////////////////////////////////////////////////////////
@@ -61,28 +59,16 @@ Task("Nuget-Pack").Does(() => MSBuild(paths.solution, settings => settings
 Task("Build")
     .IsDependentOn("Clean")
     .IsDependentOn("Restore-NuGet-Packages")
-    .IsDependentOn("MSBuild");
+    .IsDependentOn("MSBuild")
+    .IsDependentOn("NuGet-Pack");
 
 Task("Test")
     .IsDependentOn("Build")
     .IsDependentOn("Run-Unit-Tests");
 
-Task("Nuget")
-    .IsDependentOn("Build")
-    .IsDependentOn("Test")
-    .IsDependentOn("Nuget-Pack")
-    .Does(() => {
-        Information("   Nuget package is now ready at location: {0}.", paths.nugetOutput);
-        Warning("   Please remember to create and push a tag based on the currently built version.");
-        Information("   You can do so by copying/pasting the following commands:");
-        Information("       git tag v{0}", XmlPeek(paths.props, @"/Project/PropertyGroup/ZebusVersion/text()"));
-        Information("       git push origin --tags");
-    });
-
 Task("AppVeyor")
     .IsDependentOn("Build")
-    .IsDependentOn("Test")
-    .IsDependentOn("Nuget-Pack");
+    .IsDependentOn("Test");
 
 //////////////////////////////////////////////////////////////////////
 // EXECUTION

@@ -18,7 +18,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         public override void CreateSchema()
         {
             IgnoreWhenSet("APPVEYOR");
-            IgnoreWhenSet("AZURE_PIPELINES");
+            IgnoreWhenSet("TF_BUILD");
             base.CreateSchema();
         }
 

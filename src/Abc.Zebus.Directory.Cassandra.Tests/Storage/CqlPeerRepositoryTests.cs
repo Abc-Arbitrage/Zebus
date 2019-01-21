@@ -24,7 +24,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         public override void CreateSchema()
         {
             IgnoreWhenSet("APPVEYOR");
-            IgnoreWhenSet("AZURE_PIPELINES");
+            IgnoreWhenSet("TF_BUILD");
             base.CreateSchema();
         }
 

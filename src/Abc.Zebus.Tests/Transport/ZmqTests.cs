@@ -73,6 +73,51 @@ namespace Abc.Zebus.Tests.Transport
             }
         }
 
+        [Test, Explicit]
+        public void OkNowIKnowThatMyMessagesAreNotLostAfterDisconnect()
+        {
+            var message = new byte[100];
+            var receiveBuffer = new byte[100];
+
+            Console.WriteLine("ZMQ v{0}", ZmqUtil.GetVersion().ToString(3));
+            Console.WriteLine(Environment.Is64BitProcess ? "x64" : "x86");
+
+            using (var context = new ZmqContext())
+            using (var receiver = new ZmqSocket(context, ZmqSocketType.PULL))
+            using (var sender = new ZmqSocket(context, ZmqSocketType.PUSH))
+            {
+                var port = TcpUtil.GetRandomUnusedPort();
+                var receiveEndpoint = $"tcp://*:{port}";
+                var sendEndpoint = $"tcp://localhost:{port}";
+
+                receiver.SetOption(ZmqSocketOption.RCVHWM, 2_000);
+                receiver.SetOption(ZmqSocketOption.RCVTIMEO, 200);
+                receiver.SetOption(ZmqSocketOption.RCVBUF, 100_000);
+                receiver.Bind(receiveEndpoint);
+
+                sender.SetOption(ZmqSocketOption.SNDHWM, 2_000);
+                //sender.SetOption(ZmqSocketOption.RCVHWM, 1);
+                sender.SetOption(ZmqSocketOption.SNDTIMEO, 200);
+                receiver.SetOption(ZmqSocketOption.SNDBUF, 100_000);
+                sender.Connect(sendEndpoint);
+
+                var sendCount = 0;
+                while (sender.TrySend(message, 0, message.Length, out _))
+                    sendCount++;
+
+                Console.WriteLine("{0} sent messages", sendCount);
+
+                sender.TryDisconnect(sendEndpoint);
+                sender.Connect(sendEndpoint);
+
+                var receivedMessageCount = 0;
+                while (receiver.TryReadMessage(ref receiveBuffer, out _, out _))
+                    receivedMessageCount++;
+
+                Console.WriteLine("{0} received messages", receivedMessageCount);
+            }
+        }
+
         [Test]
         public void should_get_error_messages()
         {

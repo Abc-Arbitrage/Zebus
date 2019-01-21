@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Text;
-using System.Threading;
 using Abc.Zebus.Transport.Zmq;
 using log4net;
 
@@ -40,14 +39,7 @@ namespace Abc.Zebus.Transport
 
             try
             {
-                _socket = new ZmqSocket(_context, ZmqSocketType.PUSH);
-                _socket.SetOption(ZmqSocketOption.SNDHWM, _options.SendHighWaterMark);
-                _socket.SetOption(ZmqSocketOption.SNDTIMEO, (int)_options.SendTimeout.TotalMilliseconds);
-                _socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE, 1);
-                _socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE_IDLE, 30);
-                _socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE_INTVL, 3);
-                _socket.SetOption(ZmqSocketOption.ROUTING_ID, Encoding.ASCII.GetBytes(PeerId.ToString()));
-
+                _socket = CreateSocket();
                 _socket.Connect(EndPoint);
 
                 IsConnected = true;
@@ -65,6 +57,29 @@ namespace Abc.Zebus.Transport
 
                 SwitchToClosedState(_options.ClosedStateDurationAfterConnectFailure);
             }
+        }
+
+        private ZmqSocket CreateSocket()
+        {
+            var socket = new ZmqSocket(_context, ZmqSocketType.PUSH);
+
+            socket.SetOption(ZmqSocketOption.SNDHWM, _options.SendHighWaterMark);
+            socket.SetOption(ZmqSocketOption.SNDTIMEO, (int)_options.SendTimeout.TotalMilliseconds);
+
+            if (_options.KeepAlive != null)
+            {
+                socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE, _options.KeepAlive.Enabled ? 1 : 0);
+
+                if (_options.KeepAlive.KeepAliveTimeout != null)
+                    socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE_IDLE, (int)_options.KeepAlive.KeepAliveTimeout.Value.TotalSeconds);
+
+                if (_options.KeepAlive.KeepAliveInterval != null)
+                    socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE_INTVL, (int)_options.KeepAlive.KeepAliveInterval.Value.TotalSeconds);
+            }
+
+            socket.SetOption(ZmqSocketOption.ROUTING_ID, Encoding.ASCII.GetBytes(PeerId.ToString()));
+
+            return socket;
         }
 
         public void ReconnectFor(string endPoint, TransportMessage message)
@@ -100,30 +115,16 @@ namespace Abc.Zebus.Transport
             if (!CanSendOrConnect(message))
                 return;
 
-            var stopwatch = Stopwatch.StartNew();
-            var spinWait = new SpinWait();
-
-            ZmqErrorCode error;
-
-            while (true)
+            if (_socket.TrySend(buffer, 0, length, out var error))
             {
-                if (_socket.TrySend(buffer, 0, length, out error))
-                {
-                    _failedSendCount = 0;
-                    return;
-                }
-
-                // EAGAIN: Non-blocking mode was requested and the message cannot be sent at the moment.
-                if (error == ZmqErrorCode.EAGAIN && stopwatch.Elapsed < _options.SendTimeout)
-                {
-                    spinWait.SpinOnce();
-                    continue;
-                }
-
-                break;
+                _failedSendCount = 0;
+                return;
             }
 
-            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}, Error: {3}", PeerId, message.MessageTypeId, message.Id, error.ToErrorMessage());
+            var hasReachedHighWaterMark = error == ZmqErrorCode.EAGAIN;
+            var errorMesage = hasReachedHighWaterMark ? "High water mark reached" : error.ToErrorMessage();
+
+            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}, Error: {3}", PeerId, message.MessageTypeId, message.Id, errorMesage);
             _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
 
             if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)

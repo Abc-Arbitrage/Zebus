@@ -52,7 +52,7 @@ namespace Abc.Zebus.Transport
 
         public CodedInputStream Receive(TimeSpan? timeout = null)
         {
-            var receiveTimeout = timeout ?? _options.ReadTimeout;
+            var receiveTimeout = timeout ?? _options.ReceiveTimeout;
             if (receiveTimeout != _lastReceiveTimeout)
             {
                 _socket.SetOption(ZmqSocketOption.RCVTIMEO, (int)receiveTimeout.TotalMilliseconds);
@@ -73,10 +73,10 @@ namespace Abc.Zebus.Transport
         {
             var socket = new ZmqSocket(_context, ZmqSocketType.PULL);
             socket.SetOption(ZmqSocketOption.RCVHWM, _options.ReceiveHighWaterMark);
-            socket.SetOption(ZmqSocketOption.RCVTIMEO, (int)_options.ReadTimeout.TotalMilliseconds);
+            socket.SetOption(ZmqSocketOption.RCVTIMEO, (int)_options.ReceiveTimeout.TotalMilliseconds);
             socket.SetOption(ZmqSocketOption.ROUTING_ID, Encoding.ASCII.GetBytes(_peerId.ToString()));
 
-            _lastReceiveTimeout = _options.ReadTimeout;
+            _lastReceiveTimeout = _options.ReceiveTimeout;
 
             return socket;
         }
