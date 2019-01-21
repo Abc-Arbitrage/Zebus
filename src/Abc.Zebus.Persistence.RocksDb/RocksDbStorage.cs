@@ -48,7 +48,7 @@ namespace Abc.Zebus.Persistence.RocksDb
                                          .SetCreateMissingColumnFamilies()
                                          .SetMaxBackgroundCompactions(4)
                                          .SetMaxBackgroundFlushes(2)
-                                         .SetBytesPerSync(1048576);
+                                         .SetBytesPerSync(1024 * 1024);
             var columnFamilies = new ColumnFamilies();
             columnFamilies.Add("Messages", ColumnFamilyOptions());
             columnFamilies.Add("Peers", ColumnFamilyOptions());
