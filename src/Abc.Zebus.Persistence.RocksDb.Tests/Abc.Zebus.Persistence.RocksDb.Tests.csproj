@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net471</TargetFramework>
     <Version>$(ZebusPersistenceVersion)</Version>
+    <Platform>x64</Platform>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <Import Project="..\Abc.Zebus.Tests.props" />
