@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -51,7 +50,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                               _log.Info($"Created new state for peer {p}");
                                                               return new PeerState(p, delta);
                                                           },
-                                                          (id, state) => new PeerState(state.PeerId, state.NonAckedMessageCount + delta, state.OldestNonAckedMessageTimestampInTicks));
+                                                          (id, state) => state.WithNonAckedMessageCountDelta(delta));
 
             return UpdatePeerState(peerState);
         }
@@ -83,7 +82,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         {
             var updatedPeer = _statesByPeerId.AddOrUpdate(peer.PeerId,
                                                           id => new PeerState(id, 0, newOldestMessageTimestamp),
-                                                          (id, state) => new PeerState(id, state.NonAckedMessageCount, newOldestMessageTimestamp));
+                                                          (id, state) => state.WithOldestNonAckedMessageTimestampInTicks(newOldestMessageTimestamp));
 
             return UpdatePeerState(updatedPeer);
         }

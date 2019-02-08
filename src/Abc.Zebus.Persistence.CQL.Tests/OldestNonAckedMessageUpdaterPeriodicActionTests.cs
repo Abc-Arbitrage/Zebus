@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.PeriodicAction;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
@@ -71,19 +75,26 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
         [Test]
         public void should_only_call_clean_for_updated_peers()
-        { 
-            var peerState = new PeerState(new PeerId("Peer"));
-            var otherPeerState = new PeerState(new PeerId("OtherPeer"));
-            _cqlStorage.Setup(s => s.GetAllKnownPeers()).Returns(new[] { peerState, otherPeerState, });
+        {
+            var peerStates = new[]
+            {
+                new PeerState(new PeerId("Peer")),
+                new PeerState(new PeerId("OtherPeer"))
+            };
+
+            var cleanedPeerStates = new List<PeerState>();
+
+            _cqlStorage.Setup(s => s.GetAllKnownPeers()).Returns(peerStates);
+            _cqlStorage.Setup(s => s.CleanBuckets(Capture.In(cleanedPeerStates))).Returns(Task.CompletedTask);
 
             _oldestMessageUpdater.DoPeriodicAction();
 
-            peerState.NonAckedMessageCount++;
+            peerStates[0] = peerStates[0].WithNonAckedMessageCountDelta(1);
  
             _oldestMessageUpdater.DoPeriodicAction();
 
-            _cqlStorage.Verify(x => x.CleanBuckets(peerState), Times.Exactly(2));
-            _cqlStorage.Verify(x => x.CleanBuckets(otherPeerState), Times.Once);
+            cleanedPeerStates.Select(x => x.PeerId)
+                             .ShouldBeEquivalentTo(peerStates[0].PeerId, peerStates[1].PeerId, peerStates[0].PeerId);
         }
     }
 }
