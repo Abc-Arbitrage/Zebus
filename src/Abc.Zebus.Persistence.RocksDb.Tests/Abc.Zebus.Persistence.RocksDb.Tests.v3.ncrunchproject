@@ -1,0 +1,6 @@
+﻿<ProjectConfiguration>
+  <Settings>
+    <CopyReferencedAssembliesToWorkspace>True</CopyReferencedAssembliesToWorkspace>
+    <UseCPUArchitecture>x64</UseCPUArchitecture>
+  </Settings>
+</ProjectConfiguration>

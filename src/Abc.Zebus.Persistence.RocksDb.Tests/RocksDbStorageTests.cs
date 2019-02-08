@@ -15,19 +15,20 @@ using ProtoBuf;
 
 namespace Abc.Zebus.Persistence.RocksDb.Tests
 {
+    [TestFixture]
     public class RocksDbStorageTests
     {
         private RocksDbStorage _storage;
         private Mock<IReporter> _reporterMock;
-        private string _dbName;
+        private string _databaseDirectoryPath;
 
         [SetUp]
         public void SetUp()
         {
-            _dbName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            _databaseDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
             _reporterMock = new Mock<IReporter>();
-            _storage = new RocksDbStorage(_dbName);
+            _storage = new RocksDbStorage(_databaseDirectoryPath);
             _storage.Start();
         }
 
@@ -35,7 +36,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         public void Teardown()
         {
             _storage.Stop();
-            System.IO.Directory.Delete(_dbName, true);
+            System.IO.Directory.Delete(_databaseDirectoryPath, true);
         }
 
         [Test]
@@ -168,6 +169,26 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
                     transportMessages.Count.ShouldEqual(100);
                     transportMessages.Last().ShouldEqualDeeply(expectedTransportMessages.Last());
                 }
+            }
+        }
+
+        [Test]
+        public async Task should_not_get_acked_message()
+        {
+            var peer = new PeerId("Abc.Testing.Target");
+
+            var message1 = MatcherEntry.Message(peer, MessageId.NextId(), MessageUtil.TypeId<Message1>(), Array.Empty<byte>());
+            var message2 = MatcherEntry.Message(peer, MessageId.NextId(), MessageUtil.TypeId<Message1>(), Array.Empty<byte>());
+
+            await _storage.Write(new[] { message1 });
+            await _storage.Write(new[] { message2 });
+            await _storage.Write(new[] { MatcherEntry.Ack(peer, message2.MessageId) });
+
+            using (var reader = _storage.CreateMessageReader(peer))
+            {
+                reader.GetUnackedMessages()
+                      .Select(x => x.Id)
+                      .ShouldBeEquivalentTo(message1.MessageId);
             }
         }
 

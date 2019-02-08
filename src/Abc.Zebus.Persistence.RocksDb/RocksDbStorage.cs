@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,20 +25,20 @@ namespace Abc.Zebus.Persistence.RocksDb
         private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
 
         private RocksDbSharp.RocksDb _db;
-        private readonly string _dbName;
+        private readonly string _databaseDirectoryPath;
         private ColumnFamilyHandle _messagesColumnFamily;
         private ColumnFamilyHandle _peersColumnFamily;
         private ColumnFamilyHandle _acksColumnFamily;
 
         [DefaultConstructor]
         public RocksDbStorage()
-            : this("zebus-persistence")
+            : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "database"))
         {
         }
 
-        public RocksDbStorage(string dbName)
+        public RocksDbStorage(string databaseDirectoryPath)
         {
-            _dbName = dbName;
+            _databaseDirectoryPath = databaseDirectoryPath;
         }
 
         public int PersistenceQueueSize { get; } = 0;
@@ -49,11 +50,15 @@ namespace Abc.Zebus.Persistence.RocksDb
                                          .SetMaxBackgroundCompactions(4)
                                          .SetMaxBackgroundFlushes(2)
                                          .SetBytesPerSync(1024 * 1024);
-            var columnFamilies = new ColumnFamilies();
-            columnFamilies.Add("Messages", ColumnFamilyOptions());
-            columnFamilies.Add("Peers", ColumnFamilyOptions());
-            columnFamilies.Add("Acks", ColumnFamilyOptions());
-            _db = RocksDbSharp.RocksDb.Open(options, _dbName, columnFamilies);
+
+            var columnFamilies = new ColumnFamilies
+            {
+                { "Messages", ColumnFamilyOptions() },
+                { "Peers", ColumnFamilyOptions() },
+                { "Acks", ColumnFamilyOptions() }
+            };
+
+            _db = RocksDbSharp.RocksDb.Open(options, _databaseDirectoryPath, columnFamilies);
 
             _messagesColumnFamily = _db.GetColumnFamily("Messages");
             _peersColumnFamily = _db.GetColumnFamily("Peers");
