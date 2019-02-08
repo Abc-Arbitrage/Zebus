@@ -67,6 +67,8 @@ namespace Abc.Zebus.Persistence.RocksDb
             ColumnFamilyOptions ColumnFamilyOptions() => new ColumnFamilyOptions().SetCompression(CompressionTypeEnum.rocksdb_no_compression)
                                                                                   .SetLevelCompactionDynamicLevelBytes(true)
                                                                                   .SetArenaBlockSize(16 * 1024);
+
+            LoadAllOutOfOrderAcks();
         }
 
         public void Stop() => Dispose();
@@ -81,23 +83,29 @@ namespace Abc.Zebus.Persistence.RocksDb
                 FillKey(key, entry.PeerId, entry.MessageId.GetDateTime().Ticks, entry.MessageId.Value);
                 if (entry.IsAck)
                 {
+                    // Ack
                     var bytes = _db.Get(key, _messagesColumnFamily);
                     if (bytes != null)
                     {
+                        // Acked message
                         _db.Remove(key, _messagesColumnFamily);
                     }
                     else
                     {
+                        // Ack before message
                         _outOfOrderAcks.TryAdd(entry.MessageId, default);
                         _db.Put(key, Array.Empty<byte>(), _acksColumnFamily);
                     }
                 }
                 else
                 {
+                    // Message 
                     if (!_outOfOrderAcks.TryRemove(entry.MessageId, out _))
-                        _db.Put(key, entry.MessageBytes, _messagesColumnFamily);
-
-                    // Otherwise ignore the message as it has already been acked
+                        // Message before ack
+                        _db.Put(key, entry.MessageBytes, _messagesColumnFamily); 
+                    else
+                        // Otherwise ignore the message and remove the ack as it has already been acked
+                        _db.Remove(key, _acksColumnFamily); 
                 }
             }
 
@@ -189,8 +197,32 @@ namespace Abc.Zebus.Persistence.RocksDb
             Buffer.BlockCopy(messageIdPart, 0, key, peerPart.Length + sizeof(long), _guidLength);
         }
 
-        private static PeerId ReadPeerKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes));
-        private static byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
+        private void LoadAllOutOfOrderAcks()
+        {
+            using (var newIterator = _db.NewIterator(_acksColumnFamily))
+            {
+                newIterator.SeekToFirst();
+                while (newIterator.Valid())
+                {
+                    var keyBytes = newIterator.Key();
+                    var messageId = ReadMessageIdFromKey(keyBytes);
+                    _outOfOrderAcks.TryAdd(new MessageId(messageId), default);
+
+                    newIterator.Next();
+                }
+            }
+        }
+
+        private static Guid ReadMessageIdFromKey(byte[] keyBytes)
+        {
+            var messageIdBytes = new byte [_guidLength];
+            Buffer.BlockCopy(keyBytes, keyBytes.Length - _guidLength, messageIdBytes, 0, _guidLength);
+            var messageId = new Guid(messageIdBytes);
+            return messageId;
+        }
+
+        private static PeerId ReadPeerKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes)); 
+        private static byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString()); 
         public static byte[] CreateKeyBuffer(PeerId entryPeerId) => new byte[Encoding.UTF8.GetByteCount(entryPeerId.ToString()) + sizeof(long) + _guidLength];
 
         public static bool CompareStart(byte[] x, byte[] y, int length)

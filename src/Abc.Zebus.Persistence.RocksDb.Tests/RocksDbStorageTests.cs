@@ -177,8 +177,8 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         {
             var peer = new PeerId("Abc.Testing.Target");
 
-            var message1 = MatcherEntry.Message(peer, MessageId.NextId(), MessageUtil.TypeId<Message1>(), Array.Empty<byte>());
-            var message2 = MatcherEntry.Message(peer, MessageId.NextId(), MessageUtil.TypeId<Message1>(), Array.Empty<byte>());
+            var message1 = GetMatcherEntryWithValidTransportMessage(peer, 1);
+            var message2 = GetMatcherEntryWithValidTransportMessage(peer, 2);
 
             await _storage.Write(new[] { message1 });
             await _storage.Write(new[] { message2 });
@@ -188,7 +188,39 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             {
                 reader.GetUnackedMessages()
                       .Select(x => x.Id)
+                      .ToList()
                       .ShouldBeEquivalentTo(message1.MessageId);
+            }
+        }
+
+        private static MatcherEntry GetMatcherEntryWithValidTransportMessage(PeerId peer, int i)
+        {
+            var inputMessage = CreateTestTransportMessage(i);
+            var messageBytes = Serialization.Serializer.Serialize(inputMessage).ToArray();
+            var message1 = MatcherEntry.Message(peer, inputMessage.Id, MessageUtil.TypeId<Message1>(), messageBytes);
+            return message1;
+        }
+
+        [Test]
+        public async Task should_load_previous_out_of_order_acks()
+        {
+            var peer = new PeerId("Abc.Testing.Target");
+
+            var messageId = MessageId.NextId();
+            await _storage.Write(new[] { MatcherEntry.Ack(peer, messageId) }); 
+            _storage.Stop();
+
+            _storage = new RocksDbStorage(_databaseDirectoryPath);
+            _storage.Start();
+
+            var message = MatcherEntry.Message(peer, messageId, MessageUtil.TypeId<Message1>(), Array.Empty<byte>()); 
+            await _storage.Write(new[] { message });
+
+            using (var messageReader = _storage.CreateMessageReader(peer))
+            {
+                messageReader.GetUnackedMessages()
+                             .Count()
+                             .ShouldEqual(0);
             }
         }
 
