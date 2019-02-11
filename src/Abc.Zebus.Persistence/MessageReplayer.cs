@@ -35,7 +35,7 @@ namespace Abc.Zebus.Persistence
         private readonly int _replayBatchSize;
         private readonly SendContext _emptySendContext = new SendContext();
 
-        public MessageReplayer(IPersistenceConfiguration persistenceConfiguration, IStorage storage,  IBus bus, ITransport transport,
+        public MessageReplayer(IPersistenceConfiguration persistenceConfiguration, IStorage storage, IBus bus, ITransport transport,
                                IInMemoryMessageMatcher inMemoryMessageMatcher, Peer peer, Guid replayId, IReporter reporter)
         {
             _persistenceConfiguration = persistenceConfiguration;
@@ -120,7 +120,7 @@ namespace Abc.Zebus.Persistence
             var replayDuration = MeasureDuration();
             var totalReplayedCount = ReplayUnackedMessages(cancellationToken);
             _logger.Info($"Replay phase ended for {_peer.Id}. {totalReplayedCount} messages replayed in {replayDuration.Value} ({totalReplayedCount / replayDuration.Value.TotalSeconds} msg/s)");
-            
+
             if (cancellationToken.IsCancellationRequested)
                 return;
 
@@ -143,13 +143,13 @@ namespace Abc.Zebus.Persistence
                 if (reader == null)
                     return 0;
                 var totalMessageCount = 0;
-                
+
                 foreach (var partition in reader.GetUnackedMessages().TakeWhile(m => !cancellationToken.IsCancellationRequested).Partition(_replayBatchSize, true))
                 {
                     var messageSentCount = 0;
                     var batchDuration = MeasureDuration();
                     var readAndSendDuration = MeasureDuration();
-                    foreach (var message in partition)
+                    foreach (var message in partition.Select(DeserializeTransportMessage))
                     {
                         _unackedIds.Add(message.Id);
                         ReplayMessage(message);
@@ -168,6 +168,8 @@ namespace Abc.Zebus.Persistence
                 return totalMessageCount;
             }
         }
+
+        private static TransportMessage DeserializeTransportMessage(byte[] row) => TransportMessageDeserializer.Deserialize(row);
 
         private void WaitForAcks(CancellationToken cancellationToken)
         {
@@ -214,7 +216,7 @@ namespace Abc.Zebus.Persistence
 
         private TransportMessage ToTransportMessage(IMessage message, bool wasPersisted = false)
         {
-            return new TransportMessage(message.TypeId(), Serializer.Serialize(message), _self) {  WasPersisted = wasPersisted };
+            return new TransportMessage(message.TypeId(), Serializer.Serialize(message), _self) { WasPersisted = wasPersisted };
         }
 
         public void Handle(MessageHandled messageHandled)

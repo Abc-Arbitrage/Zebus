@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Abc.Zebus.Persistence.Storage;
-using Abc.Zebus.Transport;
 using RocksDbSharp;
 
 namespace Abc.Zebus.Persistence.RocksDb
@@ -22,7 +21,7 @@ namespace Abc.Zebus.Persistence.RocksDb
             _messagesColumnFamily = messagesColumnFamily;
         }
 
-        public IEnumerable<TransportMessage> GetUnackedMessages()
+        public IEnumerable<byte[]> GetUnackedMessages()
         {
             var key = RocksDbStorage.CreateKeyBuffer(_peerId);
             RocksDbStorage.FillKey(key, _peerId, 0, Guid.Empty);
@@ -30,12 +29,12 @@ namespace Abc.Zebus.Persistence.RocksDb
             _iterator?.Dispose();
             _iterator = _db.NewIterator(_messagesColumnFamily);
             if (!_iterator.Seek(key).Valid())
-                return Enumerable.Empty<TransportMessage>();
+                return Enumerable.Empty<byte[]>();
 
             return TransportMessages(_iterator, key, _peerId);
         }
 
-        private static IEnumerable<TransportMessage> TransportMessages(Iterator iterator, byte[] key, PeerId peerId)
+        private static IEnumerable<byte[]> TransportMessages(Iterator iterator, byte[] key, PeerId peerId)
         {
             var found = true;
             var peerPartLength = GetPeerPartLength(peerId);
@@ -45,9 +44,7 @@ namespace Abc.Zebus.Persistence.RocksDb
                 if (!RocksDbStorage.CompareStart(currentKey, key, peerPartLength))
                     break;
 
-                var currentValue = iterator.Value();
-                var transportMessage = TransportMessageDeserializer.Deserialize(currentValue);
-                yield return transportMessage;
+                yield return iterator.Value();
 
                 found = iterator.Next().Valid();
             }

@@ -325,8 +325,8 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             using (MessageId.PauseIdGeneration())
             using (SystemDateTime.PauseTime())
             {
-                var expectedTransportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
-                var messages = expectedTransportMessages.SelectMany(x =>
+                var transportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
+                var messages = transportMessages.SelectMany(x =>
                                                         {
                                                             var transportMessageBytes = Serialization.Serializer.Serialize(x).ToArray();
                                                             return new[]
@@ -344,6 +344,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                 nonAckedMessageCountsForUpdatedPeers[secondPeer].ShouldEqual(100);
 
                 var readerForFirstPeer = (CqlMessageReader)_storage.CreateMessageReader(firstPeer);
+                var expectedTransportMessages = transportMessages.Select(Serialization.Serializer.Serialize).Select(x => x.ToArray()).ToList();
                 readerForFirstPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
 
                 var readerForSecondPeer = (CqlMessageReader)_storage.CreateMessageReader(secondPeer);

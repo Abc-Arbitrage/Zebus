@@ -32,12 +32,14 @@ namespace Abc.Zebus.Persistence.Tests
         private Peer _targetPeer;
         private Peer _anotherPeer;
         private Guid _replayId;
-        private List<TransportMessage> _insertedMessages;
+        private List<byte[]> _insertedMessages;
         private Mock<IStorage> _storageMock;
+        private TransportMessageSerializer _transportMessageSerializer;
 
         [SetUp]
         public void Setup()
         {
+            _transportMessageSerializer = new TransportMessageSerializer();
             _configurationMock = new Mock<IPersistenceConfiguration>();
             _configurationMock.Setup(conf => conf.SafetyPhaseDuration).Returns(500.Milliseconds());
             _configurationMock.SetupGet(x => x.ReplayBatchSize).Returns(_replayBatchSize);
@@ -53,7 +55,7 @@ namespace Abc.Zebus.Persistence.Tests
 
             _replayId = Guid.NewGuid();
 
-            _insertedMessages = new List<TransportMessage>();
+            _insertedMessages = new List<byte[]>();
             var readerMock = new Mock<IMessageReader>();
             _storageMock = new Mock<IStorage>();
             _storageMock.Setup(x => x.CreateMessageReader(It.IsAny<PeerId>())).Returns(readerMock.Object);
@@ -109,11 +111,11 @@ namespace Abc.Zebus.Persistence.Tests
         public void should_not_replay_messages_if_peer_does_not_exist()
         {
             _storageMock.Setup(x => x.CreateMessageReader(It.IsAny<PeerId>())).Returns((IMessageReader)null);
-            
+
             using (MessageId.PauseIdGeneration())
             {
                 _replayer.Run(new CancellationToken());
-                
+
                 _bus.Expect(new ReplaySessionStarted(_targetPeer.Id, _replayId));
             }
         }
@@ -221,7 +223,7 @@ namespace Abc.Zebus.Persistence.Tests
             _replayer.UnackedMessageCountThatReleasesNextBatch = 1;
 
             var unackedTransportMessages = InsertMessagesInThePast(DateTime.Now, messageCount: 10);
-            
+
             using (MessageId.PauseIdGeneration())
             {
                 _replayer.Start();
@@ -237,7 +239,7 @@ namespace Abc.Zebus.Persistence.Tests
 
                     Thread.Sleep(10);
                 }
-                
+
                 unackedTransportMessages = unackedTransportMessages.OrderBy(msg => msg.Id.GetDateTime()).ToList();
                 messageIndex = 0;
                 foreach (var unackedTransportMessage in unackedTransportMessages)
@@ -267,7 +269,7 @@ namespace Abc.Zebus.Persistence.Tests
 
             var refTime = refDateTime.AddHours(-messageCount);
             var transportMessages = new List<TransportMessage>();
-            
+
             for (var i = 0; i < messageCount; ++i)
             {
                 TransportMessage transportMessage;
@@ -276,7 +278,8 @@ namespace Abc.Zebus.Persistence.Tests
                     transportMessage = new FakeCommand(i).ToTransportMessage(_anotherPeer);
                 }
                 transportMessages.Add(transportMessage);
-                _insertedMessages.AddRange(transportMessage);
+
+                _insertedMessages.AddRange(_transportMessageSerializer.Serialize(transportMessage));
                 refTime = refTime.AddHours(1);
             }
 
@@ -290,7 +293,7 @@ namespace Abc.Zebus.Persistence.Tests
             for (var i = 0; i < messageCount; ++i)
             {
                 var transportMessage = new FakeCommand(i).ToTransportMessage(_anotherPeer);
-                _insertedMessages.Add(transportMessage);
+                _insertedMessages.Add(_transportMessageSerializer.Serialize(transportMessage));
             }
         }
     }

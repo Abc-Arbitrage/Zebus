@@ -6,6 +6,6 @@ namespace Abc.Zebus.Persistence.Storage
 {
     public interface IMessageReader : IDisposable
     {
-        IEnumerable<TransportMessage> GetUnackedMessages();
+        IEnumerable<byte[]> GetUnackedMessages();
     }
 }

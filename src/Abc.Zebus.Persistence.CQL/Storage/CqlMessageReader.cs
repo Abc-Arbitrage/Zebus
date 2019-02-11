@@ -4,7 +4,6 @@ using System.Linq;
 using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Storage;
-using Abc.Zebus.Transport;
 using Cassandra;
 using Cassandra.Data.Linq;
 using log4net;
@@ -31,7 +30,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                                           .ToString());
         }
 
-        public IEnumerable<TransportMessage> GetUnackedMessages()
+        public IEnumerable<byte[]> GetUnackedMessages()
         {
             var oldestNonAckedMessageTimestampInTicks = _peerState.OldestNonAckedMessageTimestampInTicks;
             _log.Info($"Reading messages for peer {_peerState.PeerId} from {oldestNonAckedMessageTimestampInTicks} ({new DateTime(oldestNonAckedMessageTimestampInTicks).ToLongTimeString()})");
@@ -52,17 +51,12 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             _log.Info($"{nonAckedMessageRead} non acked messages replayed for peer {_peerState.PeerId}");
         }
 
-        private IEnumerable<TransportMessage> GetNonAckedMessagesInBucket(long oldestNonAckedMessageTimestampInTicks, long bucketId)
+        private IEnumerable<byte[]> GetNonAckedMessagesInBucket(long oldestNonAckedMessageTimestampInTicks, long bucketId)
         {
             return _dataContext.Session
                                .Execute(_preparedStatement.Bind(_peerState.PeerId.ToString(), bucketId, oldestNonAckedMessageTimestampInTicks).SetPageSize(10 * 1000))
                                .Where(x => !x.GetValue<bool>("IsAcked"))
-                               .Select(CreatePersistentMessageFromRow);
-        }
-
-        private static TransportMessage CreatePersistentMessageFromRow(Row row)
-        {
-            return TransportMessageDeserializer.Deserialize(row.GetValue<byte[]>("TransportMessage"));
+                               .Select(row => row.GetValue<byte[]>("TransportMessage"));
         }
 
         public void Dispose()

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
+using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
@@ -51,7 +52,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
 
             var messages = _storage.CreateMessageReader(peerId).GetUnackedMessages();
             var retrievedMessage = messages.Single();
-            retrievedMessage.ShouldEqualDeeply(inputMessage);
+            retrievedMessage.ShouldEqualDeeply(messageBytes);
         }
 
         [Test]
@@ -142,8 +143,8 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             using (MessageId.PauseIdGeneration())
             using (SystemDateTime.PauseTime())
             {
-                var expectedTransportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
-                var messages = expectedTransportMessages.SelectMany(x =>
+                var inputMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
+                var messages = inputMessages.SelectMany(x =>
                                                         {
                                                             var transportMessageBytes = Serialization.Serializer.Serialize(x).ToArray();
                                                             return new[]
@@ -156,6 +157,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
 
                 await _storage.Write(messages);
 
+                var expectedTransportMessages = inputMessages.Select(Serialization.Serializer.Serialize).Select(x => x.ToArray()).ToList();
                 using (var readerForFirstPeer = _storage.CreateMessageReader(firstPeer))
                 {
                     var transportMessages = readerForFirstPeer.GetUnackedMessages().ToList();
@@ -187,6 +189,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             using (var reader = _storage.CreateMessageReader(peer))
             {
                 reader.GetUnackedMessages()
+                      .Select(TransportMessageDeserializer.Deserialize)
                       .Select(x => x.Id)
                       .ToList()
                       .ShouldBeEquivalentTo(message1.MessageId);
@@ -207,13 +210,13 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             var peer = new PeerId("Abc.Testing.Target");
 
             var messageId = MessageId.NextId();
-            await _storage.Write(new[] { MatcherEntry.Ack(peer, messageId) }); 
+            await _storage.Write(new[] { MatcherEntry.Ack(peer, messageId) });
             _storage.Stop();
 
             _storage = new RocksDbStorage(_databaseDirectoryPath);
             _storage.Start();
 
-            var message = MatcherEntry.Message(peer, messageId, MessageUtil.TypeId<Message1>(), Array.Empty<byte>()); 
+            var message = MatcherEntry.Message(peer, messageId, MessageUtil.TypeId<Message1>(), Array.Empty<byte>());
             await _storage.Write(new[] { message });
 
             using (var messageReader = _storage.CreateMessageReader(peer))
@@ -253,6 +256,16 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             public Message1(int id)
             {
                 Id = id;
+            }
+        }
+
+        private static class TransportMessageDeserializer
+        {
+            public static TransportMessage Deserialize(byte[] bytes)
+            {
+                var inputStream = new CodedInputStream(bytes, 0, bytes.Length);
+                var readTransportMessage = inputStream.ReadTransportMessage();
+                return readTransportMessage;
             }
         }
     }
