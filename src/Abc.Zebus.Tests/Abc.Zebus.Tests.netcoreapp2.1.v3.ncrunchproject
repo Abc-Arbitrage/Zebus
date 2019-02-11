@@ -1,6 +1,7 @@
 ﻿<ProjectConfiguration>
   <Settings>
     <HiddenComponentWarnings>
+      <Value>NCrunchAssemblyDepsResolutionFailure</Value>
       <Value>NetCoreNetStandardLocalSystem</Value>
     </HiddenComponentWarnings>
   </Settings>
