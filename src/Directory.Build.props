@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
 
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -19,7 +19,7 @@
     <ZebusVersion>3.2.0</ZebusVersion>
     <ZebusContractsVersion>3.0.0</ZebusContractsVersion>
     <ZebusDirectoryVersion>$(ZebusVersion)</ZebusDirectoryVersion>
-    <ZebusPersistenceVersion>$(ZebusVersion)</ZebusPersistenceVersion>
+    <ZebusPersistenceVersion>3.2.1</ZebusPersistenceVersion>
   </PropertyGroup>
 
   <PropertyGroup>
