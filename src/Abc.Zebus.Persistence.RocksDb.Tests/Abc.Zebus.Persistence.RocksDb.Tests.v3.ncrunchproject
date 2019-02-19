@@ -1,0 +1,9 @@
+﻿<ProjectConfiguration>
+  <Settings>
+    <CopyReferencedAssembliesToWorkspace>True</CopyReferencedAssembliesToWorkspace>
+    <HiddenComponentWarnings>
+      <Value>CopyReferencedAssembliesToWorkspaceIsOn</Value>
+    </HiddenComponentWarnings>
+    <UseCPUArchitecture>x64</UseCPUArchitecture>
+  </Settings>
+</ProjectConfiguration>

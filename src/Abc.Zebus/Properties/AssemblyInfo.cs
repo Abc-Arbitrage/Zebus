@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory.Runner")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Cassandra.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Testing")]
@@ -26,3 +27,5 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Tests")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.RocksDb")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.RocksDb.Tests")]

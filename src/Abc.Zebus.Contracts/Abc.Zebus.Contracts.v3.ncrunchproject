@@ -1,0 +1,7 @@
+﻿<ProjectConfiguration>
+  <Settings>
+    <HiddenComponentWarnings>
+      <Value>NetCoreNetStandardLocalSystem</Value>
+    </HiddenComponentWarnings>
+  </Settings>
+</ProjectConfiguration>

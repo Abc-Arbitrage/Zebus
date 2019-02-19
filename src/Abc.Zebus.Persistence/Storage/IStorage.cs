@@ -29,9 +29,13 @@ namespace Abc.Zebus.Persistence.Storage
         /// <summary>
         /// Remove the specified peer.
         /// </summary>
-        void RemovePeer(PeerId peerId);
+        Task RemovePeer(PeerId peerId);
 
-        Dictionary<PeerId, int> GetNonAckedMessageCountsForUpdatedPeers();
+        /// <summary>
+        /// Returns the count of all non-acked messages for peers updated since the last call to this method
+        /// </summary>
+        /// <returns></returns>
+        Dictionary<PeerId, int> GetNonAckedMessageCounts();
 
         void Start();
 

@@ -31,6 +31,7 @@ output/**
 .vs/
 .idea/
 local-*
+nCrunchTemp_*
 
 src/_NCrunch_Abc.Zebus/**
 lib/packages/**

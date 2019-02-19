@@ -6,6 +6,7 @@ using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Util;
+using Moq;
 using NUnit.Framework;
 using ProtoBuf;
 
@@ -78,9 +79,36 @@ namespace Abc.Zebus.Tests.Core
             }
         }
 
+        [Test]
+        public void should_generate_unacked_messages()
+        {
+            var targetConfig = new Mock<IBusConfiguration>();
+            targetConfig.SetupGet(x => x.DirectoryServiceEndPoints).Returns(new[] { _directoryEndPoint });
+            targetConfig.SetupGet(x => x.IsPersistent).Returns(true);
+            targetConfig.SetupGet(x => x.RegistrationTimeout).Returns(30.Seconds());
+            targetConfig.SetupGet(x => x.StartReplayTimeout).Returns(30.Seconds());
+
+            var target = CreateBusFactory().WithHandlers(typeof(ManualEventHandler))
+                                                  .WithConfiguration(targetConfig.Object, "Demo")
+                                                  .WithPeerId("Some.Random.Persistent.Peer.0")
+                                                  .CreateAndStartBus();
+            using (var source = CreateBusFactory().CreateAndStartBus())
+            {
+                source.Publish(new ManualEvent(42));
+                Thread.Sleep(2000);
+
+                target.Dispose();
+
+                for (int i = 0; i < 1_000; i++)
+                {
+                    source.Publish(new ManualEvent(42));
+                }
+            }
+        }
+
         private static BusFactory CreateBusFactory()
         {
-            return new BusFactory().WithConfiguration(_directoryEndPoint, "Dev");
+            return new BusFactory().WithConfiguration(_directoryEndPoint, "Demo");
         }
 
         [ProtoContract]

@@ -7,7 +7,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Abc.Zebus.Testing.Comparison;
-using Abc.Zebus.Util.Extensions;
 using KellermanSoftware.CompareNetObjects;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
@@ -180,6 +179,11 @@ namespace Abc.Zebus.Testing.Extensions
                 if (new NUnitEqualityComparer().AreEqual(obj, expected, ref empty))
                     Assert.Fail("'{0}' is present in the enumerable", expected);
             }
+        }
+
+        public static void ShouldBeEquivalentTo<T>(this IEnumerable<T> collection, params T[] expected)
+        {
+            ShouldBeEquivalentTo((IEnumerable)collection, expected);
         }
 
         public static void ShouldBeEquivalentTo(this IEnumerable collection, IEnumerable expected, bool compareDeeply = false)

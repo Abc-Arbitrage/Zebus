@@ -1,0 +1,8 @@
+﻿<ProjectConfiguration>
+  <Settings>
+    <HiddenComponentWarnings>
+      <Value>NetCoreNetStandardLocalSystem</Value>
+      <Value>NCrunchAssemblyDepsResolutionFailure</Value>
+    </HiddenComponentWarnings>
+  </Settings>
+</ProjectConfiguration>

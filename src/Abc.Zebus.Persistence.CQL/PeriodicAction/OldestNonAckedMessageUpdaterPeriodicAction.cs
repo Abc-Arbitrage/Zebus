@@ -1,45 +1,44 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Hosting;
-using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
-using Abc.Zebus.Persistence.Messages;
+using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Util;
-using Cassandra.Data.Linq;
 
 namespace Abc.Zebus.Persistence.CQL.PeriodicAction
 {
     public class OldestNonAckedMessageUpdaterPeriodicAction : PeriodicActionHostInitializer
     {
-        private readonly IPeerStateRepository _peerStateRepository;
-        private readonly PersistenceCqlDataContext _dataContext;
         private readonly ICqlPersistenceConfiguration _configuration;
-        private long _lastCheckVersion;
+        private readonly ICqlStorage _cqlStorage;
         private DateTime _lastGlobalCheck;
+        private readonly NonAckedCountCache _nonAckedCountCache = new NonAckedCountCache();
 
-        public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, IPeerStateRepository peerStateRepository, PersistenceCqlDataContext dataContext, ICqlPersistenceConfiguration configuration) 
+        public OldestNonAckedMessageUpdaterPeriodicAction(IBus bus, ICqlPersistenceConfiguration configuration, ICqlStorage cqlStorage)
             : base(bus, configuration.OldestMessagePerPeerCheckPeriod)
         {
-            _peerStateRepository = peerStateRepository;
-            _dataContext = dataContext;
             _configuration = configuration;
+            _cqlStorage = cqlStorage;
         }
 
         public override void DoPeriodicAction()
         {
             var isGlobalCheck = SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
+            var allPeersDictionary = _cqlStorage.GetAllKnownPeers().ToDictionary(state => state.PeerId);
+            IEnumerable<PeerState> peersToCheck = allPeersDictionary.Values;
+            var updatedPeers = _nonAckedCountCache.GetForUpdatedPeers(peersToCheck.Select(x => (x.PeerId, x.NonAckedMessageCount)).ToList());
             if (isGlobalCheck)
             {
-                _lastCheckVersion = 0;
                 _lastGlobalCheck = SystemDateTime.UtcNow;
             }
-
-            var peersToCheck = _peerStateRepository.GetUpdatedPeers(ref _lastCheckVersion);
+            else
+            {
+                peersToCheck = updatedPeers.Select(x => allPeersDictionary[x.PeerId]);
+            }
 
             Parallel.ForEach(peersToCheck, new ParallelOptions { MaxDegreeOfParallelism = 10 }, UpdateOldestNonAckedMessage);
-
-            _peerStateRepository.Save();
         }
 
         private void UpdateOldestNonAckedMessage(PeerState peer)
@@ -47,53 +46,8 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
             if (peer.Removed)
                 return;
 
-            var newOldest = GetOldestNonAckedMessageTimestamp(peer);
-
-            CleanBuckets(peer.PeerId, peer.OldestNonAckedMessageTimestampInTicks, newOldest);
-
-            peer.UpdateOldestNonAckedMessageTimestamp(newOldest);
-        }
-
-        private long GetOldestNonAckedMessageTimestamp(PeerState peer)
-        {
-            var peerId = peer.PeerId.ToString();
-            var lastAckedMessageTimestamp = 0L;
-
-            foreach (var currentBucketId in BucketIdHelper.GetBucketsCollection(peer.OldestNonAckedMessageTimestampInTicks))
-            {
-                var messagesInBucket = _dataContext.PersistentMessages
-                                                   .Where(x => x.PeerId == peerId
-                                                               && x.BucketId == currentBucketId
-                                                               && x.UniqueTimestampInTicks >= peer.OldestNonAckedMessageTimestampInTicks)
-                                                   .OrderBy(x => x.UniqueTimestampInTicks)
-                                                   .Select(x => new { x.IsAcked, x.UniqueTimestampInTicks })
-                                                   .Execute();
-
-                foreach (var message in messagesInBucket)
-                {
-                    if (!message.IsAcked)
-                        return message.UniqueTimestampInTicks;
-
-                    lastAckedMessageTimestamp = message.UniqueTimestampInTicks;
-                    
-                }
-            }
-
-            return lastAckedMessageTimestamp == 0 ? SystemDateTime.UtcNow.Ticks : lastAckedMessageTimestamp + 1;
-        }
-
-        private void CleanBuckets(PeerId peerId, long previousOldestMessageTimestamp, long newOldestMessageTimestamp)
-        {
-            var firstBucketToDelete = BucketIdHelper.GetBucketId(previousOldestMessageTimestamp);
-            var lastBucketToDelete = BucketIdHelper.GetPreviousBucketId(newOldestMessageTimestamp);
-            if (firstBucketToDelete == lastBucketToDelete)
-                return;
-
-            var bucketsToDelete = BucketIdHelper.GetBucketsCollection(firstBucketToDelete, lastBucketToDelete).ToArray();
-            _dataContext.PersistentMessages
-                        .Where(x => x.PeerId == peerId.ToString() && bucketsToDelete.Contains(x.BucketId))
-                        .Delete()
-                        .ExecuteAsync();
+            _cqlStorage.CleanBuckets(peer)
+                       .Wait(_configuration.OldestMessagePerPeerCheckPeriod);
         }
     }
 }

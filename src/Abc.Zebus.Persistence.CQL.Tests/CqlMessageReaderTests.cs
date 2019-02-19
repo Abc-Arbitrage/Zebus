@@ -5,6 +5,7 @@ using Abc.Zebus.Persistence.CQL.Data;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.CQL.Tests.Cql;
 using Abc.Zebus.Persistence.Messages;
+using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
@@ -60,7 +61,8 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             nonAckedMessages.Count.ShouldEqual(3);
             for (var i = 0; i < nonAckedMessages.Count; i++)
             {
-                nonAckedMessages[i].DeepCompare(transportMessages[i]).ShouldBeTrue();
+                var transportMessage = TransportMessageDeserializer.Deserialize(nonAckedMessages[i]);
+                transportMessage.DeepCompare(transportMessages[i]).ShouldBeTrue();
             }
         }
 

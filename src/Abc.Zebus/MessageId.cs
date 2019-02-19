@@ -45,17 +45,13 @@ namespace Abc.Zebus
             return new DisposableAction(() => _pausedGuid = null);
         }
 
-        public static MessageId NextId()
-            => new MessageId(NewGuid());
+        public static MessageId NextId() => new MessageId(NewGuid());
 
-        private static Guid NewGuid()
-            => _pausedGuid ?? _generator.NewGuid();
+        private static Guid NewGuid() => _pausedGuid ?? _generator.NewGuid();
 
-        public DateTime GetDateTime()
-            => TimeGuidGenerator.ExtractDateTime(Value);
+        public DateTime GetDateTime() => TimeGuidGenerator.ExtractDateTime(Value);
 
-        public static void ResetLastTimestamp()
-            => _generator.Reset();
+        public static void ResetLastTimestamp() => _generator.Reset();
 
         /// <summary>
         /// Time-based Guid generator.

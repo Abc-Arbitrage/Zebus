@@ -14,10 +14,4 @@
     <Reference Include="Microsoft.VisualBasic" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="log4net.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

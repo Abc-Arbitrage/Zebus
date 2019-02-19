@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net471</TargetFramework>
+    <Version>$(ZebusPersistenceVersion)</Version>
+    <Platform>x64</Platform>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <Import Project="..\Abc.Zebus.Tests.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Persistence.RocksDb\Abc.Zebus.Persistence.RocksDb.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
+  </ItemGroup>
+
+</Project>
