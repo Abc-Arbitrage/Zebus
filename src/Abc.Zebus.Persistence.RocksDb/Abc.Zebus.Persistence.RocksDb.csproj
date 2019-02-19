@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Zebus.Persistence.RocksDb</PackageId>
+    <Version>$(ZebusPersistenceVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup>
