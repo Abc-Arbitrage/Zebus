@@ -3,6 +3,8 @@ using System.Configuration;
 using System.IO;
 using System.Threading;
 using Abc.Zebus.Core;
+using Abc.Zebus.Directory.Cassandra.Cql;
+using Abc.Zebus.Directory.Cassandra.Storage;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.DeadPeerDetection;
 using Abc.Zebus.Directory.Initialization;
@@ -29,10 +31,11 @@ namespace Abc.Zebus.Directory.Runner
             };
 
             XmlConfigurator.ConfigureAndWatch(LogManager.GetRepository(typeof(Program).Assembly), new FileInfo(PathUtil.InBaseDirectory("log4net.config")));
-            _log.Info("Starting in memory directory");
+            var storageType = ConfigurationManager.AppSettings["Storage"];
+            _log.Info($"Starting in directory with storage type '{storageType}'");
 
             var busFactory = new BusFactory();
-            InjectDirectoryServiceSpecificConfiguration(busFactory);
+            InjectDirectoryServiceSpecificConfiguration(busFactory, storageType);
 
             busFactory
                 .WithConfiguration(new AppSettingsBusConfiguration(), ConfigurationManager.AppSettings["Environment"])
@@ -42,7 +45,7 @@ namespace Abc.Zebus.Directory.Runner
 
             using (busFactory.CreateAndStartBus())
             {
-                _log.Info("In memory directory started");
+                _log.Info("Directory started");
 
                 _log.Info("Starting dead peer detector");
                 var deadPeerDetector = busFactory.Container.GetInstance<IDeadPeerDetector>();
@@ -55,15 +58,16 @@ namespace Abc.Zebus.Directory.Runner
             }
         }
 
-        private static void InjectDirectoryServiceSpecificConfiguration(BusFactory busFactory)
+        private static void InjectDirectoryServiceSpecificConfiguration(BusFactory busFactory, string storageType)
         {
+            var useCassandraStorage = string.Equals(storageType, "Cassandra", StringComparison.OrdinalIgnoreCase);
             busFactory.ConfigureContainer(c =>
             {
                 c.AddRegistry<DirectoryRegistry>();
                 c.ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
 
                 c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
-                c.ForSingletonOf<IPeerRepository>().Use<MemoryPeerRepository>();
+                c.ForSingletonOf<IPeerRepository>().Use(ctx => useCassandraStorage ? (IPeerRepository)ctx.GetInstance<CqlPeerRepository>() : ctx.GetInstance<MemoryPeerRepository>());
                 c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
                 c.ForSingletonOf<IPeerDirectory>().Use(ctx => ctx.GetInstance<PeerDirectoryServer>());
 
@@ -74,6 +78,13 @@ namespace Abc.Zebus.Directory.Runner
 
                     return dispatcher;
                 });
+
+                // Cassandra specific
+                if (useCassandraStorage)
+                {
+                    c.ForSingletonOf<CassandraCqlSessionManager>().Use(() => new CassandraCqlSessionManager());
+                    c.ForSingletonOf<ICassandraConfiguration>().Use<CassandraAppSettingsConfiguration>();
+                }
             });
         }
     }
