@@ -1,3 +1,7 @@
+## 3.2.1
+- Add stand-alone persistence implementation based on RocksDb
+- Refactor CqlStorqge
+
 ## 3.2.0
 - Update libzmq to 4.3.1
 - Add Linux support
