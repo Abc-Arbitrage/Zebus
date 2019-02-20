@@ -41,8 +41,6 @@ namespace Abc.Zebus.Persistence.RocksDb
             _databaseDirectoryPath = databaseDirectoryPath;
         }
 
-        public int PersistenceQueueSize { get; } = 0;
-
         public void Start()
         {
             var options = new DbOptions().SetCreateIfMissing()
