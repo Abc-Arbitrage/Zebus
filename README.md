@@ -78,9 +78,15 @@ On Windows, you will need to have [Microsoft Visual C++ 2017 Redistributable](ht
 
 We try to stick to the [semantic versioning](http://semver.org/) principles and keep the [release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES.md) and [directory release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES_DIRECTORY.md) up to date.
 
+# Other repositories
+
+ - [Zebus.MessageDsl](https://github.com/Abc-Arbitrage/Zebus.MessageDsl) - a DSL which simplifies the writing of ProtoBuf contracts for Zebus
+ - [Zebus.TinyHost](https://github.com/Abc-Arbitrage/Zebus.TinyHost) - a lightweight host used to run Zebus enabled services
+ - [Zebus.Samples](https://github.com/Abc-Arbitrage/Zebus.Samples) - miscellaneous samples that show how to get started with Zebus
+
 # Copyright
 
-Copyright © 2016 Abc Arbitrage Asset Management
+Copyright © 2019 Abc Arbitrage Asset Management
 
 # License
 
