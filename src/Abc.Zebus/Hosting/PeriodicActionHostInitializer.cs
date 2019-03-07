@@ -43,7 +43,7 @@ namespace Abc.Zebus.Hosting
         {
             base.AfterStart();
 
-            if (Period == TimeSpan.MaxValue)
+            if (Period <= TimeSpan.Zero || Period == TimeSpan.MaxValue)
             {
                 _logger.InfoFormat("Periodic action disabled");
                 return;

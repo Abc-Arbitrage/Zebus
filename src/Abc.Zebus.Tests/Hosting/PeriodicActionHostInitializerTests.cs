@@ -258,6 +258,22 @@ namespace Abc.Zebus.Tests.Hosting
         }
 
         [Test]
+        public void should_not_run_action_if_period_is_negative()
+        {
+            var period = -20.Milliseconds();
+            _periodicInitializer = new XPeriodicActionHostInitializer(_bus, period);
+
+            var callCount = 0;
+            _periodicInitializer.PeriodicAction = () => callCount++;
+
+            _periodicInitializer.AfterStart();
+
+            Thread.Sleep(100);
+
+            callCount.ShouldEqual(0);
+        }
+
+        [Test]
         public void should_publish_error()
         {
             _periodicInitializer.PeriodicAction = () => throw new Exception("Custom error");
