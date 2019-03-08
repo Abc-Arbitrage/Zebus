@@ -128,7 +128,7 @@ namespace Abc.Zebus.Persistence
 
             var safetyDuration = MeasureDuration();
             ForwardLiveMessages(cancellationToken);
-            _logger.Info($"Satefy phase ended for {_peer.Id} ({safetyDuration.Value})");
+            _logger.Info($"Safety phase ended for {_peer.Id} ({safetyDuration.Value})");
             if (cancellationToken.IsCancellationRequested)
                 return;
 
