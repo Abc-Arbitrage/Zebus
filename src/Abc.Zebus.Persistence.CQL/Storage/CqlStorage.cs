@@ -110,7 +110,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                         _log.Error(t.Exception);
 
                     remaining.Release();
-                });
+                }, TaskContinuationOptions.ExecuteSynchronously);
             }
 
             var updateNonAckedCountTasks = new List<Task>();
