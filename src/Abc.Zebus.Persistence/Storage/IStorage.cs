@@ -11,8 +11,6 @@ namespace Abc.Zebus.Persistence.Storage
     /// </summary>
     public interface IStorage
     {
-        int PersistenceQueueSize { get; }
-
         /// <summary>
         /// Stores a batch of entries (messages or acks) into the storage
         /// </summary>
