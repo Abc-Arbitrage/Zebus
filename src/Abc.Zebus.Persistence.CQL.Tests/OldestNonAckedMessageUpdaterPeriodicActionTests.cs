@@ -22,7 +22,6 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
         public override void CreateSchema()
         {
-            IgnoreWhenSet("APPVEYOR");
             IgnoreWhenSet("TF_BUILD");
             base.CreateSchema();
         }
@@ -90,7 +89,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             _oldestMessageUpdater.DoPeriodicAction();
 
             peerStates[0] = peerStates[0].WithNonAckedMessageCountDelta(1);
- 
+
             _oldestMessageUpdater.DoPeriodicAction();
 
             cleanedPeerStates.Select(x => x.PeerId)

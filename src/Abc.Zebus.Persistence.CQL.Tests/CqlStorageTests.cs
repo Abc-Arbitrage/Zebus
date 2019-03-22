@@ -27,7 +27,6 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
         public override void CreateSchema()
         {
-            IgnoreWhenSet("APPVEYOR");
             IgnoreWhenSet("TF_BUILD");
             base.CreateSchema();
         }
@@ -313,7 +312,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             nonAckedMessageCountsForUpdatedPeers = _storage.GetNonAckedMessageCounts();
             nonAckedMessageCountsForUpdatedPeers[firstPeer].ShouldEqual(1);
-            nonAckedMessageCountsForUpdatedPeers[secondPeer].ShouldEqual(1); 
+            nonAckedMessageCountsForUpdatedPeers[secondPeer].ShouldEqual(1);
         }
 
         [Test]

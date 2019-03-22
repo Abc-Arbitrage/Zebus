@@ -23,7 +23,6 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 
         public override void CreateSchema()
         {
-            IgnoreWhenSet("APPVEYOR");
             IgnoreWhenSet("TF_BUILD");
             base.CreateSchema();
         }
@@ -81,7 +80,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         public void should_return_null_when_peer_does_not_exists()
         {
             var fetched = _repository.Get(new PeerId("PeerId"));
-            
+
             fetched.ShouldBeNull();
         }
 
@@ -194,7 +193,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             _repository.SetPeerResponding(_peer1.Id, false);
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeFalse();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeFalse();
-            
+
             _repository.SetPeerResponding(_peer1.Id, true);
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeTrue();
