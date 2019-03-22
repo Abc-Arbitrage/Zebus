@@ -10,14 +10,17 @@ jobs:
       - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
+          command: build
           projects: src/Abc.Zebus.sln
           arguments: --configuration $(BuildConfiguration)
+
       - task: DotNetCoreCLI@2
         displayName: Test
         inputs:
           command: test
-          projects: '**/*.Tests.csproj'
+          projects: src/**/*.Tests.csproj
           arguments: --configuration $(BuildConfiguration)
+
       - task: DotNetCoreCLI@2
         displayName: Pack
         inputs:
@@ -26,6 +29,7 @@ jobs:
           packDirectory: $(Build.ArtifactStagingDirectory)
           nobuild: true
           verbosityPack: Minimal
+
       - task: PublishBuildArtifacts@1
         displayName: Publish Artifacts
         inputs:
@@ -38,8 +42,10 @@ jobs:
       - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
+          command: build
           projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
           arguments: --configuration $(BuildConfiguration) --framework netcoreapp2.1
+
       - task: DotNetCoreCLI@2
         displayName: Test
         inputs:
