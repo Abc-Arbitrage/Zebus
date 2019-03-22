@@ -8,18 +8,18 @@ jobs:
       vmImage: vs2017-win2016
     steps:
       - task: DotNetCoreCLI@2
-        displayName: dotnet build
+        displayName: Build
         inputs:
           projects: src/Abc.Zebus.sln
           arguments: --configuration $(BuildConfiguration)
       - task: DotNetCoreCLI@2
-        displayName: dotnet test
+        displayName: Test
         inputs:
           command: test
           projects: '**/*.Tests.csproj'
           arguments: --configuration $(BuildConfiguration)
       - task: DotNetCoreCLI@2
-        displayName: dotnet pack
+        displayName: Pack
         inputs:
           command: pack
           configuration: $(BuildConfiguration)
@@ -36,12 +36,12 @@ jobs:
       vmImage: ubuntu-16.04
     steps:
       - task: DotNetCoreCLI@2
-        displayName: dotnet build
+        displayName: Build
         inputs:
           projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
           arguments: --configuration $(BuildConfiguration) --framework netcoreapp2.1
       - task: DotNetCoreCLI@2
-        displayName: dotnet test
+        displayName: Test
         inputs:
           command: test
           projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
