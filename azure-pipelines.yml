@@ -1,0 +1,48 @@
+
+variables:
+  BuildConfiguration: Release
+
+jobs:
+  - job: Windows
+    pool:
+      vmImage: vs2017-win2016
+    steps:
+      - task: DotNetCoreCLI@2
+        displayName: dotnet build
+        inputs:
+          projects: src/Abc.Zebus.sln
+          arguments: --configuration $(BuildConfiguration)
+      - task: DotNetCoreCLI@2
+        displayName: dotnet test
+        inputs:
+          command: test
+          projects: '**/*.Tests.csproj'
+          arguments: --configuration $(BuildConfiguration)
+      - task: DotNetCoreCLI@2
+        displayName: dotnet pack
+        inputs:
+          command: pack
+          configuration: $(BuildConfiguration)
+          packDirectory: $(Build.ArtifactStagingDirectory)
+          nobuild: true
+          verbosityPack: Minimal
+      - task: PublishBuildArtifacts@1
+        displayName: Publish Artifacts
+        inputs:
+          ArtifactName: NuGet
+
+  - job: Linux
+    pool:
+      vmImage: ubuntu-16.04
+    steps:
+      - task: DotNetCoreCLI@2
+        displayName: dotnet build
+        inputs:
+          projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
+          arguments: --configuration $(BuildConfiguration) --framework netcoreapp2.1
+      - task: DotNetCoreCLI@2
+        displayName: dotnet test
+        inputs:
+          command: test
+          projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
+          arguments: --configuration $(BuildConfiguration) --framework netcoreapp2.1
