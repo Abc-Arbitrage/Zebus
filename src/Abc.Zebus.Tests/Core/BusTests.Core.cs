@@ -103,6 +103,18 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
+            public void should_stop_message_dispatcher_when_directory_unsubscription_fails()
+            {
+                _directoryMock.Setup(i => i.UnregisterAsync(It.IsAny<IBus>()))
+                              .Returns(Task.FromException(new InvalidOperationException()));
+
+                _bus.Start();
+                _bus.Stop();
+
+                _messageDispatcherMock.Verify(i => i.Stop());
+            }
+
+            [Test]
             public void should_fail_when_starting_started_bus()
             {
                 _bus.Start();

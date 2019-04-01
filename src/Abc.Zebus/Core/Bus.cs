@@ -179,7 +179,16 @@ namespace Abc.Zebus.Core
             Status = BusStatus.Stopping;
 
             if (unregister)
-                _directory.UnregisterAsync(this).Wait();
+            {
+                try
+                {
+                    _directory.UnregisterAsync(this).Wait();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex);
+                }
+            }
 
             lock (_subscriptions)
             {
@@ -193,9 +202,14 @@ namespace Abc.Zebus.Core
                 }
             }
 
-            _stoppingStrategy.Stop(_transport, _messageDispatcher);
-
-            Status = BusStatus.Stopped;
+            try
+            {
+                _stoppingStrategy.Stop(_transport, _messageDispatcher);
+            }
+            finally
+            {
+                Status = BusStatus.Stopped;
+            }
 
             _messageIdToTaskCompletionSources.Clear();
         }
