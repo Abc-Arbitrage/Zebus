@@ -27,9 +27,10 @@ namespace Abc.Zebus.Persistence.CQL.Tests
                 BucketIdHelper.GetBucketId(beginning.AddHours(1)),
                 BucketIdHelper.GetBucketId(beginning.AddHours(2)),
                 BucketIdHelper.GetBucketId(now),
+                BucketIdHelper.GetBucketId(now.AddHours(1)),
             };
 
-            BucketIdHelper.GetBucketsCollection(beginning.Ticks).ShouldBeEquivalentTo(expectedBucketIds);
+            BucketIdHelper.GetBucketsCollection(beginning.Ticks, now).ShouldBeEquivalentTo(expectedBucketIds);
         }
 
         [Test]

@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Persistence.Storage
 {
@@ -8,31 +6,20 @@ namespace Abc.Zebus.Persistence.Storage
     {
         private readonly Dictionary<PeerId, NonAckedCount> _nonAckedCounts = new Dictionary<PeerId, NonAckedCount>();
 
-        public IEnumerable<NonAckedCount> GetForUpdatedPeers(ICollection<(PeerId, int)> allPeerStates)
+        public IEnumerable<NonAckedCount> GetUpdatedValues(IEnumerable<NonAckedCount> allNonAckedCounts)
         {
-            var updatedPeers = (from peerState in allPeerStates
-                                let count = _nonAckedCounts.GetValueOrDefault(peerState.Item1, id => new NonAckedCount(id, -42))
-                                where count.Count != peerState.Item2
-                                select new NonAckedCount(peerState.Item1, peerState.Item2)).ToList();
+            var updatedPeers = new List<NonAckedCount>();
 
-            foreach (var peerState in allPeerStates)
+            foreach (var nonAckedCount in allNonAckedCounts)
             {
-                _nonAckedCounts[peerState.Item1] = new NonAckedCount(peerState.Item1, peerState.Item2);
+                if (_nonAckedCounts.TryGetValue(nonAckedCount.PeerId, out var previousNonAckedCount) && previousNonAckedCount.Count == nonAckedCount.Count)
+                    continue;
+
+                _nonAckedCounts[nonAckedCount.PeerId] = nonAckedCount;
+                updatedPeers.Add(nonAckedCount);
             }
 
             return updatedPeers;
         }
-    }
-
-    public readonly struct NonAckedCount
-    {
-        public readonly PeerId PeerId;
-        public readonly int Count;
-
-        public NonAckedCount(PeerId peerId, int count)
-        {
-            PeerId = peerId;
-            Count = count;
-        } 
     }
 }

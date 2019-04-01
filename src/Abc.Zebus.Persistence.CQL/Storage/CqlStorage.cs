@@ -39,7 +39,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             _preparedStatement = dataContext.Session.Prepare(dataContext.PersistentMessages.Insert(new PersistentMessage()).SetTTL(0).SetTimestamp(default(DateTimeOffset)).ToString());
         }
 
-        public static TimeSpan PersistentMessagesTimeToLive => 30.Days();
+        public Task CleanBucketTask { get; private set; } = Task.CompletedTask;
 
         public Dictionary<PeerId, int> GetNonAckedMessageCounts()
         {
@@ -95,7 +95,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                              matcherEntry.MessageId.Value,
                                                              matcherEntry.IsAck,
                                                              matcherEntry.MessageBytes,
-                                                             (int)PersistentMessagesTimeToLive.TotalSeconds,
+                                                             (int)PeerState.MessagesTimeToLive.TotalSeconds,
                                                              ToUnixMicroSeconds(rowTimestamp));
 
                 var insertTask = _dataContext.Session.ExecuteAsync(boundStatement); 
@@ -147,30 +147,44 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         {
         }
 
-        public Task CleanBuckets(PeerState peer)
+        public Task UpdateNewOldestMessageTimestamp(PeerState peer)
         {
-            var peerId = peer.PeerId;
-            var newOldestMessageTimestamp = GetOldestNonAckedMessageTimestampInTicks(peer);
-
-            var firstBucketToDelete = BucketIdHelper.GetBucketId(peer.OldestNonAckedMessageTimestampInTicks);
-            var lastBucketToDelete = BucketIdHelper.GetPreviousBucketId(newOldestMessageTimestamp);
-            if (firstBucketToDelete == lastBucketToDelete)
+            var newOldestMessageTimestamp = GetOldestNonAckedMessageTimestampInTicks(peer) - PeerState.OldestNonAckedMessageTimestampSafetyOffset.Ticks;
+            if (newOldestMessageTimestamp == peer.OldestNonAckedMessageTimestampInTicks)
                 return Task.CompletedTask;
+
+            if (newOldestMessageTimestamp < peer.OldestNonAckedMessageTimestampInTicks)
+            {
+                _log.Warn($"OldestNonAckedMessageTimestampInTicks moved backward for {peer.PeerId}, Value: {new DateTime(newOldestMessageTimestamp)}");
+            }
+            else
+            {
+                CleanBuckets(peer.PeerId, peer.OldestNonAckedMessageTimestampInTicks, newOldestMessageTimestamp);
+            }
+
+            return _peerStateRepository.UpdateNewOldestMessageTimestamp(peer, newOldestMessageTimestamp);
+        }
+
+        private void CleanBuckets(in PeerId peerId, long oldestNonAckedMessageTimestampInTicks, long newOldestMessageTimestamp)
+        {
+            var firstBucketToDelete = BucketIdHelper.GetBucketId(oldestNonAckedMessageTimestampInTicks);
+            var lastBucketToDelete = BucketIdHelper.GetPreviousBucketId(newOldestMessageTimestamp);
+            if (firstBucketToDelete > lastBucketToDelete)
+                return;
 
             var bucketsToDelete = BucketIdHelper.GetBucketsCollection(firstBucketToDelete, lastBucketToDelete).ToArray();
             var peerIdString = peerId.ToString();
-            _dataContext.PersistentMessages
-                        .Where(x => x.PeerId == peerIdString && bucketsToDelete.Contains(x.BucketId))
-                        .Delete()
-                        .ExecuteAsync();
 
-            return _peerStateRepository.UpdateNewOldestMessageTimestamp(peer, newOldestMessageTimestamp);
+            CleanBucketTask = _dataContext.PersistentMessages
+                                          .Where(x => x.PeerId == peerIdString && bucketsToDelete.Contains(x.BucketId))
+                                          .Delete()
+                                          .ExecuteAsync();
         }
 
         private long GetOldestNonAckedMessageTimestampInTicks(PeerState peer)
         {
             var peerId = peer.PeerId.ToString();
-            var lastAckedMessageTimestamp = 0L;
+            var lastAckedMessageTimestamp = SystemDateTime.UtcNow.Ticks;
 
             foreach (var currentBucketId in BucketIdHelper.GetBucketsCollection(peer.OldestNonAckedMessageTimestampInTicks))
             {
@@ -191,7 +205,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                 }
             }
 
-            return lastAckedMessageTimestamp == 0 ? SystemDateTime.UtcNow.Ticks : lastAckedMessageTimestamp + 1;
+            return lastAckedMessageTimestamp;
         }
 
         public IEnumerable<PeerState> GetAllKnownPeers()

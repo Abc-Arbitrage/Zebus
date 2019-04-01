@@ -23,9 +23,24 @@ namespace Abc.Zebus.Persistence.Messages
             return GetBucketId(timestampInTicks - _ticksInABucket);
         }
 
-        public static IEnumerable<long> GetBucketsCollection(long beginTimestampInTicks, long endTimestampInTicks = 0)
+        public static IEnumerable<long> GetBucketsCollection(long beginTimestampInTicks)
         {
-            var latestBucketId = GetBucketId(endTimestampInTicks > 0 ? endTimestampInTicks : DateTime.UtcNow.Ticks);
+            return GetBucketsCollection(beginTimestampInTicks, DateTime.UtcNow);
+        }
+
+        public static IEnumerable<long> GetBucketsCollection(long beginTimestampInTicks, DateTime utcNow)
+        {
+            // A message could be received with a timestamp in the future from a machine with a clock-drift.
+            // It is dangerous to stop scanning buckets using DateTime.UtcNow.
+            // => Add _bucketSize to DateTime.UtcNow to scan one extra bucket.
+            var endTimestampInTicks = utcNow.Add(_bucketSize).Ticks;
+
+            return GetBucketsCollection(beginTimestampInTicks, endTimestampInTicks);
+        }
+
+        public static IEnumerable<long> GetBucketsCollection(long beginTimestampInTicks, long endTimestampInTicks)
+        {
+            var latestBucketId = GetBucketId(endTimestampInTicks);
 
             var currentBucket = GetBucketId(beginTimestampInTicks);
             while (currentBucket <= latestBucketId)

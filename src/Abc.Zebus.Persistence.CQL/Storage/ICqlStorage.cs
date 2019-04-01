@@ -6,7 +6,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 {
     public interface ICqlStorage : IStorage
     {
-        Task CleanBuckets(PeerState peer);
+        Task UpdateNewOldestMessageTimestamp(PeerState peer);
         IEnumerable<PeerState> GetAllKnownPeers();
     }
 }

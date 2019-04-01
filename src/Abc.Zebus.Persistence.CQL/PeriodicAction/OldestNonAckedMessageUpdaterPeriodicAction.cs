@@ -28,7 +28,7 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
             var isGlobalCheck = SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
             var allPeersDictionary = _cqlStorage.GetAllKnownPeers().ToDictionary(state => state.PeerId);
             IEnumerable<PeerState> peersToCheck = allPeersDictionary.Values;
-            var updatedPeers = _nonAckedCountCache.GetForUpdatedPeers(peersToCheck.Select(x => (x.PeerId, x.NonAckedMessageCount)).ToList());
+            var updatedPeers = _nonAckedCountCache.GetUpdatedValues(peersToCheck.Select(x => new NonAckedCount(x.PeerId, x.NonAckedMessageCount)));
             if (isGlobalCheck)
             {
                 _lastGlobalCheck = SystemDateTime.UtcNow;
@@ -46,7 +46,7 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
             if (peer.Removed)
                 return;
 
-            _cqlStorage.CleanBuckets(peer)
+            _cqlStorage.UpdateNewOldestMessageTimestamp(peer)
                        .Wait(_configuration.OldestMessagePerPeerCheckPeriod);
         }
     }

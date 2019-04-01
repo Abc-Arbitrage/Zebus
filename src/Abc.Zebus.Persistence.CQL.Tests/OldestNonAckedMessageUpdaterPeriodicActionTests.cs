@@ -53,8 +53,8 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             _oldestMessageUpdater.DoPeriodicAction();
 
-            _cqlStorage.Verify(x => x.CleanBuckets(peerState), Times.Once);
-            _cqlStorage.Verify(x => x.CleanBuckets(otherPeerState), Times.Once);
+            _cqlStorage.Verify(x => x.UpdateNewOldestMessageTimestamp(peerState), Times.Once);
+            _cqlStorage.Verify(x => x.UpdateNewOldestMessageTimestamp(otherPeerState), Times.Once);
         }
 
         [Test]
@@ -68,8 +68,8 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 
             _oldestMessageUpdater.DoPeriodicAction();
 
-            _cqlStorage.Verify(x => x.CleanBuckets(peerState), Times.Once);
-            _cqlStorage.Verify(x => x.CleanBuckets(otherPeerState), Times.Once);
+            _cqlStorage.Verify(x => x.UpdateNewOldestMessageTimestamp(peerState), Times.Once);
+            _cqlStorage.Verify(x => x.UpdateNewOldestMessageTimestamp(otherPeerState), Times.Once);
         }
 
         [Test]
@@ -84,7 +84,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             var cleanedPeerStates = new List<PeerState>();
 
             _cqlStorage.Setup(s => s.GetAllKnownPeers()).Returns(peerStates);
-            _cqlStorage.Setup(s => s.CleanBuckets(Capture.In(cleanedPeerStates))).Returns(Task.CompletedTask);
+            _cqlStorage.Setup(s => s.UpdateNewOldestMessageTimestamp(Capture.In(cleanedPeerStates))).Returns(Task.CompletedTask);
 
             _oldestMessageUpdater.DoPeriodicAction();
 

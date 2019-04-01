@@ -94,7 +94,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         private Task RemovePersistentMessages(PeerId peerId)
         {
-            var allPossibleBuckets = BucketIdHelper.GetBucketsCollection(SystemDateTime.UtcNow.Ticks - CqlStorage.PersistentMessagesTimeToLive.Ticks).ToArray();
+            var allPossibleBuckets = BucketIdHelper.GetBucketsCollection(SystemDateTime.UtcNow.Ticks - PeerState.MessagesTimeToLive.Ticks).ToArray();
 
             return _dataContext.PersistentMessages
                                .Where(x => x.PeerId == peerId.ToString() && allPossibleBuckets.Contains(x.BucketId))
