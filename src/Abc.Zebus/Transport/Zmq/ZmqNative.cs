@@ -28,13 +28,6 @@ namespace Abc.Zebus.Transport.Zmq
                     ? (LibImpl)new Win64Impl()
                     : new Win32Impl();
             }
-            catch (DllNotFoundException) when (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                // Used in unit tests only
-                return Environment.Is64BitProcess
-                    ? (LibImpl)new Linux64Impl()
-                    : new Linux32Impl();
-            }
         }
     }
 }

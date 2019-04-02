@@ -23,11 +23,8 @@
     <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.x86.dll">
       <PackagePath>runtimes\win-x86\native\Abc.Zebus.libzmq.dll</PackagePath>
     </None> 
-    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.x64.so">
+    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.so">
       <PackagePath>runtimes\linux-x64\native\Abc.Zebus.libzmq.so</PackagePath>
-    </None>
-    <None Include="..\..\lib\zmq\Abc.Zebus.libzmq.x86.so">
-      <PackagePath>runtimes\linux-x86\native\Abc.Zebus.libzmq.so</PackagePath>
     </None>
     <None Update="..\..\lib\zmq\Abc.Zebus.libzmq.*">
       <Link>%(FileName)%(Extension)</Link>

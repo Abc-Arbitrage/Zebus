@@ -43,15 +43,3 @@ strip lib/libzmq.so.*.*
 ```
 
 The dynamic library will be outputted in `lib/libzmq.so.*.*`.
-
-### i386
-
-```
-mkdir build_i386
-cd build_i386
-cmake -DWITH_PERF_TOOL=OFF -DZMQ_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32 ..
-make -j$[$(nproc)+1]
-strip lib/libzmq.so.*.*
-```
-
-The dynamic library will be outputted in `lib/libzmq.so.*.*`.
