@@ -149,25 +149,25 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public Task UpdateNewOldestMessageTimestamp(PeerState peer)
         {
-            var newOldestMessageTimestamp = GetOldestNonAckedMessageTimestampInTicks(peer) - PeerState.OldestNonAckedMessageTimestampSafetyOffset.Ticks;
-            if (newOldestMessageTimestamp == peer.OldestNonAckedMessageTimestampInTicks)
+            var newOldestUnackedTimestampMinusSafetyOffset = GetOldestUnackedMessageTimestampInTicks(peer) - PeerState.OldestNonAckedMessageTimestampSafetyOffset.Ticks;
+            if (newOldestUnackedTimestampMinusSafetyOffset == peer.OldestNonAckedMessageTimestampInTicks)
                 return Task.CompletedTask;
 
-            if (newOldestMessageTimestamp < peer.OldestNonAckedMessageTimestampInTicks)
+            if (newOldestUnackedTimestampMinusSafetyOffset < peer.OldestNonAckedMessageTimestampInTicks)
             {
-                _log.Warn($"OldestNonAckedMessageTimestampInTicks moved backward for {peer.PeerId}, Value: {new DateTime(newOldestMessageTimestamp)}");
+                _log.Warn($"OldestNonAckedMessageTimestampInTicks moved backward for {peer.PeerId}, Value: {new DateTime(newOldestUnackedTimestampMinusSafetyOffset)}");
             }
             else
             {
-                CleanBuckets(peer.PeerId, peer.OldestNonAckedMessageTimestampInTicks, newOldestMessageTimestamp);
+                CleanBuckets(peer.PeerId, peer.OldestNonAckedMessageTimestampInTicks, newOldestUnackedTimestampMinusSafetyOffset);
             }
 
-            return _peerStateRepository.UpdateNewOldestMessageTimestamp(peer, newOldestMessageTimestamp);
+            return _peerStateRepository.UpdateNewOldestMessageTimestamp(peer, newOldestUnackedTimestampMinusSafetyOffset);
         }
 
-        private void CleanBuckets(in PeerId peerId, long oldestNonAckedMessageTimestampInTicks, long newOldestMessageTimestamp)
+        private void CleanBuckets(in PeerId peerId, long oldestUnackedMessageTimestampInTicks, long newOldestMessageTimestamp)
         {
-            var firstBucketToDelete = BucketIdHelper.GetBucketId(oldestNonAckedMessageTimestampInTicks);
+            var firstBucketToDelete = BucketIdHelper.GetBucketId(oldestUnackedMessageTimestampInTicks);
             var lastBucketToDelete = BucketIdHelper.GetPreviousBucketId(newOldestMessageTimestamp);
             if (firstBucketToDelete > lastBucketToDelete)
                 return;
@@ -181,7 +181,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                           .ExecuteAsync();
         }
 
-        private long GetOldestNonAckedMessageTimestampInTicks(PeerState peer)
+        private long GetOldestUnackedMessageTimestampInTicks(PeerState peer)
         {
             var peerId = peer.PeerId.ToString();
             var lastAckedMessageTimestamp = SystemDateTime.UtcNow.Ticks;

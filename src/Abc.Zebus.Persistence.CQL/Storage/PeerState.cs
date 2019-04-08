@@ -7,11 +7,11 @@ namespace Abc.Zebus.Persistence.CQL.Storage
     {
         /// <summary>
         /// Because <see cref="OldestNonAckedMessageTimestampInTicks"/> is just an optimization to make replay faster,
-        /// there is absolutely no risk to have its value set in the past. However, settings its value slightly in the
+        /// there is absolutely no risk in having its value set in the past. However, setting its value slightly in the
         /// future is quite dangerous because it can generate lost messages.
         ///
-        /// This delay prevent <see cref="OldestNonAckedMessageTimestampInTicks"/> from being moved to aggressively.
-        /// It's value is set to the maximum estimated clock-drift / network delay of the system.
+        /// This delay prevents <see cref="OldestNonAckedMessageTimestampInTicks"/> from being moved too aggressively.
+        /// Its value is set to the maximum estimated clock-drift / network delay of the system.
         /// </summary>
         public static readonly TimeSpan OldestNonAckedMessageTimestampSafetyOffset = 15.Minutes();
 
