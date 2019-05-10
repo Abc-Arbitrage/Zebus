@@ -13,11 +13,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants Condition="'$(TargetFramework)' == 'net471'
-                     or '$(TargetFramework)' == 'net461'">$(DefineConstants);NETFWK</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <ZebusVersion>3.2.2</ZebusVersion>
     <ZebusContractsVersion>3.0.0</ZebusContractsVersion>
     <ZebusDirectoryVersion>$(ZebusVersion)</ZebusDirectoryVersion>
@@ -40,8 +35,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All" />
+    <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
