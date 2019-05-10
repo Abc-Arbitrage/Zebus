@@ -1,9 +1,2 @@
 <Project>
-
-  <PropertyGroup Condition="$(ContinuousIntegrationBuild)">
-    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
-    <PackageVersion Condition="'$(TEAMCITY_VERSION)' != '' and '$(BUILD_NUMBER)' != ''">$(PackageVersion)-pre$(BUILD_NUMBER)</PackageVersion>
-    <PackageVersion Condition="'$(TF_BUILD)' != '' and '$(BUILD_SOURCEBRANCH)' != '' and !$(BUILD_SOURCEBRANCH.StartsWith('refs/tags/'))">$(PackageVersion)-pre$(BUILD_BUILDID)</PackageVersion>
-  </PropertyGroup>
-
 </Project>
