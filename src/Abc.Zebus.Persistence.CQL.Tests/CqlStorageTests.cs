@@ -21,7 +21,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
 {
     public class CqlStorageTests : CqlTestFixture<PersistenceCqlDataContext, ICqlPersistenceConfiguration>
     {
-        private static readonly long _expectedOldestNonAckedMessageTimestampSafetyOffset = new TimeSpan(00, 15, 00).Ticks;
+        private static readonly long _expectedOldestNonAckedMessageTimestampSafetyOffset = TimeSpan.FromMinutes(20).Ticks;
 
         private CqlStorage _storage;
         private Mock<IPersistenceConfiguration> _configurationMock;

@@ -13,7 +13,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         /// This delay prevents <see cref="OldestNonAckedMessageTimestampInTicks"/> from being moved too aggressively.
         /// Its value is set to the maximum estimated clock-drift / network delay of the system.
         /// </summary>
-        public static readonly TimeSpan OldestNonAckedMessageTimestampSafetyOffset = 15.Minutes();
+        public static readonly TimeSpan OldestNonAckedMessageTimestampSafetyOffset = 20.Minutes();
 
         public static readonly TimeSpan MessagesTimeToLive = 30.Days();
 
