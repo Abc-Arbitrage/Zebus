@@ -407,23 +407,26 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         }
 
         [Test]
-        public async Task should_take_last_message_timestamp_minus_safety_offset_as_oldest_non_acked_message_when_all_messages_are_acked()
+        public async Task should_take_utc_now_timestamp_minus_safety_offset_as_oldest_non_acked_message_when_all_messages_are_acked()
         {
-            var peerId = new PeerId("PeerId");
-            var now = SystemDateTime.UtcNow;
+            using (SystemDateTime.PauseTime())
+            {
+                var peerId = new PeerId("PeerId");
+                var now = SystemDateTime.UtcNow;
 
-            InsertPersistentMessage(peerId, now.AddMilliseconds(1));
-            InsertPersistentMessage(peerId, now.AddMilliseconds(2));
-            InsertPersistentMessage(peerId, now.AddMilliseconds(3));
-            InsertPersistentMessage(peerId, now.AddMilliseconds(4));
-            InsertPersistentMessage(peerId, now.AddMilliseconds(5));
+                InsertPersistentMessage(peerId, now.AddMilliseconds(-5));
+                InsertPersistentMessage(peerId, now.AddMilliseconds(-4));
+                InsertPersistentMessage(peerId, now.AddMilliseconds(-3));
+                InsertPersistentMessage(peerId, now.AddMilliseconds(-2));
+                InsertPersistentMessage(peerId, now.AddMilliseconds(-1));
 
-            var peerState = new PeerState(peerId, 0, now.AddHours(-1).Ticks);
-            InsertPeerState(peerState);
+                var peerState = new PeerState(peerId, 0, now.AddHours(-1).Ticks);
+                InsertPeerState(peerState);
 
-            await _storage.UpdateNewOldestMessageTimestamp(peerState);
+                await _storage.UpdateNewOldestMessageTimestamp(peerState);
 
-            GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.AddMilliseconds(5).Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
+                GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
+            }
         }
 
         [Test]

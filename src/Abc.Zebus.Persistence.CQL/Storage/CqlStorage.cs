@@ -184,28 +184,24 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         private long GetOldestUnackedMessageTimestampInTicks(PeerState peer)
         {
             var peerId = peer.PeerId.ToString();
-            var lastAckedMessageTimestamp = SystemDateTime.UtcNow.Ticks;
+            var bucketIds = BucketIdHelper.GetBucketsCollection(peer.OldestNonAckedMessageTimestampInTicks);
 
-            foreach (var currentBucketId in BucketIdHelper.GetBucketsCollection(peer.OldestNonAckedMessageTimestampInTicks))
+            var firstUnackedMessageTimestamp = bucketIds.SelectMany(ReadMessages)
+                                                        .Where(x => !x.isAcked)
+                                                        .Select(x => (long?)x.uniqueTimestampInTicks)
+                                                        .FirstOrDefault();
+
+            return firstUnackedMessageTimestamp ?? SystemDateTime.UtcNow.Ticks;
+
+            IEnumerable<(bool isAcked, long uniqueTimestampInTicks)> ReadMessages(long bucketId)
             {
-                var messagesInBucket = _dataContext.PersistentMessages
-                                                   .Where(x => x.PeerId == peerId &&
-                                                               x.BucketId == currentBucketId &&
-                                                               x.UniqueTimestampInTicks >= peer.OldestNonAckedMessageTimestampInTicks)
-                                                   .OrderBy(x => x.UniqueTimestampInTicks)
-                                                   .Select(x => new { x.IsAcked, x.UniqueTimestampInTicks })
-                                                   .Execute();
-
-                foreach (var message in messagesInBucket)
-                {
-                    if (!message.IsAcked)
-                        return message.UniqueTimestampInTicks;
-
-                    lastAckedMessageTimestamp = message.UniqueTimestampInTicks;
-                }
+                return _dataContext.PersistentMessages
+                                   .Where(x => x.PeerId == peerId && x.BucketId == bucketId && x.UniqueTimestampInTicks >= peer.OldestNonAckedMessageTimestampInTicks)
+                                   .OrderBy(x => x.UniqueTimestampInTicks)
+                                   .Select(x => new { x.IsAcked, x.UniqueTimestampInTicks })
+                                   .Execute()
+                                   .Select(x => (x.IsAcked, x.UniqueTimestampInTicks));
             }
-
-            return lastAckedMessageTimestamp;
         }
 
         public IEnumerable<PeerState> GetAllKnownPeers()
