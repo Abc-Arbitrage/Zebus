@@ -32,6 +32,9 @@
       <Pack>True</Pack>
       <Visible>false</Visible>
     </None>
+    <None Update="..\..\lib\zmq\Abc.Zebus.libzmq.x64.so">
+      <Link>Abc.Zebus.libzmq.so</Link>
+    </None>
     <None Update="Zebus.targets">
       <Pack>true</Pack>
       <PackagePath>build</PackagePath>
