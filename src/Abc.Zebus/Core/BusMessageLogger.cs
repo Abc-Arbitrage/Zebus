@@ -45,7 +45,7 @@ namespace Abc.Zebus.Core
             => _logInfoEnabled && GetLogInfo(message).Logger.IsInfoEnabled;
 
         [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, string dispatchQueueName = null, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
+        public void InfoFormat(string format, IMessage message, string dispatchQueueName, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
         {
             if (!_logInfoEnabled)
                 return;
@@ -75,33 +75,37 @@ namespace Abc.Zebus.Core
         }
 
         [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, MessageId messageId, long messageSize, IList<Peer> peers, Level logLevel = null)
+        public void InfoFormat(string format, IMessage message, IList<Peer> peers, MessageId messageId, long messageSize)
         {
             if (!_logInfoEnabled)
                 return;
-
-            switch (peers.Count)
-            {
-                case 0:
-                    InfoFormat(format, message, messageId: messageId, messageSize: messageSize);
-                    return;
-
-                case 1:
-                    InfoFormat(format, message, messageId: messageId, messageSize:messageSize, peerId:peers[0].Id);
-                    return;
-            }
 
             var logInfo = GetLogInfo(message);
             if (!logInfo.Logger.IsInfoEnabled)
                 return;
 
             var messageText = logInfo.GetMessageText(message);
-            var otherPeersCount = peers.Count - 1;
-            var peerIdText = otherPeersCount > 1
-                ? peers[0].Id + " and " + otherPeersCount + " other peers"
-                : peers[0].Id + " and " + otherPeersCount + " other peer";
+            var targetPeersText = GetTargetPeersText();
 
-            _logger.Logger.Log(_loggerType, logLevel ?? Level.Info, string.Format(format, messageText, messageId, messageSize, peerIdText), null);
+            _logger.InfoFormat(format, messageText, targetPeersText, messageId, messageSize);
+
+            string GetTargetPeersText()
+            {
+                switch (peers.Count)
+                {
+                    case 0:
+                        return "no target peer";
+
+                    case 1:
+                        return peers[0].Id.ToString();
+
+                    default:
+                        var otherPeersCount = peers.Count - 1;
+                        return otherPeersCount > 1
+                            ? peers[0].Id + " and " + otherPeersCount + " other peers"
+                            : peers[0].Id + " and " + otherPeersCount + " other peer";
+                }
+            }
         }
 
         public static string ToString(IMessage message)

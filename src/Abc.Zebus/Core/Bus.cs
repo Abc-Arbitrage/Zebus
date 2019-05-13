@@ -227,7 +227,7 @@ namespace Abc.Zebus.Core
                 HandleLocalMessage(message, null);
 
             var targetPeers = shouldBeHandledLocally ? peersHandlingMessage.Where(x => x.Id != PeerId).ToList() : peersHandlingMessage;
-            SendTransportMessage(null, message, targetPeers, true, shouldBeHandledLocally);
+            LogAndSendTransportMessage(message, targetPeers, true, shouldBeHandledLocally);
         }
 
         public Task<CommandResult> Send(ICommand message)
@@ -277,7 +277,7 @@ namespace Abc.Zebus.Core
                 _messageIdToTaskCompletionSources.TryAdd(transportMessage.Id, taskCompletionSource);
 
                 var peers = new[] { peer };
-                LogMessageSend(message, transportMessage, peers);
+                LogMessageSend(message, peers, transportMessage);
                 SendTransportMessage(transportMessage, peers);
             }
 
@@ -589,7 +589,7 @@ namespace Abc.Zebus.Core
                 {
                     var messageExecutionCompleted = MessageExecutionCompleted.Create(dispatch.Context, dispatchResult, _serializer);
                     var shouldLogMessageExecutionCompleted = _messageLogger.IsInfoEnabled(dispatch.Message);
-                    SendTransportMessage(null, messageExecutionCompleted, dispatch.Context.GetSender(), shouldLogMessageExecutionCompleted);
+                    LogAndSendTransportMessage(messageExecutionCompleted, new[] { dispatch.Context.GetSender() }, shouldLogMessageExecutionCompleted);
                 }
 
                 AckTransportMessage(transportMessage);
@@ -692,26 +692,20 @@ namespace Abc.Zebus.Core
             };
         }
 
-        private void SendTransportMessage(MessageId? messageId, IMessage message, Peer peer, bool logEnabled)
-            => SendTransportMessage(messageId, message, new[] { peer }, logEnabled);
-
-        private void SendTransportMessage(MessageId? messageId, IMessage message, IList<Peer> peers, bool logEnabled, bool locallyHandled = false)
+        private void LogAndSendTransportMessage(IMessage message, IList<Peer> peers, bool logEnabled, bool locallyHandled = false)
         {
             if (peers.Count == 0)
             {
                 if (!locallyHandled && logEnabled)
-                    _messageLogger.InfoFormat("SEND: {0} with no target peer", message);
+                    _messageLogger.InfoFormat("SEND: {0} to {1}", message, peers, default, default);
 
                 return;
             }
 
             var transportMessage = ToTransportMessage(message);
 
-            if (messageId != null)
-                transportMessage.Id = messageId.Value;
-
             if (logEnabled)
-                LogMessageSend(message, transportMessage, peers);
+                LogMessageSend(message, peers, transportMessage);
 
             SendTransportMessage(transportMessage, peers);
         }
@@ -719,8 +713,8 @@ namespace Abc.Zebus.Core
         protected void SendTransportMessage(TransportMessage transportMessage, IList<Peer> peers)
             => _transport.Send(transportMessage, peers, new SendContext());
 
-        private static void LogMessageSend(IMessage message, TransportMessage transportMessage, IList<Peer> peers)
-            => _messageLogger.InfoFormat("SEND: {0} to {3} ({2} bytes) [{1}]", message, transportMessage.Id, transportMessage.Content.Length, peers);
+        private static void LogMessageSend(IMessage message, IList<Peer> peers, TransportMessage transportMessage)
+            => _messageLogger.InfoFormat("SEND: {0} to {1} ({3} bytes) [{2}]", message, peers, transportMessage.Id, transportMessage.Content.Length);
 
         protected void AckTransportMessage(TransportMessage transportMessage)
             => _transport.AckMessage(transportMessage);

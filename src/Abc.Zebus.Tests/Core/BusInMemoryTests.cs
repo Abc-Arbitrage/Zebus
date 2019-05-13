@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
@@ -19,16 +20,18 @@ namespace Abc.Zebus.Tests.Core
         private IBus _bus;
         private TestTransport _transport;
         private Container _container;
+        private TestPeerDirectory _peerDirectory;
 
         [SetUp]
         public void Setup()
         {
             _transport = new TestTransport();
             _container = new Container();
+            _peerDirectory = new TestPeerDirectory();
 
             _bus = new BusFactory(_container)
                 .WithHandlers(typeof(EventPublisherEventHandler))
-                .CreateAndStartInMemoryBus(new TestPeerDirectory(), _transport);
+                .CreateAndStartInMemoryBus(_peerDirectory, _transport);
         }
 
         [Test]
@@ -53,6 +56,23 @@ namespace Abc.Zebus.Tests.Core
             handler.Error.ShouldBeNull("Handler was not able to send a message");
 
             stopTask.Wait(10.Seconds()).ShouldBeTrue("Bus was not stopped");
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void should_publish_event_to_peers(int peerCount)
+        {
+            for (var i = 0; i < peerCount; i++)
+            {
+                var peer = new Peer(new PeerId($"Abc.Testing.Other.{i}"), $"tcp://other-peer:{i + 1}");
+                _peerDirectory.Peers[peer.Id] = peer.ToPeerDescriptor(false, typeof(Event));
+            }
+
+            _bus.Publish(new Event());
+
+            _transport.Messages.SelectMany(x => x.Targets).Count().ShouldEqual(peerCount);
         }
 
         [ProtoContract]
