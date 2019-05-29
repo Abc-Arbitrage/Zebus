@@ -3,35 +3,32 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using Abc.Zebus.Scan;
-using JetBrains.Annotations;
+using Abc.Zebus.Transport;
 using Abc.Zebus.Util.Extensions;
 using log4net;
-using log4net.Core;
 
 namespace Abc.Zebus.Core
 {
     public class BusMessageLogger
     {
-        private static readonly ConcurrentDictionary<Type, MessageTypeLogInfo> _logInfos = new ConcurrentDictionary<Type, MessageTypeLogInfo>();
-        private static readonly Func<Type, MessageTypeLogInfo> _logInfoFactory = CreateLogger;
-        private readonly Type _loggerType;
+        private static readonly ConcurrentDictionary<Type, MessageTypeLogHelper> _logHelpers = new ConcurrentDictionary<Type, MessageTypeLogHelper>();
         private readonly ILog _logger;
         private bool _logDebugEnabled;
         private bool _logInfoEnabled;
 
         public BusMessageLogger(Type loggerType)
-            : this(loggerType, loggerType.FullName)
+            : this(loggerType.FullName)
         {
         }
 
-        public BusMessageLogger(Type loggerType, string loggerFullName)
+        public BusMessageLogger(string loggerFullName)
         {
-            _loggerType = loggerType;
             _logger = LogManager.GetLogger(typeof(BusMessageLogger).Assembly, loggerFullName);
 
             // Instances of BusMessageLogger are static, no need to unsubscribe from these events
             _logger.Logger.Repository.ConfigurationChanged += (sender, args) => UpdateLogConfig();
             _logger.Logger.Repository.ConfigurationReset += (sender, args) => UpdateLogConfig();
+
             UpdateLogConfig();
 
             void UpdateLogConfig()
@@ -42,84 +39,126 @@ namespace Abc.Zebus.Core
         }
 
         public bool IsInfoEnabled(IMessage message)
-            => _logInfoEnabled && GetLogInfo(message).Logger.IsInfoEnabled;
+            => _logInfoEnabled && GetLogHelper(message).Logger.IsInfoEnabled;
 
-        [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, string dispatchQueueName, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
+        public void LogHandleMessage(IList<IMessage> messages, string dispatchQueueName, MessageId? messageId)
         {
-            if (!_logInfoEnabled)
+            var message = messages[0];
+
+            if (!TryGetLogHelperForInfo(message, out var logHelper))
                 return;
 
-            var logInfo = GetLogInfo(message);
-            if (!logInfo.Logger.IsInfoEnabled)
-                return;
+            var messageText = logHelper.GetMessageText(message);
+            var dispatchQueueNameText = HasCustomDispatchQueue() ? $" [{dispatchQueueName}]" : "";
+            var batchText = messages.Count > 1 ? $" Count: {messages.Count}" : "";
 
-            var messageText = logInfo.GetMessageText(message);
-            dispatchQueueName = string.IsNullOrEmpty(dispatchQueueName) || dispatchQueueName == DispatchQueueNameScanner.DefaultQueueName ? string.Empty : $" [{dispatchQueueName}]";
+            _logger.Info($"HANDLE{dispatchQueueNameText}: {messageText}{batchText} [{messageId}]");
 
-            _logger.InfoFormat(format, messageText, dispatchQueueName, messageId, messageSize, peerId);
+            bool HasCustomDispatchQueue() => !string.IsNullOrEmpty(dispatchQueueName) && dispatchQueueName != DispatchQueueNameScanner.DefaultQueueName;
         }
 
-        [StringFormatMethod("format")]
-        public void DebugFormat(string format, IMessage message, MessageId? messageId = null, long messageSize = 0, PeerId peerId = default(PeerId))
+        public void LogReceiveMessageAck(MessageExecutionCompleted messageAck)
         {
-            if (!_logDebugEnabled)
+            if (!TryGetLogHelperForDebug(messageAck, out _))
                 return;
 
-            var logInfo = GetLogInfo(message);
-            if (!logInfo.Logger.IsDebugEnabled)
-                return;
-
-            var messageText = logInfo.GetMessageText(message);
-            _logger.DebugFormat(format, messageText, messageId, messageSize, peerId);
+            _logger.Debug($"RECV ACK {{{messageAck}}}");
         }
 
-        [StringFormatMethod("format")]
-        public void InfoFormat(string format, IMessage message, IList<Peer> peers, MessageId messageId, long messageSize)
+        public void LogReceiveMessageLocal(IMessage message)
         {
-            if (!_logInfoEnabled)
+            if (!TryGetLogHelperForDebug(message, out var logHelper))
                 return;
 
-            var logInfo = GetLogInfo(message);
-            if (!logInfo.Logger.IsInfoEnabled)
+            var messageText = logHelper.GetMessageText(message);
+            _logger.Debug($"RECV local: {messageText}");
+        }
+
+        public void LogReceiveMessageRemote(IMessage message, TransportMessage transportMessage)
+        {
+            if (!TryGetLogHelperForDebug(message, out var logHelper))
                 return;
 
-            var messageText = logInfo.GetMessageText(message);
-            var targetPeersText = GetTargetPeersText();
+            var messageText = logHelper.GetMessageText(message);
+            _logger.Debug($"RECV remote: {messageText} from {transportMessage.SenderId} ({transportMessage.Content.Length} bytes). [{transportMessage.Id}]");
+        }
 
-            _logger.InfoFormat(format, messageText, targetPeersText, messageId, messageSize);
+        public void LogSendMessage(IMessage message, IList<Peer> peers)
+        {
+            if (!TryGetLogHelperForInfo(message, out var logHelper))
+                return;
 
-            string GetTargetPeersText()
+            var messageText = logHelper.GetMessageText(message);
+            var targetPeersText = GetTargetPeersText(peers);
+
+            _logger.Info($"SEND: {messageText} to {targetPeersText}");
+        }
+
+        public void LogSendMessage(IMessage message, IList<Peer> peers, TransportMessage transportMessage)
+        {
+            if (!TryGetLogHelperForInfo(message, out var logHelper))
+                return;
+
+            var messageText = logHelper.GetMessageText(message);
+            var targetPeersText = GetTargetPeersText(peers);
+
+            _logger.Info($"SEND: {messageText} to {targetPeersText} ({transportMessage.Content.Length} bytes) [{transportMessage.Id}]");
+        }
+
+        private static string GetTargetPeersText(IList<Peer> peers)
+        {
+            switch (peers.Count)
             {
-                switch (peers.Count)
-                {
-                    case 0:
-                        return "no target peer";
+                case 0:
+                    return "no target peer";
 
-                    case 1:
-                        return peers[0].Id.ToString();
+                case 1:
+                    return peers[0].Id.ToString();
 
-                    default:
-                        var otherPeersCount = peers.Count - 1;
-                        return otherPeersCount > 1
-                            ? peers[0].Id + " and " + otherPeersCount + " other peers"
-                            : peers[0].Id + " and " + otherPeersCount + " other peer";
-                }
+                default:
+                    var otherPeersCount = peers.Count - 1;
+                    return otherPeersCount > 1
+                        ? peers[0].Id + " and " + otherPeersCount + " other peers"
+                        : peers[0].Id + " and " + otherPeersCount + " other peer";
             }
         }
 
         public static string ToString(IMessage message)
-            => GetLogInfo(message).GetMessageText(message);
+            => GetLogHelper(message).GetMessageText(message);
 
-        private static MessageTypeLogInfo GetLogInfo(IMessage message)
-            => _logInfos.GetOrAdd(message.GetType(), _logInfoFactory);
+        private static MessageTypeLogHelper GetLogHelper(IMessage message)
+            => _logHelpers.GetOrAdd(message.GetType(), type => CreateLogger(type));
 
-        private static MessageTypeLogInfo CreateLogger(Type messageType)
+        private static MessageTypeLogHelper CreateLogger(Type messageType)
         {
             var logger = LogManager.GetLogger(messageType);
             var hasToStringOverride = HasToStringOverride(messageType);
 
-            return new MessageTypeLogInfo(logger, hasToStringOverride, messageType.GetPrettyName());
+            return new MessageTypeLogHelper(logger, hasToStringOverride, messageType.GetPrettyName());
+        }
+
+        private bool TryGetLogHelperForInfo(IMessage message, out MessageTypeLogHelper logHelper)
+        {
+            if (!_logInfoEnabled)
+            {
+                logHelper = null;
+                return false;
+            }
+
+            logHelper = GetLogHelper(message);
+            return logHelper.Logger.IsInfoEnabled;
+        }
+
+        private bool TryGetLogHelperForDebug(IMessage message, out MessageTypeLogHelper logHelper)
+        {
+            if (!_logDebugEnabled)
+            {
+                logHelper = null;
+                return false;
+            }
+
+            logHelper = GetLogHelper(message);
+            return logHelper.Logger.IsDebugEnabled;
         }
 
         private static bool HasToStringOverride(Type messageType)
@@ -128,13 +167,13 @@ namespace Abc.Zebus.Core
             return methodInfo != null;
         }
 
-        private class MessageTypeLogInfo
+        private class MessageTypeLogHelper
         {
             public readonly ILog Logger;
             private readonly bool _hasToStringOverride;
             private readonly string _messageTypeName;
 
-            public MessageTypeLogInfo(ILog logger, bool hasToStringOverride, string messageTypeName)
+            public MessageTypeLogHelper(ILog logger, bool hasToStringOverride, string messageTypeName)
             {
                 Logger = logger;
                 _hasToStringOverride = hasToStringOverride;

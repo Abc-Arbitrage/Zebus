@@ -227,7 +227,7 @@ namespace Abc.Zebus.Core
                 HandleLocalMessage(message, null);
 
             var targetPeers = shouldBeHandledLocally ? peersHandlingMessage.Where(x => x.Id != PeerId).ToList() : peersHandlingMessage;
-            LogAndSendTransportMessage(message, targetPeers, true, shouldBeHandledLocally);
+            LogAndSendMessage(message, targetPeers, true, shouldBeHandledLocally);
         }
 
         public Task<CommandResult> Send(ICommand message)
@@ -277,7 +277,7 @@ namespace Abc.Zebus.Core
                 _messageIdToTaskCompletionSources.TryAdd(transportMessage.Id, taskCompletionSource);
 
                 var peers = new[] { peer };
-                LogMessageSend(message, peers, transportMessage);
+                _messageLogger.LogSendMessage(message, peers, transportMessage);
                 SendTransportMessage(transportMessage, peers);
             }
 
@@ -572,7 +572,7 @@ namespace Abc.Zebus.Core
                 return;
             }
 
-            _messageLogger.DebugFormat("RECV remote: {0} from {3} ({2} bytes). [{1}]", dispatch.Message, transportMessage.Id, transportMessage.Content.Length, transportMessage.Originator.SenderId);
+            _messageLogger.LogReceiveMessageRemote(dispatch.Message, transportMessage);
             _messageDispatcher.Dispatch(dispatch);
         }
 
@@ -589,7 +589,7 @@ namespace Abc.Zebus.Core
                 {
                     var messageExecutionCompleted = MessageExecutionCompleted.Create(dispatch.Context, dispatchResult, _serializer);
                     var shouldLogMessageExecutionCompleted = _messageLogger.IsInfoEnabled(dispatch.Message);
-                    LogAndSendTransportMessage(messageExecutionCompleted, new[] { dispatch.Context.GetSender() }, shouldLogMessageExecutionCompleted);
+                    LogAndSendMessage(messageExecutionCompleted, new[] { dispatch.Context.GetSender() }, shouldLogMessageExecutionCompleted);
                 }
 
                 AckTransportMessage(transportMessage);
@@ -653,7 +653,7 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleMessageExecutionCompleted(TransportMessage transportMessage, MessageExecutionCompleted message)
         {
-            _messageLogger.DebugFormat("RECV: {0}", message);
+            _messageLogger.LogReceiveMessageAck(message);
 
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out var taskCompletionSource))
                 return;
@@ -666,7 +666,7 @@ namespace Abc.Zebus.Core
 
         protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
         {
-            _messageLogger.DebugFormat("RECV local: {0}", message);
+            _messageLogger.LogReceiveMessageLocal(message);
 
             var context = MessageContext.CreateOverride(PeerId, EndPoint);
             var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource))
@@ -692,12 +692,12 @@ namespace Abc.Zebus.Core
             };
         }
 
-        private void LogAndSendTransportMessage(IMessage message, IList<Peer> peers, bool logEnabled, bool locallyHandled = false)
+        private void LogAndSendMessage(IMessage message, IList<Peer> peers, bool logEnabled, bool locallyHandled = false)
         {
             if (peers.Count == 0)
             {
                 if (!locallyHandled && logEnabled)
-                    _messageLogger.InfoFormat("SEND: {0} to {1}", message, peers, default, default);
+                    _messageLogger.LogSendMessage(message, peers);
 
                 return;
             }
@@ -705,16 +705,13 @@ namespace Abc.Zebus.Core
             var transportMessage = ToTransportMessage(message);
 
             if (logEnabled)
-                LogMessageSend(message, peers, transportMessage);
+                _messageLogger.LogSendMessage(message, peers, transportMessage);
 
             SendTransportMessage(transportMessage, peers);
         }
 
         protected void SendTransportMessage(TransportMessage transportMessage, IList<Peer> peers)
             => _transport.Send(transportMessage, peers, new SendContext());
-
-        private static void LogMessageSend(IMessage message, IList<Peer> peers, TransportMessage transportMessage)
-            => _messageLogger.InfoFormat("SEND: {0} to {1} ({3} bytes) [{2}]", message, peers, transportMessage.Id, transportMessage.Content.Length);
 
         protected void AckTransportMessage(TransportMessage transportMessage)
             => _transport.AckMessage(transportMessage);

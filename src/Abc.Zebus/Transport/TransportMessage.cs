@@ -41,6 +41,9 @@ namespace Abc.Zebus.Transport
         [JsonIgnore]
         public bool IsPersistTransportMessage => PersistentPeerIds != null && PersistentPeerIds.Count != 0;
 
+        [JsonIgnore]
+        public PeerId SenderId => Originator.SenderId;
+
         public TransportMessage(MessageTypeId messageTypeId, Stream content, Peer sender)
             : this(messageTypeId, content, sender.Id, sender.EndPoint)
         {

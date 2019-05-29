@@ -8,7 +8,7 @@ namespace Abc.Zebus.Dispatch.Pipes
 {
     public class PipeInvocation : IMessageHandlerInvocation
     {
-        private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(PipeInvocation), "Abc.Zebus.Dispatch");
+        private static readonly BusMessageLogger _messageLogger = new BusMessageLogger("Abc.Zebus.Dispatch");
 
         private readonly List<Action<object>> _handlerMutations = new List<Action<object>>();
         private readonly IMessageHandlerInvoker _invoker;
@@ -99,14 +99,14 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation()
         {
-            _messageLogger.InfoFormat("HANDLE{1}: {0} [{2}]", _messages[0], _invoker.DispatchQueueName, _messageContext.MessageId);
+            _messageLogger.LogHandleMessage(_messages, _invoker.DispatchQueueName, _messageContext.MessageId);
 
             return MessageContext.SetCurrent(_messageContext);
         }
 
         IDisposable IMessageHandlerInvocation.SetupForInvocation(object messageHandler)
         {
-            _messageLogger.InfoFormat("HANDLE{1}: {0} [{2}]", _messages[0], _invoker.DispatchQueueName, _messageContext.MessageId);
+            _messageLogger.LogHandleMessage(_messages, _invoker.DispatchQueueName, _messageContext.MessageId);
 
             ApplyMutations(messageHandler);
 
