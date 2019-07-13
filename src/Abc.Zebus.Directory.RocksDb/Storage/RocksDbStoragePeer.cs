@@ -1,0 +1,49 @@
+﻿using Abc.Zebus.Routing;
+using ProtoBuf;
+using System;
+
+namespace Abc.Zebus.Directory.RocksDb.Storage
+{
+    public partial class RocksDbPeerRepository
+    {
+        [ProtoContract]
+        public class RocksDbStoragePeer
+        {
+            [ProtoMember(1)]
+            public string PeerId { get; set; }
+
+            [ProtoMember(2)]
+            public string EndPoint { get; set; }
+
+            [ProtoMember(3)]
+            public bool IsUp { get; set; }
+
+            [ProtoMember(4)]
+            public bool IsResponding { get; set; }
+
+            [ProtoMember(5)]
+            public bool IsPersistent { get; set; }
+
+            [ProtoMember(6)]
+            public DateTime TimestampUtc { get; set; }
+
+            [ProtoMember(7)]
+            public bool HasDebuggerAttached { get; set; }
+
+            [ProtoMember(8)]
+            public BindingKey[] StaticSubscriptions { get; set; }
+
+            public RocksDbStoragePeer(string peerId, string endPoint, bool isUp, bool isResponding, bool isPersistent, DateTime timestampUtc, bool hasDebuggerAttached, BindingKey[] staticSubscriptions)
+            {
+                PeerId = peerId; 
+                EndPoint = endPoint;
+                IsUp = isUp;
+                IsResponding = isResponding;
+                IsPersistent = isPersistent;
+                TimestampUtc = timestampUtc;
+                HasDebuggerAttached = hasDebuggerAttached;
+                StaticSubscriptions = staticSubscriptions;
+            }
+        }
+    }
+}

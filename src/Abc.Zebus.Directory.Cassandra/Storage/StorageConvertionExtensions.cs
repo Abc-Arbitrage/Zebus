@@ -7,7 +7,7 @@ using ProtoBuf;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
 {
-    public static class StorageConvertionExtensions
+    public static class StorageConversionExtensions
     {
         public static StoragePeer ToStoragePeer(this PeerDescriptor peerDescriptor)
         {

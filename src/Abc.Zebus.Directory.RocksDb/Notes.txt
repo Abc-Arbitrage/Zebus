@@ -1,0 +1,10 @@
+﻿1. Binary key made up of Clustering Key elements from CQL
+	- Sub: PeerId - MessageTypeId
+	- Peer: PeerId 
+2. GetAllPeers()
+	- Easy - scan everything
+3. GetPeer()
+	- Need to get all message type ids for a certain peer
+	- Can we do a starts with query in RocksDb?
+		- Yes we can, just fill the first part of the key and leave the rest empty
+		- Use a cursor and seek to the key
