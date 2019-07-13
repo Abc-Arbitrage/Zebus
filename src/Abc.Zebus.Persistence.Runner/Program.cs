@@ -45,7 +45,7 @@ namespace Abc.Zebus.Persistence.Runner
                                              .WithScan()
                                              .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"])
                                              .WithPeerId(ConfigurationManager.AppSettings["PeerId"]);
-            
+
             InjectPersistenceServiceSpecificConfiguration(busFactory, appSettingsConfiguration, useCassandraStorage);
 
             using (busFactory.CreateAndStartBus())
@@ -88,7 +88,16 @@ namespace Abc.Zebus.Persistence.Runner
             {
                 c.ForSingletonOf<IPersistenceConfiguration>().Use(configuration);
 
-                c.ForSingletonOf<IStorage>().Use(ctx => useCassandraStorage ? (IStorage)ctx.GetInstance<CqlStorage>() : ctx.GetInstance<RocksDbStorage>());
+                if (useCassandraStorage)
+                {
+                    _log.Info("Using Cassandra storage implementation");
+                    c.ForSingletonOf<IStorage>().Use<CqlStorage>();
+                }
+                else
+                {
+                    _log.Info("Using RocksDB storage implementation");
+                    c.ForSingletonOf<IStorage>().Use<RocksDbStorage>();
+                }
 
                 c.ForSingletonOf<IMessageReplayerRepository>().Use<MessageReplayerRepository>();
                 c.ForSingletonOf<IMessageReplayer>().Use<MessageReplayer>();
