@@ -31,9 +31,12 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             public bool HasDebuggerAttached { get; set; }
 
             [ProtoMember(8)]
-            public BindingKey[] StaticSubscriptions { get; set; }
+            public Subscription[] StaticSubscriptions { get; set; }
 
-            public RocksDbStoragePeer(string peerId, string endPoint, bool isUp, bool isResponding, bool isPersistent, DateTime timestampUtc, bool hasDebuggerAttached, BindingKey[] staticSubscriptions)
+            // For serialisation
+            public RocksDbStoragePeer() { }
+
+            public RocksDbStoragePeer(string peerId, string endPoint, bool isUp, bool isResponding, bool isPersistent, DateTime timestampUtc, bool hasDebuggerAttached, Subscription[] staticSubscriptions)
             {
                 PeerId = peerId; 
                 EndPoint = endPoint;
