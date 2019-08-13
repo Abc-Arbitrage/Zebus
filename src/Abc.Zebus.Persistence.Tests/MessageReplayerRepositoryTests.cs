@@ -2,6 +2,7 @@
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
@@ -25,7 +26,7 @@ namespace Abc.Zebus.Persistence.Tests
             var storage = new Mock<IStorage>();
             var speedReporter = new Mock<IReporter>();
 
-            _repository = new MessageReplayerRepository(persistenceConfigurationMock.Object, storage.Object, new TestBus(), transportMock.Object, batchPersisterMock.Object, speedReporter.Object);
+            _repository = new MessageReplayerRepository(persistenceConfigurationMock.Object, storage.Object, new TestBus(), transportMock.Object, batchPersisterMock.Object, speedReporter.Object, Mock.Of<IMessageSerializer>());
 
             _peer = new Peer(new PeerId("Abc.Testing.Peer.0"), "tcp://abctest:888");
         }
