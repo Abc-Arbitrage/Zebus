@@ -559,7 +559,7 @@ namespace Abc.Zebus.Core
 
             var context = MessageContext.CreateNew(transportMessage);
             var continuation = GetOnRemoteMessageDispatchedContinuation(transportMessage, sendAcknowledgment);
-            return new MessageDispatch(context, message, continuation, synchronousDispatch);
+            return new MessageDispatch(context, message, _serializer, continuation, synchronousDispatch);
         }
 
         protected virtual void HandleRemoteMessage(TransportMessage transportMessage, bool synchronous = false)
@@ -669,7 +669,7 @@ namespace Abc.Zebus.Core
             _messageLogger.LogReceiveMessageLocal(message);
 
             var context = MessageContext.CreateOverride(PeerId, EndPoint);
-            var dispatch = new MessageDispatch(context, message, GetOnLocalMessageDispatchedContinuation(taskCompletionSource))
+            var dispatch = new MessageDispatch(context, message, _serializer, GetOnLocalMessageDispatchedContinuation(taskCompletionSource))
             {
                 IsLocal = true
             };

@@ -7,6 +7,7 @@ using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Tests.TestUtil;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
@@ -64,7 +65,7 @@ namespace Abc.Zebus.Persistence.Tests
 
             var speedReporter = new Mock<IReporter>();
 
-            _replayer = new MessageReplayer(_configurationMock.Object, _storageMock.Object, _bus, _transport, _messageMatcherMock.Object, _targetPeer, _replayId, speedReporter.Object);
+            _replayer = new MessageReplayer(_configurationMock.Object, _storageMock.Object, _bus, _transport, _messageMatcherMock.Object, _targetPeer, _replayId, speedReporter.Object, new MessageSerializer());
 
             _messageMatcherMock.Setup(x => x.EnqueueWaitHandle(It.IsAny<EventWaitHandle>())).Callback<EventWaitHandle>(x => x.Set());
         }

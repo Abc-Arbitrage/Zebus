@@ -36,6 +36,9 @@ namespace Abc.Zebus.Tests.Serialization
             return _serializer.Deserialize(messageTypeId, stream);
         }
 
+        public bool TryClone(IMessage message, out IMessage clone)
+            => _serializer.TryClone(message, out clone);
+
         public Stream Serialize(IMessage message)
         {
             if (_serializationExceptions.TryGetValue(message.TypeId(), out var exception))

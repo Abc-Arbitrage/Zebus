@@ -4,7 +4,6 @@ using System.IO;
 using System.Reflection;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
-using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
@@ -127,7 +126,7 @@ namespace Abc.Zebus.Tests.Lotus
         {
             public MessageDispatch CreateMessageDispatch(TransportMessage transportMessage)
             {
-                return new MessageDispatch(MessageContext.CreateNew(transportMessage), null, null);
+                return new MessageDispatch(MessageContext.CreateNew(transportMessage), null, null, null);
             }
         }
 

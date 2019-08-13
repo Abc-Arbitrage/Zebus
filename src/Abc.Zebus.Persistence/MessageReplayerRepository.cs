@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 
 namespace Abc.Zebus.Persistence
@@ -16,10 +17,16 @@ namespace Abc.Zebus.Persistence
         private readonly ITransport _transport;
         private readonly IInMemoryMessageMatcher _inMemoryMessageMatcher;
         private readonly IReporter _speedReporter;
+        private readonly IMessageSerializer _messageSerializer;
         private bool _messageReplayersEnabled = true;
 
-        public MessageReplayerRepository(IPersistenceConfiguration persistenceConfiguration, IStorage storage, IBus bus, ITransport transport,
-                                         IInMemoryMessageMatcher inMemoryMessageMatcher, IReporter speedReporter)
+        public MessageReplayerRepository(IPersistenceConfiguration persistenceConfiguration,
+                                         IStorage storage,
+                                         IBus bus,
+                                         ITransport transport,
+                                         IInMemoryMessageMatcher inMemoryMessageMatcher,
+                                         IReporter speedReporter,
+                                         IMessageSerializer messageSerializer)
         {
             _persistenceConfiguration = persistenceConfiguration;
             _storage = storage;
@@ -27,6 +34,7 @@ namespace Abc.Zebus.Persistence
             _transport = transport;
             _inMemoryMessageMatcher = inMemoryMessageMatcher;
             _speedReporter = speedReporter;
+            _messageSerializer = messageSerializer;
         }
 
         public bool HasActiveMessageReplayers()
@@ -44,7 +52,7 @@ namespace Abc.Zebus.Persistence
                 ThrowIfDeactivated();
             }
 
-            return new MessageReplayer(_persistenceConfiguration, _storage, _bus, _transport, _inMemoryMessageMatcher, peer, replayId, _speedReporter);
+            return new MessageReplayer(_persistenceConfiguration, _storage, _bus, _transport, _inMemoryMessageMatcher, peer, replayId, _speedReporter, _messageSerializer);
         }
 
         public void DeactivateMessageReplayers()

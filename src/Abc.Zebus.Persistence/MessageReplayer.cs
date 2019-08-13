@@ -29,14 +29,22 @@ namespace Abc.Zebus.Persistence
         private readonly Peer _peer;
         private readonly Guid _replayId;
         private readonly IReporter _reporter;
+        private readonly IMessageSerializer _messageSerializer;
         private CancellationTokenSource _cancellationTokenSource;
         private Thread _runThread;
         private readonly Stopwatch _stopwatch = new Stopwatch();
         private readonly int _replayBatchSize;
         private readonly SendContext _emptySendContext = new SendContext();
 
-        public MessageReplayer(IPersistenceConfiguration persistenceConfiguration, IStorage storage, IBus bus, ITransport transport,
-                               IInMemoryMessageMatcher inMemoryMessageMatcher, Peer peer, Guid replayId, IReporter reporter)
+        public MessageReplayer(IPersistenceConfiguration persistenceConfiguration,
+                               IStorage storage,
+                               IBus bus,
+                               ITransport transport,
+                               IInMemoryMessageMatcher inMemoryMessageMatcher,
+                               Peer peer,
+                               Guid replayId,
+                               IReporter reporter,
+                               IMessageSerializer messageSerializer)
         {
             _persistenceConfiguration = persistenceConfiguration;
             _storage = storage;
@@ -47,6 +55,7 @@ namespace Abc.Zebus.Persistence
             _peer = peer;
             _replayId = replayId;
             _reporter = reporter;
+            _messageSerializer = messageSerializer;
             _replayBatchSize = _persistenceConfiguration.ReplayBatchSize;
 
             UnackedMessageCountThatReleasesNextBatch = _persistenceConfiguration.ReplayUnackedMessageCountThatReleasesNextBatch;
@@ -106,6 +115,7 @@ namespace Abc.Zebus.Persistence
             {
                 _logger.ErrorFormat("Replay failed, PeerId: {0}, Exception: {1}", _peer.Id, ex);
             }
+
             _stopwatch.Stop();
 
             _logger.InfoFormat("Replay stopped, PeerId: {0}. It ran for {1}", _peer.Id, _stopwatch.Elapsed);
@@ -187,6 +197,7 @@ namespace Abc.Zebus.Persistence
 
                 Thread.Sleep(100);
             }
+
             _logger.Info($"Batch acked in {waitDuration.Value} for peer {_peer.Id} ({expectedAckCount / waitDuration.Value.TotalSeconds} msg/s)");
             _logger.Info($"Proceeding with next batch for {_peer.Id}");
         }
@@ -205,8 +216,7 @@ namespace Abc.Zebus.Persistence
 
             while (DateTime.UtcNow < phaseEnd && !cancellationToken.IsCancellationRequested)
             {
-                TransportMessage liveMessage;
-                if (!_liveMessages.TryTake(out liveMessage, 200))
+                if (!_liveMessages.TryTake(out var liveMessage, 200))
                     continue;
 
                 var messageReplayed = new MessageReplayed(_replayId, liveMessage);
@@ -216,7 +226,7 @@ namespace Abc.Zebus.Persistence
 
         private TransportMessage ToTransportMessage(IMessage message, bool wasPersisted = false)
         {
-            return new TransportMessage(message.TypeId(), Serializer.Serialize(message), _self) { WasPersisted = wasPersisted };
+            return new TransportMessage(message.TypeId(), _messageSerializer.Serialize(message), _self) { WasPersisted = wasPersisted };
         }
 
         public void Handle(MessageHandled messageHandled)
