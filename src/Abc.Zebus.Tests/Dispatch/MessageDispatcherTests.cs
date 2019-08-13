@@ -13,6 +13,7 @@ using Abc.Zebus.Tests.Dispatch.DispatchMessages;
 using Abc.Zebus.Tests.Dispatch.Pipes;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Tests.Scan;
+using Abc.Zebus.Tests.Serialization;
 using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
@@ -188,7 +189,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var context = MessageContext.CreateTest("u.name");
             var command = new DispatchCommand();
             var dispatched = new ManualResetEvent(false);
-            var dispatch = new MessageDispatch(context, command, (x, r) => dispatched.Set());
+            var dispatch = new MessageDispatch(context, command, new TestMessageSerializer(), (x, r) => dispatched.Set());
             _messageDispatcher.Dispatch(dispatch, x => x == typeof(AsyncCommandHandler));
 
             dispatched.WaitOne(5.Seconds()).ShouldBeTrue();
@@ -271,7 +272,7 @@ namespace Abc.Zebus.Tests.Dispatch
         public void should_have_only_one_failing_handler()
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
-            
+
             var invokersCount = _messageDispatcher.GetMessageHanlerInvokers().Count(x => x.MessageType == typeof(AsyncFailingCommand));
 
             invokersCount.ShouldEqual(1);
@@ -310,7 +311,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             int? replyCode = null;
             var context = MessageContext.CreateTest();
-            var dispatch = new MessageDispatch(context, new ReplyCommand(), (x, r) => replyCode = context.ReplyCode);
+            var dispatch = new MessageDispatch(context, new ReplyCommand(), new TestMessageSerializer(), (x, r) => replyCode = context.ReplyCode);
             _messageDispatcher.Dispatch(dispatch);
 
             Wait.Until(() => replyCode == ReplyCommand.ReplyCode, 2.Seconds());
@@ -352,7 +353,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var asyncHandler = new CapturingTaskSchedulerAsyncCommandHandler();
             _containerMock.Setup(x => x.GetInstance(typeof(CapturingTaskSchedulerAsyncCommandHandler))).Returns(asyncHandler);
-            
+
             var command = new DispatchCommand();
             Dispatch(command);
 
@@ -381,7 +382,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var taskCompletionSource = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, (x, r) => taskCompletionSource.SetResult(r))
+            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, new TestMessageSerializer(), (x, r) => taskCompletionSource.SetResult(r))
             {
                 IsLocal = isLocal
             };

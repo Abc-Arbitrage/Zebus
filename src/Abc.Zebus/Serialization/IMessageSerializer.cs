@@ -6,5 +6,6 @@ namespace Abc.Zebus.Serialization
     {
         Stream Serialize(IMessage message);
         IMessage Deserialize(MessageTypeId messageTypeId, Stream stream);
+        bool TryClone(IMessage message, out IMessage clone);
     }
 }

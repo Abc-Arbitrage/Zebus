@@ -5,6 +5,7 @@ using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using NUnit.Framework;
+using ProtoBuf;
 
 namespace Abc.Zebus.Tests.Serialization
 {
@@ -55,6 +56,35 @@ namespace Abc.Zebus.Tests.Serialization
             deserializedTransportMessage.WasPersisted.ShouldEqual(transportMessage.WasPersisted);
 
             message.Targets.ShouldBeEquivalentTo(transportMessage.PersistentPeerIds);
+        }
+
+        [Test]
+        public void should_clone_serializable_message()
+        {
+            var message = new SerializableMessage { Value = 42 };
+
+            _messageSerializer.TryClone(message, out var clone).ShouldBeTrue();
+            clone.ShouldNotBeNull();
+            clone.ShouldNotBeTheSameAs(message);
+            clone.ShouldBe<SerializableMessage>().Value.ShouldEqual(message.Value);
+        }
+
+        [Test]
+        public void should_not_clone_non_serializable_message()
+        {
+            var message = new NonSerializableMessage();
+            _messageSerializer.TryClone(message, out _).ShouldBeFalse();
+        }
+
+        [ProtoContract]
+        public class SerializableMessage : IMessage
+        {
+            [ProtoMember(1)]
+            public int Value { get; set; }
+        }
+
+        public class NonSerializableMessage : IMessage
+        {
         }
     }
 }

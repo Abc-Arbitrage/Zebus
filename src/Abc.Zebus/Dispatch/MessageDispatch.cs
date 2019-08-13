@@ -9,13 +9,15 @@ namespace Abc.Zebus.Dispatch
     {
         private static readonly object _exceptionsLock = new object();
 
+        private readonly IMessageSerializer _messageSerializer;
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
         private Dictionary<Type, Exception> _exceptions;
         private int _remainingHandlerCount;
         private bool _isCloned;
 
-        public MessageDispatch(MessageContext context, IMessage message, Action<MessageDispatch, DispatchResult> continuation, bool shouldRunSynchronously = false)
+        public MessageDispatch(MessageContext context, IMessage message, IMessageSerializer messageSerializer, Action<MessageDispatch, DispatchResult> continuation, bool shouldRunSynchronously = false)
         {
+            _messageSerializer = messageSerializer;
             _continuation = continuation;
 
             ShouldRunSynchronously = shouldRunSynchronously;
@@ -63,7 +65,7 @@ namespace Abc.Zebus.Dispatch
             if (!IsLocal || _isCloned)
                 return;
 
-            if (Serializer.TryClone(Message, out var clone))
+            if (_messageSerializer.TryClone(Message, out var clone))
                 Message = clone;
 
             _isCloned = true;

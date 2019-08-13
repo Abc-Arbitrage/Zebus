@@ -26,5 +26,8 @@ namespace Abc.Zebus.Serialization
 
             return stream;
         }
+
+        public bool TryClone(IMessage message, out IMessage clone)
+            => Serializer.TryClone(message, out  clone);
     }
 }
