@@ -3,7 +3,7 @@
     <TargetFrameworks>net461;netcoreapp2.1;netstandard2.0</TargetFrameworks>
     <PackageId>Zebus.Testing</PackageId>
     <Description>Test tools for Zebus</Description>
-    <Version>$(ZebusVersion)</Version>
+    <Version>$(ZebusTestingVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup>
