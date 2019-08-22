@@ -11,13 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoFixture" Version="4.5.0" />
-    <PackageReference Include="CompareNETObjects" Version="4.55.0" />
-    <PackageReference Include="Moq" Version="4.9.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="NUnit" Version="3.11.0" />
-    <PackageReference Include="protobuf-net" Version="2.3.13" />
-    <PackageReference Include="structuremap" Version="4.7.0" />
+    <PackageReference Include="AutoFixture" Version="4.11.0" />
+    <PackageReference Include="CompareNETObjects" Version="4.62.0" />
+    <PackageReference Include="Moq" Version="4.12.0" />
+    <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="System.Management" Version="4.5.0" />
   </ItemGroup>
 
