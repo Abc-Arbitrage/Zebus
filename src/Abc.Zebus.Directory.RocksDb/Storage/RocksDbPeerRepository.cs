@@ -24,9 +24,9 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         private ColumnFamilyHandle _peersColumnFamily;
         /// <summary>
         /// Key structure:
-        /// --------------------------------------------------
-        /// |  PeerId (n bytes)  |  MessageTypeId (n bytes)  | 
-        /// --------------------------------------------------
+        /// -----------------------------------------------------------------------------------
+        /// |  PeerId Length (1 byte)  |  PeerId (n bytes)  |  MessageFullTypeName (n bytes)  | 
+        /// -----------------------------------------------------------------------------------
         /// </summary>
         private ColumnFamilyHandle _subscriptionsColumnFamily;
 
@@ -40,6 +40,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         {
             _databaseDirectoryPath = databaseDirectoryPath;
         }
+
+        internal string DatabaseFilePath => _databaseDirectoryPath;
 
         public void Start()
         {
@@ -98,10 +100,18 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         public PeerDescriptor Get(PeerId peerId)
         {
             var peerStorageBytes = _db.Get(GetPeerKey(peerId), _peersColumnFamily);
+            return DeserialisePeerDescriptor(peerId, peerStorageBytes, GetDynamicSubscriptions(peerId));
+        }
+
+        private PeerDescriptor DeserialisePeerDescriptor(PeerId peerId, byte[] peerStorageBytes, ICollection<Subscription> dynamicSubscriptions = null)
+        {
             var peerStorage = Serializer.Deserialize<RocksDbStoragePeer>(new MemoryStream(peerStorageBytes));
             var staticSubscriptions = peerStorage.StaticSubscriptions;
-            var subscriptions = staticSubscriptions.Concat(GetDynamicSubscriptions(peerId));
-            return new PeerDescriptor(peerId, peerStorage.EndPoint, peerStorage.IsPersistent, peerStorage.IsUp, peerStorage.IsResponding, peerStorage.TimestampUtc, subscriptions.ToArray());
+            var subscriptions = staticSubscriptions.Concat(dynamicSubscriptions ?? Enumerable.Empty<Subscription>());
+            return new PeerDescriptor(peerId, peerStorage.EndPoint, peerStorage.IsPersistent, peerStorage.IsUp, peerStorage.IsResponding, peerStorage.TimestampUtc, subscriptions.ToArray())
+            {
+                HasDebuggerAttached = peerStorage.HasDebuggerAttached,
+            };
         }
 
         private Subscription[] GetDynamicSubscriptions(PeerId peerId)
@@ -118,8 +128,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
                 do
                 {
                     currentKey = cursor.Key();
-                    var messageTypeId = GetMessageTypeIdFromKey(currentKey, peerId);
-                    bindingKeys.Add((messageTypeId, DeserializeBindingKeys(cursor.Value())));
+                    var (bindingKey, messageTypeId) = ReadDynamicSubscription(cursor);
+                    bindingKeys.Add((messageTypeId, bindingKey));
                     cursor.Next();
                 } while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
             }
@@ -127,29 +137,88 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             return subscriptions;
         }
 
-        private MessageTypeId GetMessageTypeIdFromKey(byte[] currentKey, PeerId peerId)
+        private (BindingKey[] bindingKeys, MessageTypeId messageTypeId) ReadDynamicSubscription(Iterator cursor)
         {
-            var peerIdByteCount = Encoding.UTF8.GetByteCount(peerId.ToString());
+            var currentKey = cursor.Key();
+            var messageTypeId = GetMessageTypeIdFromKey(currentKey);
+            var bindingKeys = DeserializeBindingKeys(cursor.Value());
+            return (bindingKeys, messageTypeId);
+        }
+
+        private MessageTypeId GetMessageTypeIdFromKey(byte[] currentKey)
+        {
+            var peerIdByteCount = 1 + currentKey[0];
             if (currentKey.Length <= peerIdByteCount)
                 throw new ApplicationException("Key does not contain message type id");
 
             return new MessageTypeId(Encoding.UTF8.GetString(currentKey, peerIdByteCount, currentKey.Length - peerIdByteCount));
         }
 
-        public IEnumerable<PeerDescriptor> GetPeers(bool loadDynamicSubscriptions = true) => throw new NotImplementedException();
+        public IEnumerable<PeerDescriptor> GetPeers(bool loadDynamicSubscriptions = true)
+        {
+            if (!loadDynamicSubscriptions)
+            {
+                using (var cursor = _db.NewIterator(_peersColumnFamily))
+                {
+                    for (cursor.SeekToFirst(); cursor.Valid(); cursor.Next())
+                    {
+                        var key = cursor.Key();
+                        var value = cursor.Value();
+                        yield return DeserialisePeerDescriptor(GetPeerIdFromKey(key), value);
+                    }
+                }
+            }
+            else
+            {
+                var bindingKeys = new Dictionary<PeerId, List<Subscription>>();
+                using (var cursor = _db.NewIterator(_subscriptionsColumnFamily))
+                {
+                    for (cursor.SeekToFirst(); cursor.Valid(); cursor.Next())
+                    {
+                        var peerId = GetPeerIdFromKey(cursor.Key());
+                        var (bindingKey, messageTypeId) = ReadDynamicSubscription(cursor);
+                        foreach (var subscription in bindingKey.Select(x => new Subscription(messageTypeId, x)))
+                        {
+                            if (!bindingKeys.TryGetValue(peerId, out var subscriptions))
+                            {
+                                subscriptions = new List<Subscription>();
+                                bindingKeys.Add(peerId, subscriptions);
+                            }
+                            subscriptions.Add(subscription);
+                        }
+                        cursor.Next();
+                    }
+                }
+
+                using (var cursor = _db.NewIterator(_peersColumnFamily))
+                {
+                    for (cursor.SeekToFirst(); cursor.Valid(); cursor.Next())
+                    {
+                        var key = cursor.Key();
+                        var peerId = GetPeerIdFromKey(key);
+                        var value = cursor.Value();
+                        bindingKeys.TryGetValue(peerId, out var dynamicSubscriptions);
+                        yield return DeserialisePeerDescriptor(GetPeerIdFromKey(key), value, dynamicSubscriptions);
+                    }
+                }
+            }
+        }
+
         public bool? IsPersistent(PeerId peerId) => throw new NotImplementedException();
         public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc) => throw new NotImplementedException();
         public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds) => throw new NotImplementedException();
         public void RemovePeer(PeerId peerId) => throw new NotImplementedException();
         public void SetPeerResponding(PeerId peerId, bool isResponding) => throw new NotImplementedException();
         private byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
+        private PeerId GetPeerIdFromKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes));
 
         private byte[] GetSubscriptionKey(PeerId peerId, MessageTypeId messageTypeId)
         {
             var peerPart = Encoding.UTF8.GetBytes(peerId.ToString());
             var messageTypeIdPart = Encoding.UTF8.GetBytes(messageTypeId.FullName);
 
-            byte[] key = new byte[peerPart.Length + messageTypeIdPart.Length];
+            byte[] key = new byte[1 + peerPart.Length + messageTypeIdPart.Length];
+            key[0] = (byte)peerPart.Length;
             Buffer.BlockCopy(peerPart, 0, key, 0, peerPart.Length);
             Buffer.BlockCopy(messageTypeIdPart, 0, key, peerPart.Length, messageTypeIdPart.Length);
 
@@ -160,7 +229,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         {
             var peerPart = Encoding.UTF8.GetBytes(peerId.ToString());
 
-            byte[] key = new byte[peerPart.Length];
+            byte[] key = new byte[1 + peerPart.Length];
+            key[0] = (byte)peerPart.Length;
             Buffer.BlockCopy(peerPart, 0, key, 0, peerPart.Length);
 
             return key;
