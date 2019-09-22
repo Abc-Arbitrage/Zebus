@@ -9,15 +9,17 @@ using System.Threading;
 namespace Abc.Zebus.Directory.RocksDb.Tests
 {
     [TestFixture]
-    public class RocksDbPeerRepositoryTests
+    public partial class RocksDbPeerRepositoryTests
     {
         private Peer _peer1;
+        private Peer _peer2;
         private RocksDbPeerRepository _repository;
 
         [SetUp]
         public void Setup()
         {
             _peer1 = new Peer(new PeerId("Abc.Peer.1"), "tcp://endpoint:123");
+            _peer2 = new Peer(new PeerId("Abc.Peer.2"), "tcp://endpoint:123");
             _repository = new RocksDbPeerRepository();
             _repository.Start();
         }
@@ -137,6 +139,21 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeTrue();
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void get_persistent_state(bool isPersistent)
+        {
+            _repository.AddOrUpdatePeer(CreatePeerDescriptor(_peer1.Id, isPersistent:isPersistent));
+
+            _repository.IsPersistent(_peer1.Id).ShouldEqual(isPersistent);
+        }
+
+        [Test]
+        public void get_persistent_state_when_peer_does_not_exists()
+        {
+            _repository.IsPersistent(_peer1.Id).ShouldBeNull();
+        }
+
         [Test]
         public void should_handle_peers_with_null_subscriptions_gracefully()
         {
@@ -154,9 +171,14 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
 
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().PeerId.ShouldEqual(_peer1.Id);
+
+            throw new NotImplementedException();
         }
 
-        private static PeerDescriptor CreatePeerDescriptor(PeerId peerId) => new PeerDescriptor(peerId, "endpoint", true, true, true, DateTime.UtcNow, new[] { Subscription.Any<TestMessage>() });
+        private static PeerDescriptor CreatePeerDescriptor(PeerId peerId, bool isPersistent = true, bool isResponding = true)
+        {
+            return new PeerDescriptor(peerId, "endpoint", isPersistent, true, isResponding, DateTime.UtcNow, new[] { Subscription.Any<TestMessage>() });
+        }
 
         class TestMessage : IMessage { }
     }

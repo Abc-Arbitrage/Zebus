@@ -203,7 +203,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             }
         }
 
-        public bool? IsPersistent(PeerId peerId) => throw new NotImplementedException();
+        public bool? IsPersistent(PeerId peerId) => Get(peerId)?.IsPersistent;
+
         public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc) => throw new NotImplementedException();
         public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds) => throw new NotImplementedException();
         public void RemovePeer(PeerId peerId)
@@ -216,7 +217,13 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             }); 
         }
 
-        public void SetPeerResponding(PeerId peerId, bool isResponding) => throw new NotImplementedException();
+        public void SetPeerResponding(PeerId peerId, bool isResponding)
+        {
+            var peer = Get(peerId);
+            peer.Peer.IsResponding = isResponding;
+            AddOrUpdatePeer(peer);
+        }
+
         private byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
         private PeerId GetPeerIdFromKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes));
 
