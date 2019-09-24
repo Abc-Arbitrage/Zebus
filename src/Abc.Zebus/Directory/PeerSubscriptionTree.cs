@@ -28,7 +28,22 @@ namespace Abc.Zebus.Directory
         {
             var peerCollector = new PeerCollector(_peersMatchingAllMessages);
 
-            _rootNode.Accept(peerCollector, routingKey);
+            if (routingKey.IsEmpty)
+            {
+                // The message is not routable or has not routing member.
+
+                // If the tree contains any subscription with a binding-key, it indicates a message definition
+                // mismatch between the publisher and the subscriber. In this situation, it is safer to send
+                // the message to the subscriber anyway.
+
+                // => Always forward the message to all peers.
+
+                _rootNode.AddAllPeers(peerCollector);
+            }
+            else
+            {
+                _rootNode.Accept(peerCollector, routingKey);
+            }
 
             return peerCollector.GetPeers();
         }
@@ -92,7 +107,6 @@ namespace Abc.Zebus.Directory
             private static readonly Action<SubscriptionNode, string> _removeSharpNode = (x, _) => x._sharpNode = null;
             private static readonly Action<SubscriptionNode, string> _removeStarNode = (x, _) => x._starNode = null;
 
-            private readonly Func<string, SubscriptionNode> _createChildNode;
             private readonly int _nextPartIndex;
             private readonly bool _matchesAll;
             private Dictionary<string, SubscriptionNode> _childNodes;
@@ -105,33 +119,29 @@ namespace Abc.Zebus.Directory
             {
                 _nextPartIndex = nextPartIndex;
                 _matchesAll = matchesAll;
-                _createChildNode = _ => new SubscriptionNode(_nextPartIndex + 1, false);
             }
 
             public bool IsEmpty => _peerCountIncludingChildren == 0;
 
+            public void AddAllPeers(PeerCollector peerCollector)
+            {
+                peerCollector.Offer(_peers);
+
+                _sharpNode?.AddAllPeers(peerCollector);
+                _starNode?.AddAllPeers(peerCollector);
+
+                if (_childNodes != null)
+                {
+                    lock (_childNodes)
+                    {
+                        foreach (var (_, childNode) in _childNodes)
+                            childNode.AddAllPeers(peerCollector);
+                    }
+                }
+            }
+
             public void Accept(PeerCollector peerCollector, BindingKey routingKey)
             {
-                if (routingKey.IsEmpty)
-                {
-                    // If a message became routable, but we don't have the routing definition yet, send it to every peer
-                    peerCollector.Offer(_peers);
-
-                    _sharpNode?.Accept(peerCollector, routingKey);
-                    _starNode?.Accept(peerCollector, routingKey);
-
-                    if (_childNodes != null)
-                    {
-                        lock (_childNodes)
-                        {
-                            foreach (var (_, childNode) in _childNodes)
-                                childNode.Accept(peerCollector, routingKey);
-                        }
-                    }
-
-                    return;
-                }
-
                 if (IsLeaf(routingKey) || _matchesAll)
                 {
                     peerCollector.Offer(_peers);
@@ -213,7 +223,13 @@ namespace Abc.Zebus.Directory
 
                 lock (_childNodes)
                 {
-                    return _childNodes.GetValueOrAdd(part, _createChildNode);
+                    if (!_childNodes.TryGetValue(part, out var childNode))
+                    {
+                        childNode = new SubscriptionNode(_nextPartIndex + 1, false);
+                        _childNodes.Add(part, childNode);
+                    }
+
+                    return childNode;
                 }
             }
 
