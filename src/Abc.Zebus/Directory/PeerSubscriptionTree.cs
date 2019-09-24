@@ -10,7 +10,7 @@ namespace Abc.Zebus.Directory
 {
     public class PeerSubscriptionTree
     {
-        private readonly SubscriptionNode _rootNode = new SubscriptionNode(0, false);
+        private readonly SubscriptionNode _rootNode = new SubscriptionNode(0);
         private List<Peer> _peersMatchingAllMessages = new List<Peer>();
 
         public bool IsEmpty => _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0;
@@ -83,7 +83,7 @@ namespace Abc.Zebus.Directory
                 _initialPeers = initialPeers;
             }
 
-            public void Offer(IEnumerable<Peer> peers)
+            public void Offer(List<Peer> peers)
             {
                 foreach (var peer in peers)
                 {
@@ -109,17 +109,15 @@ namespace Abc.Zebus.Directory
             private static readonly Action<SubscriptionNode, string> _removeStarNode = (x, _) => x._starNode = null;
 
             private readonly int _nextPartIndex;
-            private readonly bool _matchesAll;
             private ConcurrentDictionary<string, SubscriptionNode> _childNodes;
             private List<Peer> _peers = new List<Peer>();
             private SubscriptionNode _sharpNode;
             private SubscriptionNode _starNode;
             private int _peerCountIncludingChildren;
 
-            public SubscriptionNode(int nextPartIndex, bool matchesAll)
+            public SubscriptionNode(int nextPartIndex)
             {
                 _nextPartIndex = nextPartIndex;
-                _matchesAll = matchesAll;
             }
 
             public bool IsEmpty => _peerCountIncludingChildren == 0;
@@ -142,20 +140,17 @@ namespace Abc.Zebus.Directory
 
             public void Accept(PeerCollector peerCollector, BindingKey routingKey)
             {
-                if (IsLeaf(routingKey) || _matchesAll)
+                if (IsLeaf(routingKey))
                 {
                     peerCollector.Offer(_peers);
                     return;
                 }
 
-                _sharpNode?.Accept(peerCollector, routingKey);
+                _sharpNode?.AddAllPeers(peerCollector);
                 _starNode?.Accept(peerCollector, routingKey);
 
                 var nextPart = routingKey.GetPart(_nextPartIndex);
-                if (nextPart == null)
-                    return;
-
-                if (_childNodes == null)
+                if (nextPart == null || _childNodes == null)
                     return;
 
                 if (_childNodes.TryGetValue(nextPart, out var childNode))
@@ -206,9 +201,6 @@ namespace Abc.Zebus.Directory
                 if (_nextPartIndex == 0)
                     return false;
 
-                if (bindingKey.IsEmpty)
-                    return _nextPartIndex == 1;
-
                 return _nextPartIndex == bindingKey.PartCount;
             }
 
@@ -218,7 +210,7 @@ namespace Abc.Zebus.Directory
                 if (_childNodes == null)
                     _childNodes = new ConcurrentDictionary<string, SubscriptionNode>();
 
-                return _childNodes.GetOrAdd(part, k => new SubscriptionNode(_nextPartIndex + 1, false));
+                return _childNodes.GetOrAdd(part, k => new SubscriptionNode(_nextPartIndex + 1));
             }
 
             private void RemoveChildNode(string part)
@@ -231,12 +223,12 @@ namespace Abc.Zebus.Directory
 
             private SubscriptionNode GetOrCreateSharpNode()
             {
-                return _sharpNode ?? (_sharpNode = new SubscriptionNode(_nextPartIndex + 1, true));
+                return _sharpNode ?? (_sharpNode = new SubscriptionNode(_nextPartIndex + 1));
             }
 
             private SubscriptionNode GetOrCreateStarNode()
             {
-                return _starNode ?? (_starNode = new SubscriptionNode(_nextPartIndex + 1, false));
+                return _starNode ?? (_starNode = new SubscriptionNode(_nextPartIndex + 1));
             }
 
             private int UpdateList(Peer peer, UpdateAction action)
