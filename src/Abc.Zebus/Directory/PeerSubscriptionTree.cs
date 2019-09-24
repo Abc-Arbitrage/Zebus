@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -109,7 +110,7 @@ namespace Abc.Zebus.Directory
 
             private readonly int _nextPartIndex;
             private readonly bool _matchesAll;
-            private Dictionary<string, SubscriptionNode> _childNodes;
+            private ConcurrentDictionary<string, SubscriptionNode> _childNodes;
             private List<Peer> _peers = new List<Peer>();
             private SubscriptionNode _sharpNode;
             private SubscriptionNode _starNode;
@@ -130,13 +131,12 @@ namespace Abc.Zebus.Directory
                 _sharpNode?.AddAllPeers(peerCollector);
                 _starNode?.AddAllPeers(peerCollector);
 
-                if (_childNodes != null)
+                if (_childNodes == null)
+                    return;
+
+                foreach (var (_, childNode) in _childNodes)
                 {
-                    lock (_childNodes)
-                    {
-                        foreach (var (_, childNode) in _childNodes)
-                            childNode.AddAllPeers(peerCollector);
-                    }
+                    childNode.AddAllPeers(peerCollector);
                 }
             }
 
@@ -155,14 +155,11 @@ namespace Abc.Zebus.Directory
                 if (nextPart == null)
                     return;
 
-                if (_childNodes != null)
-                {
-                    lock (_childNodes)
-                    {
-                        if (_childNodes.TryGetValue(nextPart, out var childNode))
-                            childNode.Accept(peerCollector, routingKey);
-                    }
-                }
+                if (_childNodes == null)
+                    return;
+
+                if (_childNodes.TryGetValue(nextPart, out var childNode))
+                    childNode.Accept(peerCollector, routingKey);
             }
 
             public int Update(Peer peer, BindingKey subscription, UpdateAction action)
@@ -219,18 +216,9 @@ namespace Abc.Zebus.Directory
             private SubscriptionNode GetOrAddChildNode(string part)
             {
                 if (_childNodes == null)
-                    _childNodes = new Dictionary<string, SubscriptionNode>();
+                    _childNodes = new ConcurrentDictionary<string, SubscriptionNode>();
 
-                lock (_childNodes)
-                {
-                    if (!_childNodes.TryGetValue(part, out var childNode))
-                    {
-                        childNode = new SubscriptionNode(_nextPartIndex + 1, false);
-                        _childNodes.Add(part, childNode);
-                    }
-
-                    return childNode;
-                }
+                return _childNodes.GetOrAdd(part, k => new SubscriptionNode(_nextPartIndex + 1, false));
             }
 
             private void RemoveChildNode(string part)
@@ -238,10 +226,7 @@ namespace Abc.Zebus.Directory
                 if (_childNodes == null)
                     return;
 
-                lock (_childNodes)
-                {
-                    _childNodes.Remove(part);
-                }
+                _childNodes.TryRemove(part, out _);
             }
 
             private SubscriptionNode GetOrCreateSharpNode()
