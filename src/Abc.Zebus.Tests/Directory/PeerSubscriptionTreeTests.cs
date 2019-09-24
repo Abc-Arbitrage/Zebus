@@ -71,6 +71,32 @@ namespace Abc.Zebus.Tests.Directory
             matchingPeers.Single().ShouldEqual(peer);
         }
 
+        [TestCase("*")]
+        [TestCase("#")]
+        [TestCase("foo")]
+        [TestCase("foo.#")]
+        [TestCase("foo.bar")]
+        [TestCase("foo.bar.*")]
+        [TestCase("foo.bar.#")]
+        [TestCase("foo.bar.baz")]
+        [TestCase("foo.*.baz")]
+        public void empty_bindingkey_should_return_all_subscriptions(string routingKey)
+        {
+            // Arrange
+            var peerSubscriptionTree = new PeerSubscriptionTree();
+            var peerA = new Peer(new PeerId("a"), "endpoint");
+            var peerB = new Peer(new PeerId("b"), "endpoint");
+
+            peerSubscriptionTree.Add(peerA, BindingKeyHelper.CreateFromString(routingKey, '.'));
+            peerSubscriptionTree.Add(peerB, BindingKeyHelper.CreateFromString("foo.bar", '.'));
+
+            // Act
+            var matchingPeers = peerSubscriptionTree.GetPeers(BindingKey.Empty);
+
+            // Assert
+            matchingPeers.ShouldBeEquivalentTo(peerA, peerB);
+        }
+
         [TestCase("a.b.c")]
         [TestCase("b.c.d")]
         public void stars_should_always_match_if_same_number_of_parts(string routingKey)
