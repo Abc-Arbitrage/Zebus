@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Util.Extensions;
+using JetBrains.Annotations;
 
 namespace Abc.Zebus.Directory
 {
@@ -16,14 +17,10 @@ namespace Abc.Zebus.Directory
         public bool IsEmpty => _rootNode.IsEmpty && _peersMatchingAllMessages.Count == 0;
 
         public void Add(Peer peer, BindingKey subscription)
-        {
-            UpdatePeerSubscription(peer, subscription, UpdateAction.Add);
-        }
+            => UpdatePeerSubscription(peer, subscription, UpdateAction.Add);
 
         public void Remove(Peer peer, BindingKey subscription)
-        {
-            UpdatePeerSubscription(peer, subscription, UpdateAction.Remove);
-        }
+            => UpdatePeerSubscription(peer, subscription, UpdateAction.Remove);
 
         public IList<Peer> GetPeers(BindingKey routingKey)
         {
@@ -31,9 +28,9 @@ namespace Abc.Zebus.Directory
 
             if (routingKey.IsEmpty)
             {
-                // The message is not routable or has not routing member.
+                // The message is not routable or has no routing member.
 
-                // If the tree contains any subscription with a binding-key, it indicates a message definition
+                // If the tree contains any subscription with a binding key, it indicates a message definition
                 // mismatch between the publisher and the subscriber. In this situation, it is safer to send
                 // the message to the subscriber anyway.
 
@@ -58,9 +55,7 @@ namespace Abc.Zebus.Directory
         }
 
         private void UpdatePeersMatchingAllMessages(Peer peer, UpdateAction action)
-        {
-            UpdateList(ref _peersMatchingAllMessages, peer, action);
-        }
+            => UpdateList(ref _peersMatchingAllMessages, peer, action);
 
         private static void UpdateList(ref List<Peer> peers, Peer peer, UpdateAction action)
         {
@@ -83,6 +78,7 @@ namespace Abc.Zebus.Directory
                 _initialPeers = initialPeers;
             }
 
+            [SuppressMessage("ReSharper", "ParameterTypeCanBeEnumerable.Local")]
             public void Offer(List<Peer> peers)
             {
                 foreach (var peer in peers)
@@ -108,11 +104,17 @@ namespace Abc.Zebus.Directory
             private static readonly Action<SubscriptionNode, string> _removeSharpNode = (x, _) => x._sharpNode = null;
             private static readonly Action<SubscriptionNode, string> _removeStarNode = (x, _) => x._starNode = null;
 
-            private readonly int _nextPartIndex;
+            [CanBeNull]
             private ConcurrentDictionary<string, SubscriptionNode> _childNodes;
-            private List<Peer> _peers = new List<Peer>();
+
+            [CanBeNull]
             private SubscriptionNode _sharpNode;
+
+            [CanBeNull]
             private SubscriptionNode _starNode;
+
+            private readonly int _nextPartIndex;
+            private List<Peer> _peers = new List<Peer>();
             private int _peerCountIncludingChildren;
 
             public SubscriptionNode(int nextPartIndex)
@@ -170,16 +172,10 @@ namespace Abc.Zebus.Directory
                 var nextPart = subscription.GetPart(_nextPartIndex);
 
                 if (subscription.IsSharp(_nextPartIndex) || nextPart == null)
-                {
-                    var sharpNode = GetOrCreateSharpNode();
-                    return UpdateChildNode(sharpNode, peer, subscription, action, null, _removeSharpNode);
-                }
+                    return UpdateChildNode(GetOrCreateSharpNode(), peer, subscription, action, null, _removeSharpNode);
 
                 if (subscription.IsStar(_nextPartIndex))
-                {
-                    var starNode = GetOrCreateStarNode();
-                    return UpdateChildNode(starNode, peer, subscription, action, null, _removeStarNode);
-                }
+                    return UpdateChildNode(GetOrCreateStarNode(), peer, subscription, action, null, _removeStarNode);
 
                 var childNode = GetOrAddChildNode(nextPart);
                 return UpdateChildNode(childNode, peer, subscription, action, nextPart, _removeNode);
@@ -204,7 +200,6 @@ namespace Abc.Zebus.Directory
                 return _nextPartIndex == bindingKey.PartCount;
             }
 
-            [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
             private SubscriptionNode GetOrAddChildNode(string part)
             {
                 if (_childNodes == null)
@@ -214,27 +209,18 @@ namespace Abc.Zebus.Directory
             }
 
             private void RemoveChildNode(string part)
-            {
-                if (_childNodes == null)
-                    return;
-
-                _childNodes.TryRemove(part, out _);
-            }
+                => _childNodes?.TryRemove(part, out _);
 
             private SubscriptionNode GetOrCreateSharpNode()
-            {
-                return _sharpNode ?? (_sharpNode = new SubscriptionNode(_nextPartIndex + 1));
-            }
+                => _sharpNode ?? (_sharpNode = new SubscriptionNode(_nextPartIndex + 1));
 
             private SubscriptionNode GetOrCreateStarNode()
-            {
-                return _starNode ?? (_starNode = new SubscriptionNode(_nextPartIndex + 1));
-            }
+                => _starNode ?? (_starNode = new SubscriptionNode(_nextPartIndex + 1));
 
             private int UpdateList(Peer peer, UpdateAction action)
-            {
-                return action == UpdateAction.Add ? AddToList(peer) : RemoveFromList(peer);
-            }
+                => action == UpdateAction.Add
+                    ? AddToList(peer)
+                    : RemoveFromList(peer);
 
             private int AddToList(Peer peerToAdd)
             {
