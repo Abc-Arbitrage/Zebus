@@ -18,6 +18,7 @@ namespace Abc.Zebus.Dispatch
 
         private readonly IPipeManager _pipeManager;
         private readonly int _batchSize;
+        private readonly MessageDeliveryWaiter _messageDeliveryWaiter;
         private FlushableBlockingCollection<Entry> _queue = new FlushableBlockingCollection<Entry>();
         private Thread _thread;
         private volatile bool _isRunning;
@@ -30,11 +31,12 @@ namespace Abc.Zebus.Dispatch
 
         internal SynchronizationContext SynchronizationContext { get; }
 
-        public DispatchQueue(IPipeManager pipeManager, int batchSize, string name)
+        public DispatchQueue(IPipeManager pipeManager, int batchSize, string name, TimeSpan timeToWaitForInitialization)
         {
             _pipeManager = pipeManager;
             _batchSize = batchSize;
             Name = name;
+            _messageDeliveryWaiter = new MessageDeliveryWaiter(timeToWaitForInitialization);
 
             SynchronizationContext = new DispatchQueueSynchronizationContext(this);
         }
@@ -63,6 +65,7 @@ namespace Abc.Zebus.Dispatch
             if (_isRunning)
                 return;
 
+            _messageDeliveryWaiter.Reset();
             _isRunning = true;
             _thread = new Thread(ThreadProc)
             {
@@ -71,6 +74,12 @@ namespace Abc.Zebus.Dispatch
             };
 
             _thread.Start();
+            _logger.InfoFormat("{0} started", Name);
+        }
+
+        public void StartDeliveringMessages()
+        {
+            _messageDeliveryWaiter.StopWaiting();
         }
 
         public void Stop()
@@ -80,6 +89,8 @@ namespace Abc.Zebus.Dispatch
 
             _isRunning = false;
 
+            _messageDeliveryWaiter.StopWaiting();
+
             while (WaitUntilAllMessagesAreProcessed())
                 Thread.Sleep(1);
 
@@ -88,10 +99,13 @@ namespace Abc.Zebus.Dispatch
             _thread.Join();
 
             _queue = new FlushableBlockingCollection<Entry>();
+            _logger.InfoFormat("{0} stopped", Name);
         }
 
         private void ThreadProc()
         {
+            _messageDeliveryWaiter.Wait();
+
             _currentDispatchQueueName = Name;
             try
             {
@@ -384,6 +398,32 @@ namespace Abc.Zebus.Dispatch
             public override void Post(SendOrPostCallback d, object state)
             {
                 _dispatchQueue.Enqueue(() => d(state));
+            }
+        }
+
+        private class MessageDeliveryWaiter
+        {
+            private readonly ManualResetEventSlim _canStartDeliveringMessages = new ManualResetEventSlim(false);
+            private readonly TimeSpan _timeToWaitForInitialization;
+
+            public MessageDeliveryWaiter(TimeSpan timeToWaitForInitialization)
+            {
+                _timeToWaitForInitialization = timeToWaitForInitialization;
+            }
+
+            public void Wait()
+            {
+                _canStartDeliveringMessages.Wait(_timeToWaitForInitialization);
+            }
+
+            public void StopWaiting()
+            {
+                _canStartDeliveringMessages.Set();
+            }
+
+            public void Reset()
+            {
+                _canStartDeliveringMessages.Reset();
             }
         }
     }

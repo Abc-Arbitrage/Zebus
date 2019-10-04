@@ -23,6 +23,7 @@ namespace Abc.Zebus.Dispatch
 
         void Stop();
         void Start();
+        void StartDeliveringMessages();
         int Purge();
     }
 }

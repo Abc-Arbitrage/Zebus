@@ -14,6 +14,8 @@ namespace Abc.Zebus.Hosting
         /// </summary>
         public virtual int Priority => 0;
 
+        public virtual bool CallAfterStartBeforeMessageDeliveryHasStarted => false;
+
         public virtual void ConfigureContainer(IContainer container)
         {
         }

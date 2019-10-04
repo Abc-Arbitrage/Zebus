@@ -41,17 +41,21 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher = CreateAndStartDispatcher(_dispatchQueueFactory);
         }
 
-        private MessageDispatcher CreateAndStartDispatcher(IDispatchQueueFactory dispatchQueueFactory)
+        private MessageDispatcher CreateAndStartDispatcher(IDispatchQueueFactory dispatchQueueFactory, bool startDelivering = true)
         {
             var messageDispatcher = new MessageDispatcher(new IMessageHandlerInvokerLoader[]
-            {
-                new SyncMessageHandlerInvokerLoader(_containerMock.Object),
-                new AsyncMessageHandlerInvokerLoader(_containerMock.Object),
-            }, dispatchQueueFactory);
+                                                          {
+                                                              new SyncMessageHandlerInvokerLoader(_containerMock.Object),
+                                                              new AsyncMessageHandlerInvokerLoader(_containerMock.Object),
+                                                          },
+                                                          dispatchQueueFactory);
 
             messageDispatcher.ConfigureAssemblyFilter(x => x == GetType().Assembly);
             messageDispatcher.ConfigureHandlerFilter(type => type != typeof(SyncMessageHandlerInvokerLoaderTests.WrongAsyncHandler));
             messageDispatcher.Start();
+            if (startDelivering)
+                messageDispatcher.StartDeliveringMessages();
+
             return messageDispatcher;
         }
 
@@ -296,7 +300,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var predicateBuilder = new Mock<IBindingKeyPredicateBuilder>();
             predicateBuilder.Setup(x => x.GetPredicate(It.IsAny<Type>(), It.IsAny<BindingKey>())).Returns(_ => true);
 
-            _messageDispatcher.AddInvoker(new DynamicMessageHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent), new [] {BindingKey.Empty}, predicateBuilder.Object));
+            _messageDispatcher.AddInvoker(new DynamicMessageHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent), new[] { BindingKey.Empty }, predicateBuilder.Object));
 
             var evt = new FakeEvent(123);
             DispatchAndWaitForCompletion(evt);
@@ -364,6 +368,25 @@ namespace Abc.Zebus.Tests.Dispatch
             asyncHandler.TaskScheduler.ShouldEqual(TaskScheduler.Default);
         }
 
+        [Test]
+        public void should_enqueue_but_not_deliver_if_message_is_received_before_dispatcher_is_delivering()
+        {
+            _messageDispatcher = CreateAndStartDispatcher(_dispatchQueueFactory, false);
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var task = Dispatch(new ExecutableEvent());
+
+            _dispatchQueueFactory.DispatchQueues.Count.ShouldEqual(1);
+            foreach (var dispatchQueue in _dispatchQueueFactory.DispatchQueues)
+            {
+                dispatchQueue.QueueLength.ShouldBeGreaterThan(0);
+            }
+
+            _messageDispatcher.StartDeliveringMessages();
+
+            task.Wait(20.Seconds()).ShouldBeTrue("Dispatch should be completed");
+        }
+
         private DispatchResult DispatchAndWaitForCompletion(IMessage message)
         {
             var dispatch = Dispatch(message);
@@ -405,7 +428,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             public DispatchQueue Create(string queueName)
             {
-                var taskScheduler = new DispatchQueue(_pipeManager, 200, queueName);
+                var taskScheduler = new DispatchQueue(_pipeManager, 200, queueName, 1.Minute());
                 DispatchQueues.Add(taskScheduler);
                 return taskScheduler;
             }

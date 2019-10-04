@@ -94,6 +94,25 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
+            public void should_raise_started_but_not_delivering_messages_event_when_starting()
+            {
+                var raised = false;
+                _bus.StartedButNotDeliveringMessages += () => raised = true;
+
+                _bus.Start();
+
+                raised.ShouldBeTrue();
+            }
+
+            [Test]
+            public void should_not_start_message_dispatcher_until_started_but_not_delivering_messages_event_is_handled()
+            {
+                _bus.StartedButNotDeliveringMessages += () => _messageDispatcherMock.Verify(x => x.StartDeliveringMessages(), Times.Never);
+
+                _bus.Start();
+            }
+
+            [Test]
             public void should_stop_message_dispatcher()
             {
                 _bus.Start();

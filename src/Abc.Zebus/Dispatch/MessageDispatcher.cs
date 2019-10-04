@@ -21,7 +21,7 @@ namespace Abc.Zebus.Dispatch
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _handlerFilter;
         private Func<Type, bool> _messageFilter;
-        private MessageDispatcherStatus _status;
+        private  MessageDispatcherStatus _status;
 
         internal MessageDispatcherStatus Status => _status;
 
@@ -124,7 +124,7 @@ namespace Abc.Zebus.Dispatch
 
         public void Stop()
         {
-            if (_status != MessageDispatcherStatus.Started)
+            if (_status != MessageDispatcherStatus.Started && _status != MessageDispatcherStatus.StartedDeliveringMessages)
                 return;
 
             _status = MessageDispatcherStatus.Stopping;
@@ -142,6 +142,7 @@ namespace Abc.Zebus.Dispatch
             switch (_status)
             {
                 case MessageDispatcherStatus.Started:
+                case MessageDispatcherStatus.StartedDeliveringMessages:
                     return;
 
                 case MessageDispatcherStatus.Stopping:
@@ -153,6 +154,16 @@ namespace Abc.Zebus.Dispatch
             foreach (var dispatchQueue in _dispatchQueues.Values)
             {
                 dispatchQueue.Start();
+            }
+        }
+
+        public void StartDeliveringMessages()
+        {
+            _status = MessageDispatcherStatus.StartedDeliveringMessages;
+
+            foreach (var dispatchQueue in _dispatchQueues.Values)
+            {
+                dispatchQueue.StartDeliveringMessages();
             }
         }
 
@@ -210,6 +221,9 @@ namespace Abc.Zebus.Dispatch
             var dispatchQueue = _dispatchQueueFactory.Create(queueName);
             dispatchQueue.Start();
 
+            if (_status == MessageDispatcherStatus.StartedDeliveringMessages)
+                dispatchQueue.StartDeliveringMessages();
+
             return dispatchQueue;
         }
 
@@ -237,6 +251,7 @@ namespace Abc.Zebus.Dispatch
     {
         Stopped,
         Stopping,
-        Started
+        Started,
+        StartedDeliveringMessages
     }
 }

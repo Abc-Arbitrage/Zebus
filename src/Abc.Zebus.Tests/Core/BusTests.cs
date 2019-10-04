@@ -55,19 +55,20 @@ namespace Abc.Zebus.Tests.Core
                 System.IO.Directory.Delete(_bus.DeserializationFailureDumpDirectoryPath, true);
         }
 
-        
-
-        private void AddInvoker<TMessage>(bool shouldBeSubscribedOnStartup) where TMessage : class, IMessage
+        private void AddInvoker<TMessage>(bool shouldBeSubscribedOnStartup)
+            where TMessage : class, IMessage
         {
             _invokers.Add(new TestMessageHandlerInvoker<TMessage>(shouldBeSubscribedOnStartup));
         }
 
-        private void SetupPeersHandlingMessage<TMessage>(params Peer[] peers) where TMessage : IMessage
+        private void SetupPeersHandlingMessage<TMessage>(params Peer[] peers)
+            where TMessage : IMessage
         {
             _directoryMock.Setup(x => x.GetPeersHandlingMessage(It.IsAny<TMessage>())).Returns(peers);
         }
 
-        private void SetupDispatch<TMessage>(TMessage message, Action<IMessage> invokerCallback = null, Exception error = null) where TMessage : IMessage
+        private void SetupDispatch<TMessage>(TMessage message, Action<IMessage> invokerCallback = null, Exception error = null)
+            where TMessage : IMessage
         {
             _messageDispatcherMock.Setup(x => x.Dispatch(It.Is<MessageDispatch>(dispatch => dispatch.Message.DeepCompare(message))))
                                   .Callback<MessageDispatch>(dispatch =>

@@ -12,7 +12,7 @@ namespace Abc.Zebus
         void Configure(PeerId peerId, string environment);
 
         void Publish(IEvent message);
-        
+
         Task<CommandResult> Send(ICommand message);
         Task<CommandResult> Send(ICommand message, Peer peer);
 
@@ -22,12 +22,13 @@ namespace Abc.Zebus
         void Reply(int errorCode);
         void Reply(int errorCode, string message);
         void Reply(IMessage response);
-        
+
         void Start();
         void Stop();
 
         event Action Starting;
         event Action Started;
+        event Action StartedButNotDeliveringMessages;
         event Action Stopping;
         event Action Stopped;
     }

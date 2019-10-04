@@ -28,7 +28,7 @@ namespace Abc.Zebus
         /// (https://github.com/Abc-Arbitrage/Zebus/wiki/Persistence)
         /// </summary>
         bool IsPersistent { get; }
-        
+
         /// <summary>
         /// Mainly a debugging setting, setting it to false will prevent the Bus from connecting
         /// to a random Directory when needed
@@ -44,5 +44,10 @@ namespace Abc.Zebus
         /// Maximum batch size for <see cref="IBatchedMessageHandler{T}"/>.
         /// </summary>
         int MessagesBatchSize { get; }
+
+        /// <summary>
+        /// Maximum time to wait for the host to initialise itself after subscribing to the bus but before dequeuing messages
+        /// </summary>
+        TimeSpan TimeToWaitForInitialization { get; }
     }
 }

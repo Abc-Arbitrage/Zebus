@@ -100,6 +100,11 @@ namespace Abc.Zebus.Tests.Lotus
                 throw new NotSupportedException();
             }
 
+            public void StartDeliveringMessages()
+            {
+                throw new NotImplementedException();
+            }
+
             public void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker)
             {
                 throw new NotImplementedException();
