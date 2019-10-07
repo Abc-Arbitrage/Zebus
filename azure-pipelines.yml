@@ -28,7 +28,7 @@ jobs:
           command: pack
           configuration: $(BuildConfiguration)
           packDirectory: $(Build.ArtifactStagingDirectory)
-          nobuild: true
+          nobuild: false
           verbosityPack: Minimal
 
       - task: PublishBuildArtifacts@1
