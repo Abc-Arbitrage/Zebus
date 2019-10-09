@@ -25,7 +25,7 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
             Callback?.Invoke(invocation);
 
             if (IsBlocking)
-                _blockingSignal.Wait(5.Second());
+                _blockingSignal.Wait(5.Seconds());
         }
 
         public void Unblock()
