@@ -229,6 +229,7 @@ namespace Abc.Zebus.Testing
             Starting();
             IsStarted = true;
             IsRunning = true;
+            StartedButNotDeliveringMessages();
             Started();
         }
 
