@@ -382,6 +382,8 @@ namespace Abc.Zebus.Tests.Dispatch
                 dispatchQueue.QueueLength.ShouldBeGreaterThan(0);
             }
 
+            task.Wait(50.Milliseconds()).ShouldBeFalse();
+
             _messageDispatcher.StartDeliveringMessages();
 
             task.Wait(20.Seconds()).ShouldBeTrue("Dispatch should be completed");
