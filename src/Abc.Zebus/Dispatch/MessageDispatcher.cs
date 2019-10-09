@@ -159,6 +159,9 @@ namespace Abc.Zebus.Dispatch
 
         public void StartDeliveringMessages()
         {
+            if (_status != MessageDispatcherStatus.Started)
+                return;
+
             _status = MessageDispatcherStatus.StartedDeliveringMessages;
 
             foreach (var dispatchQueue in _dispatchQueues.Values)
