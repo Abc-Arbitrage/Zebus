@@ -124,7 +124,7 @@ namespace Abc.Zebus.Dispatch
 
         public void Stop()
         {
-            if (_status != MessageDispatcherStatus.Started && _status != MessageDispatcherStatus.StartedDeliveringMessages)
+            if (_status != MessageDispatcherStatus.Starting && _status != MessageDispatcherStatus.Started)
                 return;
 
             _status = MessageDispatcherStatus.Stopping;
@@ -141,15 +141,15 @@ namespace Abc.Zebus.Dispatch
         {
             switch (_status)
             {
+                case MessageDispatcherStatus.Starting:
                 case MessageDispatcherStatus.Started:
-                case MessageDispatcherStatus.StartedDeliveringMessages:
                     return;
 
                 case MessageDispatcherStatus.Stopping:
                     throw new InvalidOperationException("MessageDispatcher is stopping");
             }
 
-            _status = MessageDispatcherStatus.Started;
+            _status = MessageDispatcherStatus.Starting;
 
             foreach (var dispatchQueue in _dispatchQueues.Values)
             {
@@ -159,10 +159,10 @@ namespace Abc.Zebus.Dispatch
 
         public void StartDeliveringMessages()
         {
-            if (_status != MessageDispatcherStatus.Started)
+            if (_status != MessageDispatcherStatus.Starting)
                 return;
 
-            _status = MessageDispatcherStatus.StartedDeliveringMessages;
+            _status = MessageDispatcherStatus.Started;
 
             foreach (var dispatchQueue in _dispatchQueues.Values)
             {
@@ -224,7 +224,7 @@ namespace Abc.Zebus.Dispatch
             var dispatchQueue = _dispatchQueueFactory.Create(queueName);
             dispatchQueue.Start();
 
-            if (_status == MessageDispatcherStatus.StartedDeliveringMessages)
+            if (_status == MessageDispatcherStatus.Started)
                 dispatchQueue.StartDeliveringMessages();
 
             return dispatchQueue;
@@ -254,7 +254,7 @@ namespace Abc.Zebus.Dispatch
     {
         Stopped,
         Stopping,
-        Started,
-        StartedDeliveringMessages
+        Starting,
+        Started
     }
 }
