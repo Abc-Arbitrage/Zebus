@@ -21,7 +21,7 @@ namespace Abc.Zebus.Dispatch
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _handlerFilter;
         private Func<Type, bool> _messageFilter;
-        private  MessageDispatcherStatus _status;
+        private MessageDispatcherStatus _status;
 
         internal MessageDispatcherStatus Status => _status;
 
