@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentDateTime" Version="2.0.0" />
+    <PackageReference Include="RocksDbNative" Version="6.2.2" />
   </ItemGroup>
 
   <ItemGroup>
