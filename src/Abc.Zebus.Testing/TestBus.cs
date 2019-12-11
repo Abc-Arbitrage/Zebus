@@ -12,6 +12,7 @@ namespace Abc.Zebus.Testing
 {
     public class TestBus : IBus
     {
+        private readonly IMessageSerializer _messageSerializer;
         private readonly ConcurrentDictionary<HandlerKey, Func<IMessage, object>> _handlers = new ConcurrentDictionary<HandlerKey, Func<IMessage, object>>();
         private readonly MessageComparer _messageComparer = new MessageComparer();
         private readonly Dictionary<PeerId, List<IMessage>> _messagesByPeerId = new Dictionary<PeerId, List<IMessage>>();
@@ -20,9 +21,16 @@ namespace Abc.Zebus.Testing
         private readonly List<ICommand> _commands = new List<ICommand>();
         private readonly HashSet<Subscription> _subscriptions = new HashSet<Subscription>();
 
-        public TestBus()
+        public TestBus(IMessageSerializer messageSerializer)
         {
+            _messageSerializer = messageSerializer;
             HandlerExecutor = new DefaultHandlerExecutor();
+        }
+
+        public TestBus()
+            : this(new MessageSerializer())
+        {
+
         }
 
         public event Action Starting = delegate { };
@@ -79,8 +87,8 @@ namespace Abc.Zebus.Testing
 
         public void Publish(IEvent message)
         {
-            if (Serializer.TryClone(message, out var clone))
-                message = clone;
+            if (_messageSerializer.TryClone(message, out var clone))
+                message = (IEvent)clone;
 
             lock (_events)
             {
@@ -98,8 +106,8 @@ namespace Abc.Zebus.Testing
 
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
-            if (Serializer.TryClone(message, out var clone))
-                message = clone;
+            if (_messageSerializer.TryClone(message, out var clone))
+                message = (ICommand)clone;
 
             lock (_commands)
             {
