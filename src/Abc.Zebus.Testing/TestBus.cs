@@ -12,7 +12,6 @@ namespace Abc.Zebus.Testing
 {
     public class TestBus : IBus
     {
-        private readonly IMessageSerializer _messageSerializer;
         private readonly ConcurrentDictionary<HandlerKey, Func<IMessage, object>> _handlers = new ConcurrentDictionary<HandlerKey, Func<IMessage, object>>();
         private readonly MessageComparer _messageComparer = new MessageComparer();
         private readonly Dictionary<PeerId, List<IMessage>> _messagesByPeerId = new Dictionary<PeerId, List<IMessage>>();
@@ -21,17 +20,12 @@ namespace Abc.Zebus.Testing
         private readonly List<ICommand> _commands = new List<ICommand>();
         private readonly HashSet<Subscription> _subscriptions = new HashSet<Subscription>();
 
-        public TestBus(IMessageSerializer messageSerializer)
+        public TestBus()
         {
-            _messageSerializer = messageSerializer;
+            MessageSerializer = new MessageSerializer();
             HandlerExecutor = new DefaultHandlerExecutor();
         }
 
-        public TestBus()
-            : this(new MessageSerializer())
-        {
-
-        }
 
         public event Action Starting = delegate { };
         public event Action Started = delegate { };
@@ -77,6 +71,7 @@ namespace Abc.Zebus.Testing
         public string LastReplyMessage { get; set; }
         public object LastReplyResponse { get; set; }
         public IHandlerExecutor HandlerExecutor { get; set; }
+        public IMessageSerializer MessageSerializer { get; set; }
         public bool IsStarted { get; private set; }
         public bool IsStopped { get; private set; }
         public PeerId PeerId { get; private set; }
@@ -87,7 +82,7 @@ namespace Abc.Zebus.Testing
 
         public void Publish(IEvent message)
         {
-            if (_messageSerializer.TryClone(message, out var clone))
+            if (MessageSerializer.TryClone(message, out var clone))
                 message = (IEvent)clone;
 
             lock (_events)
@@ -106,7 +101,7 @@ namespace Abc.Zebus.Testing
 
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
-            if (_messageSerializer.TryClone(message, out var clone))
+            if (MessageSerializer.TryClone(message, out var clone))
                 message = (ICommand)clone;
 
             lock (_commands)
