@@ -62,6 +62,14 @@ namespace Abc.Zebus
         public static Task<IDisposable> SubscribeAsync(this IBus bus, Subscription subscription, Action<IMessage> handler)
             => bus.SubscribeAsync(new SubscriptionRequest(subscription), handler);
 
+        public static Task<IDisposable> SubscribeAsync<T>(this IBus bus, Subscription subscription, Action<T> handler)
+            where T : class, IMessage
+            => bus.SubscribeAsync(new SubscriptionRequest(subscription),  msg => handler((T)msg));
+
+        public static Task<IDisposable> SubscribeAsync<T>(this IBus bus, IEnumerable<Subscription> subscriptions, Action<T> handler)
+            where T : class, IMessage
+            => bus.SubscribeAsync(new SubscriptionRequest(subscriptions),  msg => handler((T)msg));
+
         public static Task<IDisposable> SubscribeAsync(this IBus bus, IEnumerable<Subscription> subscriptions, Action<IMessage> handler)
             => bus.SubscribeAsync(new SubscriptionRequest(subscriptions), handler);
 
@@ -73,7 +81,15 @@ namespace Abc.Zebus
 
         public static IDisposable Subscribe<T>(this IBus bus, Action<T> handler)
             where T : class, IMessage
-            => Subscribe(bus, Subscription.Any<T>(), msg => handler((T)msg));
+            => Subscribe(bus, Subscription.Any<T>(), handler);
+
+        public static IDisposable Subscribe<T>(this IBus bus, Subscription subscription, Action<T> handler)
+            where T : class, IMessage
+            => SubscribeAsync(bus, subscription, handler).WaitSync();
+
+        public static IDisposable Subscribe<T>(this IBus bus, IEnumerable<Subscription> subscriptions, Action<T> handler)
+            where T : class, IMessage
+            => SubscribeAsync(bus, subscriptions, handler).WaitSync();
 
         public static IDisposable Subscribe(this IBus bus, Subscription subscription, Action<IMessage> handler)
             => SubscribeAsync(bus, subscription, handler).WaitSync();
