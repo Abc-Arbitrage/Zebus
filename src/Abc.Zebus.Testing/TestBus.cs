@@ -22,8 +22,10 @@ namespace Abc.Zebus.Testing
 
         public TestBus()
         {
+            MessageSerializer = new MessageSerializer();
             HandlerExecutor = new DefaultHandlerExecutor();
         }
+
 
         public event Action Starting = delegate { };
         public event Action Started = delegate { };
@@ -69,6 +71,7 @@ namespace Abc.Zebus.Testing
         public string LastReplyMessage { get; set; }
         public object LastReplyResponse { get; set; }
         public IHandlerExecutor HandlerExecutor { get; set; }
+        public IMessageSerializer MessageSerializer { get; set; }
         public bool IsStarted { get; private set; }
         public bool IsStopped { get; private set; }
         public PeerId PeerId { get; private set; }
@@ -79,8 +82,8 @@ namespace Abc.Zebus.Testing
 
         public void Publish(IEvent message)
         {
-            if (Serializer.TryClone(message, out var clone))
-                message = clone;
+            if (MessageSerializer.TryClone(message, out var clone))
+                message = (IEvent)clone;
 
             lock (_events)
             {
@@ -98,8 +101,8 @@ namespace Abc.Zebus.Testing
 
         public Task<CommandResult> Send(ICommand message, Peer peer)
         {
-            if (Serializer.TryClone(message, out var clone))
-                message = clone;
+            if (MessageSerializer.TryClone(message, out var clone))
+                message = (ICommand)clone;
 
             lock (_commands)
             {
