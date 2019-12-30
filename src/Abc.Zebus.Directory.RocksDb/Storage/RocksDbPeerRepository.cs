@@ -15,6 +15,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
     {
         private readonly string _databaseDirectoryPath;
         private RocksDbSharp.RocksDb _db;
+
         /// <summary>
         /// Key structure:
         /// ----------------------
@@ -22,10 +23,11 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         /// ----------------------
         /// </summary>
         private ColumnFamilyHandle _peersColumnFamily;
+
         /// <summary>
         /// Key structure:
         /// -----------------------------------------------------------------------------------
-        /// |  PeerId Length (1 byte)  |  PeerId (n bytes)  |  MessageFullTypeName (n bytes)  | 
+        /// |  PeerId Length (1 byte)  |  PeerId (n bytes)  |  MessageFullTypeName (n bytes)  |
         /// -----------------------------------------------------------------------------------
         /// </summary>
         private ColumnFamilyHandle _subscriptionsColumnFamily;
@@ -120,39 +122,37 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         private Subscription[] GetDynamicSubscriptions(PeerId peerId)
         {
             var bindingKeys = new List<(MessageTypeId, BindingKey[])>();
-            var key = GetSubscriptionKey(peerId);
-            IterateDynamicSubscriptions(peerId, cursor =>
-            {
-                var (bindingKey, messageTypeId) = ReadDynamicSubscription(cursor);
-                bindingKeys.Add((messageTypeId, bindingKey)); 
-            });
+            // var key = GetSubscriptionKey(peerId);
+            IterateDynamicSubscriptionsForPeer(peerId,
+                                               (key, value) =>
+                                               {
+                                                   var (bindingKey, messageTypeId) = ReadDynamicSubscription(key, value);
+                                                   bindingKeys.Add((messageTypeId, bindingKey));
+                                               });
             return bindingKeys.SelectMany(y => y.Item2.Select(bindingKey => new Subscription(y.Item1, bindingKey))).ToArray();
         }
 
-        private void IterateDynamicSubscriptions(PeerId peerId, Action<Iterator> action)
+        private void IterateDynamicSubscriptionsForPeer(PeerId peerId, Action<byte[], byte[]> action)
         {
             var key = GetSubscriptionKey(peerId);
-            using (var cursor = _db.NewIterator(_subscriptionsColumnFamily))
-            {
-                if (!cursor.Seek(key).Valid())
-                    return;
+            using var cursor = _db.NewIterator(_subscriptionsColumnFamily);
+            if (!cursor.Seek(key).Valid())
+                return;
 
-                var peerIdLength = peerId.ToString().Length;
-                byte[] currentKey;
-                do
-                {
-                    currentKey = cursor.Key();
-                    action(cursor);
-                    cursor.Next();
-                } while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
-            }
+            var peerIdLength = peerId.ToString().Length;
+            byte[] currentKey;
+            do
+            {
+                currentKey = cursor.Key();
+                action(currentKey, cursor.Value());
+                cursor.Next();
+            } while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
         }
 
-        private (BindingKey[] bindingKeys, MessageTypeId messageTypeId) ReadDynamicSubscription(Iterator cursor)
+        private (BindingKey[] bindingKeys, MessageTypeId messageTypeId) ReadDynamicSubscription(byte[] key, byte[] value)
         {
-            var currentKey = cursor.Key();
-            var messageTypeId = GetMessageTypeIdFromKey(currentKey);
-            var bindingKeys = DeserializeBindingKeys(cursor.Value());
+            var messageTypeId = GetMessageTypeIdFromKey(key);
+            var bindingKeys = DeserializeBindingKeys(value);
             return (bindingKeys, messageTypeId);
         }
 
@@ -170,23 +170,25 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             var bindingKeys = new Dictionary<PeerId, List<Subscription>>();
             if (loadDynamicSubscriptions)
             {
-                using (var cursor = _db.NewIterator(_subscriptionsColumnFamily))
+                using var cursor = _db.NewIterator(_subscriptionsColumnFamily);
+                for (cursor.SeekToFirst(); cursor.Valid(); cursor.Next())
                 {
-                    for (cursor.SeekToFirst(); cursor.Valid(); cursor.Next())
+                    var key = cursor.Key();
+                    var value = cursor.Value();
+                    var peerId = GetPeerIdFromSubscriptionKey(key);
+                    var (bindingKey, messageTypeId) = ReadDynamicSubscription(key, value);
+                    foreach (var subscription in bindingKey.Select(x => new Subscription(messageTypeId, x)))
                     {
-                        var peerId = GetPeerIdFromKey(cursor.Key());
-                        var (bindingKey, messageTypeId) = ReadDynamicSubscription(cursor);
-                        foreach (var subscription in bindingKey.Select(x => new Subscription(messageTypeId, x)))
+                        if (!bindingKeys.TryGetValue(peerId, out var subscriptions))
                         {
-                            if (!bindingKeys.TryGetValue(peerId, out var subscriptions))
-                            {
-                                subscriptions = new List<Subscription>();
-                                bindingKeys.Add(peerId, subscriptions);
-                            }
-                            subscriptions.Add(subscription);
+                            subscriptions = new List<Subscription>();
+                            bindingKeys.Add(peerId, subscriptions);
                         }
-                        cursor.Next();
+
+                        subscriptions.Add(subscription);
                     }
+
+                    cursor.Next();
                 }
             }
 
@@ -205,16 +207,28 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
         public bool? IsPersistent(PeerId peerId) => Get(peerId)?.IsPersistent;
 
-        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc) => throw new NotImplementedException();
-        public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds) => throw new NotImplementedException();
+        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc)
+        {
+            IterateDynamicSubscriptionsForPeer(peerId,
+                                               (key, value) => _db.Remove(key, _subscriptionsColumnFamily));
+        }
+
+        public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds)
+        {
+            IterateDynamicSubscriptionsForPeer(peerId,
+                                               (key, value) =>
+                                               {
+                                                   var messageTypeId = GetMessageTypeIdFromKey(key);
+                                                   if (messageTypeIds.Contains(messageTypeId))
+                                                       _db.Remove(key, _subscriptionsColumnFamily);
+                                               });
+        }
+
         public void RemovePeer(PeerId peerId)
         {
             _db.Remove(GetPeerKey(peerId), _peersColumnFamily);
 
-            IterateDynamicSubscriptions(peerId, cursor =>
-            {
-                _db.Remove(cursor.Key(), _subscriptionsColumnFamily);
-            }); 
+            IterateDynamicSubscriptionsForPeer(peerId, (key, value) => { _db.Remove(key, _subscriptionsColumnFamily); });
         }
 
         public void SetPeerResponding(PeerId peerId, bool isResponding)
@@ -226,6 +240,11 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
         private byte[] GetPeerKey(PeerId peerId) => Encoding.UTF8.GetBytes(peerId.ToString());
         private PeerId GetPeerIdFromKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes));
+        private PeerId GetPeerIdFromSubscriptionKey(byte[] subscriptionKeyBytes)
+        {
+            var peerLength = subscriptionKeyBytes[0];
+            return new PeerId(Encoding.UTF8.GetString(subscriptionKeyBytes, 1, peerLength));
+        }
 
         private byte[] GetSubscriptionKey(PeerId peerId, MessageTypeId messageTypeId)
         {
@@ -234,8 +253,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
             byte[] key = new byte[1 + peerPart.Length + messageTypeIdPart.Length];
             key[0] = (byte)peerPart.Length;
-            Buffer.BlockCopy(peerPart, 0, key, 0, peerPart.Length);
-            Buffer.BlockCopy(messageTypeIdPart, 0, key, peerPart.Length, messageTypeIdPart.Length);
+            Buffer.BlockCopy(peerPart, 0, key, 1, peerPart.Length);
+            Buffer.BlockCopy(messageTypeIdPart, 0, key, 1 + peerPart.Length, messageTypeIdPart.Length);
 
             return key;
         }
@@ -246,7 +265,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
             byte[] key = new byte[1 + peerPart.Length];
             key[0] = (byte)peerPart.Length;
-            Buffer.BlockCopy(peerPart, 0, key, 0, peerPart.Length);
+            Buffer.BlockCopy(peerPart, 0, key, 1, peerPart.Length);
 
             return key;
         }
@@ -268,6 +287,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
                     bindingKeys[keyIndex] = new BindingKey(parts);
                 }
+
                 return bindingKeys;
             }
         }
@@ -286,9 +306,11 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
                     for (var partIndex = 0; partIndex < bindingKey.PartCount; partIndex++)
                         binaryWriter.Write(bindingKey.GetPart(partIndex));
                 }
+
                 return memoryStream.ToArray();
             }
         }
+
         public static bool CompareStart(byte[] x, byte[] y, int length)
         {
             if (x.Length < length || y.Length < length)

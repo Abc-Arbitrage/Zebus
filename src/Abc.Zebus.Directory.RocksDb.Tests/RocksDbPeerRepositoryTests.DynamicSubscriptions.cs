@@ -112,7 +112,6 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
             _repository.AddDynamicSubscriptionsForTypes(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
             _repository.RemoveDynamicSubscriptionsForTypes(pastPeerDescriptor.PeerId, pastPeerDescriptor.TimestampUtc.Value, new[] { MessageUtil.GetTypeId(typeof(int)) });
 
-
             var fetched = _repository.Get(presentPeerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[]
             {
@@ -279,6 +278,23 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         }
 
         [Test]
+        public void should_add_dynamic_subscriptions_with_binding_key()
+        {
+            var firstPeer = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(firstPeer);
+            _repository.AddDynamicSubscriptionsForTypes(firstPeer.PeerId, firstPeer.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
+
+            var fetchedBefore = _repository.GetPeers().ToList();
+            var firstPeerSubs = fetchedBefore.Single(peer => peer.PeerId == firstPeer.PeerId);
+            firstPeerSubs.Subscriptions.Length.ShouldEqual(2);
+            firstPeerSubs.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<FakeCommand>("toto")
+            });
+        }
+
+        [Test]
         public void should_remove_dynamic_subscriptions_for_peer()
         {
             var firstPeer = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
@@ -333,11 +349,11 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         public static PeerDescriptor ToPeerDescriptorWithRoundedTime(this Peer peer, bool isPersistent, params Type[] types)
         {
             return ToPeerDescriptor(peer, isPersistent, types);
-        } 
+        }
 
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, params Type[] types)
         {
             return new PeerDescriptor(peer.Id, "endpoint", isPersistent, true, true, DateTime.UtcNow, types.Select(x => new Subscription(new MessageTypeId(x.FullName))).ToArray());
-        } 
-    } 
+        }
+    }
 }
