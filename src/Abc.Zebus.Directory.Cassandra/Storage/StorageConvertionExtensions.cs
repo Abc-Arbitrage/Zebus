@@ -42,10 +42,9 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
         {
-            if (storagePeer == null)
+            if (storagePeer?.StaticSubscriptionsBytes == null)
                 return null;
-            if (storagePeer.StaticSubscriptionsBytes == null)
-                return null;
+
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
             var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
             return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
@@ -104,10 +103,10 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                 {
                     var partsCount = binaryReader.ReadInt32();
                     var parts = new string[partsCount];
-                    
+
                     for (var partIndex = 0; partIndex < partsCount; partIndex++)
                         parts[partIndex] = binaryReader.ReadString();
-                    
+
                     bindingKeys[keyIndex] = new BindingKey(parts);
                 }
                 return bindingKeys;

@@ -247,7 +247,7 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         }
 
         [Test]
-        public void should_handle_dynamic_subscriptions_with_empty_binding_key_aside_static_one()
+        public void should_handle_dynamic_subscriptions_with_empty_binding_key_beside_static_one()
         {
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
@@ -262,7 +262,7 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         }
 
         [Test]
-        public void should_handle_dynamic_subscriptions_with_empty_binding_key_aside_specific_one()
+        public void should_handle_dynamic_subscriptions_with_empty_binding_key_beside_specific_one()
         {
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);

@@ -71,6 +71,13 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
         public void AddDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subscriptionsForTypes)
         {
+            if (subscriptionsForTypes == null)
+                return;
+
+            var peer = Get(peerId);
+            if (peer?.TimestampUtc > timestampUtc)
+                return;
+
             foreach (var subscription in subscriptionsForTypes)
             {
                 var key = GetSubscriptionKey(peerId, subscription.MessageTypeId);
@@ -111,8 +118,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         private PeerDescriptor DeserialisePeerDescriptor(PeerId peerId, byte[] peerStorageBytes, ICollection<Subscription> dynamicSubscriptions = null)
         {
             var peerStorage = Serializer.Deserialize<RocksDbStoragePeer>(new MemoryStream(peerStorageBytes));
-            var staticSubscriptions = peerStorage.StaticSubscriptions;
-            var subscriptions = staticSubscriptions.Concat(dynamicSubscriptions ?? Enumerable.Empty<Subscription>());
+            var staticSubscriptions = peerStorage.StaticSubscriptions ?? Array.Empty<Subscription>();
+            var subscriptions = staticSubscriptions.Concat(dynamicSubscriptions ?? Array.Empty<Subscription>()).Distinct();
             return new PeerDescriptor(peerId, peerStorage.EndPoint, peerStorage.IsPersistent, peerStorage.IsUp, peerStorage.IsResponding, peerStorage.TimestampUtc, subscriptions.ToArray())
             {
                 HasDebuggerAttached = peerStorage.HasDebuggerAttached,
@@ -215,6 +222,13 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
         public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds)
         {
+            if (messageTypeIds == null)
+                return;
+
+            var peer = Get(peerId);
+            if (peer?.TimestampUtc > timestampUtc)
+                return;
+
             IterateDynamicSubscriptionsForPeer(peerId,
                                                (key, value) =>
                                                {
