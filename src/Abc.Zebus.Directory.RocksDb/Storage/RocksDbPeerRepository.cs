@@ -8,11 +8,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using log4net;
 
 namespace Abc.Zebus.Directory.RocksDb.Storage
 {
     public partial class RocksDbPeerRepository : IPeerRepository, IDisposable
     {
+        private static readonly ILog _log = LogManager.GetLogger(typeof(RocksDbPeerRepository));
+        private const int PeerIdLengthByteCount = 2;
         private RocksDbSharp.RocksDb _db;
 
         /// <summary>
@@ -26,7 +29,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         /// <summary>
         /// Key structure:
         /// -----------------------------------------------------------------------------------
-        /// |  PeerId Length (1 byte)  |  PeerId (n bytes)  |  MessageFullTypeName (n bytes)  |
+        /// |  PeerId (n bytes)  |  MessageFullTypeName (n bytes)  | PeerId Length (2 bytes)  |
         /// -----------------------------------------------------------------------------------
         /// </summary>
         private ColumnFamilyHandle _subscriptionsColumnFamily;
@@ -37,14 +40,14 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         {
         }
 
-        public RocksDbPeerRepository(string databaseDirectoryPath)
+        private RocksDbPeerRepository(string databaseDirectoryPath)
         {
             DatabaseFilePath = databaseDirectoryPath;
+
+            Start();
         }
 
-        internal string DatabaseFilePath { get; }
-
-        public void Start()
+        private void Start()
         {
             var options = new DbOptions().SetCreateIfMissing()
                                          .SetCreateMissingColumnFamilies()
@@ -67,6 +70,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
                                                                                          .SetLevelCompactionDynamicLevelBytes(true)
                                                                                          .SetArenaBlockSize(16 * 1024);
         }
+
+        internal string DatabaseFilePath { get; }
 
         public void AddDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subscriptionsForTypes)
         {
@@ -139,7 +144,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
         private void IterateDynamicSubscriptionsForPeer(PeerId peerId, Action<byte[], byte[]> action)
         {
-            var key = BuildSubscriptionKey(peerId);
+            var key = BuildSubscriptionKeyPrefix(peerId);
             using var cursor = _db.NewIterator(_subscriptionsColumnFamily);
             if (!cursor.Seek(key).Valid())
                 return;
@@ -149,6 +154,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             do
             {
                 currentKey = cursor.Key();
+                Console.WriteLine($"Doing something to key {Encoding.UTF8.GetString(currentKey)}");
                 action(currentKey, cursor.Value());
                 cursor.Next();
             } while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
@@ -163,11 +169,12 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
         private static MessageTypeId GetMessageTypeIdFromKey(byte[] currentKey)
         {
-            var peerIdByteCount = 1 + currentKey[0];
+            var length = ReadPeerIdLength(currentKey);
+            var peerIdByteCount = length + PeerIdLengthByteCount;
             if (currentKey.Length <= peerIdByteCount)
                 throw new ApplicationException("Key does not contain message type id");
 
-            return new MessageTypeId(Encoding.UTF8.GetString(currentKey, peerIdByteCount, currentKey.Length - peerIdByteCount));
+            return new MessageTypeId(Encoding.UTF8.GetString(currentKey, length, currentKey.Length - length - PeerIdLengthByteCount));
         }
 
         public IEnumerable<PeerDescriptor> GetPeers(bool loadDynamicSubscriptions = true)
@@ -248,30 +255,36 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 
         private static PeerId GetPeerIdFromPeerKey(byte[] keyBytes) => new PeerId(Encoding.UTF8.GetString(keyBytes));
 
-        private static PeerId GetPeerIdFromSubscriptionKey(byte[] subscriptionKeyBytes) => new PeerId(Encoding.UTF8.GetString(subscriptionKeyBytes, 1, subscriptionKeyBytes[0]));
+        private static PeerId GetPeerIdFromSubscriptionKey(byte[] subscriptionKeyBytes) => new PeerId(Encoding.UTF8.GetString(subscriptionKeyBytes, 0, ReadPeerIdLength(subscriptionKeyBytes)));
 
         private static byte[] BuildSubscriptionKey(PeerId peerId, MessageTypeId messageTypeId)
         {
             var peerPart = Encoding.UTF8.GetBytes(peerId.ToString());
             var messageTypeIdPart = Encoding.UTF8.GetBytes(messageTypeId.FullName);
 
-            var key = new byte[1 + peerPart.Length + messageTypeIdPart.Length];
-            key[0] = (byte)peerPart.Length;
-            Buffer.BlockCopy(peerPart, 0, key, 1, peerPart.Length);
-            Buffer.BlockCopy(messageTypeIdPart, 0, key, 1 + peerPart.Length, messageTypeIdPart.Length);
+            var key = new byte[peerPart.Length + messageTypeIdPart.Length + PeerIdLengthByteCount];
+            Buffer.BlockCopy(peerPart, 0, key, 0, peerPart.Length);
+            Buffer.BlockCopy(messageTypeIdPart, 0, key, peerPart.Length, messageTypeIdPart.Length);
+            WritePeerIdLength(key, peerPart.Length);
 
             return key;
         }
 
-        private static byte[] BuildSubscriptionKey(PeerId peerId)
+        private static byte[] BuildSubscriptionKeyPrefix(PeerId peerId)
         {
             var peerPart = Encoding.UTF8.GetBytes(peerId.ToString());
-
-            var key = new byte[1 + peerPart.Length];
-            key[0] = (byte)peerPart.Length;
-            Buffer.BlockCopy(peerPart, 0, key, 1, peerPart.Length);
-
+            var key = new byte[peerPart.Length];
+            Buffer.BlockCopy(peerPart, 0, key, 0, peerPart.Length);
             return key;
+        }
+
+        private static short ReadPeerIdLength(byte[] subscriptionKeyBytes) => BitConverter.ToInt16(subscriptionKeyBytes, subscriptionKeyBytes.Length - PeerIdLengthByteCount);
+
+        private static void WritePeerIdLength(byte[] key, int peerPartLength)
+        {
+            var shortLength = (short)peerPartLength;
+            key[key.Length - 2] = (byte)shortLength;
+            key[key.Length - 1] = (byte)((uint)shortLength >> 8);
         }
 
         private static BindingKey[] DeserializeBindingKeys(byte[] bindingKeysBytes)

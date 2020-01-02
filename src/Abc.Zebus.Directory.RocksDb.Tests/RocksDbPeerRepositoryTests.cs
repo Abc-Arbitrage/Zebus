@@ -19,8 +19,7 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         {
             _peer1 = new Peer(new PeerId("Abc.Peer.1"), "tcp://endpoint:123");
             _peer2 = new Peer(new PeerId("Abc.Peer.2"), "tcp://endpoint:123");
-            _repository = new RocksDbPeerRepository("test-database");
-            _repository.Start();
+            _repository = new RocksDbPeerRepository();
         }
 
         [TearDown]
