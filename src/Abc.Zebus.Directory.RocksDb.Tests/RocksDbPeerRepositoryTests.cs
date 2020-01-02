@@ -2,6 +2,7 @@
 using Abc.Zebus.Directory.RocksDb.Storage;
 using Abc.Zebus.Testing.Extensions;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -19,7 +20,8 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         {
             _peer1 = new Peer(new PeerId("Abc.Peer.1"), "tcp://endpoint:123");
             _peer2 = new Peer(new PeerId("Abc.Peer.2"), "tcp://endpoint:123");
-            _repository = new RocksDbPeerRepository();
+            var databaseDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            _repository = new RocksDbPeerRepository(databaseDirectoryPath);
         }
 
         [TearDown]

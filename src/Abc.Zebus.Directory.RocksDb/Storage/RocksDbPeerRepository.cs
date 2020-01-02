@@ -40,7 +40,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         {
         }
 
-        private RocksDbPeerRepository(string databaseDirectoryPath)
+        internal RocksDbPeerRepository(string databaseDirectoryPath)
         {
             DatabaseFilePath = databaseDirectoryPath;
 
