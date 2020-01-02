@@ -19,7 +19,7 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         {
             _peer1 = new Peer(new PeerId("Abc.Peer.1"), "tcp://endpoint:123");
             _peer2 = new Peer(new PeerId("Abc.Peer.2"), "tcp://endpoint:123");
-            _repository = new RocksDbPeerRepository();
+            _repository = new RocksDbPeerRepository("test-database");
             _repository.Start();
         }
 
@@ -151,27 +151,6 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         public void get_persistent_state_when_peer_does_not_exists()
         {
             _repository.IsPersistent(_peer1.Id).ShouldBeNull();
-        }
-
-        [Test]
-        public void should_handle_peers_with_null_subscriptions_gracefully()
-        {
-            var descriptor = CreatePeerDescriptor(_peer1.Id);
-            descriptor.TimestampUtc = DateTime.UtcNow;
-            _repository.AddOrUpdatePeer(descriptor);
-
-            /*DataContext.StoragePeers
-                        .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                        .Where(peer => peer.UselessKey == false && peer.PeerId == "Abc.DecommissionnedPeer.0")
-                        .Select(peer => new StoragePeer { StaticSubscriptionsBytes  = null, IsResponding = false, IsPersistent = false, HasDebuggerAttached = false, IsUp = false })
-                        .Update()
-                        .SetTimestamp(DateTime.UtcNow)
-                        .Execute();*/
-
-            _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
-            _repository.GetPeers().ExpectedSingle().PeerId.ShouldEqual(_peer1.Id);
-
-            throw new NotImplementedException();
         }
 
         private static PeerDescriptor CreatePeerDescriptor(PeerId peerId, bool isPersistent = true, bool isResponding = true)

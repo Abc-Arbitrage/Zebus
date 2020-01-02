@@ -76,13 +76,14 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
 
             _repository.RemovePeer(peerDescriptor.PeerId);
 
+            // Check it was removed
             _repository.Get(peerDescriptor.PeerId).ShouldBeNull();
-            //var retrievedSubscriptions = DataContext.DynamicSubscriptions
-            //                                        .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-            //                                        .Where(sub => sub.UselessKey == false && sub.PeerId == peerDescriptor.PeerId.ToString())
-            //                                        .Execute();
-            //retrievedSubscriptions.ShouldBeEmpty();
-            throw new NotImplementedException();
+
+            // Add it again just with a static subscription and check that it doesn't have any dynamic subscriptions
+            _repository.AddOrUpdatePeer(peerDescriptor);
+            var peerAddedAgain = _repository.Get(peerDescriptor.PeerId);
+            var staticSubscription = peerAddedAgain.Subscriptions.ExpectedSingle();
+            staticSubscription.IsMatchingAllMessages.ShouldBeTrue();
         }
 
         [Test]
@@ -341,7 +342,9 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
             fetched.Subscriptions.ShouldNotBeEmpty();
         }
 
-        private class FakeCommand : ICommand { }
+        private class FakeCommand : ICommand
+        {
+        }
     }
 
     public static class PeerExtensions
