@@ -12,9 +12,9 @@ using ProtoBuf;
 
 namespace Abc.Zebus.Tests
 {
-    public static class Program
+    public class Program
     {
-        public static void MainLol(string[] args)
+        public static void Main(string[] args)
         {
             new Log4netConfigurator().Setup();
 
@@ -23,21 +23,25 @@ namespace Abc.Zebus.Tests
                 RunReceiver();
                 return;
             }
+
             if (args.FirstOrDefault() == "/send")
             {
                 RunSender();
                 return;
             }
+
             if (args.FirstOrDefault() == "/receive-routed")
             {
                 RunRoutedReceiver();
                 return;
             }
+
             if (args.FirstOrDefault() == "/send-routed")
             {
                 SendRoutedMessage();
                 return;
             }
+
             if (args.FirstOrDefault() == "/send-local")
             {
                 RunLocalDispatch();
@@ -53,8 +57,8 @@ namespace Abc.Zebus.Tests
         private static void RunLocalDispatch()
         {
             var bus = new BusFactory()
-               .WithHandlers(typeof(BusPerformanceTests.PerfHandler))
-               .CreateAndStartInMemoryBus();
+                      .WithHandlers(typeof(BusPerformanceTests.PerfHandler))
+                      .CreateAndStartInMemoryBus();
 
             Console.WriteLine("Press any key to start");
             Console.ReadKey();
@@ -158,16 +162,18 @@ namespace Abc.Zebus.Tests
         private static IBus CreateAndStartSender()
         {
             return new BusFactory()
-                .WithPeerId("Abc.Zebus.Test.Sender.*")
-                .CreateAndStartBus();
+                   .WithConfiguration("tcp://localhost:129", "Demo")
+                   .WithPeerId("Abc.Zebus.Test.Sender.*")
+                   .CreateAndStartBus();
         }
 
         private static IBus CreateAndStartReceiver()
         {
             return new BusFactory()
-                .WithPeerId("Abc.Zebus.Test.Receiver.*")
-                .WithHandlers(typeof(RoutableCommandHandler))
-                .CreateAndStartBus();
+                   .WithConfiguration("tcp://localhost:129", "Demo")
+                   .WithPeerId("Abc.Zebus.Test.Receiver.*")
+                   .WithHandlers(typeof(RoutableCommandHandler))
+                   .CreateAndStartBus();
         }
 
         [ProtoContract, Routable]
