@@ -115,6 +115,7 @@ namespace Abc.Zebus.Core
                         return dispatcher;
                     }
                 );
+                x.ForSingletonOf<ISnapshotGeneratorLoader>().Use<SnapshotGeneratorLoader>();
             });
 
             foreach (var configurationAction in _configurationActions)

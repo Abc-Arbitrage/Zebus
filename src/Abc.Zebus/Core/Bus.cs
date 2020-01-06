@@ -44,7 +44,14 @@ namespace Abc.Zebus.Core
         private int _subscriptionsVersion;
         private int _status;
 
-        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
+        public Bus(ITransport transport,
+                   IPeerDirectory directory,
+                   IMessageSerializer serializer,
+                   IMessageDispatcher messageDispatcher,
+                   IMessageSendingStrategy messageSendingStrategy,
+                   IStoppingStrategy stoppingStrategy,
+                   IBindingKeyPredicateBuilder predicateBuilder,
+                   IBusConfiguration configuration)
         {
             _transport = transport;
             _transport.MessageReceived += OnTransportMessageReceived;

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Abc.Zebus.Scan;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -26,14 +27,16 @@ namespace Abc.Zebus.Directory
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
+        private readonly ISnapshotGeneratorLoader _snapshotGeneratorLoader;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
 
-        public PeerDirectoryClient(IBusConfiguration configuration)
+        public PeerDirectoryClient(IBusConfiguration configuration, ISnapshotGeneratorLoader snapshotGeneratorLoader)
         {
             _configuration = configuration;
+            _snapshotGeneratorLoader = snapshotGeneratorLoader;
         }
 
         public event Action<PeerId, PeerUpdateAction> PeerUpdated;
@@ -277,6 +280,9 @@ namespace Abc.Zebus.Directory
                 return;
 
             AddOrUpdatePeerEntry(message.PeerDescriptor);
+
+            // TODO get snapshot generator for all message types that have a snapshot generator defined
+
             PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
         }
 
