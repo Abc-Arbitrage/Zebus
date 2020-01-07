@@ -5,7 +5,7 @@ using StructureMap;
 
 namespace Abc.Zebus.Scan
 {
-    public interface ISnapshotGeneratorLoader
+    /*public interface ISnapshotGeneratorLoader
     {
     }
 
@@ -42,5 +42,5 @@ namespace Abc.Zebus.Scan
 
             return null;
         }
-    }
+    }*/
 }

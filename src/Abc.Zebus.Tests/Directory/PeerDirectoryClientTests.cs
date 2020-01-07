@@ -4,10 +4,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
+using Abc.Zebus.Snapshotting;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Tests.Scan;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using Moq;
@@ -26,6 +29,49 @@ namespace Abc.Zebus.Tests.Directory
         private TestBus _bus;
         private Peer _self;
         private Peer _otherPeer;
+        private Mock<IMessageDispatcher> _messageDispatcher;
+
+        class MySnapGen : SubscriptionSnapshotGenerator<MessageHandlerInvokerLoaderTests.TestMessage>
+        {
+            public MySnapGen(IBus bus)
+                : base(bus)
+            {
+            }
+
+            protected override MessageHandlerInvokerLoaderTests.TestMessage GenerateSnapshot(Subscription subscription, PeerId peer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        class MyHandler: IMessageHandler<MessageHandlerInvokerLoaderTests.TestMessage>
+        {
+            public void Handle(MessageHandlerInvokerLoaderTests.TestMessage message)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [Test]
+        public void should_test()
+        {
+            // Arrange
+            var types = new []{ typeof(MySnapGen), typeof(string), typeof(MyHandler) };
+
+            var handled = types.Select(x => x.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionSnapshotGenerator<>))?.GenericTypeArguments[0])
+                               .Where(x => x != null)
+                               .ToList();
+
+            // Act
+
+            foreach (var type in handled)
+            {
+                Console.WriteLine(type);
+            }
+
+            // Assert
+        }
+
 
         [SetUp]
         public void Setup()
@@ -35,9 +81,9 @@ namespace Abc.Zebus.Tests.Directory
             _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(500.Milliseconds());
             _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(false);
 
-            _directory = new PeerDirectoryClient(_configurationMock.Object);
+            _messageDispatcher = new Mock<IMessageDispatcher>();
+            _directory = new PeerDirectoryClient(_configurationMock.Object, _messageDispatcher.Object);
             _bus = new TestBus();
-
             _self = new Peer(new PeerId("Abc.Testing.0"), "tcp://abctest:123");
             _otherPeer = new Peer(new PeerId("Abc.Testing.1"), "tcp://abctest:789");
         }

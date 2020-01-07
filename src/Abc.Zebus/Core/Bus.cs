@@ -20,7 +20,7 @@ using Newtonsoft.Json;
 
 namespace Abc.Zebus.Core
 {
-    public class Bus : IBus, IMessageDispatchFactory
+    public class Bus : IInternalBus, IMessageDispatchFactory
     {
         private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(Bus));
         private static readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
@@ -223,10 +223,22 @@ namespace Abc.Zebus.Core
 
         public void Publish(IEvent message)
         {
+            PublishInternal(message, null);
+        }
+
+        public void Publish(IEvent message, PeerId targetPeerId)
+        {
+            PublishInternal(message, targetPeerId);
+        }
+
+        private void PublishInternal(IEvent message, PeerId? targetPeerId)
+        {
             if (!IsRunning)
                 throw new InvalidOperationException("Unable to publish message, the bus is not running");
 
-            var peersHandlingMessage = _directory.GetPeersHandlingMessage(message);
+            var peersHandlingMessage = _directory.GetPeersHandlingMessage(message)
+                                                 .Where(peer => targetPeerId == null || peer.Id == targetPeerId)
+                                                 .ToList();
 
             var localDispatchEnabled = LocalDispatch.Enabled;
             var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == PeerId);

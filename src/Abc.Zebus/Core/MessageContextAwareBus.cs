@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Abc.Zebus.Core
 {
-    public class MessageContextAwareBus : IBus
+    public class MessageContextAwareBus : IInternalBus
     {
         private readonly IBus _bus;
         public readonly MessageContext MessageContext;
@@ -89,6 +89,14 @@ namespace Abc.Zebus.Core
         {
             add => _bus.Stopped += value;
             remove => _bus.Stopped -= value;
+        }
+
+        public void Publish(IEvent message, PeerId targetPeer)
+        {
+            if (_bus is IInternalBus bus)
+                bus.Publish(message, targetPeer);
+            else
+                throw new NotImplementedException("Inner bus is not IInternalBus");
         }
 
         public void Dispose() => _bus.Dispose();

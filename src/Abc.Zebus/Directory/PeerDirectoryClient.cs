@@ -4,7 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Scan;
+using Abc.Zebus.Serialization;
+using Abc.Zebus.Snapshotting;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -27,16 +30,16 @@ namespace Abc.Zebus.Directory
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
-        private readonly ISnapshotGeneratorLoader _snapshotGeneratorLoader;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
+        private IMessageDispatcher _messageDispatcher;
 
-        public PeerDirectoryClient(IBusConfiguration configuration, ISnapshotGeneratorLoader snapshotGeneratorLoader)
+        public PeerDirectoryClient(IBusConfiguration configuration, IMessageDispatcher messageDispatcher)
         {
             _configuration = configuration;
-            _snapshotGeneratorLoader = snapshotGeneratorLoader;
+            _messageDispatcher = messageDispatcher;
         }
 
         public event Action<PeerId, PeerUpdateAction> PeerUpdated;
@@ -281,9 +284,27 @@ namespace Abc.Zebus.Directory
 
             AddOrUpdatePeerEntry(message.PeerDescriptor);
 
-            // TODO get snapshot generator for all message types that have a snapshot generator defined
+            DispatchSubscriptionUpdatedMessages(message.PeerDescriptor.PeerId, message.PeerDescriptor.Subscriptions);
 
             PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
+        }
+
+        private void DispatchSubscriptionUpdatedMessages(PeerId peerId, Subscription[] subscriptions)
+        {
+            var snapshotGeneratorMessageTypes = _messageDispatcher.GetMessageHanlerInvokers()
+                                                                  .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionSnapshotGenerator<>))?.GenericTypeArguments[0])
+                                                                  .Where(x => x != null)
+                                                                  .ToHashSet();
+
+            var messageContext = MessageContext.Current;
+            foreach (var subscription in subscriptions)
+            {
+                if (!snapshotGeneratorMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
+                    continue;
+
+                var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
+                _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
+            }
         }
 
         private bool EnqueueIfRegistering(IEvent message)
@@ -356,6 +377,8 @@ namespace Abc.Zebus.Directory
             peer.Value.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
             peer.Value.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
+            DispatchSubscriptionUpdatedMessages(message.PeerDescriptor.PeerId, message.PeerDescriptor.Subscriptions);
+
             PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
         }
 
@@ -372,6 +395,8 @@ namespace Abc.Zebus.Directory
             }
 
             peer.Value.SetSubscriptionsForType(message.SubscriptionsForType ?? Enumerable.Empty<SubscriptionsForType>(), message.TimestampUtc);
+
+            //DispatchSubscriptionUpdatedMessages((message.PeerId, message.SubscriptionsForType); // TODO
 
             PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
         }

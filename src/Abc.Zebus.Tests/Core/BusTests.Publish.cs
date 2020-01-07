@@ -52,6 +52,18 @@ namespace Abc.Zebus.Tests.Core
                     destination.ShouldHaveSamePropertiesAs(_peerUp);
                 }
             }
+
+            [Test]
+            public void should_publish_a_message_to_specific_peer()
+            {
+                // Arrange
+                throw new NotImplementedException();
+
+                // Act
+
+                // Assert
+            }
+
         }
     }
 }
