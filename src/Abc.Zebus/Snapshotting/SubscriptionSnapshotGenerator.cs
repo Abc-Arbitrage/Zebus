@@ -1,8 +1,10 @@
 using System;
+using Abc.Zebus.Directory;
 
 namespace Abc.Zebus.Snapshotting
 {
-    public abstract class SubscriptionSnapshotGenerator<TMessage> : ISubscriptionHandler
+    public abstract class SubscriptionSnapshotGenerator<TSnapshotMessage, TMessage> : ISubscriptionHandler
+        where TSnapshotMessage : IEvent
         where TMessage : IEvent
     {
         private readonly IBus _bus;
@@ -24,6 +26,12 @@ namespace Abc.Zebus.Snapshotting
                 throw new Exception("The bus is not an internal bus");
         }
 
-        protected abstract TMessage GenerateSnapshot(Subscription subscription, PeerId peer);
+        /// <summary>
+        /// Generate a snapshot for the given subscription
+        /// </summary>
+        /// <param name="messageSubscription">The subscription of <see cref="TMessage"/></param>
+        /// <param name="peer">The peer that subscribed</param>
+        /// <returns>An instance of the snapshot message</returns>
+        protected abstract TSnapshotMessage GenerateSnapshot(SubscriptionsForType messageSubscription, PeerId peer);
     }
 }

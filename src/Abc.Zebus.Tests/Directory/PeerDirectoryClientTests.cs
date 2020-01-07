@@ -31,14 +31,24 @@ namespace Abc.Zebus.Tests.Directory
         private Peer _otherPeer;
         private Mock<IMessageDispatcher> _messageDispatcher;
 
-        class MySnapGen : SubscriptionSnapshotGenerator<MessageHandlerInvokerLoaderTests.TestMessage>
+        class MySnap : IEvent
+        {
+
+        }
+
+        class MyMessage : IEvent
+        {
+
+        }
+
+        class MySnapGen : SubscriptionSnapshotGenerator<MySnap, MyMessage>
         {
             public MySnapGen(IBus bus)
                 : base(bus)
             {
             }
 
-            protected override MessageHandlerInvokerLoaderTests.TestMessage GenerateSnapshot(Subscription subscription, PeerId peer)
+            protected override MySnap GenerateSnapshot(SubscriptionsForType subscription, PeerId peer)
             {
                 throw new NotImplementedException();
             }
@@ -58,7 +68,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var types = new []{ typeof(MySnapGen), typeof(string), typeof(MyHandler) };
 
-            var handled = types.Select(x => x.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionSnapshotGenerator<>))?.GenericTypeArguments[0])
+            var handled = types.Select(x => x.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionSnapshotGenerator<,>))?.GenericTypeArguments[1])
                                .Where(x => x != null)
                                .ToList();
 
