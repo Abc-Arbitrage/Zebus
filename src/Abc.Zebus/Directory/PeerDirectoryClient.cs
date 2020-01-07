@@ -31,10 +31,10 @@ namespace Abc.Zebus.Directory
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
+        private readonly IMessageDispatcher _messageDispatcher;
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
-        private IMessageDispatcher _messageDispatcher;
 
         public PeerDirectoryClient(IBusConfiguration configuration, IMessageDispatcher messageDispatcher)
         {
@@ -275,6 +275,8 @@ namespace Abc.Zebus.Directory
                                                });
 
             peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
+
+            DispatchSubscriptionUpdatedMessages(peerDescriptor.PeerId, subscriptions);
         }
 
         public void Handle(PeerStarted message)
@@ -284,8 +286,6 @@ namespace Abc.Zebus.Directory
 
             AddOrUpdatePeerEntry(message.PeerDescriptor);
 
-            DispatchSubscriptionUpdatedMessages(message.PeerDescriptor.PeerId, message.PeerDescriptor.Subscriptions);
-
             PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
         }
 
@@ -293,7 +293,7 @@ namespace Abc.Zebus.Directory
         {
             var snapshotGeneratingMessageTypes = GetSnapshotGeneratingMessageTypes();
 
-            var messageContext = MessageContext.Current;
+            var messageContext = GetMessageContextForSubscriptionUpdated();
             foreach (var subscription in subscriptions)
             {
                 if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
@@ -304,12 +304,13 @@ namespace Abc.Zebus.Directory
             }
         }
 
+        private MessageContext GetMessageContextForSubscriptionUpdated() => MessageContext.Current ?? MessageContext.CreateOverride(_self.Id, _self.EndPoint);
 
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, SubscriptionsForType[] subscriptions)
         {
             var snapshotGeneratingMessageTypes = GetSnapshotGeneratingMessageTypes();
 
-            var messageContext = MessageContext.Current;
+            var messageContext = GetMessageContextForSubscriptionUpdated();
             foreach (var subscription in subscriptions)
             {
                 if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
