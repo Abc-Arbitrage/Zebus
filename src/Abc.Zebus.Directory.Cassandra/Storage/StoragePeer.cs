@@ -11,10 +11,10 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         [ClusteringKey(0)]
         [Column("PeerId")]
-        public string PeerId { get; set; }
+        public string PeerId { get; set; } = default!;
 
         [Column("EndPoint")]
-        public string EndPoint { get; set; }
+        public string EndPoint { get; set; } = default!;
 
         [Column("IsUp")]
         public bool IsUp { get; set; }
@@ -32,10 +32,6 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         public bool HasDebuggerAttached { get; set; }
 
         [Column("StaticSubscriptions")]
-        public byte[] StaticSubscriptionsBytes { get; set; }
-
-        public StoragePeer()
-        {
-        }
+        public byte[] StaticSubscriptionsBytes { get; set; } = default!;
     }
 }

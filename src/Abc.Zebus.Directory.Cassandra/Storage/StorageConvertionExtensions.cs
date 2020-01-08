@@ -30,7 +30,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             return new StorageSubscription
             {
                 PeerId = peerId.ToString(),
-                MessageTypeId = subscriptionFortype.MessageTypeId.FullName,
+                MessageTypeId = subscriptionFortype.MessageTypeId.FullName!,
                 SubscriptionBindings = SerializeBindingKeys(subscriptionFortype.BindingKeys)
             };
         }
@@ -40,22 +40,22 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             return new SubscriptionsForType(new MessageTypeId(storageSubscription.MessageTypeId), DeserializeBindingKeys(storageSubscription.SubscriptionBindings));
         }
 
-        public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
+        public static PeerDescriptor? ToPeerDescriptor(this StoragePeer? storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
         {
-            if (storagePeer == null)
+            if (storagePeer?.StaticSubscriptionsBytes == null)
                 return null;
-            if (storagePeer.StaticSubscriptionsBytes == null)
-                return null;
+
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
             var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
             return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
                                       storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
-        public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer)
+        public static PeerDescriptor? ToPeerDescriptor(this StoragePeer? storagePeer)
         {
             if (storagePeer == null)
                 return null;
+
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
             return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
                                       storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), staticSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
@@ -104,10 +104,10 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                 {
                     var partsCount = binaryReader.ReadInt32();
                     var parts = new string[partsCount];
-                    
+
                     for (var partIndex = 0; partIndex < partsCount; partIndex++)
                         parts[partIndex] = binaryReader.ReadString();
-                    
+
                     bindingKeys[keyIndex] = new BindingKey(parts);
                 }
                 return bindingKeys;
