@@ -22,7 +22,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private readonly IPeerRepository _peerRepository;
         private readonly IDirectoryConfiguration _configuration;
         private readonly TimeSpan _detectionPeriod = 5.Seconds();
-        private Thread _detectionThread;
+        private Thread? _detectionThread;
         private DateTime? _lastPingTimeUtc;
         private bool _isRunning;
 
@@ -35,9 +35,9 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             TaskScheduler = TaskScheduler.Current;
         }
 
-        public event Action<Exception> Error;
-        public event Action PersistenceDownDetected;
-        public event Action<PeerId, DateTime> PingTimeout;
+        public event Action<Exception>? Error;
+        public event Action? PersistenceDownDetected;
+        public event Action<PeerId, DateTime>? PingTimeout;
 
         public TaskScheduler TaskScheduler { get; set; }
         public IEnumerable<PeerId> KnownPeerIds => _peers.Keys;
@@ -49,7 +49,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                                          .Where(peer => peer.Subscriptions.All(sub => sub.MessageTypeId != MessageUtil.TypeId<RegisterPeerCommand>()))
                                          .Select(ToPeerEntry)
                                          .ToList();
-            
+
             var shouldSendPing = ShouldSendPing(timestampUtc);
             if (shouldSendPing)
                 _lastPingTimeUtc = timestampUtc;
@@ -90,7 +90,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 return;
             }
 
-            var canPeerBeUnregistered = (!descriptor.IsPersistent || descriptor.HasDebuggerAttached) && IsNotIntheProtectedList(descriptor);
+            var canPeerBeUnregistered = (!descriptor.IsPersistent || descriptor.HasDebuggerAttached) && IsNotInTheProtectedList(descriptor);
             if (canPeerBeUnregistered)
             {
                 _bus.Send(new UnregisterPeerCommand(descriptor.Peer, timeoutTimestampUtc));
@@ -102,13 +102,13 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
         }
 
-        private bool IsNotIntheProtectedList(PeerDescriptor descriptor)
+        private bool IsNotInTheProtectedList(PeerDescriptor descriptor)
         {
             var peerId = descriptor.PeerId.ToString();
             return !_configuration.WildcardsForPeersNotToDecommissionOnTimeout.Any(x => Operators.LikeString(peerId, x, CompareMethod.Text));
         }
 
-        private void OnPeerResponding(DeadPeerDetectorEntry entry,DateTime timeoutTimestampUtc)
+        private void OnPeerResponding(DeadPeerDetectorEntry entry, DateTime timeoutTimestampUtc)
         {
             _bus.Send(new MarkPeerAsRespondingCommand(entry.Descriptor.PeerId, timeoutTimestampUtc)).Wait(_commandTimeout);
         }
@@ -132,7 +132,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         public void Stop()
         {
             _isRunning = false;
-            if (!_detectionThread.Join(2000))
+            if (_detectionThread != null && !_detectionThread.Join(2000))
                 _logger.Warn("Unable to terminate MainLoop");
         }
 
@@ -167,6 +167,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                     OnError(ex);
                 }
             }
+
             _logger.Info("MainLoop stopped");
         }
 

@@ -22,13 +22,13 @@ namespace Abc.Zebus.Directory.Configuration
             MaxAllowedClockDifferenceWhenRegistering = appSettings.Get<TimeSpan?>("Directory.MaxAllowedClockDifferenceWhenRegistering", null);
         }
 
-        public TimeSpan PeerPingInterval { get; private set; }
-        public TimeSpan TransientPeerPingTimeout { get; private set; }
-        public TimeSpan PersistentPeerPingTimeout { get; private set; }
-        public TimeSpan DebugPeerPingTimeout { get; private set; }
-        public string[] BlacklistedMachines { get; private set; }
-        public string[] WildcardsForPeersNotToDecommissionOnTimeout { get; private set; }
-        public bool DisableDynamicSubscriptionsForDirectoryOutgoingMessages { get; private set; }
+        public TimeSpan PeerPingInterval { get; }
+        public TimeSpan TransientPeerPingTimeout { get; }
+        public TimeSpan PersistentPeerPingTimeout { get; }
+        public TimeSpan DebugPeerPingTimeout { get; }
+        public string[] BlacklistedMachines { get; }
+        public string[] WildcardsForPeersNotToDecommissionOnTimeout { get; }
+        public bool DisableDynamicSubscriptionsForDirectoryOutgoingMessages { get; }
         public TimeSpan? MaxAllowedClockDifferenceWhenRegistering { get; }
     }
 }

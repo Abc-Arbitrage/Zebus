@@ -19,13 +19,13 @@ namespace Abc.Zebus.Directory.Configuration
             MessagesBatchSize = appSettings.Get("Bus.MessagesBatchSize", 100);
         }
 
-        public string[] DirectoryServiceEndPoints { get { return new string[0]; } }
-        public bool IsPersistent { get { return false; } }
+        public string[] DirectoryServiceEndPoints => Array.Empty<string>();
+        public bool IsPersistent => false;
 
-        public TimeSpan RegistrationTimeout { get; private set; }
-        public TimeSpan StartReplayTimeout { get; private set; }
-        public bool IsDirectoryPickedRandomly { get; private set; }
-        public bool IsErrorPublicationEnabled { get; private set; }
-        public int MessagesBatchSize { get; private set; }
+        public TimeSpan RegistrationTimeout { get; }
+        public TimeSpan StartReplayTimeout { get; }
+        public bool IsDirectoryPickedRandomly { get; }
+        public bool IsErrorPublicationEnabled { get; }
+        public int MessagesBatchSize { get; }
     }
 }

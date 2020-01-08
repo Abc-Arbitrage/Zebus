@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Directory.Handlers
             _blacklistedMachines = configuration.BlacklistedMachines.ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
-        public MessageContext Context { get; set; }
+        public MessageContext Context { get; set; } = default!;
 
         public void Handle(DecommissionPeerCommand message)
         {
@@ -45,7 +45,7 @@ namespace Abc.Zebus.Directory.Handlers
 
         public void Handle(RegisterPeerCommand message)
         {
-            if (_blacklistedMachines.Contains(Context.Originator.SenderMachineName))
+            if (_blacklistedMachines.Contains(Context.Originator.SenderMachineName!))
                 throw new InvalidOperationException($"Peer {Context.SenderId} on host {Context.Originator.SenderMachineName} is not allowed to register on this directory");
 
             var peerTimestampUtc = message.Peer.TimestampUtc;
@@ -65,7 +65,7 @@ namespace Abc.Zebus.Directory.Handlers
             if (IsPeerInConflict(existingPeer, peerDescriptor))
                 throw new DomainException(DirectoryErrorCodes.PeerAlreadyExists, string.Format("Peer {0} already exists (running on {1})", peerDescriptor.PeerId, existingPeer.Peer.EndPoint));
 
-            _peerRepository.RemoveAllDynamicSubscriptionsForPeer(peerDescriptor.PeerId, DateTime.SpecifyKind(peerDescriptor.TimestampUtc.Value, DateTimeKind.Utc));
+            _peerRepository.RemoveAllDynamicSubscriptionsForPeer(peerDescriptor.PeerId, DateTime.SpecifyKind(peerDescriptor.TimestampUtc!.Value, DateTimeKind.Utc));
             _peerRepository.AddOrUpdatePeer(peerDescriptor);
             _bus.Publish(new PeerStarted(peerDescriptor));
 
@@ -97,7 +97,7 @@ namespace Abc.Zebus.Directory.Handlers
             _speedReporter.ReportSubscriptionUpdateDuration(stopwatch.Elapsed);
         }
 
-        private bool IsPeerInConflict(PeerDescriptor existingPeer, PeerDescriptor peerToAdd)
+        private static bool IsPeerInConflict([NotNullWhen(true)] PeerDescriptor? existingPeer, PeerDescriptor peerToAdd)
         {
             return existingPeer != null &&
                    existingPeer.Peer.IsResponding &&

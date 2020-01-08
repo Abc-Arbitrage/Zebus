@@ -21,7 +21,7 @@ namespace Abc.Zebus.Directory
         private readonly IDirectoryConfiguration _configuration;
         private readonly IPeerRepository _peerRepository;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
-        private Peer _self;
+        private Peer _self = default!;
 
         public PeerDirectoryServer(IDirectoryConfiguration configuration, IPeerRepository peerRepository)
         {
@@ -29,8 +29,8 @@ namespace Abc.Zebus.Directory
             _peerRepository = peerRepository;
         }
 
-        public event Action Registered;
-        public event Action<PeerId, PeerUpdateAction> PeerUpdated;
+        public event Action? Registered;
+        public event Action<PeerId, PeerUpdateAction>? PeerUpdated;
 
         public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
@@ -52,7 +52,7 @@ namespace Abc.Zebus.Directory
             return _peerRepository.IsPersistent(peerId).GetValueOrDefault();
         }
 
-        public PeerDescriptor GetPeerDescriptor(PeerId peerId)
+        public PeerDescriptor? GetPeerDescriptor(PeerId peerId)
         {
             return _peerRepository.Get(peerId);
         }

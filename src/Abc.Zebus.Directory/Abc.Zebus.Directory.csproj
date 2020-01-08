@@ -4,6 +4,7 @@
     <TargetFramework>net461</TargetFramework>
     <PackageId>Zebus.Directory</PackageId>
     <Version>$(ZebusDirectoryVersion)</Version>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

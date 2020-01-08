@@ -24,9 +24,9 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             _taskScheduler = taskScheduler;
         }
 
-        public event Action<DeadPeerDetectorEntry, DateTime> PeerTimeoutDetected;
-        public event Action<DeadPeerDetectorEntry, DateTime> PeerRespondingDetected;
-        public event Action<DeadPeerDetectorEntry, DateTime> PingTimeout;
+        public event Action<DeadPeerDetectorEntry, DateTime>? PeerTimeoutDetected;
+        public event Action<DeadPeerDetectorEntry, DateTime>? PeerRespondingDetected;
+        public event Action<DeadPeerDetectorEntry, DateTime>? PingTimeout;
 
         public PeerDescriptor Descriptor { get; set; }
         public DeadPeerStatus Status { get; private set; }
