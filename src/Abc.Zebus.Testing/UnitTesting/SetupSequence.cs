@@ -20,7 +20,7 @@ namespace Abc.Zebus.Testing.UnitTesting
         private int _expectedOrderSequence;
         private int _order;
 
-        public Action GetCallback(string expression = null)
+        public Action GetCallback(string? expression = null)
         {
             var expectedOrder = _expectedOrderSequence;
             ++_expectedOrderSequence;

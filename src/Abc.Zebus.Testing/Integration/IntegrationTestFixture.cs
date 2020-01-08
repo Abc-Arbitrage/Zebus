@@ -8,6 +8,8 @@ using Abc.Zebus.Core;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 
+#nullable disable
+
 namespace Abc.Zebus.Testing.Integration
 {
     [TestFixture]
@@ -20,7 +22,7 @@ namespace Abc.Zebus.Testing.Integration
 
         [SetUp]
         public void Setup()
-        { 
+        {
             KillInstance(@"\\integration_tests");
             _testStopwatch = Stopwatch.StartNew();
 
@@ -37,7 +39,7 @@ namespace Abc.Zebus.Testing.Integration
             _controlBus.Stop();
             _directoryServiceController.Stop();
             _directoryServiceController.Dispose();
-            
+
             Log("Integration test lasted " + _testStopwatch.Elapsed);
             KillInstance(@"\\integration_tests");
         }
@@ -81,24 +83,24 @@ namespace Abc.Zebus.Testing.Integration
         protected void NinjaLog(string text)
         {
             Console.WriteLine(@"
-      ___                                                             
-     /___\_/                                                          
-     |\_/|<\                              
-     (`o`) `   __(\_            |\_    " + DateTime.Now.ToString("HH:mm:ss.fff") + @"                               
-     \ ~ /_.-`` _|__)  ( ( ( ( /()/    " + text + @"                                
-    _/`-`  _.-``               `\|  
- .-`      (    .-.                                                    
-(   .-     \  /   `-._                                                
- \  (\_    /\/        `-.__-()                                        
-  `-|__)__/ /  /``-.   /_____8                                        
-        \__/  /     `-`                                               
-       />|   /                                                        
-      /| J   L                                                        
-      `` |   |                                                        
-         L___J                                                        
-          ( |                       
-         .oO() 
-______________________________________________________________________________                                                       
+      ___
+     /___\_/
+     |\_/|<\
+     (`o`) `   __(\_            |\_    " + DateTime.Now.ToString("HH:mm:ss.fff") + @"
+     \ ~ /_.-`` _|__)  ( ( ( ( /()/    " + text + @"
+    _/`-`  _.-``               `\|
+ .-`      (    .-.
+(   .-     \  /   `-._
+ \  (\_    /\/        `-.__-()
+  `-|__)__/ /  /``-.   /_____8
+        \__/  /     `-`
+       />|   /
+      /| J   L
+      `` |   |
+         L___J
+          ( |
+         .oO()
+______________________________________________________________________________
 ");
         }
 
@@ -143,7 +145,7 @@ ______________________________________________________________________________
 
                 position += srcDirName.Length;
             }
-            
+
             throw new Exception();
         }
 

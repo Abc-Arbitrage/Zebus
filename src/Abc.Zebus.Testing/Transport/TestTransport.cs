@@ -84,7 +84,7 @@ namespace Abc.Zebus.Testing.Transport
             if (peerList.Any() || context.PersistencePeer != null)
                 _messages.Add(new TransportMessageSent(message, peerList, context));
 
-            var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.Content);
+            var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.Content!);
             if (deserializedMessage != null)
                 MessagesSent.Add(deserializedMessage);
         }
@@ -116,7 +116,7 @@ namespace Abc.Zebus.Testing.Transport
 
         public void ExpectNothing()
         {
-            NUnitExtensions.ShouldBeEmpty(Messages, "Messages not empty. Content:" + Environment.NewLine + string.Join(Environment.NewLine, Messages.Select(msg => msg.TransportMessage.MessageTypeId.GetMessageType().Name)));
+            NUnitExtensions.ShouldBeEmpty(Messages, "Messages not empty. Content:" + Environment.NewLine + string.Join(Environment.NewLine, Messages.Select(msg => msg.TransportMessage.MessageTypeId.GetMessageType()?.Name)));
         }
 
         public void Expect(params TransportMessageSent[] expectedMessages)
@@ -132,7 +132,7 @@ namespace Abc.Zebus.Testing.Transport
             {
                 var matchingMessage = Messages.FirstOrDefault(x => comparer.Compare(notExpectedMessage, x).AreEqual);
                 if (matchingMessage != null)
-                    Assert.Fail("Found message matching " + notExpectedMessage.TransportMessage.MessageTypeId.GetMessageType().Name);
+                    Assert.Fail("Found message matching " + notExpectedMessage.TransportMessage.MessageTypeId.GetMessageType()?.Name);
             }
         }
     }

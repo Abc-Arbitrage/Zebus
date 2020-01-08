@@ -6,9 +6,9 @@ using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util.Extensions;
-using NUnit.Framework;
 using AutoFixture;
 using AutoFixture.Kernel;
+using NUnit.Framework;
 
 namespace Abc.Zebus.Testing
 {
@@ -44,6 +44,7 @@ namespace Abc.Zebus.Testing
         }
 
         public static void CheckSerializationFor<T>(T obj)
+            where T : notnull
         {
             var fixture = BuildFixture();
 
@@ -69,7 +70,7 @@ namespace Abc.Zebus.Testing
             method.Invoke(null, new[] { fixture, obj });
         }
 
-        private static void CheckSerializationForType(Fixture fixture, Type messageType, object message = null)
+        private static void CheckSerializationForType(Fixture fixture, Type messageType, object? message = null)
         {
             Console.Write("Testing {0} ", messageType.Name);
 

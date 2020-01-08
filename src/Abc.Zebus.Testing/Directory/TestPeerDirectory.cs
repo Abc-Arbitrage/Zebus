@@ -12,7 +12,7 @@ namespace Abc.Zebus.Testing.Directory
     public class TestPeerDirectory : IPeerDirectory
     {
         public readonly ConcurrentDictionary<PeerId, PeerDescriptor> Peers = new ConcurrentDictionary<PeerId, PeerDescriptor>();
-        public Peer Self;
+        public Peer Self = default!;
         private readonly Peer _remote = new Peer(new PeerId("remote"), "endpoint");
 
         public event Action Registered = delegate { };
@@ -34,7 +34,7 @@ namespace Abc.Zebus.Testing.Directory
             var newSubscriptions = SubscriptionsForType.CreateDictionary(Peers[Self.Id].Subscriptions);
             foreach (var subscriptionsForType in subscriptionsForTypes)
                 newSubscriptions[subscriptionsForType.MessageTypeId] = subscriptionsForType;
-            
+
             Peers[Self.Id] = Self.ToPeerDescriptor(true, newSubscriptions.Values.SelectMany(subForType => subForType.ToSubscriptions()));
             PeerUpdated(Self.Id, PeerUpdateAction.Updated);
             return Task.CompletedTask;
@@ -72,7 +72,7 @@ namespace Abc.Zebus.Testing.Directory
             return Peers.TryGetValue(peerId, out var peer) && peer.IsPersistent;
         }
 
-        public PeerDescriptor GetPeerDescriptor(PeerId peerId)
+        public PeerDescriptor? GetPeerDescriptor(PeerId peerId)
         {
             return Peers.TryGetValue(peerId, out var peer)
                 ? peer

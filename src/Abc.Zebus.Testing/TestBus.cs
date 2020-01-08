@@ -12,10 +12,10 @@ namespace Abc.Zebus.Testing
 {
     public class TestBus : IBus
     {
-        private readonly ConcurrentDictionary<HandlerKey, Func<IMessage, object>> _handlers = new ConcurrentDictionary<HandlerKey, Func<IMessage, object>>();
+        private readonly ConcurrentDictionary<HandlerKey, Func<IMessage, object?>> _handlers = new ConcurrentDictionary<HandlerKey, Func<IMessage, object?>>();
         private readonly MessageComparer _messageComparer = new MessageComparer();
         private readonly Dictionary<PeerId, List<IMessage>> _messagesByPeerId = new Dictionary<PeerId, List<IMessage>>();
-        private readonly Dictionary<ICommand, Peer> _peerByCommand = new Dictionary<ICommand, Peer>();
+        private readonly Dictionary<ICommand, Peer?> _peerByCommand = new Dictionary<ICommand, Peer?>();
         private readonly List<IEvent> _events = new List<IEvent>();
         private readonly List<ICommand> _commands = new List<ICommand>();
         private readonly HashSet<Subscription> _subscriptions = new HashSet<Subscription>();
@@ -25,7 +25,6 @@ namespace Abc.Zebus.Testing
             MessageSerializer = new MessageSerializer();
             HandlerExecutor = new DefaultHandlerExecutor();
         }
-
 
         public event Action Starting = delegate { };
         public event Action Started = delegate { };
@@ -68,14 +67,14 @@ namespace Abc.Zebus.Testing
         }
 
         public int LastReplyCode { get; set; }
-        public string LastReplyMessage { get; set; }
-        public object LastReplyResponse { get; set; }
+        public string? LastReplyMessage { get; set; }
+        public object? LastReplyResponse { get; set; }
         public IHandlerExecutor HandlerExecutor { get; set; }
         public IMessageSerializer MessageSerializer { get; set; }
         public bool IsStarted { get; private set; }
         public bool IsStopped { get; private set; }
         public PeerId PeerId { get; private set; }
-        public string Environment { get; private set; }
+        public string Environment { get; private set; } = string.Empty;
         public bool IsRunning { get; private set; }
 
         public IEnumerable<IMessage> Messages => Events.Cast<IMessage>().Concat(Commands);
@@ -99,7 +98,7 @@ namespace Abc.Zebus.Testing
             return Send(message, null);
         }
 
-        public Task<CommandResult> Send(ICommand message, Peer peer)
+        public Task<CommandResult> Send(ICommand message, Peer? peer)
         {
             if (MessageSerializer.TryClone(message, out var clone))
                 message = (ICommand)clone;
@@ -113,7 +112,7 @@ namespace Abc.Zebus.Testing
                 _peerByCommand[message] = peer;
             }
 
-            Func<IMessage, object> handler;
+            Func<IMessage, object?>? handler;
 
             if (peer != null)
                 _handlers.TryGetValue(new HandlerKey(message.GetType(), peer.Id), out handler);
@@ -146,7 +145,7 @@ namespace Abc.Zebus.Testing
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
 
-            var handlerKeys = request.Subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType(), default)).ToList();
+            var handlerKeys = request.Subscriptions.Select(x => new HandlerKey(x.MessageTypeId.GetMessageType()!, default)).ToList();
 
             foreach (var handlerKey in handlerKeys)
             {
@@ -209,13 +208,13 @@ namespace Abc.Zebus.Testing
             LastReplyMessage = null;
         }
 
-        public void Reply(int errorCode, string message)
+        public void Reply(int errorCode, string? message)
         {
             LastReplyCode = errorCode;
             LastReplyMessage = message;
         }
 
-        public void Reply(IMessage response)
+        public void Reply(IMessage? response)
         {
             LastReplyResponse = response;
         }
@@ -242,7 +241,7 @@ namespace Abc.Zebus.Testing
             Stopped();
         }
 
-        public void AddHandler<TMessage>(Func<TMessage, object> handler)
+        public void AddHandler<TMessage>(Func<TMessage, object?> handler)
             where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default)] = x => handler((TMessage)x);
@@ -254,7 +253,7 @@ namespace Abc.Zebus.Testing
             _handlers[new HandlerKey(typeof(TMessage), default)] = x => true;
         }
 
-        public void AddHandlerForPeer<TMessage>(PeerId peerId, Func<TMessage, object> handler)
+        public void AddHandlerForPeer<TMessage>(PeerId peerId, Func<TMessage, object?> handler)
             where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), peerId)] = x => handler((TMessage)x);
@@ -286,7 +285,7 @@ namespace Abc.Zebus.Testing
             _handlers[new HandlerKey(typeof(TMessage), default)] = x => { throw ex; };
         }
 
-        public void AddHandlerThatThrows<TMessage>(Exception ex = null)
+        public void AddHandlerThatThrows<TMessage>(Exception? ex = null)
             where TMessage : IMessage
         {
             _handlers[new HandlerKey(typeof(TMessage), default)] = x => { throw ex ?? new Exception(); };
@@ -323,7 +322,7 @@ namespace Abc.Zebus.Testing
             return _messagesByPeerId.Keys.ToList();
         }
 
-        public Peer GetRecipientPeer(ICommand command)
+        public Peer? GetRecipientPeer(ICommand command)
         {
             return _peerByCommand[command];
         }
@@ -333,7 +332,7 @@ namespace Abc.Zebus.Testing
         /// </summary>
         public class DefaultHandlerExecutor : IHandlerExecutor
         {
-            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object> handler)
+            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler)
             {
                 var taskCompletionSource = new TaskCompletionSource<CommandResult>();
                 try
@@ -359,7 +358,7 @@ namespace Abc.Zebus.Testing
         /// </summary>
         public class AsyncHandlerExecutor : IHandlerExecutor
         {
-            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object> handler)
+            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler)
             {
                 return Task.Factory.StartNew(() =>
                 {
@@ -374,7 +373,7 @@ namespace Abc.Zebus.Testing
         /// </summary>
         public class DoNotReplyHandlerExecutor : IHandlerExecutor
         {
-            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object> handler)
+            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler)
             {
                 return new TaskCompletionSource<CommandResult>().Task;
             }
@@ -382,7 +381,7 @@ namespace Abc.Zebus.Testing
 
         public interface IHandlerExecutor
         {
-            Task<CommandResult> Execute(ICommand command, Func<IMessage, object> handler);
+            Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler);
         }
 
         private class HandlerKey : Tuple<Type, PeerId>

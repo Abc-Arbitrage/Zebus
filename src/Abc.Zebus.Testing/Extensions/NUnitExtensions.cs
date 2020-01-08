@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -18,17 +17,17 @@ namespace Abc.Zebus.Testing.Extensions
     [DebuggerStepThrough]
     internal static class NUnitExtensions
     {
-        public static void ShouldBeFalse(this bool condition, string message = null)
+        public static void ShouldBeFalse(this bool condition, string? message = null)
         {
             Assert.IsFalse(condition, message);
         }
 
-        public static void ShouldBeTrue(this bool condition, string message = null)
+        public static void ShouldBeTrue(this bool condition, string? message = null)
         {
             Assert.IsTrue(condition, message);
         }
 
-        public static object ShouldEqual(this object actual, object expected, string message = null)
+        public static object ShouldEqual(this object actual, object expected, string? message = null)
         {
             Assert.AreEqual(expected, actual, message);
             return expected;
@@ -70,7 +69,7 @@ namespace Abc.Zebus.Testing.Extensions
         public static DateTime? ShouldApproximateDateTime(this DateTime? actual, DateTime expected)
         {
             actual.ShouldNotBeNull();
-            return ShouldApproximateDateTime(actual.Value, expected);
+            return ShouldApproximateDateTime(actual!.Value, expected);
         }
 
         public static object ShouldEqualEpsilon(this decimal actual, decimal expected, decimal epsilon)
@@ -80,14 +79,14 @@ namespace Abc.Zebus.Testing.Extensions
             return expected;
         }
 
-        public static object ShouldEqualEpsilon(this decimal? actual, decimal? expected, decimal epsilon)
+        public static object? ShouldEqualEpsilon(this decimal? actual, decimal? expected, decimal epsilon)
         {
             Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
 
             return expected;
         }
 
-        public static object ShouldEqualEpsilon(this decimal actual, decimal? expected, decimal epsilon)
+        public static object? ShouldEqualEpsilon(this decimal actual, decimal? expected, decimal epsilon)
         {
             Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
 
@@ -101,7 +100,7 @@ namespace Abc.Zebus.Testing.Extensions
             return expected;
         }
 
-        public static object ShouldEqualEpsilon(this double? actual, double? expected, double epsilon)
+        public static object? ShouldEqualEpsilon(this double? actual, double? expected, double epsilon)
         {
             Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
 
@@ -114,12 +113,12 @@ namespace Abc.Zebus.Testing.Extensions
             return expected;
         }
 
-        public static void ShouldBeNull(this object anObject, string message = null)
+        public static void ShouldBeNull(this object? anObject, string? message = null)
         {
             Assert.IsNull(anObject, message);
         }
 
-        public static void ShouldNotBeNull(this object anObject, string message = null)
+        public static void ShouldNotBeNull(this object? anObject, string? message = null)
         {
             Assert.IsNotNull(anObject, message);
         }
@@ -136,13 +135,13 @@ namespace Abc.Zebus.Testing.Extensions
             return expected;
         }
 
-        public static T ShouldBe<T>(this object actual)
+        public static T ShouldBe<T>(this object? actual)
         {
             Assert.IsInstanceOf<T>(actual);
-            return (T)actual;
+            return (T)actual!;
         }
 
-        public static void ShouldNotBeOfType<T>(this object actual)
+        public static void ShouldNotBeOfType<T>(this object? actual)
         {
             Assert.IsNotInstanceOf<T>(actual);
         }
@@ -219,7 +218,7 @@ namespace Abc.Zebus.Testing.Extensions
             return arg2;
         }
 
-        public static IComparable ShouldBeLessOrEqualThan(this IComparable arg1, IComparable arg2, string message = null)
+        public static IComparable ShouldBeLessOrEqualThan(this IComparable arg1, IComparable arg2, string? message = null)
         {
             Assert.LessOrEqual(arg1, arg2, message);
             return arg2;
@@ -231,12 +230,12 @@ namespace Abc.Zebus.Testing.Extensions
             return arg2;
         }
 
-        public static void ShouldBeEmpty<T>(this IEnumerable<T> enumerable, string message = null)
+        public static void ShouldBeEmpty<T>(this IEnumerable<T> enumerable, string? message = null)
         {
             Assert.IsFalse(enumerable.Any(), message ?? "the collection is not empty");
         }
 
-        public static void ShouldNotBeEmpty<T>(this IEnumerable<T> enumerable, string message = null)
+        public static void ShouldNotBeEmpty<T>(this IEnumerable<T> enumerable, string? message = null)
         {
             Assert.IsTrue(enumerable.Any(), message ?? "the collection is empty");
         }
@@ -246,7 +245,7 @@ namespace Abc.Zebus.Testing.Extensions
             Assert.IsEmpty(aString);
         }
 
-        public static void ShouldNotBeEmpty(this IEnumerable collection, string message = null)
+        public static void ShouldNotBeEmpty(this IEnumerable collection, string? message = null)
         {
             Assert.IsNotEmpty(collection, message);
         }
@@ -315,12 +314,12 @@ namespace Abc.Zebus.Testing.Extensions
 
         public static Exception ShouldBeThrownBy(this Type exceptionType, MethodThatThrows method)
         {
-            Exception exception = method.GetException();
+            var exception = method.GetException();
 
             Assert.IsNotNull(exception, $"{exceptionType.Name} was not thrown");
-            Assert.AreEqual(exceptionType, exception.GetType());
+            Assert.AreEqual(exceptionType, exception!.GetType());
 
-            return exception;
+            return exception!;
         }
 
         public static void ShouldBeBetween(this DateTime actual, DateTime inferior, DateTime superior)
@@ -329,9 +328,9 @@ namespace Abc.Zebus.Testing.Extensions
             Assert.GreaterOrEqual(superior, actual);
         }
 
-        public static Exception GetException(this MethodThatThrows method)
+        public static Exception? GetException(this MethodThatThrows method)
         {
-            Exception exception = null;
+            Exception? exception = null;
 
             try
             {
@@ -345,7 +344,7 @@ namespace Abc.Zebus.Testing.Extensions
             return exception;
         }
 
-        public static void ShouldBeOfType<T>(this object actual)
+        public static void ShouldBeOfType<T>(this object? actual)
         {
             Assert.IsInstanceOf<T>(actual);
         }
@@ -369,8 +368,8 @@ namespace Abc.Zebus.Testing.Extensions
                     continue;
 
                 var actualValue = actualProperty.GetValue(actual);
-                object expectedValue = null;
-                
+                object? expectedValue = null;
+
                 if (expectedProperties.TryGetValue(actualProperty.Name, out var expectedProperty))
                     expectedValue = expectedProperty.GetValue(expected);
 
@@ -383,18 +382,6 @@ namespace Abc.Zebus.Testing.Extensions
                 if (!LooseEquals(expectedValue, actualValue))
                     Assert.Fail("{0} should be equal, found {1}, expected {2}", actualProperty.Name, actualValue, expectedValue);
             }
-        }
-
-        public static void ShouldExists(this string fileOrDirectoryPath)
-        {
-            var exists = File.Exists(fileOrDirectoryPath) || System.IO.Directory.Exists(fileOrDirectoryPath);
-            Assert.IsTrue(exists, "File or directory should exist, path: " + fileOrDirectoryPath);
-        }
-
-        public static void ShouldNotExists(this string fileOrDirectoryPath)
-        {
-            var exists = File.Exists(fileOrDirectoryPath) || System.IO.Directory.Exists(fileOrDirectoryPath);
-            Assert.IsFalse(exists, "File and directory should not exist, path: " + fileOrDirectoryPath);
         }
 
         public static TSource ExpectedSingle<TSource>(this IEnumerable<TSource> source)
@@ -421,7 +408,7 @@ namespace Abc.Zebus.Testing.Extensions
             return items[0];
         }
 
-        private static bool LooseEquals(object x, object y)
+        private static bool LooseEquals(object? x, object? y)
         {
             if (x == y)
                 return true;
