@@ -42,7 +42,7 @@ namespace Abc.Zebus.Tests
         [TestCase("whatever")]
         [TestCase("*")]
         [TestCase("#")]
-        public void empty_bindingkey_should_always_match(string routingKey)
+        public void empty_bindingKey_should_always_match(string routingKey)
         {
             var subscription = new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Empty);
             subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
@@ -68,7 +68,7 @@ namespace Abc.Zebus.Tests
 
         [TestCase("a.b.#")]
         [TestCase("a.#")]
-        public void binding_key_with_dashr_should_match_routing_key(string bindingKey)
+        public void binding_key_with_dash_should_match_routing_key(string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
             subscription.Matches(BindingKeyHelper.CreateFromString("a.b.c", '.')).ShouldBeTrue();
@@ -151,7 +151,7 @@ namespace Abc.Zebus.Tests
             subscription = Subscription.Matching<FakeRoutableCommandWithBoolean>(x => x.IsAMatch);
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithBoolean)));
             subscription.BindingKey.ShouldEqual(new BindingKey("True"));
-            
+
             subscription = Subscription.Matching<FakeRoutableCommandWithBoolean>(x => !(!x.IsAMatch));
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithBoolean)));
             subscription.BindingKey.ShouldEqual(new BindingKey("True"));
@@ -164,9 +164,9 @@ namespace Abc.Zebus.Tests
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithEnum)));
             subscription.BindingKey.ShouldEqual(new BindingKey(TestEnum1.Bar.ToString(), "*"));
         }
-        
+
         [Test]
-        public void should_create_subscription_from_inversed_predicate_with_enum()
+        public void should_create_subscription_from_inverted_predicate_with_enum()
         {
             var subscription = Subscription.Matching<FakeRoutableCommandWithEnum>(x => TestEnum1.Bar == x.Test1);
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithEnum)));
@@ -188,19 +188,13 @@ namespace Abc.Zebus.Tests
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
             subscription.BindingKey.ShouldEqual(new BindingKey(GetFieldValue().ToString(), "*", "*"));
         }
-        
+
         [Test]
         public void should_create_subscription_from_simple_predicate_in_generic_context()
         {
             var subscription = CreateSubscription<FakeRoutableCommand>();
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
             subscription.BindingKey.ShouldEqual(new BindingKey(GetFieldValue().ToString(), "*", "*"));
-        }
-
-        private Subscription CreateSubscription<TMessage>()
-            where TMessage : FakeRoutableCommand
-        {
-            return Subscription.Matching<TMessage>(x => x.Id == GetFieldValue());
         }
 
         [Test]
@@ -215,9 +209,9 @@ namespace Abc.Zebus.Tests
             subscription1.Equals(subscription2).ShouldBeTrue();
             subscription1.Equals((object)subscription2).ShouldBeTrue();
         }
-        
+
         [Test]
-        public void UpdatePeerSubscriptionsCommand_should_have_meaningfull_to_string()
+        public void UpdatePeerSubscriptionsCommand_should_have_meaningful_to_string()
         {
             var id = Guid.NewGuid();
             var subscriptions = new[]
@@ -229,8 +223,60 @@ namespace Abc.Zebus.Tests
             var command = new UpdatePeerSubscriptionsCommand(peerId, subscriptions, DateTime.Today);
 
             command.ToString()
-                .ShouldEqual(
-                    $"PeerId: {peerId}, TimestampUtc: {DateTime.Today:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{string.Join(", ", subscriptions.AsEnumerable())}]");
+                   .ShouldEqual(
+                       $"PeerId: {peerId}, TimestampUtc: {DateTime.Today:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{string.Join(", ", subscriptions.AsEnumerable())}]");
+        }
+
+        [Test]
+        public void should_create_definition()
+        {
+            // Arrange
+            var subscription = CreateSubscription<FakeRoutableCommand>();
+
+            // Act
+            var definition = subscription.GetDefinition();
+
+            // Assert
+            definition.Parts.Count.ShouldEqual(3);
+            CheckPart(definition.Parts[0], "Id", _field.ToString(), false);
+            CheckPart(definition.Parts[1], "Name", "*", true);
+            CheckPart(definition.Parts[2], "OtherId", "*", true);
+        }
+
+        [Test]
+        public void should_create_definition_that_matches_last_routing_key()
+        {
+            // Arrange
+            var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.OtherId == Guid.Empty);
+
+            // Act
+            var definition = subscription.GetDefinition();
+
+            // Assert
+            definition.Parts.Count.ShouldEqual(3);
+            CheckPart(definition.Parts[0], "Id", "*", true);
+            CheckPart(definition.Parts[1], "Name", "*", true);
+            CheckPart(definition.Parts[2], "OtherId", Guid.Empty.ToString(), false);
+        }
+
+        [Test]
+        public void should_create_definition_that_matches_all()
+        {
+            // Arrange
+            var subscription = Subscription.Any<FakeRoutableCommand>();
+
+            // Act
+            var definition = subscription.GetDefinition();
+
+            // Assert
+            definition.Parts.ShouldBeEmpty();
+        }
+
+        private static void CheckPart(SubscriptionDefinitionPart part, string name, string matchValue, bool matchesAll)
+        {
+            part.PropertyName.ShouldEqual(name);
+            part.MatchValue.ShouldEqual(matchValue);
+            part.MatchesAll.ShouldEqual(matchesAll);
         }
 
         [Test]
@@ -250,6 +296,12 @@ namespace Abc.Zebus.Tests
                 x.WarmUpIteration = 1000;
                 x.Action = _ => subscription.Matches(key);
             });
+        }
+
+        private Subscription CreateSubscription<TMessage>()
+            where TMessage : FakeRoutableCommand
+        {
+            return Subscription.Matching<TMessage>(x => x.Id == GetFieldValue());
         }
 
         private Subscription CreateSubscription(string bindingKey)

@@ -44,7 +44,7 @@ namespace Abc.Zebus.Routing
 
             if (!subPredicates.Any())
                 return _ => true;
-            
+
             var finalExpression = subPredicates.Aggregate((Expression)null, (final, exp) => final == null ? exp : Expression.AndAlso(final, exp));
             return (Func<IMessage, bool>)Expression.Lambda(finalExpression, cacheItem.ParameterExpression).Compile();
         }
@@ -53,12 +53,7 @@ namespace Abc.Zebus.Routing
         {
             return _cacheItems.GetOrAdd(messageType, type =>
             {
-                var routingMembers = type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
-                                         .Select(x => new MemberExtendedInfo { Member = x, Attribute = x.GetCustomAttribute<RoutingPositionAttribute>(true) })
-                                         .Where(x => x.Attribute != null)
-                                         .OrderBy(x => x.Attribute.Position)
-                                         .ToList();
-
+                var routingMembers = GetRoutingMembers(type);
                 var parameterExpression = Expression.Parameter(typeof(IMessage), "m");
                 var castedMessage = Expression.Convert(parameterExpression, messageType);
 
@@ -68,6 +63,15 @@ namespace Abc.Zebus.Routing
                     MembersToStringExpressions = routingMembers.Select(x => GenerateMemberToStringExpression(castedMessage, x)).ToList()
                 };
             });
+        }
+
+        public static List<MemberExtendedInfo> GetRoutingMembers(Type type)
+        {
+            return type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
+                       .Select(x => new MemberExtendedInfo { Member = x, Attribute = x.GetCustomAttribute<RoutingPositionAttribute>(true) })
+                       .Where(x => x.Attribute != null)
+                       .OrderBy(x => x.Attribute.Position)
+                       .ToList();
         }
 
         private static MethodCallExpression GenerateMemberToStringExpression(Expression parameterExpression, MemberExtendedInfo memberExtendedInfo)
