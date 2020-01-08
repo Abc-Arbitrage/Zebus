@@ -4,7 +4,6 @@
     <TargetFramework>net461</TargetFramework>
     <PackageId>Zebus.Directory.Cassandra</PackageId>
     <Version>$(ZebusDirectoryVersion)</Version>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

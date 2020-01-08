@@ -4,7 +4,6 @@
     <TargetFramework>net461</TargetFramework>
     <PackageId>Zebus.Persistence</PackageId>
     <Version>$(ZebusPersistenceVersion)</Version>
-    <Nullable>enable</Nullable>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 

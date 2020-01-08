@@ -4,7 +4,6 @@
     <TargetFramework>net461</TargetFramework>
     <PackageId>Zebus.Persistence.CQL</PackageId>
     <Version>$(ZebusPersistenceVersion)</Version>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

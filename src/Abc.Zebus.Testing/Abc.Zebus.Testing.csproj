@@ -4,7 +4,6 @@
     <PackageId>Zebus.Testing</PackageId>
     <Description>Test tools for Zebus</Description>
     <Version>$(ZebusTestingVersion)</Version>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
