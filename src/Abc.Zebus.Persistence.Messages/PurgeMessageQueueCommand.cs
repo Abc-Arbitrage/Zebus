@@ -7,9 +7,12 @@ namespace Abc.Zebus.Persistence.Messages
     public class PurgeMessageQueueCommand : ICommand
     {
         [ProtoMember(1, IsRequired = true)] public readonly string InstanceName;
-        
-        private PurgeMessageQueueCommand() { }
-        
+
+        private PurgeMessageQueueCommand()
+        {
+            InstanceName = default!;
+        }
+
         public PurgeMessageQueueCommand(string instanceName)
         {
             InstanceName = instanceName;

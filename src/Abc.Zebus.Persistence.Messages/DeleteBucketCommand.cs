@@ -8,9 +8,13 @@ namespace Abc.Zebus.Persistence.Messages
     {
         [ProtoMember(1, IsRequired = true)] public readonly string BucketName;
         [ProtoMember(2, IsRequired = true)] public readonly string InstanceName;
-        
-        private DeleteBucketCommand() { }
-        
+
+        private DeleteBucketCommand()
+        {
+            BucketName = default!;
+            InstanceName = default!;
+        }
+
         public DeleteBucketCommand(string bucketName, string instanceName)
         {
             BucketName = bucketName;

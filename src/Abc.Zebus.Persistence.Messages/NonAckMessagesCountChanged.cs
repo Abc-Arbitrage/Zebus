@@ -1,3 +1,4 @@
+using System;
 using ProtoBuf;
 
 namespace Abc.Zebus.Persistence.Messages
@@ -10,9 +11,9 @@ namespace Abc.Zebus.Persistence.Messages
 
         public NonAckMessagesCountChanged()
         {
-            NonAckMessages = new NonAckMessage[0];
+            NonAckMessages = Array.Empty<NonAckMessage>();
         }
-        
+
         public NonAckMessagesCountChanged(NonAckMessage[] nonAckMessages)
         {
             NonAckMessages = nonAckMessages;

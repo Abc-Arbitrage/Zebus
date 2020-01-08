@@ -4,6 +4,7 @@
     <TargetFramework>net461</TargetFramework>
     <Version>$(ZebusPersistenceVersion)</Version>
     <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
