@@ -54,7 +54,7 @@ namespace Abc.Zebus.Persistence.Runner
                 var inMemoryMessageMatcherInitializer = busFactory.Container.GetInstance<InMemoryMessageMatcherInitializer>();
                 inMemoryMessageMatcherInitializer.BeforeStart();
 
-                OldestNonAckedMessageUpdaterPeriodicAction oldestNonAckedMessageUpdaterPeriodicAction = null;
+                OldestNonAckedMessageUpdaterPeriodicAction? oldestNonAckedMessageUpdaterPeriodicAction = null;
                 if (useCassandraStorage)
                 {
                     oldestNonAckedMessageUpdaterPeriodicAction = busFactory.Container.GetInstance<OldestNonAckedMessageUpdaterPeriodicAction>();

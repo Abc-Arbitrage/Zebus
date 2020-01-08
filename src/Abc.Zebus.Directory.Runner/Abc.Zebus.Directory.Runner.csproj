@@ -5,6 +5,7 @@
     <OutputType>Exe</OutputType>
     <Version>$(ZebusDirectoryVersion)</Version>
     <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
