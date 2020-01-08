@@ -20,7 +20,7 @@ namespace Abc.Zebus.Scan
             Container = container;
         }
 
-        protected IContainer Container { get; private set; }
+        protected IContainer Container { get; }
 
         public IEnumerable<IMessageHandlerInvoker> LoadMessageHandlerInvokers(TypeSource typeSource)
         {

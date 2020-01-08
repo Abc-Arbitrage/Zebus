@@ -5,12 +5,12 @@ using System.Collections.Generic;
 namespace Abc.Zebus.Util.Collections
 {
     internal class ConcurrentSet<T> : ICollection<T>
+        where T : notnull
     {
-        private readonly ConcurrentDictionary<T, object> _items;
+        private readonly ConcurrentDictionary<T, object?> _items = new ConcurrentDictionary<T, object?>();
 
         public ConcurrentSet()
         {
-            _items = new ConcurrentDictionary<T, object>();
         }
 
         public ConcurrentSet(IEnumerable<T> items)
@@ -61,8 +61,7 @@ namespace Abc.Zebus.Util.Collections
 
         public bool Remove(T item)
         {
-            object value;
-            return _items.TryRemove(item, out value);
+            return _items.TryRemove(item, out var value);
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Abc.Zebus.Dispatch
     public interface IMessageHandlerInvoker
     {
         Type MessageHandlerType { get; }
-        Type MessageType { get; }
+        Type? MessageType { get; }
         MessageTypeId MessageTypeId { get; }
         bool ShouldBeSubscribedOnStartup { get; }
         string DispatchQueueName { get; }

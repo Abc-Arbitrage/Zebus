@@ -18,9 +18,9 @@ namespace Abc.Zebus.Dispatch
         private readonly IMessageHandlerInvokerLoader[] _invokerLoaders;
         private readonly IDispatchQueueFactory _dispatchQueueFactory;
         private ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>> _invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
-        private Func<Assembly, bool> _assemblyFilter;
-        private Func<Type, bool> _handlerFilter;
-        private Func<Type, bool> _messageFilter;
+        private Func<Assembly, bool>? _assemblyFilter;
+        private Func<Type, bool>? _handlerFilter;
+        private Func<Type, bool>? _messageFilter;
         private MessageDispatcherStatus _status;
 
         internal MessageDispatcherStatus Status => _status;
@@ -54,8 +54,12 @@ namespace Abc.Zebus.Dispatch
             foreach (var invokerLoader in _invokerLoaders)
             {
                 var loadedInvokers = invokerLoader.LoadMessageHandlerInvokers(typeSource);
+
                 foreach (var invoker in loadedInvokers)
                 {
+                    if (invoker.MessageType is null)
+                        continue;
+
                     if (_handlerFilter != null && !_handlerFilter(invoker.MessageHandlerType))
                         continue;
 

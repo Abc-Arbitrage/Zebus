@@ -7,7 +7,7 @@ namespace Abc.Zebus.Serialization
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(MessageSerializer));
 
-        public IMessage Deserialize(MessageTypeId messageTypeId, Stream stream)
+        public IMessage? Deserialize(MessageTypeId messageTypeId, Stream stream)
         {
             var messageType = messageTypeId.GetMessageType();
             if (messageType != null)
@@ -15,7 +15,6 @@ namespace Abc.Zebus.Serialization
 
             _log.WarnFormat("Could not find message type: {0}", messageTypeId.FullName);
             return null;
-
         }
 
         public Stream Serialize(IMessage message)
@@ -28,6 +27,6 @@ namespace Abc.Zebus.Serialization
         }
 
         public bool TryClone(IMessage message, out IMessage clone)
-            => Serializer.TryClone(message, out  clone);
+            => Serializer.TryClone(message, out clone!);
     }
 }

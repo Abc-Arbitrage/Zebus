@@ -5,9 +5,9 @@ namespace Abc.Zebus
 {
     internal class MessageTypeDescriptor
     {
-        public static readonly MessageTypeDescriptor Null = new MessageTypeDescriptor(null, null, false, false);
+        public static readonly MessageTypeDescriptor Null = new MessageTypeDescriptor(null!, null, false, false); // TODO replace with null
 
-        private MessageTypeDescriptor(string fullName, Type messageType, bool isPersistent, bool isInfrastructure)
+        private MessageTypeDescriptor(string fullName, Type? messageType, bool isPersistent, bool isInfrastructure)
         {
             FullName = fullName;
             MessageType = messageType;
@@ -16,7 +16,7 @@ namespace Abc.Zebus
         }
 
         public string FullName { get; }
-        public Type MessageType { get; }
+        public Type? MessageType { get; }
         public bool IsPersistent { get; }
         public bool IsInfrastructure { get; }
 

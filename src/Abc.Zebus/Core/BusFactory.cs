@@ -16,8 +16,8 @@ namespace Abc.Zebus.Core
         private readonly List<Action<ConfigurationExpression>> _configurationActions = new List<Action<ConfigurationExpression>>();
         private readonly ZmqTransportConfiguration _transportConfiguration = new ZmqTransportConfiguration();
         private readonly List<ScanTarget> _scanTargets = new List<ScanTarget>();
-        private IBusConfiguration _configuration;
-        private string _environment;
+        private IBusConfiguration? _configuration;
+        private string? _environment;
         public PeerId PeerId { get; set; }
 
         public BusFactory()
@@ -97,8 +97,9 @@ namespace Abc.Zebus.Core
 
         public IBus CreateBus()
         {
-            if (_configuration == null)
+            if (_configuration == null || _environment == null)
                 throw new InvalidOperationException("The CreateBus() method was called with no configuration (Call .WithConfiguration(...) first)");
+
             Container.Configure(x => x.AddRegistry<ZebusRegistry>());
             Container.Configure(x =>
             {
@@ -170,10 +171,10 @@ namespace Abc.Zebus.Core
 
         private class ScanTarget
         {
-            private readonly Assembly _assembly;
-            private readonly Type _type;
+            private readonly Assembly? _assembly;
+            private readonly Type? _type;
 
-            public ScanTarget(Assembly assembly, Type type)
+            public ScanTarget(Assembly? assembly, Type? type)
             {
                 _assembly = assembly;
                 _type = type;

@@ -9,14 +9,14 @@ namespace Abc.Zebus.Util
 {
     internal static class TypeUtil
     {
-        private static readonly ConcurrentDictionary<string, Type> _typesByNames = new ConcurrentDictionary<string, Type>();
+        private static readonly ConcurrentDictionary<string, Type?> _typesByNames = new ConcurrentDictionary<string, Type?>();
 
-        public static Type Resolve(string typeName)
+        public static Type? Resolve(string typeName)
         {
             return _typesByNames.GetOrAdd(typeName, FindTypeByName);
         }
-        
-        private static Type FindTypeByName(string typeName)
+
+        private static Type? FindTypeByName(string typeName)
         {
             try
             {
@@ -30,7 +30,7 @@ namespace Abc.Zebus.Util
 
             if (typeName.Contains("<"))
                 return FindGenericTypeByName(typeName);
-            
+
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().OrderBy(a => a.FullName))
             {
                 var type = assembly.GetType(typeName);
@@ -41,7 +41,7 @@ namespace Abc.Zebus.Util
             return null;
         }
 
-        private static Type FindGenericTypeByName(string typeName)
+        private static Type? FindGenericTypeByName(string typeName)
         {
             var genericArguments = typeName.Substring(typeName.IndexOf("<", StringComparison.Ordinal)).Trim('<', '>').Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var typeNameWithoutGenericArguments = typeName.Substring(0, typeName.IndexOf("<", StringComparison.Ordinal)) + '`' + genericArguments.Length;
@@ -49,7 +49,7 @@ namespace Abc.Zebus.Util
             var type = Resolve(typeNameWithoutGenericArguments);
             if (type == null)
                 return null;
-            
+
             var genericTypes = new List<Type>();
             foreach (var genericArgument in genericArguments)
             {

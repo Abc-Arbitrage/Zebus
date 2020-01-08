@@ -4,6 +4,6 @@ namespace Abc.Zebus.Dispatch
 {
     public interface IMessageDispatchFactory
     {
-        MessageDispatch CreateMessageDispatch(TransportMessage transportMessage);
+        MessageDispatch? CreateMessageDispatch(TransportMessage transportMessage);
     }
 }

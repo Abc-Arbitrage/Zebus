@@ -7,8 +7,8 @@ namespace Abc.Zebus.Routing
 {
     internal class BindingKeyToken
     {
-        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod("ToString");
-        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod("ToString");
+        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString));
+        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString));
         private readonly Func<IMessage, string> _valueAccessorFunc;
 
         public BindingKeyToken(int position, Type messageType, FieldInfo fieldInfo)

@@ -24,8 +24,8 @@ namespace Abc.Zebus.Util
             if (now == null && utcNow == null)
                 throw new ArgumentNullException();
 
-            _nowFunc = () => now ?? utcNow.Value.ToLocalTime();
-            _utcNowFunc = () => utcNow ?? now.Value.ToUniversalTime();
+            _nowFunc = () => now ?? utcNow.GetValueOrDefault().ToLocalTime();
+            _utcNowFunc = () => utcNow ?? now.GetValueOrDefault().ToUniversalTime();
             return new Scope();
         }
 

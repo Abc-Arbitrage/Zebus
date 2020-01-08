@@ -46,7 +46,7 @@ namespace Abc.Zebus.Serialization.Protobuf
         {
         }
 
-        internal InvalidProtocolBufferException(string message, Exception innerException)
+        internal InvalidProtocolBufferException(string message, Exception? innerException)
             : base(message, innerException)
         {
         }

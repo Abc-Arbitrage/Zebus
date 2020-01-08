@@ -38,14 +38,12 @@ namespace Abc.Zebus
         [UsedImplicitly]
         private Peer()
         {
+            EndPoint = default!;
         }
 
         public override string ToString() => $"{Id}, {EndPoint}";
 
         public string GetMachineNameFromEndPoint()
-        {
-            var uri = new Uri(EndPoint);
-            return uri.Host;
-        }
+            => new Uri(EndPoint).Host;
     }
 }

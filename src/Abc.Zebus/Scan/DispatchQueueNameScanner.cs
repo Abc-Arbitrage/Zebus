@@ -34,7 +34,7 @@ namespace Abc.Zebus.Scan
             var assemblyCache = _assemblyCaches.GetOrAdd(type.Assembly, x => new AssemblyCache(x));
             return assemblyCache.GetQueueNameFromNamespace(type.Namespace);
         }
- 
+
         private class AssemblyCache
         {
             private readonly Dictionary<string, string> _knownQueueNames = new Dictionary<string, string>();
@@ -62,7 +62,7 @@ namespace Abc.Zebus.Scan
                 var queueName = _knownQueueNames.GetValueOrDefault(@namespace);
                 if (queueName != null)
                     return queueName;
-                 
+
                 var parentNamespace = @namespace.Qualifier();
                 if (parentNamespace.Length == @namespace.Length)
                     return DefaultQueueName;

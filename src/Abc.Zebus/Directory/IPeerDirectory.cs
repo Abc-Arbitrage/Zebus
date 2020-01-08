@@ -20,7 +20,7 @@ namespace Abc.Zebus.Directory
         bool IsPersistent(PeerId peerId);
 
         // TODO: move to a specific interface (IPeerDirectoryExplorer)
-        PeerDescriptor GetPeerDescriptor(PeerId peerId);
+        PeerDescriptor? GetPeerDescriptor(PeerId peerId);
 
         IEnumerable<PeerDescriptor> GetPeerDescriptors();
     }

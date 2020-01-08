@@ -1,4 +1,5 @@
-﻿using Abc.Zebus.Dispatch;
+﻿using System;
+using Abc.Zebus.Dispatch;
 
 namespace Abc.Zebus.Lotus
 {
@@ -15,7 +16,9 @@ namespace Abc.Zebus.Lotus
 
         public void Handle(ReplayMessageCommand message)
         {
-            var dispatch = _dispatchFactory.CreateMessageDispatch(message.MessageToReplay);
+            var dispatch = _dispatchFactory.CreateMessageDispatch(message.MessageToReplay)
+                           ?? throw new InvalidOperationException($"Could not dispatch message of type {message.MessageToReplay.MessageTypeId.FullName}");
+
             _dispatcher.Dispatch(dispatch, message.ShouldApplyToHandler);
         }
     }

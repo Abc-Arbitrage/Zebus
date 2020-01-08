@@ -15,12 +15,12 @@ namespace Abc.Zebus.Dispatch
     {
         private readonly Instance _instance;
         private bool? _isSingleton;
-        private IBus _bus;
+        private IBus? _bus;
 
         [ThreadStatic]
-        private static MessageContextAwareBus _dispatchBus;
+        private static MessageContextAwareBus? _dispatchBus;
 
-        protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null)
+        protected MessageHandlerInvoker(Type handlerType, Type? messageType, bool? shouldBeSubscribedOnStartup = null)
         {
             MessageHandlerType = handlerType;
             DispatchQueueName = DispatchQueueNameScanner.GetQueueName(handlerType);
@@ -32,7 +32,7 @@ namespace Abc.Zebus.Dispatch
         }
 
         public Type MessageHandlerType { get; }
-        public Type MessageType { get; }
+        public Type? MessageType { get; }
         public MessageTypeId MessageTypeId { get; }
         public bool ShouldBeSubscribedOnStartup { get; }
         public string DispatchQueueName { get; }
@@ -60,8 +60,11 @@ namespace Abc.Zebus.Dispatch
             return MessageShouldBeSubscribedOnStartup(messageType, GetExplicitSubscriptionMode(handlerType));
         }
 
-        internal static bool MessageShouldBeSubscribedOnStartup(Type messageType, SubscriptionMode? subscriptionMode = null)
+        internal static bool MessageShouldBeSubscribedOnStartup(Type? messageType, SubscriptionMode? subscriptionMode = null)
         {
+            if (messageType is null)
+                return false;
+
             if (subscriptionMode != null)
                 return subscriptionMode == SubscriptionMode.Auto;
 
@@ -86,7 +89,7 @@ namespace Abc.Zebus.Dispatch
             if (IsHandlerSingleton(container))
                 return container.GetInstance(MessageHandlerType);
 
-            _bus = _bus ?? container.GetInstance<IBus>();
+            _bus ??= container.GetInstance<IBus>();
             if (_bus == null)
                 return container.GetInstance(MessageHandlerType);
 
@@ -114,8 +117,8 @@ namespace Abc.Zebus.Dispatch
         private static Instance CreateConstructorInstance(Type messageHandlerType)
         {
             var inst = new ConstructorInstance(messageHandlerType);
-            inst.Dependencies.Add<IBus>(new LambdaInstance<IBus>("Dispatch IBus", () => _dispatchBus));
-            inst.Dependencies.Add<MessageContext>(new LambdaInstance<MessageContext>("Dispatch MessageContext", () => _dispatchBus.MessageContext));
+            inst.Dependencies.Add<IBus>(new LambdaInstance<IBus>("Dispatch IBus", () => _dispatchBus!));
+            inst.Dependencies.Add<MessageContext>(new LambdaInstance<MessageContext>("Dispatch MessageContext", () => _dispatchBus!.MessageContext));
             return inst;
         }
 

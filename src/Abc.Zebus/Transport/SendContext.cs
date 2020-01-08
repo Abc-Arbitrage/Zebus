@@ -5,7 +5,7 @@ namespace Abc.Zebus.Transport
     public class SendContext
     {
         public List<PeerId> PersistentPeerIds { get; } = new List<PeerId>();
-        public Peer PersistencePeer { get; set; }
+        public Peer? PersistencePeer { get; set; }
 
         public bool WasPersisted(PeerId peerId)
         {

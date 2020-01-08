@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -8,7 +9,7 @@ namespace Abc.Zebus.Transport.Zmq
 {
     internal static unsafe class ZmqUtil
     {
-        [ContractAnnotation("=> halt")]
+        [ContractAnnotation("=> halt"), DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static Exception ThrowLastError(string message)
             => throw new IOException($"{message}: {GetLastErrorMessage()})");
@@ -31,6 +32,7 @@ namespace Abc.Zebus.Transport.Zmq
         public static bool WasInterrupted()
             => ZmqNative.errno() == ZmqErrorCode.EINTR;
 
+        [ContractAnnotation("=> halt"), DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void ThrowArgOutOfRange()
             => throw new ArgumentOutOfRangeException();

@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
+using JetBrains.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus.Routing
@@ -16,11 +16,11 @@ namespace Abc.Zebus.Routing
         private const string _sharp = "#";
         public static readonly BindingKey Empty = new BindingKey();
 
-        private static readonly ConcurrentDictionary<Type, BindingKeyBuilder> _builders = new ConcurrentDictionary<Type, BindingKeyBuilder>();
-        private static readonly Func<Type, BindingKeyBuilder> _bindingKeyBuilderFactory = CreateBuilder;
+        private static readonly ConcurrentDictionary<Type, BindingKeyBuilder?> _builders = new ConcurrentDictionary<Type, BindingKeyBuilder?>();
+        private static readonly Func<Type, BindingKeyBuilder?> _bindingKeyBuilderFactory = CreateBuilder;
 
         [ProtoMember(1, IsRequired = true)]
-        private readonly string[] _parts;
+        private readonly string[]? _parts;
 
         public BindingKey(params string[] parts)
         {
@@ -35,20 +35,20 @@ namespace Abc.Zebus.Routing
         public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
 
         public bool IsSharp(int index)
-            => _parts[index] == _sharp;
+            => _parts?[index] == _sharp;
 
         public bool IsStar(int index)
-            => _parts[index] == _star;
+            => _parts?[index] == _star;
 
         [Pure]
-        public string GetPart(int index)
-            => index < PartCount ? _parts[index] : null;
+        public string? GetPart(int index)
+            => index < PartCount ? _parts![index] : null;
 
         [Pure]
         public IEnumerable<string> GetParts()
             => _parts?.ToList() ?? Enumerable.Empty<string>();
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => obj is BindingKey other && Equals(other);
 
         public bool Equals(BindingKey other)
@@ -96,10 +96,10 @@ namespace Abc.Zebus.Routing
         internal static BindingKey Create(Type messageType, IDictionary<string, string> fieldValues)
             => GetBindingKeyBuilder(messageType)?.BuildKey(fieldValues) ?? Empty;
 
-        private static BindingKeyBuilder GetBindingKeyBuilder(Type messageType)
+        private static BindingKeyBuilder? GetBindingKeyBuilder(Type messageType)
             => _builders.GetOrAdd(messageType, _bindingKeyBuilderFactory);
 
-        private static BindingKeyBuilder CreateBuilder(Type messageType)
+        private static BindingKeyBuilder? CreateBuilder(Type messageType)
         {
             if (!Attribute.IsDefined(messageType, typeof(Routable)))
                 return null;

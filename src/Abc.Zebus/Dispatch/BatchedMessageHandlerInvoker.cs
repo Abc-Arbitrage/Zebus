@@ -33,8 +33,9 @@ namespace Abc.Zebus.Dispatch
 
         public override bool CanMergeWith(IMessageHandlerInvoker other)
         {
-            var otherBatchedInvoker = other as BatchedMessageHandlerInvoker;
-            return otherBatchedInvoker != null && otherBatchedInvoker.MessageHandlerType == MessageHandlerType && otherBatchedInvoker.MessageType == MessageType;
+            return other is BatchedMessageHandlerInvoker otherBatchedInvoker
+                   && otherBatchedInvoker.MessageHandlerType == MessageHandlerType
+                   && otherBatchedInvoker.MessageType == MessageType;
         }
 
         private object CreateHandler(MessageContext messageContext)

@@ -27,16 +27,16 @@ namespace Abc.Zebus.Directory
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
-        private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
-        private IEnumerable<Peer> _directoryPeers;
-        private Peer _self;
+        private BlockingCollection<IEvent>? _messagesReceivedDuringRegister;
+        private IEnumerable<Peer> _directoryPeers = Enumerable.Empty<Peer>();
+        private Peer _self = default!;
 
         public PeerDirectoryClient(IBusConfiguration configuration)
         {
             _configuration = configuration;
         }
 
-        public event Action<PeerId, PeerUpdateAction> PeerUpdated;
+        public event Action<PeerId, PeerUpdateAction>? PeerUpdated;
 
         public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
@@ -67,7 +67,7 @@ namespace Abc.Zebus.Directory
 
         private void ProcessMessagesReceivedDuringRegister()
         {
-            foreach (var message in _messagesReceivedDuringRegister.GetConsumingEnumerable())
+            foreach (var message in _messagesReceivedDuringRegister!.GetConsumingEnumerable())
             {
                 try
                 {
@@ -146,7 +146,7 @@ namespace Abc.Zebus.Directory
             {
                 var registration = await bus.Send(new RegisterPeerCommand(self), directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
 
-                var response = (RegisterPeerResponse)registration.Response;
+                var response = (RegisterPeerResponse?)registration.Response;
                 if (response?.PeerDescriptors == null)
                     return false;
 
@@ -231,7 +231,7 @@ namespace Abc.Zebus.Directory
             return entry != null && entry.IsPersistent;
         }
 
-        public PeerDescriptor GetPeerDescriptor(PeerId peerId)
+        public PeerDescriptor? GetPeerDescriptor(PeerId peerId)
             => _peers.GetValueOrDefault(peerId)?.ToPeerDescriptor();
 
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()

@@ -14,12 +14,12 @@ namespace Abc.Zebus.Transport
         public readonly string SenderEndPoint;
 
         [ProtoMember(3, IsRequired = true)]
-        internal readonly string SenderMachineName;
+        internal readonly string? SenderMachineName;
 
         [ProtoMember(5, IsRequired = true)]
-        public string InitiatorUserName;
+        public string? InitiatorUserName;
 
-        public OriginatorInfo(PeerId senderId, string senderEndPoint, string senderMachineName, string initiatorUserName)
+        public OriginatorInfo(PeerId senderId, string senderEndPoint, string? senderMachineName, string? initiatorUserName)
         {
             SenderId = senderId;
             SenderEndPoint = senderEndPoint;
@@ -30,6 +30,7 @@ namespace Abc.Zebus.Transport
         [UsedImplicitly]
         internal OriginatorInfo()
         {
+            SenderEndPoint = default!;
         }
 
         public string GetSenderMachineNameFromEndPoint()

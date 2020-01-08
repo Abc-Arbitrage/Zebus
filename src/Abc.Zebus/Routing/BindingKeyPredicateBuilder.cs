@@ -10,15 +10,9 @@ namespace Abc.Zebus.Routing
 {
     public class BindingKeyPredicateBuilder : IBindingKeyPredicateBuilder
     {
-        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod("ToString");
-        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod("ToString");
+        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString));
+        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString));
         private readonly ConcurrentDictionary<Type, CacheItem> _cacheItems = new ConcurrentDictionary<Type, CacheItem>();
-
-        class CacheItem
-        {
-            public ParameterExpression ParameterExpression { get; set; }
-            public IList<MethodCallExpression> MembersToStringExpressions { get; set; }
-        }
 
         public Func<IMessage, bool> GetPredicate(Type messageType, BindingKey bindingKey)
         {
@@ -44,8 +38,8 @@ namespace Abc.Zebus.Routing
 
             if (!subPredicates.Any())
                 return _ => true;
-            
-            var finalExpression = subPredicates.Aggregate((Expression)null, (final, exp) => final == null ? exp : Expression.AndAlso(final, exp));
+
+            var finalExpression = subPredicates.Aggregate((Expression?)null, (final, exp) => final == null ? exp : Expression.AndAlso(final, exp))!;
             return (Func<IMessage, bool>)Expression.Lambda(finalExpression, cacheItem.ParameterExpression).Compile();
         }
 
@@ -54,7 +48,7 @@ namespace Abc.Zebus.Routing
             return _cacheItems.GetOrAdd(messageType, type =>
             {
                 var routingMembers = type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
-                                         .Select(x => new MemberExtendedInfo { Member = x, Attribute = x.GetCustomAttribute<RoutingPositionAttribute>(true) })
+                                         .Select(x => new MemberExtendedInfo(x))
                                          .Where(x => x.Attribute != null)
                                          .OrderBy(x => x.Attribute.Position)
                                          .ToList();
@@ -62,11 +56,7 @@ namespace Abc.Zebus.Routing
                 var parameterExpression = Expression.Parameter(typeof(IMessage), "m");
                 var castedMessage = Expression.Convert(parameterExpression, messageType);
 
-                return new CacheItem
-                {
-                    ParameterExpression = parameterExpression,
-                    MembersToStringExpressions = routingMembers.Select(x => GenerateMemberToStringExpression(castedMessage, x)).ToList()
-                };
+                return new CacheItem(parameterExpression, routingMembers.Select(x => GenerateMemberToStringExpression(castedMessage, x)));
             });
         }
 
@@ -95,11 +85,29 @@ namespace Abc.Zebus.Routing
                 : Expression.Call(memberAccessor(parameterExpression), _toStringMethod);
             return getMemberValue;
         }
-    }
 
-    public class MemberExtendedInfo
-    {
-        public MemberInfo Member { get; set; }
-        public RoutingPositionAttribute Attribute { get; set; }
+        private class CacheItem
+        {
+            public ParameterExpression ParameterExpression { get; }
+            public IList<MethodCallExpression> MembersToStringExpressions { get; }
+
+            public CacheItem(ParameterExpression parameterExpression, IEnumerable<MethodCallExpression> membersToStringExpressions)
+            {
+                ParameterExpression = parameterExpression;
+                MembersToStringExpressions = membersToStringExpressions.ToList();
+            }
+        }
+
+        private class MemberExtendedInfo
+        {
+            public MemberInfo Member { get; }
+            public RoutingPositionAttribute Attribute { get; }
+
+            public MemberExtendedInfo(MemberInfo member)
+            {
+                Member = member;
+                Attribute = member.GetCustomAttribute<RoutingPositionAttribute>(true);
+            }
+        }
     }
 }

@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Util.Extensions;
-using JetBrains.Annotations;
 
 namespace Abc.Zebus.Directory
 {
@@ -101,17 +100,12 @@ namespace Abc.Zebus.Directory
         private class SubscriptionNode
         {
             private static readonly Action<SubscriptionNode, string> _removeNode = (x, part) => x.RemoveChildNode(part);
-            private static readonly Action<SubscriptionNode, string> _removeSharpNode = (x, _) => x._sharpNode = null;
-            private static readonly Action<SubscriptionNode, string> _removeStarNode = (x, _) => x._starNode = null;
+            private static readonly Action<SubscriptionNode, string?> _removeSharpNode = (x, _) => x._sharpNode = null;
+            private static readonly Action<SubscriptionNode, string?> _removeStarNode = (x, _) => x._starNode = null;
 
-            [CanBeNull]
-            private ConcurrentDictionary<string, SubscriptionNode> _childNodes;
-
-            [CanBeNull]
-            private SubscriptionNode _sharpNode;
-
-            [CanBeNull]
-            private SubscriptionNode _starNode;
+            private ConcurrentDictionary<string, SubscriptionNode>? _childNodes;
+            private SubscriptionNode? _sharpNode;
+            private SubscriptionNode? _starNode;
 
             private readonly int _nextPartIndex;
             private List<Peer> _peers = new List<Peer>();
@@ -178,10 +172,10 @@ namespace Abc.Zebus.Directory
                     return UpdateChildNode(GetOrCreateStarNode(), peer, subscription, action, null, _removeStarNode);
 
                 var childNode = GetOrAddChildNode(nextPart);
-                return UpdateChildNode(childNode, peer, subscription, action, nextPart, _removeNode);
+                return UpdateChildNode(childNode, peer, subscription, action, nextPart, _removeNode!);
             }
 
-            private int UpdateChildNode(SubscriptionNode childNode, Peer peer, BindingKey subscription, UpdateAction action, string childNodePart, Action<SubscriptionNode, string> remover)
+            private int UpdateChildNode(SubscriptionNode childNode, Peer peer, BindingKey subscription, UpdateAction action, string? childNodePart, Action<SubscriptionNode, string?> remover)
             {
                 var update = childNode.Update(peer, subscription, action);
                 _peerCountIncludingChildren += update;
@@ -212,10 +206,10 @@ namespace Abc.Zebus.Directory
                 => _childNodes?.TryRemove(part, out _);
 
             private SubscriptionNode GetOrCreateSharpNode()
-                => _sharpNode ?? (_sharpNode = new SubscriptionNode(_nextPartIndex + 1));
+                => _sharpNode ??= new SubscriptionNode(_nextPartIndex + 1);
 
             private SubscriptionNode GetOrCreateStarNode()
-                => _starNode ?? (_starNode = new SubscriptionNode(_nextPartIndex + 1));
+                => _starNode ??= new SubscriptionNode(_nextPartIndex + 1);
 
             private int UpdateList(Peer peer, UpdateAction action)
                 => action == UpdateAction.Add

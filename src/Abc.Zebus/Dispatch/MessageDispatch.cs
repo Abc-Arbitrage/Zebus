@@ -11,7 +11,7 @@ namespace Abc.Zebus.Dispatch
 
         private readonly IMessageSerializer _messageSerializer;
         private readonly Action<MessageDispatch, DispatchResult> _continuation;
-        private Dictionary<Type, Exception> _exceptions;
+        private Dictionary<Type, Exception>? _exceptions;
         private int _remainingHandlerCount;
         private bool _isCloned;
 
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Dispatch
             _continuation(this, new DispatchResult(null));
         }
 
-        public void SetHandled(IMessageHandlerInvoker invoker, Exception error)
+        public void SetHandled(IMessageHandlerInvoker invoker, Exception? error)
         {
             if (error != null)
                 AddException(invoker.MessageHandlerType, error);

@@ -27,7 +27,7 @@ namespace Abc.Zebus
             return new MessageTypeId(messageType);
         }
 
-        internal static MessageTypeDescriptor GetMessageTypeDescriptor(string fullName)
+        internal static MessageTypeDescriptor GetMessageTypeDescriptor(string? fullName)
         {
             if (fullName == null)
                 return MessageTypeDescriptor.Null;
@@ -40,7 +40,7 @@ namespace Abc.Zebus
             return MessageTypeDescriptor.Load(fullName);
         }
 
-        internal static MessageTypeDescriptor GetMessageTypeDescriptor(Type messageType)
+        internal static MessageTypeDescriptor GetMessageTypeDescriptor(Type? messageType)
         {
             if (messageType == null)
                 return MessageTypeDescriptor.Null;

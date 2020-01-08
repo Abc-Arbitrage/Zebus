@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Util;
@@ -15,7 +15,7 @@ namespace Abc.Zebus
     [ProtoContract]
     public class Subscription : IEquatable<Subscription>
     {
-        private static readonly MethodInfo _wildCardTokenMethod = typeof(Builder).GetMethod("Any");
+        private static readonly MethodInfo _wildCardTokenMethod = typeof(Builder).GetMethod(nameof(Builder.Any));
         private int _computedHashCode;
 
         [ProtoMember(1, IsRequired = true)]
@@ -65,7 +65,7 @@ namespace Abc.Zebus
             return routingKey.PartCount == BindingKey.PartCount;
         }
 
-        public bool Equals(Subscription other)
+        public bool Equals(Subscription? other)
         {
             if (other == null)
                 return false;
@@ -73,18 +73,17 @@ namespace Abc.Zebus
             return MessageTypeId.Equals(other.MessageTypeId) && BindingKey.Equals(other.BindingKey);
         }
 
-        public override bool Equals(object obj) => Equals(obj as Subscription);
+        public override bool Equals(object? obj) => Equals(obj as Subscription);
 
+        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
         public override int GetHashCode()
         {
             unchecked
             {
-                // ReSharper disable NonReadonlyMemberInGetHashCode
                 if (_computedHashCode == 0)
                     _computedHashCode = (MessageTypeId.GetHashCode() * 397) ^ BindingKey.GetHashCode();
 
                 return _computedHashCode;
-                // ReSharper restore NonReadonlyMemberInGetHashCode
             }
         }
 
@@ -122,7 +121,7 @@ namespace Abc.Zebus
             return new Subscription(MessageUtil.TypeId<TMessage>(), BindingKey.Create(typeof(TMessage), parameterValues));
         }
 
-        private static object GetExpressionValue(Expression expression)
+        private static object? GetExpressionValue(Expression expression)
         {
             if (expression.NodeType != ExpressionType.Call)
                 return Expression.Lambda(expression).Compile().DynamicInvoke();
@@ -219,10 +218,9 @@ namespace Abc.Zebus
 
         private static void AddFieldValueFromBinaryExpression<TMessage>(Dictionary<string, string> fieldValues, BinaryExpression binaryExpression)
         {
-            MemberExpression memberExpression;
             Expression memberValueExpression;
 
-            if (TryGetMessageMemberExpression<TMessage>(binaryExpression.Right, out memberExpression))
+            if (TryGetMessageMemberExpression<TMessage>(binaryExpression.Right, out var memberExpression))
             {
                 memberValueExpression = binaryExpression.Left;
             }
@@ -244,7 +242,7 @@ namespace Abc.Zebus
             fieldValues.Add(memberName, valueAsText);
         }
 
-        private static bool TryGetMessageMemberExpression<TMessage>(Expression expression, out MemberExpression memberExpression)
+        private static bool TryGetMessageMemberExpression<TMessage>(Expression? expression, [NotNullWhen(true)] out MemberExpression? memberExpression)
         {
             memberExpression = expression as MemberExpression;
             if (memberExpression != null)
@@ -286,7 +284,7 @@ namespace Abc.Zebus
         [EditorBrowsable(EditorBrowsableState.Never), UsedImplicitly]
         public class Builder
         {
-            public T Any<T>() => default(T);
+            public T Any<T>() => default!;
         }
     }
 }

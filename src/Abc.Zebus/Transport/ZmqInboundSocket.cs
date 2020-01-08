@@ -16,8 +16,8 @@ namespace Abc.Zebus.Transport
         private readonly ZmqSocketOptions _options;
         private readonly string _environment;
         private byte[] _readBuffer = new byte[0];
-        private ZmqSocket _socket;
-        private ZmqEndPoint _socketEndPoint;
+        private ZmqSocket? _socket;
+        private ZmqEndPoint? _socketEndPoint;
         private TimeSpan _lastReceiveTimeout;
 
         public ZmqInboundSocket(ZmqContext context, PeerId peerId, ZmqEndPoint originalEndpoint, ZmqSocketOptions options, string environment)
@@ -47,19 +47,19 @@ namespace Abc.Zebus.Transport
 
         public void Dispose()
         {
-            _socket.Dispose();
+            _socket?.Dispose();
         }
 
-        public CodedInputStream Receive(TimeSpan? timeout = null)
+        public CodedInputStream? Receive(TimeSpan? timeout = null)
         {
             var receiveTimeout = timeout ?? _options.ReceiveTimeout;
             if (receiveTimeout != _lastReceiveTimeout)
             {
-                _socket.SetOption(ZmqSocketOption.RCVTIMEO, (int)receiveTimeout.TotalMilliseconds);
+                _socket!.SetOption(ZmqSocketOption.RCVTIMEO, (int)receiveTimeout.TotalMilliseconds);
                 _lastReceiveTimeout = receiveTimeout;
             }
 
-            if (_socket.TryReadMessage(ref _readBuffer, out var messageLength, out var error))
+            if (_socket!.TryReadMessage(ref _readBuffer, out var messageLength, out var error))
                 return new CodedInputStream(_readBuffer, 0, messageLength);
 
             // EAGAIN: Non-blocking mode was requested and no messages are available at the moment.
@@ -83,12 +83,12 @@ namespace Abc.Zebus.Transport
 
         public void Disconnect()
         {
-            var endpoint = _socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT);
+            var endpoint = _socket?.GetOptionString(ZmqSocketOption.LAST_ENDPOINT);
             if (endpoint == null)
                 return;
 
             _logger.InfoFormat("Unbinding socket, Inbound Endpoint: {0}", endpoint);
-            if (!_socket.TryUnbind(endpoint))
+            if (!_socket!.TryUnbind(endpoint))
                 _logger.WarnFormat("Socket error, Inbound Endpoint: {0}, Error: {1}", endpoint, ZmqUtil.GetLastErrorMessage());
         }
     }

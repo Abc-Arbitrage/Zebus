@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using Abc.Zebus.Serialization.Protobuf;
 
@@ -9,7 +8,7 @@ namespace Abc.Zebus.Transport
     {
         private static readonly MemoryStream _emptyStream = new MemoryStream(new byte[0]);
 
-        internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage, string environmentOverride = null)
+        internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage, string? environmentOverride = null)
         {
             output.WriteRawTag(1 << 3 | 2);
             Write(output, transportMessage.Id);
@@ -45,7 +44,7 @@ namespace Abc.Zebus.Transport
             WriteWasPersisted(output, wasPersisted);
         }
 
-        internal static void WritePersistentPeerIds(this CodedOutputStream output, TransportMessage transportMessage, List<PeerId> persistentPeerIdOverride)
+        internal static void WritePersistentPeerIds(this CodedOutputStream output, TransportMessage transportMessage, List<PeerId>? persistentPeerIdOverride)
         {
             var peerIds = persistentPeerIdOverride ?? transportMessage.PersistentPeerIds;
             if (peerIds == null)

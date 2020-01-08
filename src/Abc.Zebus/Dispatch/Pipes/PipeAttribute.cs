@@ -11,6 +11,6 @@ namespace Abc.Zebus.Dispatch.Pipes
             PipeType = pipeType;
         }
 
-        public Type PipeType { get; private set; }
+        public Type PipeType { get; }
     }
 }

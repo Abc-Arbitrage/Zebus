@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Transport;
@@ -41,7 +42,7 @@ namespace Abc.Zebus.Core
         public bool IsInfoEnabled(IMessage message)
             => _logInfoEnabled && GetLogHelper(message).Logger.IsInfoEnabled;
 
-        public void LogHandleMessage(IList<IMessage> messages, string dispatchQueueName, MessageId? messageId)
+        public void LogHandleMessage(IList<IMessage> messages, string? dispatchQueueName, MessageId? messageId)
         {
             var message = messages[0];
 
@@ -80,7 +81,7 @@ namespace Abc.Zebus.Core
                 return;
 
             var messageText = logHelper.GetMessageText(message);
-            _logger.Debug($"RECV remote: {messageText} from {transportMessage.SenderId} ({transportMessage.Content.Length} bytes). [{transportMessage.Id}]");
+            _logger.Debug($"RECV remote: {messageText} from {transportMessage.SenderId} ({transportMessage.Content?.Length} bytes). [{transportMessage.Id}]");
         }
 
         public void LogSendMessage(IMessage message, IList<Peer> peers)
@@ -102,7 +103,7 @@ namespace Abc.Zebus.Core
             var messageText = logHelper.GetMessageText(message);
             var targetPeersText = GetTargetPeersText(peers);
 
-            _logger.Info($"SEND: {messageText} to {targetPeersText} ({transportMessage.Content.Length} bytes) [{transportMessage.Id}]");
+            _logger.Info($"SEND: {messageText} to {targetPeersText} ({transportMessage.Content?.Length} bytes) [{transportMessage.Id}]");
         }
 
         private static string GetTargetPeersText(IList<Peer> peers)
@@ -126,6 +127,7 @@ namespace Abc.Zebus.Core
         public static string ToString(IMessage message)
             => GetLogHelper(message).GetMessageText(message);
 
+        [SuppressMessage("ReSharper", "ConvertClosureToMethodGroup")]
         private static MessageTypeLogHelper GetLogHelper(IMessage message)
             => _logHelpers.GetOrAdd(message.GetType(), type => CreateLogger(type));
 
@@ -137,7 +139,7 @@ namespace Abc.Zebus.Core
             return new MessageTypeLogHelper(logger, hasToStringOverride, messageType.GetPrettyName());
         }
 
-        private bool TryGetLogHelperForInfo(IMessage message, out MessageTypeLogHelper logHelper)
+        private bool TryGetLogHelperForInfo(IMessage message, [NotNullWhen(true)] out MessageTypeLogHelper? logHelper)
         {
             if (!_logInfoEnabled)
             {
@@ -149,7 +151,7 @@ namespace Abc.Zebus.Core
             return logHelper.Logger.IsInfoEnabled;
         }
 
-        private bool TryGetLogHelperForDebug(IMessage message, out MessageTypeLogHelper logHelper)
+        private bool TryGetLogHelperForDebug(IMessage message, [NotNullWhen(true)] out MessageTypeLogHelper? logHelper)
         {
             if (!_logDebugEnabled)
             {

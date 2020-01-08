@@ -14,7 +14,7 @@ namespace Abc.Zebus.Directory
         public readonly MessageTypeId MessageTypeId;
 
         [ProtoMember(2, IsRequired = true)]
-        public readonly BindingKey[] BindingKeys = Array.Empty<BindingKey>();
+        public readonly BindingKey[] BindingKeys;
 
         public SubscriptionsForType(MessageTypeId messageTypeId, params BindingKey[] bindingKeys)
         {
@@ -25,6 +25,7 @@ namespace Abc.Zebus.Directory
         [UsedImplicitly]
         private SubscriptionsForType()
         {
+            BindingKeys = Array.Empty<BindingKey>();
         }
 
         public static SubscriptionsForType Create<TMessage>(params BindingKey[] bindingKeys)
@@ -36,12 +37,12 @@ namespace Abc.Zebus.Directory
                             .ToDictionary(grp => grp.Key, grp => new SubscriptionsForType(grp.Key, grp.Select(sub => sub.BindingKey).ToArray()));
 
         public Subscription[] ToSubscriptions()
-            => BindingKeys?.Select(bindingKey => new Subscription(MessageTypeId, bindingKey)).ToArray() ?? new Subscription[0];
+            => BindingKeys?.Select(bindingKey => new Subscription(MessageTypeId, bindingKey)).ToArray() ?? Array.Empty<Subscription>();
 
-        public bool Equals(SubscriptionsForType other)
+        public bool Equals(SubscriptionsForType? other)
             => other != null && MessageTypeId == other.MessageTypeId && BindingKeys.SequenceEqual(other.BindingKeys);
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
                 return false;

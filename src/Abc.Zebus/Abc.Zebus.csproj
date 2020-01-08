@@ -3,6 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Zebus</PackageId>
     <Version>$(ZebusVersion)</Version>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

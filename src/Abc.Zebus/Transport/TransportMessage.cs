@@ -24,19 +24,19 @@ namespace Abc.Zebus.Transport
         }
 
         [ProtoIgnore, JsonIgnore]
-        public Stream Content { get; set; }
+        public Stream? Content { get; set; }
 
         [ProtoMember(4, IsRequired = true)]
         public OriginatorInfo Originator { get; set; }
 
         [ProtoMember(5, IsRequired = false)]
-        public string Environment { get; set; }
+        public string? Environment { get; set; }
 
         [ProtoMember(6, IsRequired = false)]
         public bool? WasPersisted { get; set; }
 
         [ProtoMember(7, IsRequired = false)]
-        public List<PeerId> PersistentPeerIds { get; set; }
+        public List<PeerId>? PersistentPeerIds { get; set; }
 
         [JsonIgnore]
         public bool IsPersistTransportMessage => PersistentPeerIds != null && PersistentPeerIds.Count != 0;
@@ -65,6 +65,7 @@ namespace Abc.Zebus.Transport
         [UsedImplicitly]
         internal TransportMessage()
         {
+            Originator = default!;
         }
 
         private static OriginatorInfo CreateOriginator(PeerId peerId, string peerEndPoint)
@@ -89,7 +90,7 @@ namespace Abc.Zebus.Transport
         internal TransportMessage ToPersistTransportMessage(List<PeerId> peerIds) => CloneWithPeerIds(peerIds);
         internal TransportMessage UnpackPersistTransportMessage() => CloneWithPeerIds(null);
 
-        private TransportMessage CloneWithPeerIds(List<PeerId> peerIds) => new TransportMessage
+        private TransportMessage CloneWithPeerIds(List<PeerId>? peerIds) => new TransportMessage
         {
             Id = Id,
             MessageTypeId = MessageTypeId,

@@ -7,7 +7,6 @@ namespace Abc.Zebus.Util.Extensions
 {
     internal static class ExtendIEnumerable
     {
-#if !NETFWK
         [Pure]
         public static HashSet<T> ToHashSet<T>([InstantHandle] this IEnumerable<T> collection)
         {
@@ -19,7 +18,6 @@ namespace Abc.Zebus.Util.Extensions
         {
             return new HashSet<T>(collection, comparer);
         }
-#endif
 
         [Pure]
         public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)

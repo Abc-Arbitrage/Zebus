@@ -5,6 +5,7 @@
     <PackageId>Zebus.Contracts</PackageId>
     <RootNamespace>Abc.Zebus</RootNamespace>
     <Version>$(ZebusContractsVersion)</Version>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
 </Project>

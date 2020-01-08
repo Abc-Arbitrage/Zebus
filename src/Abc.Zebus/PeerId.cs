@@ -18,7 +18,7 @@ namespace Abc.Zebus
         }
 
         public bool Equals(PeerId other) => string.Equals(_value, other._value);
-        public override bool Equals(object obj) => obj is PeerId && Equals((PeerId)obj);
+        public override bool Equals(object? obj) => obj is PeerId peerId && Equals(peerId);
 
         public override int GetHashCode() => _value?.GetHashCode() ?? 0;
 

@@ -22,7 +22,7 @@ namespace Abc.Zebus.Lotus
         [ProtoMember(5, IsRequired = false)]
         public readonly string[] FailingHandlerNames;
 
-        public MessageProcessingFailed(TransportMessage failingMessage, string failingMessageJson, string exceptionMessage, DateTime exceptionUtcTime, string[] failingHandlerNames)
+        public MessageProcessingFailed(TransportMessage failingMessage, string failingMessageJson, string exceptionMessage, DateTime exceptionUtcTime, string[]? failingHandlerNames)
         {
             FailingMessage = failingMessage;
             FailingMessageJson = failingMessageJson;

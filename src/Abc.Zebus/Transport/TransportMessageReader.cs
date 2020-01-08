@@ -52,8 +52,8 @@ namespace Abc.Zebus.Transport
             var endPosition = input.Position + length;
 
             var senderId = new PeerId();
-            string senderEndPoint = null;
-            string initiatorUserName = null;
+            string? senderEndPoint = null;
+            string? initiatorUserName = null;
 
             while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
             {
@@ -74,7 +74,7 @@ namespace Abc.Zebus.Transport
                 }
             }
 
-            return new OriginatorInfo(senderId, senderEndPoint, null, initiatorUserName);
+            return new OriginatorInfo(senderId, senderEndPoint!, null, initiatorUserName);
         }
 
         private static PeerId ReadPeerId(CodedInputStream input)
@@ -106,7 +106,7 @@ namespace Abc.Zebus.Transport
             var length = input.ReadLength();
             var endPosition = input.Position + length;
 
-            var value = default(T);
+            var value = default(T)!;
 
             while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
             {
@@ -124,7 +124,7 @@ namespace Abc.Zebus.Transport
             return value;
         }
 
-        private static List<PeerId> ReadPeerIds(CodedInputStream input, List<PeerId> peerIds)
+        private static List<PeerId> ReadPeerIds(CodedInputStream input, List<PeerId>? peerIds)
         {
             if (peerIds == null)
                 peerIds = new List<PeerId>();
