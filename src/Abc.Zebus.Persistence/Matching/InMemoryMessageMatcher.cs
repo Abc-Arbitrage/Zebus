@@ -53,16 +53,19 @@ namespace Abc.Zebus.Persistence.Matching
             foreach (var entry in _persistenceQueue.GetConsumingEnumerable())
             {
                 var currentEntry = entry;
-                do
+
+                while (true)
                 {
                     WaitForDelay(currentEntry);
                     PairUpOrAddToBatch(batch, currentEntry);
                     LoadBatch(batch, out var nextEntry);
                     PersistAndClearBatch(batch);
 
+                    if (nextEntry is null)
+                        break;
+
                     currentEntry = nextEntry;
                 }
-                while (currentEntry != null);
             }
         }
 
@@ -114,7 +117,7 @@ namespace Abc.Zebus.Persistence.Matching
             }
         }
 
-        private void LoadBatch(List<MatcherEntry> batch, out MatcherEntry nextEntry)
+        private void LoadBatch(List<MatcherEntry> batch, out MatcherEntry? nextEntry)
         {
             var configuration = _persistenceConfiguration;
 
@@ -146,7 +149,7 @@ namespace Abc.Zebus.Persistence.Matching
 
             foreach (var entry in batch.Where(x => x.IsEventWaitHandle))
             {
-                entry.WaitHandle.Set();
+                entry.WaitHandle!.Set();
             }
 
             CassandraInsertCount += entriesToInsert.Count;

@@ -6,7 +6,7 @@ namespace Abc.Zebus.Persistence.Matching
 {
     public class MatcherEntry
     {
-        private MatcherEntry(PeerId peerId, MessageId messageId, string messageTypeName, byte[] messageBytes, MatcherEntryType type, EventWaitHandle waitHandle)
+        private MatcherEntry(PeerId peerId, MessageId messageId, string messageTypeName, byte[]? messageBytes, MatcherEntryType type, EventWaitHandle? waitHandle)
         {
             PeerId = peerId;
             MessageId = messageId;
@@ -20,8 +20,8 @@ namespace Abc.Zebus.Persistence.Matching
         public PeerId PeerId { get; }
         public MessageId MessageId { get; }
         public string MessageTypeName { get; }
-        public byte[] MessageBytes { get; }
-        public EventWaitHandle WaitHandle { get; }
+        public byte[]? MessageBytes { get; }
+        public EventWaitHandle? WaitHandle { get; }
         public DateTime TimestampUtc { get; }
         public MatcherEntryType Type { get; }
 
@@ -30,7 +30,7 @@ namespace Abc.Zebus.Persistence.Matching
 
         public static MatcherEntry Message(PeerId peerId, MessageId messageId, MessageTypeId messageTypeId, byte[] bytes)
         {
-            return new MatcherEntry(peerId, messageId, messageTypeId.FullName, bytes, MatcherEntryType.Message, null);
+            return new MatcherEntry(peerId, messageId, messageTypeId.FullName!, bytes, MatcherEntryType.Message, null);
         }
 
         public static MatcherEntry Ack(PeerId peerId, MessageId messageId)
@@ -40,7 +40,7 @@ namespace Abc.Zebus.Persistence.Matching
 
         public static MatcherEntry EventWaitHandle(EventWaitHandle waitHandle)
         {
-            return new MatcherEntry(default(PeerId), default(MessageId), string.Empty, null, MatcherEntryType.EventWaitHandle, waitHandle);
+            return new MatcherEntry(default, default, string.Empty, null, MatcherEntryType.EventWaitHandle, waitHandle);
         }
 
         public bool CanBeProcessed(TimeSpan delay)

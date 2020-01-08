@@ -30,8 +30,8 @@ namespace Abc.Zebus.Persistence
         private readonly Guid _replayId;
         private readonly IReporter _reporter;
         private readonly IMessageSerializer _messageSerializer;
-        private CancellationTokenSource _cancellationTokenSource;
-        private Thread _runThread;
+        private CancellationTokenSource? _cancellationTokenSource;
+        private Thread? _runThread;
         private readonly Stopwatch _stopwatch = new Stopwatch();
         private readonly int _replayBatchSize;
         private readonly SendContext _emptySendContext = new SendContext();
@@ -63,7 +63,7 @@ namespace Abc.Zebus.Persistence
 
         public int UnackedMessageCountThatReleasesNextBatch { get; set; }
 
-        public event Action Stopped = delegate { };
+        public event Action? Stopped;
 
         public void AddLiveMessage(TransportMessage message)
         {
@@ -81,7 +81,7 @@ namespace Abc.Zebus.Persistence
 
         public bool Cancel()
         {
-            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource?.Cancel();
 
             if (WaitForCompletion(5.Seconds()))
                 return true;
@@ -92,7 +92,7 @@ namespace Abc.Zebus.Persistence
 
         public bool WaitForCompletion(TimeSpan timeout)
         {
-            return _runThread.Join(timeout);
+            return _runThread?.Join(timeout) ?? true;
         }
 
         private void RunProc(ManualResetEvent signal)
@@ -107,8 +107,8 @@ namespace Abc.Zebus.Persistence
             _stopwatch.Start();
             try
             {
-                Run(_cancellationTokenSource.Token);
-                if (_cancellationTokenSource.IsCancellationRequested)
+                Run(_cancellationTokenSource!.Token);
+                if (_cancellationTokenSource!.IsCancellationRequested)
                     _logger.WarnFormat("Replay cancelled, PeerId: {0}", _peer.Id);
             }
             catch (Exception ex)
@@ -120,7 +120,7 @@ namespace Abc.Zebus.Persistence
 
             _logger.InfoFormat("Replay stopped, PeerId: {0}. It ran for {1}", _peer.Id, _stopwatch.Elapsed);
 
-            Stopped();
+            Stopped?.Invoke();
         }
 
         public void Run(CancellationToken cancellationToken)

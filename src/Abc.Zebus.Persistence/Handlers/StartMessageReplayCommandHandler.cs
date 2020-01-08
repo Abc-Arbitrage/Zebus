@@ -9,7 +9,7 @@
             _messageReplayerRepository = messageReplayerRepository;
         }
 
-        public MessageContext Context { get; set; }
+        public MessageContext Context { get; set; } = default!;
 
         public void Handle(StartMessageReplayCommand message)
         {

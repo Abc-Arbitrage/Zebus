@@ -60,12 +60,11 @@ namespace Abc.Zebus.Persistence
             _messageReplayersEnabled = false;
         }
 
-        public IMessageReplayer GetActiveMessageReplayer(PeerId peerId)
+        public IMessageReplayer? GetActiveMessageReplayer(PeerId peerId)
         {
             lock (_activeMessageReplayers)
             {
-                IMessageReplayer value;
-                return _activeMessageReplayers.TryGetValue(peerId, out value) ? value : default(IMessageReplayer);
+                return _activeMessageReplayers.TryGetValue(peerId, out var value) ? value : default;
             }
         }
 
