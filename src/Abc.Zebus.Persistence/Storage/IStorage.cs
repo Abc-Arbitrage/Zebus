@@ -22,7 +22,7 @@ namespace Abc.Zebus.Persistence.Storage
         /// </summary>
         /// <param name="peerId">The PeerId of the Peer to get messages for</param>
         /// <returns>A Disposable <see cref="IMessageReader"/> that allows to get message batches for the given Peer</returns>
-        IMessageReader CreateMessageReader(PeerId peerId);
+        IMessageReader? CreateMessageReader(PeerId peerId);
 
         /// <summary>
         /// Remove the specified peer.

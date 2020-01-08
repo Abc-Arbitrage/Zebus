@@ -8,7 +8,7 @@ namespace Abc.Zebus.Persistence.CQL.Data
     {
         [PartitionKey(0)]
         [Column("PeerId")]
-        public string PeerId { get; set; }
+        public string PeerId { get; set; } = default!;
 
         [PartitionKey(1)]
         [Column("BucketId")]
@@ -26,6 +26,6 @@ namespace Abc.Zebus.Persistence.CQL.Data
         public bool IsAcked { get; set; }
 
         [Column("TransportMessage")]
-        public byte[] TransportMessage { get; set; }
+        public byte[] TransportMessage { get; set; } = default!;
     }
 }

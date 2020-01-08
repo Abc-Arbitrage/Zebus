@@ -37,7 +37,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             _log.Info($"PeerStateRepository initialized with {_statesByPeerId.Count} states.");
         }
 
-        public PeerState GetPeerStateFor(PeerId peerId)
+        public PeerState? GetPeerStateFor(PeerId peerId)
         {
             return _statesByPeerId.GetValueOrDefault(peerId);
         }
