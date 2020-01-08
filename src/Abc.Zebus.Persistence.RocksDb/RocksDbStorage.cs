@@ -24,11 +24,11 @@ namespace Abc.Zebus.Persistence.RocksDb
 
         private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
 
-        private RocksDbSharp.RocksDb _db;
+        private RocksDbSharp.RocksDb _db = default!;
         private readonly string _databaseDirectoryPath;
-        private ColumnFamilyHandle _messagesColumnFamily;
-        private ColumnFamilyHandle _peersColumnFamily;
-        private ColumnFamilyHandle _acksColumnFamily;
+        private ColumnFamilyHandle _messagesColumnFamily = default!;
+        private ColumnFamilyHandle _peersColumnFamily = default!;
+        private ColumnFamilyHandle _acksColumnFamily = default!;
 
         [DefaultConstructor]
         public RocksDbStorage()
@@ -130,7 +130,7 @@ namespace Abc.Zebus.Persistence.RocksDb
             }
         }
 
-        public IMessageReader CreateMessageReader(PeerId peerId)
+        public IMessageReader? CreateMessageReader(PeerId peerId)
         {
             using (var iterator = _db.NewIterator(_peersColumnFamily))
             {
