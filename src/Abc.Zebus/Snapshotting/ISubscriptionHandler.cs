@@ -1,6 +1,6 @@
 namespace Abc.Zebus.Snapshotting
 {
-    public interface ISubscriptionHandler : IMessageHandler<SubscriptionUpdatedMessage>
+    internal interface ISubscriptionHandler : IMessageHandler<SubscriptionUpdatedMessage>
     {
     }
 }

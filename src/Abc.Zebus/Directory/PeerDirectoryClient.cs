@@ -291,7 +291,7 @@ namespace Abc.Zebus.Directory
 
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, Subscription[] subscriptions)
         {
-            var snapshotGeneratingMessageTypes = GetSnapshotGeneratingMessageTypes();
+            var snapshotGeneratingMessageTypes = GetSubscriptionHandlerMessageTypes();
 
             var messageContext = GetMessageContextForSubscriptionUpdated();
             foreach (var subscription in subscriptions)
@@ -308,7 +308,7 @@ namespace Abc.Zebus.Directory
 
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, SubscriptionsForType[] subscriptions)
         {
-            var snapshotGeneratingMessageTypes = GetSnapshotGeneratingMessageTypes();
+            var snapshotGeneratingMessageTypes = GetSubscriptionHandlerMessageTypes();
 
             var messageContext = GetMessageContextForSubscriptionUpdated();
             foreach (var subscription in subscriptions)
@@ -321,13 +321,12 @@ namespace Abc.Zebus.Directory
             }
         }
 
-        private HashSet<Type> GetSnapshotGeneratingMessageTypes()
+        private HashSet<Type> GetSubscriptionHandlerMessageTypes()
         {
-            var snapshotGeneratingMessageTypes = _messageDispatcher.GetMessageHanlerInvokers()
-                                                                   .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionSnapshotGenerator<,>))?.GenericTypeArguments[1])
-                                                                   .Where(x => x != null)
-                                                                   .ToHashSet();
-            return snapshotGeneratingMessageTypes;
+            return _messageDispatcher.GetMessageHanlerInvokers()
+                                     .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionHandler<>))?.GenericTypeArguments[0])
+                                     .Where(x => x != null)
+                                     .ToHashSet();
         }
 
         private bool EnqueueIfRegistering(IEvent message)

@@ -9,12 +9,12 @@ namespace Abc.Zebus.Snapshotting
             Subscription = subscription;
             PeerId = peerId;
         }
+
         public SubscriptionUpdatedMessage(Subscription subscription, PeerId peerId)
         {
             Subscription = new SubscriptionsForType(subscription.MessageTypeId, subscription.BindingKey);
             PeerId = peerId;
         }
-
 
         public SubscriptionsForType Subscription { get; }
         public PeerId PeerId { get; }

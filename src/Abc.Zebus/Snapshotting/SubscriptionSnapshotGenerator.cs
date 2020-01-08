@@ -3,7 +3,12 @@ using Abc.Zebus.Directory;
 
 namespace Abc.Zebus.Snapshotting
 {
-    public abstract class SubscriptionSnapshotGenerator<TSnapshotMessage, TMessage> : ISubscriptionHandler
+    /// <summary>
+    /// Extend this class to generate snapshots each time a new subscription is created for <see cref="TMessage"/>
+    /// </summary>
+    /// <typeparam name="TSnapshotMessage">The type of the snapshot message</typeparam>
+    /// <typeparam name="TMessage">The type of the message whose subscriptions will trigger a snapshot</typeparam>
+    public abstract class SubscriptionSnapshotGenerator<TSnapshotMessage, TMessage> : SubscriptionHandler<TMessage>
         where TSnapshotMessage : IEvent
         where TMessage : IEvent
     {
@@ -14,14 +19,11 @@ namespace Abc.Zebus.Snapshotting
             _bus = bus;
         }
 
-        public void Handle(SubscriptionUpdatedMessage message)
+        protected override void OnSubscription(SubscriptionsForType subscription, PeerId peerId)
         {
-            if (message.Subscription.MessageTypeId.GetMessageType() != typeof(TMessage))
-                return;
-
-            var snapshot = GenerateSnapshot(message.Subscription, message.PeerId);
+            var snapshot = GenerateSnapshot(subscription, peerId);
             if (_bus is IInternalBus internalBus)
-                internalBus.Publish(snapshot, message.PeerId);
+                internalBus.Publish(snapshot, peerId);
             else
                 throw new Exception("The bus is not an internal bus");
         }
