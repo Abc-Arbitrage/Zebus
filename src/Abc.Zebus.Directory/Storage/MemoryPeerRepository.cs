@@ -60,8 +60,7 @@ namespace Abc.Zebus.Directory.Storage
 
         public void RemovePeer(PeerId peerId)
         {
-            PeerEntry unused;
-            _peers.TryRemove(peerId, out unused);
+            _peers.TryRemove(peerId, out _);
         }
 
         public void SetPeerResponding(PeerId peerId, bool isResponding)

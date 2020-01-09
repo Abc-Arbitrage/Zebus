@@ -43,9 +43,9 @@ namespace Abc.Zebus.Persistence.Matching
             _logger.Info("InMemoryMessageMatcher started");
         }
 
-        private void ThreadProc(object state)
+        private void ThreadProc(object? state)
         {
-            var signal = (ManualResetEventSlim)state;
+            var signal = (ManualResetEventSlim)state!;
             signal.Set();
 
             var batch = new List<MatcherEntry>();
@@ -109,7 +109,7 @@ namespace Abc.Zebus.Persistence.Matching
             catch (Exception ex)
             {
                 _logger.Error("Unexpected error happened", ex);
-                _bus.Publish(new CustomProcessingFailed(GetType().FullName, ex.ToString(), SystemDateTime.UtcNow));
+                _bus.Publish(new CustomProcessingFailed(GetType().FullName!, ex.ToString(), SystemDateTime.UtcNow));
             }
             finally
             {
@@ -196,12 +196,13 @@ namespace Abc.Zebus.Persistence.Matching
         public int Purge()
         {
             var purgedMessageCount = 0;
+
             while (_persistenceQueue.Count > 0)
             {
-                MatcherEntry entry;
-                if (_persistenceQueue.TryTake(out entry))
+                if (_persistenceQueue.TryTake(out _))
                     ++purgedMessageCount;
             }
+
             return purgedMessageCount;
         }
 

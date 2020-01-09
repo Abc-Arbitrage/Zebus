@@ -132,7 +132,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             _bus.Send(new PingPeerCommand(), Descriptor.Peer).ContinueWith(OnPingCommandAck, timestampUtc, _taskScheduler);
         }
 
-        public void OnPingCommandAck(Task<CommandResult> pingTask, object state)
+        public void OnPingCommandAck(Task<CommandResult> pingTask, object? state)
         {
             if (pingTask.IsFaulted)
             {
@@ -146,7 +146,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 return;
             }
 
-            var pingTimestampUtc = (DateTime)state;
+            var pingTimestampUtc = (DateTime)state!;
             var peerRespondingDetected = false;
 
             lock (_lock)

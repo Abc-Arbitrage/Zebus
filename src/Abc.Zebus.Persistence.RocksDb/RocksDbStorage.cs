@@ -32,7 +32,7 @@ namespace Abc.Zebus.Persistence.RocksDb
 
         [DefaultConstructor]
         public RocksDbStorage()
-            : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "database"))
+            : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "database"))
         {
         }
 

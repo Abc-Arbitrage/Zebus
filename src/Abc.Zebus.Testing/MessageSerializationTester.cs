@@ -14,8 +14,8 @@ namespace Abc.Zebus.Testing
 {
     public static class MessageSerializationTester
     {
-        private static readonly MethodInfo _createMethod = typeof(SpecimenFactory).GetMethod("Create", new[] { typeof(ISpecimenBuilder) });
-        private static readonly MethodInfo _injectMethod = typeof(FixtureRegistrar).GetMethod("Inject");
+        private static readonly MethodInfo _createMethod = typeof(SpecimenFactory).GetMethod(nameof(SpecimenFactory.Create), new[] { typeof(ISpecimenBuilder) })!;
+        private static readonly MethodInfo _injectMethod = typeof(FixtureRegistrar).GetMethod(nameof(FixtureRegistrar.Inject))!;
 
         public static void CheckSerializationForTypesInSameAssemblyAs<T>(params object[] prebuiltObjects)
         {
@@ -77,7 +77,7 @@ namespace Abc.Zebus.Testing
             if (message == null)
             {
                 var genericMethod = _createMethod.MakeGenericMethod(messageType);
-                message = genericMethod.Invoke(null, new object[] { fixture });
+                message = genericMethod.Invoke(null, new object[] { fixture })!;
             }
 
             Console.WriteLine("{{{0}}}", message);

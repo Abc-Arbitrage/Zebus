@@ -79,7 +79,7 @@ namespace Abc.Zebus.Persistence.Runner
 
         private static string InBaseDirectory(string path)
         {
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, path);
         }
 
         private static void InjectPersistenceServiceSpecificConfiguration(BusFactory busFactory, AppSettingsConfiguration configuration, bool useCassandraStorage)

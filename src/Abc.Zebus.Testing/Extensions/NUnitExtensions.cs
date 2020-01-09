@@ -201,7 +201,7 @@ namespace Abc.Zebus.Testing.Extensions
             Assert.That(collection, Is.Ordered);
         }
 
-        public static void ShouldBeEquivalentTo(this IEnumerable collection, IEnumerable expected, Func<object, object, bool> comparer)
+        public static void ShouldBeEquivalentTo(this IEnumerable collection, IEnumerable expected, Func<object?, object?, bool> comparer)
         {
             Assert.That(collection, Is.EquivalentTo(expected).Using(new EqualityComparer(comparer)));
         }
@@ -443,14 +443,14 @@ namespace Abc.Zebus.Testing.Extensions
 
         private class EqualityComparer : IEqualityComparer
         {
-            private readonly Func<object, object, bool> _comparer;
+            private readonly Func<object?, object?, bool> _comparer;
 
-            public EqualityComparer(Func<object, object, bool> comparer)
+            public EqualityComparer(Func<object?, object?, bool> comparer)
             {
                 _comparer = comparer;
             }
 
-            bool IEqualityComparer.Equals(object x, object y)
+            bool IEqualityComparer.Equals(object? x, object? y)
             {
                 return _comparer(x, y);
             }

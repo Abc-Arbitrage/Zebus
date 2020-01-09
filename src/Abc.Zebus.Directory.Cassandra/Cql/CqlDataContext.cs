@@ -30,8 +30,8 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
         {
             foreach (var propertyInfo in GetTableProperties(GetType()))
             {
-                var table = propertyInfo.GetMethod.Invoke(this, Array.Empty<object>());
-                table.GetType().GetMethod(nameof(Table<object>.CreateIfNotExists)).Invoke(table, Array.Empty<object>());
+                var table = propertyInfo.GetMethod!.Invoke(this, Array.Empty<object>())!;
+                table.GetType().GetMethod(nameof(Table<object>.CreateIfNotExists))!.Invoke(table, Array.Empty<object>());
             }
         }
 
@@ -45,7 +45,7 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
 
                 var tableType = genericArguments[0];
 
-                var tableAttribute = tableType.GetCustomAttribute<TableAttribute>();
+                var tableAttribute = tableType.GetCustomAttribute<TableAttribute>()!;
                 yield return tableAttribute.Name;
             }
         }

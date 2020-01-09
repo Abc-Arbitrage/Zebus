@@ -332,7 +332,7 @@ namespace Abc.Zebus.Testing
         /// </summary>
         public class DefaultHandlerExecutor : IHandlerExecutor
         {
-            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler)
+            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?>? handler)
             {
                 var taskCompletionSource = new TaskCompletionSource<CommandResult>();
                 try
@@ -358,7 +358,7 @@ namespace Abc.Zebus.Testing
         /// </summary>
         public class AsyncHandlerExecutor : IHandlerExecutor
         {
-            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler)
+            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?>? handler)
             {
                 return Task.Factory.StartNew(() =>
                 {
@@ -373,7 +373,7 @@ namespace Abc.Zebus.Testing
         /// </summary>
         public class DoNotReplyHandlerExecutor : IHandlerExecutor
         {
-            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler)
+            public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?>? handler)
             {
                 return new TaskCompletionSource<CommandResult>().Task;
             }
@@ -381,7 +381,7 @@ namespace Abc.Zebus.Testing
 
         public interface IHandlerExecutor
         {
-            Task<CommandResult> Execute(ICommand command, Func<IMessage, object?> handler);
+            Task<CommandResult> Execute(ICommand command, Func<IMessage, object?>? handler);
         }
 
         private class HandlerKey : Tuple<Type, PeerId>
