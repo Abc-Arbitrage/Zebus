@@ -291,6 +291,8 @@ namespace Abc.Zebus.Directory
 
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, Subscription[] subscriptions)
         {
+            if(peerId == _self.Id)
+                return;
             var snapshotGeneratingMessageTypes = GetSubscriptionHandlerMessageTypes();
 
             var messageContext = GetMessageContextForSubscriptionUpdated();
@@ -308,6 +310,8 @@ namespace Abc.Zebus.Directory
 
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, SubscriptionsForType[] subscriptions)
         {
+            if(peerId == _self.Id)
+                return;
             var snapshotGeneratingMessageTypes = GetSubscriptionHandlerMessageTypes();
 
             var messageContext = GetMessageContextForSubscriptionUpdated();
@@ -316,7 +320,7 @@ namespace Abc.Zebus.Directory
                 if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
-                var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
+                var subscriptionUpdatedMessage = new  SubscriptionUpdatedMessage(subscription, peerId);
                 _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
             }
         }
