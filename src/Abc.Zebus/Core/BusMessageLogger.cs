@@ -18,7 +18,7 @@ namespace Abc.Zebus.Core
         private bool _logInfoEnabled;
 
         public BusMessageLogger(Type loggerType)
-            : this(loggerType.FullName)
+            : this(loggerType.FullName!)
         {
         }
 

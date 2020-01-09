@@ -10,9 +10,9 @@ namespace Abc.Zebus
     public readonly struct PeerId : IEquatable<PeerId>
     {
         [ProtoMember(1, IsRequired = true)]
-        private readonly string _value;
+        private readonly string? _value;
 
-        public PeerId(string value)
+        public PeerId(string? value)
         {
             _value = value;
         }

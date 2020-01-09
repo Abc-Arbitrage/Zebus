@@ -13,7 +13,7 @@ namespace Abc.Zebus.Serialization
             writer.WriteValue(peerId.ToString());
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             if (reader.TokenType != JsonToken.String)
                 return Activator.CreateInstance(objectType); // objectType can be Nullable<PeerId>

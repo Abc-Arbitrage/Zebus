@@ -10,8 +10,8 @@ namespace Abc.Zebus.Routing
 {
     public class BindingKeyPredicateBuilder : IBindingKeyPredicateBuilder
     {
-        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString));
-        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString));
+        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString))!;
+        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString))!;
         private readonly ConcurrentDictionary<Type, CacheItem> _cacheItems = new ConcurrentDictionary<Type, CacheItem>();
 
         public Func<IMessage, bool> GetPredicate(Type messageType, BindingKey bindingKey)
@@ -50,7 +50,7 @@ namespace Abc.Zebus.Routing
                 var routingMembers = type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
                                          .Select(x => new MemberExtendedInfo(x))
                                          .Where(x => x.Attribute != null)
-                                         .OrderBy(x => x.Attribute.Position)
+                                         .OrderBy(x => x.Attribute!.Position)
                                          .ToList();
 
                 var parameterExpression = Expression.Parameter(typeof(IMessage), "m");
@@ -101,7 +101,7 @@ namespace Abc.Zebus.Routing
         private class MemberExtendedInfo
         {
             public MemberInfo Member { get; }
-            public RoutingPositionAttribute Attribute { get; }
+            public RoutingPositionAttribute? Attribute { get; }
 
             public MemberExtendedInfo(MemberInfo member)
             {

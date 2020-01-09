@@ -129,6 +129,7 @@ namespace Abc.Zebus.Routing
             public BindingKey BuildKey(IMessage message)
             {
                 var parts = new string[_tokens.Length];
+
                 for (var tokenIndex = 0; tokenIndex < parts.Length; ++tokenIndex)
                 {
                     parts[tokenIndex] = _tokens[tokenIndex].GetValue(message);
@@ -140,6 +141,7 @@ namespace Abc.Zebus.Routing
             public BindingKey BuildKey(IDictionary<string, string> fieldValues)
             {
                 var parts = new string[_tokens.Length];
+
                 for (var tokenIndex = 0; tokenIndex < _tokens.Length; ++tokenIndex)
                 {
                     parts[tokenIndex] = fieldValues.GetValueOrDefault(_tokens[tokenIndex].Name, _star);

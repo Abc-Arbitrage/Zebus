@@ -15,7 +15,7 @@ namespace Abc.Zebus
     [ProtoContract]
     public class Subscription : IEquatable<Subscription>
     {
-        private static readonly MethodInfo _wildCardTokenMethod = typeof(Builder).GetMethod(nameof(Builder.Any));
+        private static readonly MethodInfo _wildCardTokenMethod = typeof(Builder).GetMethod(nameof(Builder.Any))!;
         private int _computedHashCode;
 
         [ProtoMember(1, IsRequired = true)]
@@ -110,11 +110,11 @@ namespace Abc.Zebus
                 for (var argumentIndex = 0; argumentIndex < newExpression.Arguments.Count; ++argumentIndex)
                 {
                     var argumentExpression = newExpression.Arguments[argumentIndex];
-                    var parameterName = parameters[argumentIndex].Name;
+                    var parameterName = parameters[argumentIndex].Name!;
                     var parameterValue = GetExpressionValue(argumentExpression);
 
                     if (parameterValue != null)
-                        parameterValues[parameterName] = parameterValue.ToString();
+                        parameterValues[parameterName] = parameterValue.ToString() ?? string.Empty;
                 }
             }
 
@@ -239,7 +239,7 @@ namespace Abc.Zebus
                 return;
 
             var valueAsText = memberExpression.Type.IsEnum ? Enum.GetName(memberExpression.Type, memberValue) : memberValue.ToString();
-            fieldValues.Add(memberName, valueAsText);
+            fieldValues.Add(memberName, valueAsText ?? string.Empty);
         }
 
         private static bool TryGetMessageMemberExpression<TMessage>(Expression? expression, [NotNullWhen(true)] out MemberExpression? memberExpression)

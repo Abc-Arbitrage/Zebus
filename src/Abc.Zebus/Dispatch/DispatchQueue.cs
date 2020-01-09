@@ -381,7 +381,7 @@ namespace Abc.Zebus.Dispatch
                 _dispatchQueue = dispatchQueue;
             }
 
-            public override void Post(SendOrPostCallback d, object state)
+            public override void Post(SendOrPostCallback d, object? state)
             {
                 _dispatchQueue.Enqueue(() => d(state));
             }

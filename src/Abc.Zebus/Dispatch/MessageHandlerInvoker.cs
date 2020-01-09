@@ -73,7 +73,7 @@ namespace Abc.Zebus.Dispatch
 
         internal static SubscriptionMode? GetExplicitSubscriptionMode(Type handlerType)
         {
-            var subscriptionModeAttribute = (SubscriptionModeAttribute)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
+            var subscriptionModeAttribute = (SubscriptionModeAttribute?)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
             if (subscriptionModeAttribute != null)
                 return subscriptionModeAttribute.SubscriptionMode;
 

@@ -628,7 +628,7 @@ namespace Abc.Zebus.Core
                 jsonMessage = $"Unable to serialize message :{System.Environment.NewLine}{ex}";
             }
 
-            var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName).ToArray());
+            var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName!).ToArray());
             Publish(messageProcessingFailed);
         }
 
@@ -641,7 +641,7 @@ namespace Abc.Zebus.Core
                 return;
 
             var errorMessage = $"Unable to handle local message\r\nMessage is not serializable\r\nMessageType: {messageTypeName}\r\nDispatch error: {dispatchErrorMessage}\r\nSerialization error: {serializationException}";
-            var processingFailed = new CustomProcessingFailed(GetType().FullName, errorMessage, SystemDateTime.UtcNow);
+            var processingFailed = new CustomProcessingFailed(GetType().FullName!, errorMessage, SystemDateTime.UtcNow);
             Publish(processingFailed);
         }
 
@@ -661,7 +661,7 @@ namespace Abc.Zebus.Core
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out var taskCompletionSource))
                 return;
 
-            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId.Value, new MemoryStream(message.Payload), transportMessage) : null;
+            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId.Value, new MemoryStream(message.Payload ?? Array.Empty<byte>()), transportMessage) : null;
             var commandResult = new CommandResult(message.ErrorCode, message.ResponseMessage, response);
 
             taskCompletionSource.SetResult(commandResult);

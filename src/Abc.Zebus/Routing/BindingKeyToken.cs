@@ -7,9 +7,9 @@ namespace Abc.Zebus.Routing
 {
     internal class BindingKeyToken
     {
-        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString));
-        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString));
-        private readonly Func<IMessage, string> _valueAccessorFunc;
+        private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString))!;
+        private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString))!;
+        private readonly Func<IMessage, string?> _valueAccessorFunc;
 
         public BindingKeyToken(int position, Type messageType, FieldInfo fieldInfo)
         {
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Routing
         {
             try
             {
-                return _valueAccessorFunc(message);
+                return _valueAccessorFunc(message) ?? string.Empty;
             }
             catch (NullReferenceException)
             {
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Routing
             }
         }
 
-        private Func<IMessage, string> GenerateValueAccessor(Func<Expression, Expression> valueAccessor, Type messageType, Type memberType)
+        private static Func<IMessage, string?> GenerateValueAccessor(Func<Expression, Expression> valueAccessor, Type messageType, Type memberType)
         {
             var message = Expression.Parameter(typeof(IMessage), "m");
             var castedMessage = Expression.Convert(message, messageType);
@@ -53,8 +53,8 @@ namespace Abc.Zebus.Routing
                 ? Expression.Call(valueAccessor(castedMessage), _toStringWithFormatMethod, Expression.Constant(CultureInfo.InvariantCulture))
                 : Expression.Call(valueAccessor(castedMessage), _toStringMethod);
 
-            var lambda = Expression.Lambda(typeof(Func<IMessage, string>), body, message);
-            return (Func<IMessage, string>)lambda.Compile();
+            var lambda = Expression.Lambda(typeof(Func<IMessage, string?>), body, message);
+            return (Func<IMessage, string?>)lambda.Compile();
         }
     }
 }

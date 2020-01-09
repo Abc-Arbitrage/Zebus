@@ -64,12 +64,12 @@ namespace Abc.Zebus.Util
         public static string GetFullnameWithNoAssemblyOrVersion(Type messageType)
         {
             if (!messageType.IsGenericType)
-                return messageType.FullName;
+                return messageType.FullName!;
 
             var genericTypeDefinition = messageType.GetGenericTypeDefinition();
             var builder = new StringBuilder();
             if (messageType.IsNested)
-                builder.AppendFormat("{0}+", messageType.DeclaringType.FullName);
+                builder.AppendFormat("{0}+", messageType.DeclaringType!.FullName);
             else
                 builder.AppendFormat("{0}.", genericTypeDefinition.Namespace);
 

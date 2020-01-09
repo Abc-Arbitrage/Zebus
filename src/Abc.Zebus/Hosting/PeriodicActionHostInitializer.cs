@@ -141,7 +141,7 @@ namespace Abc.Zebus.Hosting
         {
             try
             {
-                _bus.Publish(new CustomProcessingFailed(GetType().FullName, error.ToString()));
+                _bus.Publish(new CustomProcessingFailed(GetType().FullName!, error.ToString()));
             }
             catch (Exception ex)
             {

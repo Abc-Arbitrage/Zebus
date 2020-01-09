@@ -48,7 +48,7 @@ namespace Abc.Zebus.Util
             {
                 try
                 {
-                    action((T)s);
+                    action((T)s!);
                 }
                 catch (ThreadAbortException ex)
                 {
