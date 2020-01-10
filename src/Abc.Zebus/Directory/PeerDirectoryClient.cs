@@ -284,9 +284,9 @@ namespace Abc.Zebus.Directory
             if (EnqueueIfRegistering(message))
                 return;
 
-            AddOrUpdatePeerEntry(message.PeerDescriptor);
-
             PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
+
+            AddOrUpdatePeerEntry(message.PeerDescriptor);
         }
 
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, Subscription[] subscriptions)
@@ -403,9 +403,9 @@ namespace Abc.Zebus.Directory
             peer.Value.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
             peer.Value.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
-            DispatchSubscriptionUpdatedMessages(message.PeerDescriptor.PeerId, message.PeerDescriptor.Subscriptions);
-
             PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
+
+            DispatchSubscriptionUpdatedMessages(message.PeerDescriptor.PeerId, message.PeerDescriptor.Subscriptions);
         }
 
         public void Handle(PeerSubscriptionsForTypesUpdated message)
@@ -422,9 +422,9 @@ namespace Abc.Zebus.Directory
 
             peer.Value.SetSubscriptionsForType(message.SubscriptionsForType ?? Enumerable.Empty<SubscriptionsForType>(), message.TimestampUtc);
 
-            DispatchSubscriptionUpdatedMessages(message.PeerId, message.SubscriptionsForType); // TODO
-
             PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
+
+            DispatchSubscriptionUpdatedMessages(message.PeerId, message.SubscriptionsForType); // TODO
         }
 
         private void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
