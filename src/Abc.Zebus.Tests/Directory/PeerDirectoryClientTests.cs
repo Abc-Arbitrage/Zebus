@@ -69,7 +69,7 @@ namespace Abc.Zebus.Tests.Directory
             {
             }
 
-            protected override MySnap GenerateSnapshot(SubscriptionsForType subscription, PeerId peer)
+            protected override MySnap GenerateSnapshot(SubscriptionsForType subscription)
             {
                 throw new NotImplementedException();
             }
@@ -648,7 +648,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             // Arrange
             _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
-            var (subscription, descriptor) = DispatchedMessage<MyMessage>();
+            var (subscription, descriptor) = DispatchedMessage<MyMessage>(_otherPeer);
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             // Act
@@ -663,12 +663,12 @@ namespace Abc.Zebus.Tests.Directory
             subscriptionUpdatedMessage.PeerId.ShouldEqual(_otherPeer.Id);
         }
 
-        private (SubscriptionsForType subscription, PeerDescriptor descriptor) DispatchedMessage<TMessage>()
+        private (SubscriptionsForType subscription, PeerDescriptor descriptor) DispatchedMessage<TMessage>(Peer peer)
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
             var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TMessage)));
             _messageDispatcher.Setup(x => x.Dispatch(It.IsAny<MessageDispatch>())).Callback<MessageDispatch>(dispatch => { _dispatchedMessage = dispatch; });
-            var descriptor = _otherPeer.ToPeerDescriptor(true, new Subscription[0]);
+            var descriptor = peer.ToPeerDescriptor(true, new Subscription[0]);
             return (subscription, descriptor);
         }
 
@@ -684,7 +684,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_not_dispatch_subscriptionUpdated_messages_when_subscriptionUpdated_and_no_handler_registered()
         {
             // Arrange
-            var (subscription, descriptor) = DispatchedMessage<MyMessage>();
+            var (subscription, descriptor) = DispatchedMessage<MyMessage>(_otherPeer);
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             // Act
@@ -699,7 +699,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_not_dispatch_subscriptionUpdated_messages_when_subscriptionUpdated_for_different_message()
         {
             // Arrange
-            var (subscription, descriptor) = DispatchedMessage<FakeEvent>();
+            var (subscription, descriptor) = DispatchedMessage<FakeEvent>(_otherPeer);
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             // Act
@@ -711,28 +711,21 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public async Task should_dispatch_subscriptionUpdated_messages_only_for_messages_with_registered_subscriptionHandler()
+        public async Task should_not_dispatch_subscriptionUpdated_to_self()
         {
             // Arrange
-            MessageDispatch dispatchedMessage = null;
-            _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
-            var registrationSubscriptions = new Subscription[0];
-            var subscriptions = new[] { new Subscription(new MessageTypeId(typeof(MyMessage))), new Subscription(new MessageTypeId(typeof(FakeEvent))) };
-            var descriptor = _otherPeer.ToPeerDescriptor(true, subscriptions);
-            await _directory.RegisterAsync(_bus, _self, registrationSubscriptions).ConfigureAwait(true);
             _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
-            _messageDispatcher.Setup(x => x.Dispatch(It.IsAny<MessageDispatch>())).Callback<MessageDispatch>(dispatch => { dispatchedMessage = dispatch; });
+            var (subscription, descriptor) = DispatchedMessage<MyMessage>(_self);
+            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
             // Act
             _directory.Handle(new PeerStarted(descriptor));
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.Now, subscription));
 
             // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
-            var subscriptionUpdatedMessage = dispatchedMessage.Message as SubscriptionUpdatedMessage;
-            subscriptionUpdatedMessage.ShouldNotBeNull();
-            subscriptions.ExpectedSingle(s => s.MessageTypeId == subscriptionUpdatedMessage.Subscription.MessageTypeId);
-            subscriptionUpdatedMessage.PeerId.ShouldEqual(_otherPeer.Id);
+            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
         }
+
 
         [Test]
         public void should_order_directory_peers_randomly()
