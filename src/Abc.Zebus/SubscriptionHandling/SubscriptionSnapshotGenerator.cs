@@ -21,7 +21,7 @@ namespace Abc.Zebus.SubscriptionHandling
 
         protected override void OnSubscription(SubscriptionsForType subscription, PeerId peerId)
         {
-            var snapshot = GenerateSnapshot(subscription, peerId);
+            var snapshot = GenerateSnapshot(subscription);
             if (_bus is IInternalBus internalBus)
                 internalBus.Publish(snapshot, peerId);
             else
@@ -32,8 +32,7 @@ namespace Abc.Zebus.SubscriptionHandling
         /// Generate a snapshot for the given subscription
         /// </summary>
         /// <param name="messageSubscription">The subscription of <see cref="TMessage"/></param>
-        /// <param name="peer">The peer that subscribed</param>
         /// <returns>An instance of the snapshot message</returns>
-        protected abstract TSnapshotMessage GenerateSnapshot(SubscriptionsForType messageSubscription, PeerId peer);
+        protected abstract TSnapshotMessage GenerateSnapshot(SubscriptionsForType messageSubscription);
     }
 }

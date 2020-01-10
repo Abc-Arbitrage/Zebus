@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
             {
             }
 
-            protected override SnapshotTest GenerateSnapshot(SubscriptionsForType messageSubscription, PeerId peer)
+            protected override SnapshotTest GenerateSnapshot(SubscriptionsForType messageSubscription)
             {
                 return new SnapshotTest();
             }
