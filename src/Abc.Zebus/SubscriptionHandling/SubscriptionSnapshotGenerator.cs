@@ -1,7 +1,7 @@
 using System;
 using Abc.Zebus.Directory;
 
-namespace Abc.Zebus.Snapshotting
+namespace Abc.Zebus.SubscriptionHandling
 {
     /// <summary>
     /// Extend this class to generate snapshots each time a new subscription is created for <see cref="TMessage"/>

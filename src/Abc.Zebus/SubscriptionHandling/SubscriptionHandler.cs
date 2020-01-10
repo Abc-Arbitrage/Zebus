@@ -1,6 +1,6 @@
 using Abc.Zebus.Directory;
 
-namespace Abc.Zebus.Snapshotting
+namespace Abc.Zebus.SubscriptionHandling
 {
     /// <summary>
     /// Extend this class with the message you wish to be notified of subscriptions for.

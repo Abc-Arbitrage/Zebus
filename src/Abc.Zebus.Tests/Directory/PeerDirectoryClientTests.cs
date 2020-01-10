@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
-using Abc.Zebus.Snapshotting;
+using Abc.Zebus.SubscriptionHandling;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;

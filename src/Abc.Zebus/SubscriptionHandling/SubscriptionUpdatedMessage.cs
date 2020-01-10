@@ -1,6 +1,6 @@
 using Abc.Zebus.Directory;
 
-namespace Abc.Zebus.Snapshotting
+namespace Abc.Zebus.SubscriptionHandling
 {
     public class SubscriptionUpdatedMessage : IMessage
     {
