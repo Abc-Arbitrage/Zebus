@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using log4net;
 
 namespace Abc.Zebus.Directory.RocksDb.Storage
@@ -15,6 +16,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
     public partial class RocksDbPeerRepository : IPeerRepository, IDisposable
     {
         private const int _peerIdLengthByteCount = 2;
+        private static readonly ThreadLocal<MemoryStream> _memoryStream = new ThreadLocal<MemoryStream>(() => new MemoryStream(1024));
         private RocksDbSharp.RocksDb _db;
 
         /// <summary>
@@ -84,8 +86,8 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             foreach (var subscription in subscriptionsForTypes)
             {
                 var key = BuildSubscriptionKey(peerId, subscription.MessageTypeId);
-                var value = SerializeBindingKeys(subscription.BindingKeys);
-                _db.Put(key, value, _subscriptionsColumnFamily);
+                var (value, valueLength) = SerializeBindingKeys(subscription.BindingKeys);
+                _db.Put(key, key.Length, value, valueLength, _subscriptionsColumnFamily);
             }
         }
 
@@ -102,11 +104,12 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
                                                      peerDescriptor.TimestampUtc.GetValueOrDefault(),
                                                      peerDescriptor.HasDebuggerAttached,
                                                      bindingKeys);
-            var destination = new MemoryStream();
-            Serializer.Serialize(destination, storagePeer);
-            var value = destination.ToArray();
 
-            _db.Put(key, value, _peersColumnFamily);
+            var memoryStream = GetScratchMemoryStream();
+            Serializer.Serialize(memoryStream, storagePeer);
+            var value = memoryStream.GetBuffer();
+
+            _db.Put(key, key.Length, value, memoryStream.Position, _peersColumnFamily);
         }
 
         public PeerDescriptor Get(PeerId peerId)
@@ -305,10 +308,10 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             return bindingKeys;
         }
 
-        private static byte[] SerializeBindingKeys(BindingKey[] bindingKeys)
+        private static (byte[] Data, long Length) SerializeBindingKeys(BindingKey[] bindingKeys)
         {
-            using var memoryStream = new MemoryStream();
-            using var binaryWriter = new BinaryWriter(memoryStream);
+            var memoryStream = GetScratchMemoryStream();
+            var binaryWriter = new BinaryWriter(memoryStream, Encoding.Default, true);
 
             binaryWriter.Write(bindingKeys.Length);
             foreach (var bindingKey in bindingKeys)
@@ -319,7 +322,14 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
                     binaryWriter.Write(bindingKey.GetPart(partIndex));
             }
 
-            return memoryStream.ToArray();
+            return (memoryStream.GetBuffer(), memoryStream.Position);
+        }
+
+        private static MemoryStream GetScratchMemoryStream()
+        {
+            var scratchMemoryStream = _memoryStream.Value;
+            scratchMemoryStream.Position = 0;
+            return scratchMemoryStream;
         }
 
         private static bool CompareStart(byte[] key, byte[] peerIdBytes)
