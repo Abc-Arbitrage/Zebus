@@ -14,8 +14,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
 {
     public partial class RocksDbPeerRepository : IPeerRepository, IDisposable
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(RocksDbPeerRepository));
-        private const int PeerIdLengthByteCount = 2;
+        private const int _peerIdLengthByteCount = 2;
         private RocksDbSharp.RocksDb _db;
 
         /// <summary>
@@ -154,7 +153,6 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             do
             {
                 currentKey = cursor.Key();
-                Console.WriteLine($"Doing something to key {Encoding.UTF8.GetString(currentKey)}");
                 action(currentKey, cursor.Value());
                 cursor.Next();
             } while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
@@ -170,11 +168,11 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         private static MessageTypeId GetMessageTypeIdFromKey(byte[] currentKey)
         {
             var length = ReadPeerIdLength(currentKey);
-            var peerIdByteCount = length + PeerIdLengthByteCount;
+            var peerIdByteCount = length + _peerIdLengthByteCount;
             if (currentKey.Length <= peerIdByteCount)
                 throw new ApplicationException("Key does not contain message type id");
 
-            return new MessageTypeId(Encoding.UTF8.GetString(currentKey, length, currentKey.Length - length - PeerIdLengthByteCount));
+            return new MessageTypeId(Encoding.UTF8.GetString(currentKey, length, currentKey.Length - length - _peerIdLengthByteCount));
         }
 
         public IEnumerable<PeerDescriptor> GetPeers(bool loadDynamicSubscriptions = true)
@@ -262,7 +260,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             var peerPart = Encoding.UTF8.GetBytes(peerId.ToString());
             var messageTypeIdPart = Encoding.UTF8.GetBytes(messageTypeId.FullName);
 
-            var key = new byte[peerPart.Length + messageTypeIdPart.Length + PeerIdLengthByteCount];
+            var key = new byte[peerPart.Length + messageTypeIdPart.Length + _peerIdLengthByteCount];
             Buffer.BlockCopy(peerPart, 0, key, 0, peerPart.Length);
             Buffer.BlockCopy(messageTypeIdPart, 0, key, peerPart.Length, messageTypeIdPart.Length);
             WritePeerIdLength(key, peerPart.Length);
@@ -278,7 +276,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             return key;
         }
 
-        private static short ReadPeerIdLength(byte[] subscriptionKeyBytes) => BitConverter.ToInt16(subscriptionKeyBytes, subscriptionKeyBytes.Length - PeerIdLengthByteCount);
+        private static short ReadPeerIdLength(byte[] subscriptionKeyBytes) => BitConverter.ToInt16(subscriptionKeyBytes, subscriptionKeyBytes.Length - _peerIdLengthByteCount);
 
         private static void WritePeerIdLength(byte[] key, int peerPartLength)
         {
