@@ -14,24 +14,41 @@ namespace Abc.Zebus.Hosting
         /// </summary>
         public virtual int Priority => 0;
 
-        public virtual bool CallAfterStartBeforeMessageDeliveryHasStarted => false;
-
         public virtual void ConfigureContainer(IContainer container)
         {
         }
 
+        /// <summary>
+        /// Invoked before <see cref="IBus.Start"/>.
+        /// </summary>
         public virtual void BeforeStart()
         {
         }
 
+        /// <summary>
+        /// Invoked during <see cref="IBus.Start"/>, after register but before starting dispatcher.
+        /// </summary>
+        public virtual void BeforeDispatcherStart()
+        {
+        }
+
+        /// <summary>
+        /// Invoked after <see cref="IBus.Start"/>.
+        /// </summary>
         public virtual void AfterStart()
         {
         }
 
+        /// <summary>
+        /// Invoked before <see cref="IBus.Stop"/>.
+        /// </summary>
         public virtual void BeforeStop()
         {
         }
 
+        /// <summary>
+        /// Invoked after <see cref="IBus.Stop"/>.
+        /// </summary>
         public virtual void AfterStop()
         {
         }

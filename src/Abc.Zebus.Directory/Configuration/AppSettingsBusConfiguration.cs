@@ -17,7 +17,6 @@ namespace Abc.Zebus.Directory.Configuration
             IsDirectoryPickedRandomly = appSettings.Get("Bus.Directory.PickRandom", true);
             IsErrorPublicationEnabled = appSettings.Get("Bus.IsErrorPublicationEnabled", true);
             MessagesBatchSize = appSettings.Get("Bus.MessagesBatchSize", 100);
-            TimeToWaitForInitialization = appSettings.Get("Bus.TimeToWaitForInitialization", 1.Minute());
         }
 
         public string[] DirectoryServiceEndPoints { get { return new string[0]; } }
@@ -28,6 +27,5 @@ namespace Abc.Zebus.Directory.Configuration
         public bool IsDirectoryPickedRandomly { get; private set; }
         public bool IsErrorPublicationEnabled { get; private set; }
         public int MessagesBatchSize { get; private set; }
-        public TimeSpan TimeToWaitForInitialization { get; private set; }
     }
 }

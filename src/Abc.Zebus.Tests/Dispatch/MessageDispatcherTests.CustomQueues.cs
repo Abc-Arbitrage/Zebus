@@ -18,7 +18,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_dispatch_message_to_queue_name()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var syncHandler = new SyncCommandHandler();
             _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandler))).Returns(syncHandler);
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_set_queue_name_in_message_context()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler1 = new SyncCommandHandlerWithQueueName1();
             _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler1);
@@ -86,7 +86,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_run_invoker_synchronously_if_dispatch_queue_name_equals_current_queue_name()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler1 = new SyncCommandHandlerWithQueueName1
             {
@@ -113,7 +113,7 @@ namespace Abc.Zebus.Tests.Dispatch
         public void should_not_hang_when_running_invoker_synchronously_in_same_dispatch_queue()
         {
             _messageDispatcher.ConfigureHandlerFilter(x => x == typeof(ForwardCommandHandler) || x == typeof(SyncCommandHandlerWithQueueName1));
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler1 = new ForwardCommandHandler { Action = x => Dispatch(new DispatchCommand()) };
             _containerMock.Setup(x => x.GetInstance(typeof(ForwardCommandHandler))).Returns(handler1);
@@ -129,7 +129,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_use_queue_name_from_namespace()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler = new SyncCommandHandlerWithOtherQueueName();
             _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithOtherQueueName))).Returns(handler);
@@ -145,7 +145,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_wait_for_dispatch_to_stop()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var message = new ExecutableEvent { IsBlocking = true };
 
@@ -172,7 +172,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_handle_local_dispatch_when_stopping()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler1 = new SyncCommandHandlerWithQueueName1
             {
@@ -190,9 +190,13 @@ namespace Abc.Zebus.Tests.Dispatch
             Dispatch(new DispatchCommand());
 
             Wait.Until(() => handler1.HandleStarted, 10.Seconds());
-            var stopTask = Task.Run(() => _messageDispatcher.Stop()).WaitForActivation();
 
-            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 10.Seconds());
+            var stoppingSignal = new ManualResetEventSlim();
+            _messageDispatcher.Stopping += () => stoppingSignal.Set();
+
+            var stopTask = Task.Run(() => _messageDispatcher.Stop()).WaitForActivation();
+            stoppingSignal.Wait(10.Seconds()).ShouldBeTrue();
+
             Wait.Until(() => handler2.HandleStopped, 10.Seconds());
 
             handler1.WaitForSignal = false;
@@ -209,7 +213,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_not_accept_remote_dispatch_when_stopping()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler1 = new SyncCommandHandlerWithQueueName1
             {
@@ -227,9 +231,13 @@ namespace Abc.Zebus.Tests.Dispatch
             Dispatch(new DispatchCommand());
 
             Wait.Until(() => handler1.HandleStarted, 5.Seconds());
-            var stopTask = Task.Run(() => _messageDispatcher.Stop()).WaitForActivation();
 
-            Wait.Until(() => _messageDispatcher.Status == MessageDispatcherStatus.Stopping, 10.Seconds());
+            var stoppingSignal = new ManualResetEventSlim();
+            _messageDispatcher.Stopping += () => stoppingSignal.Set();
+
+            var stopTask = Task.Run(() => _messageDispatcher.Stop()).WaitForActivation();
+            stoppingSignal.Wait(10.Seconds()).ShouldBeTrue();
+
             Wait.Until(() => handler2.HandleStopped, 5.Seconds());
 
             handler1.WaitForSignal = false;
@@ -244,7 +252,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test, Repeat(5)]
         public void should_restart_dispatch_queues()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             Dispatch(new DispatchCommand());
 
@@ -257,7 +265,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 dispatchQueue.IsRunning.ShouldBeFalse();
             }
 
-            _messageDispatcher.Start();
+            LoadAndStartDispatcher();
 
             foreach (var dispatchQueue in _dispatchQueueFactory.DispatchQueues)
             {
@@ -268,7 +276,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_clone_message_when_dispatching_locally_to_a_different_queue()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler = new SyncCommandHandlerWithQueueName1();
             _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandlerWithQueueName1))).Returns(handler);
@@ -286,7 +294,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_not_clone_message_when_dispatching_a_remote_message()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler = new SyncCommandHandler();
             _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandler))).Returns(handler);
@@ -303,7 +311,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_not_clone_message_when_dispatching_locally_to_the_current_queue()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler = new SyncCommandHandler();
             _containerMock.Setup(x => x.GetInstance(typeof(SyncCommandHandler))).Returns(handler);

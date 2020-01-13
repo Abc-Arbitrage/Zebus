@@ -27,7 +27,6 @@ namespace Abc.Zebus.Testing
 
         public event Action Starting = delegate { };
         public event Action Started = delegate { };
-        public event Action StartedButNotDeliveringMessages = delegate { };
         public event Action Stopping = delegate { };
         public event Action Stopped = delegate { };
 
@@ -229,7 +228,6 @@ namespace Abc.Zebus.Testing
             Starting();
             IsStarted = true;
             IsRunning = true;
-            StartedButNotDeliveringMessages();
             Started();
         }
 

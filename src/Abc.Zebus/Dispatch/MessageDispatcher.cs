@@ -8,28 +8,33 @@ using System.Threading.Tasks;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Util.Extensions;
+using log4net;
 
 namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatcher : IMessageDispatcher, IProvideQueueLength
     {
         private static readonly List<IMessageHandlerInvoker> _emptyInvokers = new List<IMessageHandlerInvoker>();
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(MessageDispatcher));
+
         private readonly ConcurrentDictionary<string, DispatchQueue> _dispatchQueues = new ConcurrentDictionary<string, DispatchQueue>(StringComparer.OrdinalIgnoreCase);
+        private readonly object _lock = new object();
         private readonly IMessageHandlerInvokerLoader[] _invokerLoaders;
         private readonly IDispatchQueueFactory _dispatchQueueFactory;
         private ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>> _invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
         private Func<Assembly, bool> _assemblyFilter;
         private Func<Type, bool> _handlerFilter;
         private Func<Type, bool> _messageFilter;
-        private MessageDispatcherStatus _status;
-
-        internal MessageDispatcherStatus Status => _status;
+        private Status _status;
 
         public MessageDispatcher(IMessageHandlerInvokerLoader[] invokerLoaders, IDispatchQueueFactory dispatchQueueFactory)
         {
             _invokerLoaders = invokerLoaders;
             _dispatchQueueFactory = dispatchQueueFactory;
         }
+
+        public event Action Starting;
+        public event Action Stopping;
 
         public void ConfigureAssemblyFilter(Func<Assembly, bool> assemblyFilter)
         {
@@ -47,6 +52,15 @@ namespace Abc.Zebus.Dispatch
         }
 
         public void LoadMessageHandlerInvokers()
+        {
+            _status = Status.Loaded;
+
+            _invokers = LoadInvokers();
+
+            LoadDispatchQueues();
+        }
+
+        private ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>> LoadInvokers()
         {
             var invokers = new ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>>();
             var typeSource = CreateTypeSource();
@@ -67,8 +81,15 @@ namespace Abc.Zebus.Dispatch
                 }
             }
 
-            Thread.MemoryBarrier();
-            _invokers = invokers;
+            return invokers;
+        }
+
+        private void LoadDispatchQueues()
+        {
+            foreach (var invoker in _invokers.Values.SelectMany(x => x).Where(x => !_dispatchQueues.ContainsKey(x.DispatchQueueName)))
+            {
+                _dispatchQueues.TryAdd(invoker.DispatchQueueName, _dispatchQueueFactory.Create(invoker.DispatchQueueName));
+            }
         }
 
         public IEnumerable<MessageTypeId> GetHandledMessageTypes()
@@ -97,10 +118,10 @@ namespace Abc.Zebus.Dispatch
         {
             switch (_status)
             {
-                case MessageDispatcherStatus.Stopped:
+                case Status.Stopped:
                     throw new InvalidOperationException("MessageDispatcher is stopped");
 
-                case MessageDispatcherStatus.Stopping:
+                case Status.Stopping:
                     if (dispatch.IsLocal)
                         break;
 
@@ -124,73 +145,96 @@ namespace Abc.Zebus.Dispatch
 
         public void Stop()
         {
-            if (_status != MessageDispatcherStatus.Starting && _status != MessageDispatcherStatus.Started)
+            if (_status != Status.Loaded && _status != Status.Started)
                 return;
 
-            _status = MessageDispatcherStatus.Stopping;
+            _status = Status.Stopping;
+
+            OnStopping();
 
             WaitUntilAllMessagesAreProcessed();
 
-            _status = MessageDispatcherStatus.Stopped;
+            _status = Status.Stopped;
 
             var stopTasks = _dispatchQueues.Values.Select(dispatchQueue => Task.Factory.StartNew(dispatchQueue.Stop)).ToArray();
             Task.WaitAll(stopTasks);
         }
 
-        public void Start()
+        private void OnStopping()
         {
-            switch (_status)
+            try
             {
-                case MessageDispatcherStatus.Starting:
-                case MessageDispatcherStatus.Started:
-                    return;
-
-                case MessageDispatcherStatus.Stopping:
-                    throw new InvalidOperationException("MessageDispatcher is stopping");
+                Stopping?.Invoke();
             }
-
-            _status = MessageDispatcherStatus.Starting;
-
-            foreach (var dispatchQueue in _dispatchQueues.Values)
+            catch (Exception e)
             {
-                dispatchQueue.Start();
+                _logger.Error("Stopping event handler error", e);
             }
         }
 
-        public void StartDeliveringMessages()
+        public void Start()
         {
-            if (_status != MessageDispatcherStatus.Starting)
+            if (_status == Status.Started)
                 return;
 
-            _status = MessageDispatcherStatus.Started;
+            if (_status != Status.Loaded)
+                throw new InvalidOperationException("MessageDispatcher should be loaded before start");
 
-            foreach (var dispatchQueue in _dispatchQueues.Values)
+            OnStarting();
+
+            lock (_lock)
             {
-                dispatchQueue.StartDeliveringMessages();
+                _status = Status.Started;
+
+                foreach (var dispatchQueue in _dispatchQueues.Values)
+                {
+                    dispatchQueue.Start();
+                }
+            }
+        }
+
+        private void OnStarting()
+        {
+            try
+            {
+                Starting?.Invoke();
+            }
+            catch (Exception e)
+            {
+                _logger.Error("Starting event handler error", e);
             }
         }
 
         private void WaitUntilAllMessagesAreProcessed()
         {
             bool continueWait;
-
             do
             {
                 continueWait = false;
 
                 foreach (var dispatchQueue in _dispatchQueues.Values)
+                {
                     continueWait = dispatchQueue.WaitUntilAllMessagesAreProcessed() || continueWait;
+                }
             } while (continueWait);
         }
 
         public void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker)
         {
-            lock (_invokers)
+            lock (_lock)
             {
                 var existingMessageTypeInvokers = _invokers.GetValueOrDefault(newEventHandlerInvoker.MessageTypeId) ?? new List<IMessageHandlerInvoker>();
                 var newMessageTypeInvokers = new List<IMessageHandlerInvoker>(existingMessageTypeInvokers.Count + 1);
                 newMessageTypeInvokers.AddRange(existingMessageTypeInvokers);
                 newMessageTypeInvokers.Add(newEventHandlerInvoker);
+
+                var dispatchQueueName = newEventHandlerInvoker.DispatchQueueName;
+                if (!_dispatchQueues.ContainsKey(dispatchQueueName))
+                {
+                    var dispatchQueue = _dispatchQueueFactory.Create(dispatchQueueName);
+                    if (_dispatchQueues.TryAdd(dispatchQueueName, dispatchQueue) && _status == Status.Started)
+                        dispatchQueue.Start();
+                }
 
                 _invokers[newEventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
             }
@@ -198,7 +242,7 @@ namespace Abc.Zebus.Dispatch
 
         public void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker)
         {
-            lock (_invokers)
+            lock (_lock)
             {
                 var messageTypeInvokers = _invokers.GetValueOrDefault(eventHandlerInvoker.MessageTypeId);
                 if (messageTypeInvokers == null)
@@ -219,17 +263,6 @@ namespace Abc.Zebus.Dispatch
             return _dispatchQueues.Values.Sum(x => x.QueueLength);
         }
 
-        private DispatchQueue CreateAndStartDispatchQueue(string queueName)
-        {
-            var dispatchQueue = _dispatchQueueFactory.Create(queueName);
-            dispatchQueue.Start();
-
-            if (_status == MessageDispatcherStatus.Started)
-                dispatchQueue.StartDeliveringMessages();
-
-            return dispatchQueue;
-        }
-
         private TypeSource CreateTypeSource()
         {
             var typeSource = new TypeSource();
@@ -245,16 +278,16 @@ namespace Abc.Zebus.Dispatch
 
         private void Dispatch(MessageDispatch dispatch, IMessageHandlerInvoker invoker)
         {
-            var dispatchQueue = _dispatchQueues.GetOrAdd(invoker.DispatchQueueName, CreateAndStartDispatchQueue);
+            var dispatchQueue = _dispatchQueues[invoker.DispatchQueueName];
             dispatchQueue.RunOrEnqueue(dispatch, invoker);
         }
-    }
 
-    internal enum MessageDispatcherStatus
-    {
-        Stopped,
-        Stopping,
-        Starting,
-        Started
+        private enum Status
+        {
+            Stopped,
+            Loaded,
+            Started,
+            Stopping,
+        }
     }
 }

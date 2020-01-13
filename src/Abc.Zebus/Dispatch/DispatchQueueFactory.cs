@@ -16,7 +16,7 @@ namespace Abc.Zebus.Dispatch
 
         public DispatchQueue Create(string queueName)
         {
-            return new DispatchQueue(_pipeManager, _configuration.MessagesBatchSize, queueName, _configuration.TimeToWaitForInitialization);
+            return new DispatchQueue(_pipeManager, _configuration.MessagesBatchSize, queueName);
         }
     }
 }

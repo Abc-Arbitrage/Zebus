@@ -20,7 +20,6 @@ namespace Abc.Zebus.Persistence.Runner
             PeerIdsToInvestigate = AppSettings.GetArray("PeerIdsToInvestigate");
             ReplayBatchSize = AppSettings.Get("MessageReplayer.BatchSize", 2000);
             ReplayUnackedMessageCountThatReleasesNextBatch = AppSettings.Get("MessageReplayer.ReplayUnackedMessageCountThatReleasesNextBatch", 200);
-            TimeToWaitForInitialization = AppSettings.Get("MessageReplayer.TimeToWaitForInitialization", 1.Minutes());
         }
 
         public string[] DirectoryServiceEndPoints { get; }
@@ -30,7 +29,6 @@ namespace Abc.Zebus.Persistence.Runner
         public bool IsDirectoryPickedRandomly { get; }
         public bool IsErrorPublicationEnabled => false;
         public int MessagesBatchSize { get; }
-        public TimeSpan TimeToWaitForInitialization { get; }
 
         public int PersisterBatchSize { get; }
         public TimeSpan? PersisterDelay { get; }

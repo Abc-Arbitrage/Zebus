@@ -192,7 +192,6 @@ namespace Abc.Zebus.Tests.Core
             public bool IsDirectoryPickedRandomly => false;
             public bool IsErrorPublicationEnabled => false;
             public int MessagesBatchSize => 200;
-            public TimeSpan TimeToWaitForInitialization => 1.Minute();
         }
 
         [ProtoContract]

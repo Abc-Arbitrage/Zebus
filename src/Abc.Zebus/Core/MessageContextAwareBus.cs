@@ -79,12 +79,6 @@ namespace Abc.Zebus.Core
             remove => _bus.Started -= value;
         }
 
-        public event Action StartedButNotDeliveringMessages
-        {
-            add => _bus.StartedButNotDeliveringMessages += value;
-            remove => _bus.StartedButNotDeliveringMessages -= value;
-        }
-
         public event Action Stopping
         {
             add => _bus.Stopping += value;

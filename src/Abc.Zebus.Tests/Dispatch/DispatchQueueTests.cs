@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.Dispatch
         public void Setup()
         {
             _pipeManager = new PipeManager(new IPipeSource[0]);
-            _dispatchQueue = new DispatchQueue(_pipeManager, 200, "Default", 1.Second());
+            _dispatchQueue = new DispatchQueue(_pipeManager, 200, "Default");
         }
 
         [TearDown]
@@ -47,10 +47,8 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
-        public void should_not_run_invoker_when_queue_is_not_delivering_messages()
+        public void should_not_run_invoker_before_start()
         {
-            StartDispatchQueue(false);
-
             var message = new ExecutableEvent();
             EnqueueInvocation(message);
 
@@ -64,7 +62,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var message = new ExecutableEvent();
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
             EnqueueInvocation(message);
 
             message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
@@ -73,7 +71,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_run_continuation()
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var task = EnqueueInvocation(new ExecutableEvent());
 
@@ -83,7 +81,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_continue_processing_messages_after_continuation_error()
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var message1 = new ExecutableEvent { Callback = x => throw new Exception("Processing error") };
             var dispatch = new MessageDispatch(MessageContext.CreateTest(), message1, new TestMessageSerializer(), (d, r) => throw new Exception("Continuation error"));
@@ -102,7 +100,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var message = new ExecutableEvent { IsBlocking = true };
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
             EnqueueInvocation(message);
 
             message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
@@ -124,7 +122,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var message = new AsyncExecutableEvent { Callback = async _ => await tcs.Task.ConfigureAwait(captureContext) };
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
             var invocation = EnqueueAsyncInvocation(message);
 
             message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
@@ -147,7 +145,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var message = new AsyncExecutableEvent { Callback = async _ => await tcs.Task.ConfigureAwait(captureContext) };
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
             EnqueueAsyncInvocation(message);
 
             message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
@@ -169,7 +167,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_purge()
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var message = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(message);
@@ -191,45 +189,29 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_restart([Values] bool startDelivering)
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
             _dispatchQueue.Stop();
 
             var message = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(message);
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
             message.Unblock(); // If we don't release the message the test will stay blocked
         }
 
         [Test]
-        public void should_not_deliver_messages_until_fully_started()
+        public void should_not_deliver_messages_until_started()
         {
-            StartDispatchQueue(false);
-
-            _dispatchQueue.IsRunning.ShouldBeTrue();
             var executableEvent = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(executableEvent);
 
             executableEvent.HandleStarted.Wait(100.Milliseconds()).ShouldBeFalse();
 
-            _dispatchQueue.StartDeliveringMessages();
+            _dispatchQueue.Start();
 
             executableEvent.HandleStarted.Wait(100.Milliseconds()).ShouldBeTrue();
-            executableEvent.Unblock();
-        }
-
-        [Test]
-        public void should_stop_waiting_for_initialiser_after_a_given_time()
-        {
-            _dispatchQueue = new DispatchQueue(_pipeManager, 200, "Default", 100.Milliseconds());
-            StartDispatchQueue(false);
-
-            var executableEvent = new ExecutableEvent { IsBlocking = true };
-            EnqueueInvocation(executableEvent);
-
-            executableEvent.HandleStarted.Wait(200.Milliseconds()).ShouldBeTrue();
             executableEvent.Unblock();
         }
 
@@ -243,7 +225,7 @@ namespace Abc.Zebus.Tests.Dispatch
             otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
             otherMessageTasks.Add(EnqueueInvocation(new ExecutableEvent { IsBlocking = true }));
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             Thread.Sleep(50);
 
@@ -267,7 +249,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test, Repeat(5)]
         public void should_batch_messages()
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var message0 = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(message0);
@@ -295,7 +277,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_run_continuation_with_batch()
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var firstMessage = new ExecutableEvent { IsBlocking = true };
             EnqueueInvocation(firstMessage);
@@ -312,7 +294,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public async Task should_run_continuation_with_batch_error()
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var firstMessage = new ExecutableEvent { IsBlocking = true };
             var _ = EnqueueInvocation(firstMessage);
@@ -346,7 +328,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 }
             };
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
             var firstTask = EnqueueAsyncInvocation(firstMessage);
             var secondTask = EnqueueAsyncInvocation(secondMessage);
 
@@ -359,7 +341,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_enqueue_async_continuations_on_dispatch_queue_when_requested()
         {
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var tcs = new TaskCompletionSource<object>();
 
@@ -420,7 +402,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var tcs = new TaskCompletionSource<object>();
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var firstTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
             {
@@ -453,7 +435,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var tcs = new TaskCompletionSource<object>();
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var sequence = new List<int>();
 
@@ -517,7 +499,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var tcs = new TaskCompletionSource<object>();
 
-            StartDispatchQueue();
+            _dispatchQueue.Start();
 
             var firstTask = EnqueueAsyncInvocation(new AsyncExecutableEvent
             {
@@ -559,13 +541,6 @@ namespace Abc.Zebus.Tests.Dispatch
 
             foreach (var task in allTasks)
                 task.Result.Errors.ShouldBeEmpty();
-        }
-
-        private void StartDispatchQueue(bool startDeliveringMessages = true)
-        {
-            _dispatchQueue.Start();
-            if (startDeliveringMessages)
-                _dispatchQueue.StartDeliveringMessages();
         }
 
         private static void Throw()

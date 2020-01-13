@@ -44,10 +44,5 @@ namespace Abc.Zebus
         /// Maximum batch size for <see cref="IBatchedMessageHandler{T}"/>.
         /// </summary>
         int MessagesBatchSize { get; }
-
-        /// <summary>
-        /// Maximum time to wait for the host to initialise itself after subscribing to the bus but before dequeuing messages
-        /// </summary>
-        TimeSpan TimeToWaitForInitialization { get; }
     }
 }

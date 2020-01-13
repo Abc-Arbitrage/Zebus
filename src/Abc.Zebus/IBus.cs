@@ -28,7 +28,6 @@ namespace Abc.Zebus
 
         event Action Starting;
         event Action Started;
-        event Action StartedButNotDeliveringMessages;
         event Action Stopping;
         event Action Stopped;
     }

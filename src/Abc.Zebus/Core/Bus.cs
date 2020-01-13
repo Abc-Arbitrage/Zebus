@@ -60,7 +60,6 @@ namespace Abc.Zebus.Core
 
         public event Action Starting;
         public event Action Started;
-        public event Action StartedButNotDeliveringMessages;
         public event Action Stopping;
         public event Action Stopped;
 
@@ -106,9 +105,6 @@ namespace Abc.Zebus.Core
 
                 PerformAutoSubscribe();
 
-                _logger.DebugFormat("Starting message dispatcher...");
-                _messageDispatcher.Start();
-
                 _logger.DebugFormat("Starting transport...");
                 _transport.Start();
 
@@ -121,9 +117,8 @@ namespace Abc.Zebus.Core
 
                 _transport.OnRegistered();
 
-                StartedButNotDeliveringMessages?.Invoke();
-                _logger.DebugFormat("Message dispatcher starting to deliver messages...");
-                _messageDispatcher.StartDeliveringMessages();
+                _logger.DebugFormat("Starting message dispatcher...");
+                _messageDispatcher.Start();
             }
             catch
             {
