@@ -14,7 +14,7 @@ namespace Abc.Zebus.Tests
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static void MainLol(string[] args)
         {
             new Log4netConfigurator().Setup();
 
