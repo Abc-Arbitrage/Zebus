@@ -21,8 +21,12 @@ namespace Abc.Zebus.Dispatch
         void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker);
         void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker);
 
+        int Purge();
+
         void Stop();
         void Start();
-        int Purge();
+
+        event Action Starting;
+        event Action Stopping;
     }
 }

@@ -105,9 +105,6 @@ namespace Abc.Zebus.Core
 
                 PerformAutoSubscribe();
 
-                _logger.DebugFormat("Starting message dispatcher...");
-                _messageDispatcher.Start();
-
                 _logger.DebugFormat("Starting transport...");
                 _transport.Start();
 
@@ -119,6 +116,9 @@ namespace Abc.Zebus.Core
                 registered = true;
 
                 _transport.OnRegistered();
+
+                _logger.DebugFormat("Starting message dispatcher...");
+                _messageDispatcher.Start();
             }
             catch
             {

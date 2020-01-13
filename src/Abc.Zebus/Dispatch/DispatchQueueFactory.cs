@@ -1,4 +1,5 @@
 ﻿using Abc.Zebus.Dispatch.Pipes;
+using Abc.Zebus.Util;
 
 namespace Abc.Zebus.Dispatch
 {
