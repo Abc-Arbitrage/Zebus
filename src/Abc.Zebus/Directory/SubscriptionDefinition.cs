@@ -7,7 +7,7 @@ namespace Abc.Zebus.Directory
 {
     public class SubscriptionDefinition
     {
-        public List<SubscriptionDefinitionPart> Parts { get; }
+        public IReadOnlyList<SubscriptionDefinitionPart> Parts { get; }
 
         public bool MatchesAll => Parts.Count == 0;
 
