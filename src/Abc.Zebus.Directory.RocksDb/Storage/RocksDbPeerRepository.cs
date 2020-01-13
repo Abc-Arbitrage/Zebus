@@ -148,14 +148,13 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             if (!cursor.Seek(key).Valid())
                 return;
 
-            var peerIdLength = peerId.ToString().Length;
-            byte[] currentKey;
-            do
+            var currentKey = cursor.Key();
+            while (cursor.Valid() && CompareStart(currentKey, key))
             {
-                currentKey = cursor.Key();
                 action(currentKey, cursor.Value());
                 cursor.Next();
-            } while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
+                currentKey = cursor.Key();
+            }
         }
 
         private static (BindingKey[] bindingKeys, MessageTypeId messageTypeId) ReadDynamicSubscription(byte[] key, byte[] value)
@@ -323,14 +322,15 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             return memoryStream.ToArray();
         }
 
-        private static bool CompareStart(byte[] x, byte[] y, int length)
+        private static bool CompareStart(byte[] key, byte[] peerIdBytes)
         {
-            if (x.Length < length || y.Length < length)
+            var keyLength = ReadPeerIdLength(key);
+            if (keyLength != peerIdBytes.Length)
                 return false;
 
-            for (var index = length - 1; index >= 0; index--)
+            for (var index = peerIdBytes.Length - 1; index >= 0; index--)
             {
-                if (x[index] != y[index])
+                if (key[index] != peerIdBytes[index])
                     return false;
             }
 
