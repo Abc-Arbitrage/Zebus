@@ -14,5 +14,9 @@
     <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="RocksDbNative" Version="6.2.2" />
+  </ItemGroup>
 
 </Project>

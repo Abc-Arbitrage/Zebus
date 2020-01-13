@@ -1,7 +1,6 @@
 
 variables:
   BuildConfiguration: Release
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
 jobs:
   - job: Windows
@@ -28,7 +27,6 @@ jobs:
           command: pack
           configuration: $(BuildConfiguration)
           packDirectory: $(Build.ArtifactStagingDirectory)
-          nobuild: false
           verbosityPack: Minimal
 
       - task: PublishBuildArtifacts@1

@@ -15,7 +15,7 @@ namespace Abc.Zebus.Persistence.RocksDb
     /// <summary>
     /// Key structure:
     /// -------------------------------------------------------------------
-    /// |  PeerId (n bytes)  |  Ticks (8 bytes)  |  MessageId (16 bytes)  | 
+    /// |  PeerId (n bytes)  |  Ticks (8 bytes)  |  MessageId (16 bytes)  |
     /// -------------------------------------------------------------------
     /// </summary>
     public class RocksDbStorage : IStorage, IDisposable
@@ -62,7 +62,7 @@ namespace Abc.Zebus.Persistence.RocksDb
             _peersColumnFamily = _db.GetColumnFamily("Peers");
             _acksColumnFamily = _db.GetColumnFamily("Acks");
 
-            ColumnFamilyOptions ColumnFamilyOptions() => new ColumnFamilyOptions().SetCompression(CompressionTypeEnum.rocksdb_no_compression)
+            ColumnFamilyOptions ColumnFamilyOptions() => new ColumnFamilyOptions().SetCompression(Compression.No)
                                                                                   .SetLevelCompactionDynamicLevelBytes(true)
                                                                                   .SetArenaBlockSize(16 * 1024);
 
@@ -97,7 +97,7 @@ namespace Abc.Zebus.Persistence.RocksDb
                 }
                 else
                 {
-                    // Message 
+                    // Message
                     if (!_outOfOrderAcks.TryRemove(entry.MessageId, out _))
                         // Message before ack
                         _db.Put(key, entry.MessageBytes, _messagesColumnFamily);
