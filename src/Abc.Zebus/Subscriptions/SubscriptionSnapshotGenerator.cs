@@ -1,7 +1,7 @@
 using System;
 using Abc.Zebus.Directory;
 
-namespace Abc.Zebus.SubscriptionHandling
+namespace Abc.Zebus.Subscriptions
 {
     /// <summary>
     /// Extend this class to generate snapshots each time a new subscription is created for <see cref="TMessage"/>
@@ -19,9 +19,9 @@ namespace Abc.Zebus.SubscriptionHandling
             _bus = bus;
         }
 
-        protected override void OnSubscription(SubscriptionsForType subscription, PeerId peerId)
+        protected override void OnSubscriptions(SubscriptionsForType subscriptions, PeerId peerId)
         {
-            var snapshot = GenerateSnapshot(subscription);
+            var snapshot = GenerateSnapshot(subscriptions);
             if (_bus is IInternalBus internalBus)
                 internalBus.Publish(snapshot, peerId);
             else

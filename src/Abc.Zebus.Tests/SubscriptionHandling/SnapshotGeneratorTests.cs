@@ -1,27 +1,26 @@
 using System.Collections.Generic;
 using Abc.Zebus.Directory;
-using Abc.Zebus.SubscriptionHandling;
+using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.SubscriptionHandling
 {
-
     [TestFixture]
     public class SnapshotGeneratorTests
     {
         private class EventTest : IEvent
         {
-
         }
+
         private class SnapshotTest : IEvent
         {
         }
 
-        private class snapshotGeneratorTest : SubscriptionSnapshotGenerator<SnapshotTest, EventTest>
+        private class SnapshotGeneratorTest : SubscriptionSnapshotGenerator<SnapshotTest, EventTest>
         {
-            public snapshotGeneratorTest(IBus bus)
+            public SnapshotGeneratorTest(IBus bus)
                 : base(bus)
             {
             }
@@ -37,7 +36,7 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
         {
             // Arrange
             var testBus = new TestBus();
-            var snapshotGenerator = new snapshotGeneratorTest(testBus);
+            var snapshotGenerator = new SnapshotGeneratorTest(testBus);
 
             // Act
             var peerId = new PeerId("testPeerId");
@@ -45,9 +44,6 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
 
             // Assert
             testBus.ExpectExactly(peerId, new SnapshotTest());
-
         }
-
-
     }
 }

@@ -1,6 +1,6 @@
 using Abc.Zebus.Directory;
 
-namespace Abc.Zebus.SubscriptionHandling
+namespace Abc.Zebus.Subscriptions
 {
     /// <summary>
     /// Extend this class with the message you wish to be notified of subscriptions for.
@@ -11,17 +11,17 @@ namespace Abc.Zebus.SubscriptionHandling
     {
         public void Handle(SubscriptionUpdatedMessage message)
         {
-            if (message.Subscription.MessageTypeId.GetMessageType() != typeof(TMessage))
+            if (message.Subscriptions.MessageTypeId.GetMessageType() != typeof(TMessage))
                 return;
 
-            OnSubscription(message.Subscription, message.PeerId);
+            OnSubscriptions(message.Subscriptions, message.PeerId);
         }
 
         /// <summary>
         /// Called on each new subscription for <see cref="TMessage"/>
         /// </summary>
-        /// <param name="subscription">The newly created subscription</param>
+        /// <param name="subscriptions">The newly created subscription</param>
         /// <param name="peerId">The peer id of the peer that created the subscription</param>
-        protected abstract void OnSubscription(SubscriptionsForType subscription, PeerId peerId);
+        protected abstract void OnSubscriptions(SubscriptionsForType subscriptions, PeerId peerId);
     }
 }

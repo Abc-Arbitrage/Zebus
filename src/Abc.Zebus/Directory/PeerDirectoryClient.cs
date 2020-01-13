@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Serialization;
-using Abc.Zebus.SubscriptionHandling;
+using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;

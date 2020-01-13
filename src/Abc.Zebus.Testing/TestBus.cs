@@ -26,12 +26,10 @@ namespace Abc.Zebus.Testing
             HandlerExecutor = new DefaultHandlerExecutor();
         }
 
-
         public event Action Starting = delegate { };
         public event Action Started = delegate { };
         public event Action Stopping = delegate { };
         public event Action Stopped = delegate { };
-
 
         public IEnumerable<ICommand> Commands
         {
@@ -80,15 +78,18 @@ namespace Abc.Zebus.Testing
         public bool IsRunning { get; private set; }
 
         public IEnumerable<IMessage> Messages => Events.Cast<IMessage>().Concat(Commands);
+
         public void Publish(IEvent message)
         {
             Publish(message, null);
         }
+
         public void Publish(IEvent message, PeerId targetPeer)
         {
-            Publish(message, (PeerId?) targetPeer);
+            Publish(message, (PeerId?)targetPeer);
         }
-        private void Publish(IEvent message,  PeerId? targetPeer)
+
+        private void Publish(IEvent message, PeerId? targetPeer)
         {
             if (MessageSerializer.TryClone(message, out var clone))
                 message = (IEvent)clone;

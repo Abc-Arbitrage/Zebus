@@ -1,5 +1,5 @@
 using Abc.Zebus.Directory;
-using Abc.Zebus.SubscriptionHandling;
+using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Tests.Scan;
@@ -7,18 +7,18 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.SubscriptionHandling
 {
-[TestFixture]
+    [TestFixture]
     public class SubscriptionHandlerTests
     {
         private class MessageTest : IMessage
         {
-
         }
 
         private class SubscriptionHandlerTest : SubscriptionHandler<MessageTest>
         {
             public bool OnSubscriptionExecuted { get; private set; }
-            protected override void OnSubscription(SubscriptionsForType subscription, PeerId peerId)
+
+            protected override void OnSubscriptions(SubscriptionsForType subscriptions, PeerId peerId)
             {
                 OnSubscriptionExecuted = true;
             }
@@ -49,6 +49,5 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
             // Assert
             handler.OnSubscriptionExecuted.ShouldBeFalse();
         }
-
     }
 }
