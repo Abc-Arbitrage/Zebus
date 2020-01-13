@@ -239,8 +239,8 @@ namespace Abc.Zebus.Tests
             // Assert
             definition.Parts.Count.ShouldEqual(3);
             CheckPart(definition.Parts[0], "Id", _field.ToString(), false);
-            CheckPart(definition.Parts[1], "Name", "*", true);
-            CheckPart(definition.Parts[2], "OtherId", "*", true);
+            CheckPart(definition.Parts[1], "Name", null, true);
+            CheckPart(definition.Parts[2], "OtherId", null, true);
         }
 
         [Test]
@@ -254,8 +254,8 @@ namespace Abc.Zebus.Tests
 
             // Assert
             definition.Parts.Count.ShouldEqual(3);
-            CheckPart(definition.Parts[0], "Id", "*", true);
-            CheckPart(definition.Parts[1], "Name", "*", true);
+            CheckPart(definition.Parts[0], "Id", null, true);
+            CheckPart(definition.Parts[1], "Name", null, true);
             CheckPart(definition.Parts[2], "OtherId", Guid.Empty.ToString(), false);
         }
 
@@ -269,14 +269,46 @@ namespace Abc.Zebus.Tests
             var definition = subscription.GetDefinition();
 
             // Assert
+            definition.MatchesAll.ShouldBeTrue();
             definition.Parts.ShouldBeEmpty();
+        }
+
+        [Test]
+        public void should_get_match_for_routing_key_part_from_subscription_definition()
+        {
+            // Arrange
+            var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.OtherId == Guid.Empty);
+            var definition = subscription.GetDefinition();
+
+            // Act
+            var result = definition.GetMatchForRoutingKeyPart(nameof(FakeRoutableCommand.Name));
+
+            // Assert
+            result.HasValue.ShouldBeTrue();
+            // ReSharper disable once PossibleInvalidOperationException
+            result.Value.ForAll.ShouldBeTrue();
+            result.Value.Value.ShouldBeNull();
+        }
+
+        [Test]
+        public void should_get_invalid_match_for_missing_routing_key_part_from_subscription_definition()
+        {
+            // Arrange
+            var subscription = Subscription.Any<FakeRoutableCommand>();
+            var definition = subscription.GetDefinition();
+
+            // Act
+            var result = definition.GetMatchForRoutingKeyPart("something that will not match");
+
+            // Assert
+            result.HasValue.ShouldBeFalse();
         }
 
         private static void CheckPart(SubscriptionDefinitionPart part, string name, string matchValue, bool matchesAll)
         {
             part.PropertyName.ShouldEqual(name);
-            part.MatchValue.ShouldEqual(matchValue);
-            part.MatchesAll.ShouldEqual(matchesAll);
+            part.Match.Value.ShouldEqual(matchValue);
+            part.Match.ForAll.ShouldEqual(matchesAll);
         }
 
         [Test]
