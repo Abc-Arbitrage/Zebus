@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Abc.Zebus.Subscriptions;
 
 namespace Abc.Zebus.Core
 {
@@ -93,10 +94,8 @@ namespace Abc.Zebus.Core
 
         public void Publish(IEvent message, PeerId targetPeer)
         {
-            if (_bus is IInternalBus bus)
-                bus.Publish(message, targetPeer);
-            else
-                throw new NotImplementedException("Inner bus is not IInternalBus");
+            var internalBus = (IInternalBus)_bus;
+            internalBus.Publish(message, targetPeer);
         }
 
         public void Dispose() => _bus.Dispose();

@@ -22,10 +22,8 @@ namespace Abc.Zebus.Subscriptions
         protected override void OnSubscriptions(SubscriptionsForType subscriptions, PeerId peerId)
         {
             var snapshot = GenerateSnapshot(subscriptions);
-            if (_bus is IInternalBus internalBus)
-                internalBus.Publish(snapshot, peerId);
-            else
-                throw new Exception("The bus is not an internal bus");
+            var internalBus = (IInternalBus)_bus;
+            internalBus.Publish(snapshot, peerId);
         }
 
         /// <summary>
