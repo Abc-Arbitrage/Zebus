@@ -341,7 +341,7 @@ namespace Abc.Zebus.Dispatch
                     }
                     catch (Exception ex)
                     {
-                        _logger.Error($"Unable to run dispatch continuation, MessageType: {entry.Invoker!.MessageType?.Name}, HandlerType: {entry.Invoker!.MessageHandlerType.Name}, HandlerError: {error}, ContinuationError: {ex}");
+                        _logger.Error($"Unable to run dispatch continuation, MessageType: {entry.Invoker!.MessageType.Name}, HandlerType: {entry.Invoker!.MessageHandlerType.Name}, HandlerError: {error}, ContinuationError: {ex}");
                     }
                 }
             }

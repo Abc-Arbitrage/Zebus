@@ -20,7 +20,7 @@ namespace Abc.Zebus.Dispatch
         [ThreadStatic]
         private static MessageContextAwareBus? _dispatchBus;
 
-        protected MessageHandlerInvoker(Type handlerType, Type? messageType, bool? shouldBeSubscribedOnStartup = null)
+        protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null)
         {
             MessageHandlerType = handlerType;
             DispatchQueueName = DispatchQueueNameScanner.GetQueueName(handlerType);
@@ -32,7 +32,7 @@ namespace Abc.Zebus.Dispatch
         }
 
         public Type MessageHandlerType { get; }
-        public Type? MessageType { get; }
+        public Type MessageType { get; }
         public MessageTypeId MessageTypeId { get; }
         public bool ShouldBeSubscribedOnStartup { get; }
         public string DispatchQueueName { get; }
@@ -60,11 +60,8 @@ namespace Abc.Zebus.Dispatch
             return MessageShouldBeSubscribedOnStartup(messageType, GetExplicitSubscriptionMode(handlerType));
         }
 
-        internal static bool MessageShouldBeSubscribedOnStartup(Type? messageType, SubscriptionMode? subscriptionMode = null)
+        internal static bool MessageShouldBeSubscribedOnStartup(Type messageType, SubscriptionMode? subscriptionMode = null)
         {
-            if (messageType is null)
-                return false;
-
             if (subscriptionMode != null)
                 return subscriptionMode == SubscriptionMode.Auto;
 

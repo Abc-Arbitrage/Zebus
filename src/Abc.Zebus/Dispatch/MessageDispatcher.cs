@@ -57,9 +57,6 @@ namespace Abc.Zebus.Dispatch
 
                 foreach (var invoker in loadedInvokers)
                 {
-                    if (invoker.MessageType is null)
-                        continue;
-
                     if (_handlerFilter != null && !_handlerFilter(invoker.MessageHandlerType))
                         continue;
 
