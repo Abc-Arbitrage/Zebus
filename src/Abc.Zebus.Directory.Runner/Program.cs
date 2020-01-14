@@ -8,6 +8,7 @@ using Abc.Zebus.Directory.Cassandra.Storage;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.DeadPeerDetection;
 using Abc.Zebus.Directory.Initialization;
+using Abc.Zebus.Directory.RocksDb.Storage;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Util;
@@ -19,7 +20,15 @@ namespace Abc.Zebus.Directory.Runner
 {
     internal class Program
     {
+        enum StorageType
+        {
+            Cassandra,
+            InMemory,
+            RocksDb,
+        }
+
         private static readonly ManualResetEvent _cancelKeySignal = new ManualResetEvent(false);
+
         private static readonly ILog _log = LogManager.GetLogger(typeof(Program));
 
         public static void Main()
@@ -35,7 +44,7 @@ namespace Abc.Zebus.Directory.Runner
             _log.Info($"Starting in directory with storage type '{storageType}'");
 
             var busFactory = new BusFactory();
-            InjectDirectoryServiceSpecificConfiguration(busFactory, storageType);
+            InjectDirectoryServiceSpecificConfiguration(busFactory, Enum.Parse<StorageType>(storageType));
 
             busFactory
                 .WithConfiguration(new AppSettingsBusConfiguration(), ConfigurationManager.AppSettings["Environment"])
@@ -58,34 +67,45 @@ namespace Abc.Zebus.Directory.Runner
             }
         }
 
-        private static void InjectDirectoryServiceSpecificConfiguration(BusFactory busFactory, string storageType)
+        private static void InjectDirectoryServiceSpecificConfiguration(BusFactory busFactory, StorageType storageType)
         {
-            var useCassandraStorage = string.Equals(storageType, "Cassandra", StringComparison.OrdinalIgnoreCase);
             busFactory.ConfigureContainer(c =>
             {
                 c.AddRegistry<DirectoryRegistry>();
                 c.ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
 
                 c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
-                c.ForSingletonOf<IPeerRepository>().Use(ctx => useCassandraStorage ? (IPeerRepository)ctx.GetInstance<CqlPeerRepository>() : ctx.GetInstance<MemoryPeerRepository>());
+                c.ForSingletonOf<IPeerRepository>().Use(ctx => GetPeerRepository(storageType, ctx));
                 c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
                 c.ForSingletonOf<IPeerDirectory>().Use(ctx => ctx.GetInstance<PeerDirectoryServer>());
 
-                c.ForSingletonOf<IMessageDispatcher>().Use(typeof(Func<IContext, MessageDispatcher>).Name, ctx =>
-                {
-                    var dispatcher = ctx.GetInstance<MessageDispatcher>();
-                    dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
+                c.ForSingletonOf<IMessageDispatcher>().Use(typeof(Func<IContext, MessageDispatcher>).Name,
+                                                           ctx =>
+                                                           {
+                                                               var dispatcher = ctx.GetInstance<MessageDispatcher>();
+                                                               dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
 
-                    return dispatcher;
-                });
+                                                               return dispatcher;
+                                                           });
 
                 // Cassandra specific
-                if (useCassandraStorage)
+                if (storageType == StorageType.Cassandra)
                 {
                     c.ForSingletonOf<CassandraCqlSessionManager>().Use(() => new CassandraCqlSessionManager());
                     c.ForSingletonOf<ICassandraConfiguration>().Use<CassandraAppSettingsConfiguration>();
                 }
             });
+        }
+
+        private static IPeerRepository GetPeerRepository(StorageType storageType, IContext ctx)
+        {
+            return storageType switch
+            {
+                StorageType.Cassandra => ctx.GetInstance<CqlPeerRepository>(),
+                StorageType.InMemory  => ctx.GetInstance<MemoryPeerRepository>(),
+                StorageType.RocksDb   => ctx.GetInstance<RocksDbPeerRepository>(),
+                _                     => throw new ArgumentOutOfRangeException(nameof(storageType), storageType, null)
+            };
         }
     }
 }
