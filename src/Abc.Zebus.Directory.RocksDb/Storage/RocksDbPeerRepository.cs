@@ -1,15 +1,14 @@
-﻿using Abc.Zebus.Directory.Storage;
-using Abc.Zebus.Routing;
-using ProtoBuf;
-using RocksDbSharp;
-using StructureMap;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using log4net;
+using Abc.Zebus.Directory.Storage;
+using Abc.Zebus.Routing;
+using ProtoBuf;
+using RocksDbSharp;
+using StructureMap;
 
 namespace Abc.Zebus.Directory.RocksDb.Storage
 {
@@ -118,10 +117,10 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             if (peerStorageBytes == null)
                 return null;
 
-            return DeserialisePeerDescriptor(peerId, peerStorageBytes, GetDynamicSubscriptions(peerId));
+            return DeserializePeerDescriptor(peerId, peerStorageBytes, GetDynamicSubscriptions(peerId));
         }
 
-        private static PeerDescriptor DeserialisePeerDescriptor(PeerId peerId, byte[] peerStorageBytes, ICollection<Subscription> dynamicSubscriptions = null)
+        private static PeerDescriptor DeserializePeerDescriptor(PeerId peerId, byte[] peerStorageBytes, ICollection<Subscription> dynamicSubscriptions = null)
         {
             var peerStorage = Serializer.Deserialize<RocksDbStoragePeer>(new MemoryStream(peerStorageBytes));
             var staticSubscriptions = peerStorage.StaticSubscriptions ?? Array.Empty<Subscription>();
@@ -151,12 +150,14 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             if (!cursor.Seek(key).Valid())
                 return;
 
-            var currentKey = cursor.Key();
-            while (cursor.Valid() && CompareStart(currentKey, key))
+            while (cursor.Valid())
             {
+                var currentKey = cursor.Key();
+                if (!KeyMatchesPeer(currentKey, key))
+                    break;
+
                 action(currentKey, cursor.Value());
                 cursor.Next();
-                currentKey = cursor.Key();
             }
         }
 
@@ -210,14 +211,18 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
                     var peerId = GetPeerIdFromPeerKey(key);
                     var value = cursor.Value();
                     bindingKeys.TryGetValue(peerId, out var dynamicSubscriptions);
-                    yield return DeserialisePeerDescriptor(GetPeerIdFromPeerKey(key), value, dynamicSubscriptions);
+                    yield return DeserializePeerDescriptor(GetPeerIdFromPeerKey(key), value, dynamicSubscriptions);
                 }
             }
         }
 
         public bool? IsPersistent(PeerId peerId) => Get(peerId)?.IsPersistent;
 
-        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc) => IterateDynamicSubscriptionsForPeer(peerId, (key, value) => _db.Remove(key, _subscriptionsColumnFamily));
+        public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc)
+            => RemoveAllDynamicSubscriptionsForPeer(peerId);
+
+        private void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId)
+            => IterateDynamicSubscriptionsForPeer(peerId, (key, value) => _db.Remove(key, _subscriptionsColumnFamily));
 
         public void RemoveDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, MessageTypeId[] messageTypeIds)
         {
@@ -241,7 +246,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         {
             _db.Remove(BuildPeerKey(peerId), _peersColumnFamily);
 
-            IterateDynamicSubscriptionsForPeer(peerId, (key, value) => _db.Remove(key, _subscriptionsColumnFamily));
+            RemoveAllDynamicSubscriptionsForPeer(peerId);
         }
 
         public void SetPeerResponding(PeerId peerId, bool isResponding)
@@ -328,11 +333,11 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
         private static MemoryStream GetScratchMemoryStream()
         {
             var scratchMemoryStream = _memoryStream.Value;
-            scratchMemoryStream.Position = 0;
+            scratchMemoryStream.SetLength(0);
             return scratchMemoryStream;
         }
 
-        private static bool CompareStart(byte[] key, byte[] peerIdBytes)
+        private static bool KeyMatchesPeer(byte[] key, byte[] peerIdBytes)
         {
             var keyLength = ReadPeerIdLength(key);
             if (keyLength != peerIdBytes.Length)
