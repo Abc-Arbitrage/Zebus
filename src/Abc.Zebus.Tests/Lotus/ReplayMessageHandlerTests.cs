@@ -72,7 +72,7 @@ namespace Abc.Zebus.Tests.Lotus
                 throw new NotSupportedException();
             }
 
-            public IEnumerable<IMessageHandlerInvoker> GetMessageHanlerInvokers()
+            public IEnumerable<IMessageHandlerInvoker> GetMessageHandlerInvokers()
             {
                 throw new NotSupportedException();
             }

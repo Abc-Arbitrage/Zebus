@@ -62,7 +62,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invokers = _messageDispatcher.GetMessageHanlerInvokers();
+            var invokers = _messageDispatcher.GetMessageHandlerInvokers();
             invokers.ShouldContain(x => x.MessageTypeId == new MessageTypeId(typeof(ScanCommand1)));
         }
 
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invokers = _messageDispatcher.GetMessageHanlerInvokers().ToList();
+            var invokers = _messageDispatcher.GetMessageHandlerInvokers().ToList();
             invokers.ShouldContain(x => x.MessageHandlerType == typeof(ScanCommandHandler1) && x.MessageType == typeof(ScanCommand1));
             invokers.ShouldContain(x => x.MessageHandlerType == typeof(ScanCommandHandler1) && x.MessageType == typeof(ScanCommand2));
         }
@@ -83,7 +83,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invoker = _messageDispatcher.GetMessageHanlerInvokers().Single(x => x.MessageHandlerType == typeof(ScanCommandHandler2));
+            var invoker = _messageDispatcher.GetMessageHandlerInvokers().Single(x => x.MessageHandlerType == typeof(ScanCommandHandler2));
             invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
         }
 
@@ -94,7 +94,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invoker = _messageDispatcher.GetMessageHanlerInvokers().Single(x => x.MessageType == typeof(RoutableCommand));
+            var invoker = _messageDispatcher.GetMessageHandlerInvokers().Single(x => x.MessageType == typeof(RoutableCommand));
             invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
         }
 
@@ -113,7 +113,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.ConfigureAssemblyFilter(x => x.GetName().Name == "Abc.Zebus");
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var types = _messageDispatcher.GetMessageHanlerInvokers();
+            var types = _messageDispatcher.GetMessageHandlerInvokers();
             types.ShouldNotContain(x => x.MessageType.Assembly.FullName == GetType().Assembly.FullName);
         }
 
@@ -123,7 +123,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.ConfigureHandlerFilter(x => x == typeof(ScanCommandHandler1));
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var types = _messageDispatcher.GetMessageHanlerInvokers();
+            var types = _messageDispatcher.GetMessageHandlerInvokers();
             types.ShouldNotContain(x => x.MessageHandlerType != typeof(ScanCommandHandler1));
         }
 
@@ -277,7 +277,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invokersCount = _messageDispatcher.GetMessageHanlerInvokers().Count(x => x.MessageType == typeof(AsyncFailingCommand));
+            var invokersCount = _messageDispatcher.GetMessageHandlerInvokers().Count(x => x.MessageType == typeof(AsyncFailingCommand));
 
             invokersCount.ShouldEqual(1);
         }

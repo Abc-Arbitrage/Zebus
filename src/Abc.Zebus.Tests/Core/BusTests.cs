@@ -43,7 +43,7 @@ namespace Abc.Zebus.Tests.Core
             _bus.Configure(_self.Id, _environment);
 
             _invokers = new List<IMessageHandlerInvoker>();
-            _messageDispatcherMock.Setup(x => x.GetMessageHanlerInvokers()).Returns(_invokers);
+            _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(_invokers);
 
             _directoryMock.Setup(x => x.GetPeersHandlingMessage(It.IsAny<IMessage>())).Returns(new Peer[0]);
         }

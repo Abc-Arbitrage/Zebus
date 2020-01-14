@@ -13,7 +13,7 @@ namespace Abc.Zebus.Dispatch
         void LoadMessageHandlerInvokers();
 
         IEnumerable<MessageTypeId> GetHandledMessageTypes();
-        IEnumerable<IMessageHandlerInvoker> GetMessageHanlerInvokers();
+        IEnumerable<IMessageHandlerInvoker> GetMessageHandlerInvokers();
 
         void Dispatch(MessageDispatch dispatch);
         void Dispatch(MessageDispatch dispatch, Func<Type, bool> handlerFilter);

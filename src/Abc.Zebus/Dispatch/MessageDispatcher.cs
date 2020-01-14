@@ -97,7 +97,7 @@ namespace Abc.Zebus.Dispatch
             return _invokers.Keys;
         }
 
-        public IEnumerable<IMessageHandlerInvoker> GetMessageHanlerInvokers()
+        public IEnumerable<IMessageHandlerInvoker> GetMessageHandlerInvokers()
         {
             return _invokers.SelectMany(x => x.Value);
         }

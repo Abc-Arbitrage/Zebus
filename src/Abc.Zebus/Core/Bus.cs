@@ -134,7 +134,7 @@ namespace Abc.Zebus.Core
         {
             _logger.DebugFormat("Performing auto subscribe...");
 
-            var autoSubscribeInvokers = _messageDispatcher.GetMessageHanlerInvokers().Where(x => x.ShouldBeSubscribedOnStartup).ToList();
+            var autoSubscribeInvokers = _messageDispatcher.GetMessageHandlerInvokers().Where(x => x.ShouldBeSubscribedOnStartup).ToList();
 
             lock (_subscriptions)
             {
@@ -345,7 +345,7 @@ namespace Abc.Zebus.Core
         {
             foreach (var subscription in subscriptions)
             {
-                if (_messageDispatcher.GetMessageHanlerInvokers().All(x => x.MessageTypeId != subscription.MessageTypeId))
+                if (_messageDispatcher.GetMessageHandlerInvokers().All(x => x.MessageTypeId != subscription.MessageTypeId))
                     throw new ArgumentException($"No handler available for message type Id: {subscription.MessageTypeId}");
             }
         }
