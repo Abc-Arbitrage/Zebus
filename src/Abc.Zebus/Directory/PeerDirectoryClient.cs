@@ -27,13 +27,16 @@ namespace Abc.Zebus.Directory
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
-        private BlockingCollection<IEvent>? _messagesReceivedDuringRegister;
+        private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers = Enumerable.Empty<Peer>();
         private Peer _self = default!;
 
         public PeerDirectoryClient(IBusConfiguration configuration)
         {
             _configuration = configuration;
+
+            _messagesReceivedDuringRegister = new BlockingCollection<IEvent>();
+            _messagesReceivedDuringRegister.CompleteAdding();
         }
 
         public event Action<PeerId, PeerUpdateAction>? PeerUpdated;
@@ -67,7 +70,7 @@ namespace Abc.Zebus.Directory
 
         private void ProcessMessagesReceivedDuringRegister()
         {
-            foreach (var message in _messagesReceivedDuringRegister!.GetConsumingEnumerable())
+            foreach (var message in _messagesReceivedDuringRegister.GetConsumingEnumerable())
             {
                 try
                 {
@@ -282,9 +285,6 @@ namespace Abc.Zebus.Directory
 
         private bool EnqueueIfRegistering(IEvent message)
         {
-            if (_messagesReceivedDuringRegister == null)
-                return false;
-
             if (_messagesReceivedDuringRegister.IsAddingCompleted)
                 return false;
 
