@@ -551,7 +551,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_dispatch_subscriptionUpdated_messages_when_PeerStarted()
         {
             // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            SetupMessageDispatcher();
             var (subscription, descriptor) = DispatchedMessageForRegistration<MyMessage>();
 
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
@@ -565,6 +565,12 @@ namespace Abc.Zebus.Tests.Directory
             subscriptionUpdatedMessage.ShouldNotBeNull();
             subscriptionUpdatedMessage.Subscriptions.MessageTypeId.ShouldEqual(subscription.MessageTypeId);
             subscriptionUpdatedMessage.PeerId.ShouldEqual(_otherPeer.Id);
+        }
+
+        private void SetupMessageDispatcher()
+        {
+            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            _messageDispatcher.Raise(x => x.MessageHandlerInvokersUpdated += () => { });
         }
 
         [Test]
@@ -586,7 +592,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_not_dispatch_subscriptionUpdated_messages_when_PeerStarted_for_different_event()
         {
             // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            SetupMessageDispatcher();
             var (_, descriptor) = DispatchedMessageForRegistration<FakeEvent>();
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 
@@ -602,7 +608,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_dispatch_subscriptionUpdated_messages_at_registration()
         {
             // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            SetupMessageDispatcher();
             var (subscription, _) = DispatchedMessageForRegistration<MyMessage>(true);
 
             // Act
@@ -648,7 +654,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_dispatch_subscriptionUpdated_messages_when_subscriptionUpdated()
         {
             // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            SetupMessageDispatcher();
             var (subscription, descriptor) = DispatchedMessage<MyMessage>(_otherPeer);
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 

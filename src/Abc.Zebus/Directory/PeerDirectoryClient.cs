@@ -35,11 +35,13 @@ namespace Abc.Zebus.Directory
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
+        private HashSet<Type> _snapshotGeneratingMessageTypes = new HashSet<Type>();
 
         public PeerDirectoryClient(IBusConfiguration configuration, IMessageDispatcher messageDispatcher)
         {
             _configuration = configuration;
             _messageDispatcher = messageDispatcher;
+            _messageDispatcher.MessageHandlerInvokersUpdated += MessageDispatcherOnMessageHandlerInvokersUpdated;
         }
 
         public event Action<PeerId, PeerUpdateAction> PeerUpdated;
@@ -244,6 +246,7 @@ namespace Abc.Zebus.Directory
             => _peers.Values.Select(x => x.ToPeerDescriptor()).ToList();
 
         // Only internal for testing purposes
+
         internal IEnumerable<Peer> GetDirectoryPeers()
         {
             _directoryPeers = _configuration.DirectoryServiceEndPoints.Select(CreateDirectoryPeer);
@@ -289,20 +292,34 @@ namespace Abc.Zebus.Directory
             AddOrUpdatePeerEntry(message.PeerDescriptor);
         }
 
+        private void MessageDispatcherOnMessageHandlerInvokersUpdated()
+        {
+            lock (_snapshotGeneratingMessageTypes)
+            {
+                _snapshotGeneratingMessageTypes.Clear();
+                _snapshotGeneratingMessageTypes.AddRange(_messageDispatcher.GetMessageHanlerInvokers()
+                                                                           .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionHandler<>))?.GenericTypeArguments[0])
+                                                                           .Where(x => x != null)
+                                                                           .ToHashSet());
+            }
+        }
+
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, Subscription[] subscriptions)
         {
-            if(peerId == _self.Id)
+            if (peerId == _self.Id)
                 return;
-            var snapshotGeneratingMessageTypes = GetSubscriptionHandlerMessageTypes();
 
-            var messageContext = GetMessageContextForSubscriptionUpdated();
-            foreach (var subscription in subscriptions)
+            lock (_snapshotGeneratingMessageTypes)
             {
-                if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
-                    continue;
+                var messageContext = GetMessageContextForSubscriptionUpdated();
+                foreach (var subscription in subscriptions)
+                {
+                    if (!_snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
+                        continue;
 
-                var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
-                _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
+                    var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
+                    _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
+                }
             }
         }
 
@@ -310,27 +327,21 @@ namespace Abc.Zebus.Directory
 
         private void DispatchSubscriptionUpdatedMessages(PeerId peerId, SubscriptionsForType[] subscriptions)
         {
-            if(peerId == _self.Id)
+            if (peerId == _self.Id)
                 return;
-            var snapshotGeneratingMessageTypes = GetSubscriptionHandlerMessageTypes();
 
-            var messageContext = GetMessageContextForSubscriptionUpdated();
-            foreach (var subscription in subscriptions)
+            lock (_snapshotGeneratingMessageTypes)
             {
-                if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
-                    continue;
+                var messageContext = GetMessageContextForSubscriptionUpdated();
+                foreach (var subscription in subscriptions)
+                {
+                    if (!_snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
+                        continue;
 
-                var subscriptionUpdatedMessage = new  SubscriptionUpdatedMessage(subscription, peerId);
-                _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
+                    var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
+                    _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
+                }
             }
-        }
-
-        private HashSet<Type> GetSubscriptionHandlerMessageTypes()
-        {
-            return _messageDispatcher.GetMessageHanlerInvokers()
-                                     .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionHandler<>))?.GenericTypeArguments[0])
-                                     .Where(x => x != null)
-                                     .ToHashSet();
         }
 
         private bool EnqueueIfRegistering(IEvent message)
