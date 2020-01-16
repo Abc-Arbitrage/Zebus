@@ -19,7 +19,7 @@ namespace Abc.Zebus.Subscriptions
             _bus = bus;
         }
 
-        protected override void OnSubscriptions(SubscriptionsForType subscriptions, PeerId peerId)
+        protected override void OnSubscriptionsUpdated(SubscriptionsForType subscriptions, PeerId peerId)
         {
             var snapshot = GenerateSnapshot(subscriptions);
             var internalBus = (IInternalBus)_bus;

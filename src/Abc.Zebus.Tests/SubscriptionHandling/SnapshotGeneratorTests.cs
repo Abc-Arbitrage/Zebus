@@ -40,7 +40,7 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
 
             // Act
             var peerId = new PeerId("testPeerId");
-            snapshotGenerator.Handle(new SubscriptionUpdatedMessage(new SubscriptionsForType(new MessageTypeId(typeof(EventTest))), peerId));
+            snapshotGenerator.Handle(new SubscriptionsUpdated(new SubscriptionsForType(new MessageTypeId(typeof(EventTest))), peerId));
 
             // Assert
             testBus.ExpectExactly(peerId, new SnapshotTest());

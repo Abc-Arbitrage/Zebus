@@ -18,7 +18,7 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
         {
             public bool OnSubscriptionExecuted { get; private set; }
 
-            protected override void OnSubscriptions(SubscriptionsForType subscriptions, PeerId peerId)
+            protected override void OnSubscriptionsUpdated(SubscriptionsForType subscriptions, PeerId peerId)
             {
                 OnSubscriptionExecuted = true;
             }
@@ -31,7 +31,7 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
             var handler = new SubscriptionHandlerTest();
 
             // Act
-            handler.Handle(new SubscriptionUpdatedMessage(new SubscriptionsForType(new MessageTypeId(typeof(MessageTest))), new PeerId("testPeerId")));
+            handler.Handle(new SubscriptionsUpdated(new SubscriptionsForType(new MessageTypeId(typeof(MessageTest))), new PeerId("testPeerId")));
 
             // Assert
             handler.OnSubscriptionExecuted.ShouldBeTrue();
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Tests.SubscriptionHandling
             var handler = new SubscriptionHandlerTest();
 
             // Act
-            handler.Handle(new SubscriptionUpdatedMessage(new SubscriptionsForType(new MessageTypeId(typeof(FakeEvent))), new PeerId("testPeerId")));
+            handler.Handle(new SubscriptionsUpdated(new SubscriptionsForType(new MessageTypeId(typeof(FakeEvent))), new PeerId("testPeerId")));
 
             // Assert
             handler.OnSubscriptionExecuted.ShouldBeFalse();

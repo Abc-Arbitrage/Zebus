@@ -314,7 +314,7 @@ namespace Abc.Zebus.Directory
                 if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
-                var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
+                var subscriptionUpdatedMessage = new SubscriptionsUpdated(subscription, peerId);
                 _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
             }
         }
@@ -332,7 +332,7 @@ namespace Abc.Zebus.Directory
                 if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
-                var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
+                var subscriptionUpdatedMessage = new SubscriptionsUpdated(subscription, peerId);
                 _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
             }
         }
@@ -431,7 +431,7 @@ namespace Abc.Zebus.Directory
 
             PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
 
-            DispatchSubscriptionUpdatedMessages(message.PeerId, message.SubscriptionsForType); // TODO
+            DispatchSubscriptionUpdatedMessages(message.PeerId, message.SubscriptionsForType);
         }
 
         private void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)

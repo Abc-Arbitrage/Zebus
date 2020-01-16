@@ -43,7 +43,7 @@ namespace Abc.Zebus.Tests.Directory
         class MyMessageHandlerInvoker : MessageHandlerInvoker
         {
             public MyMessageHandlerInvoker()
-                : base(typeof(MySubscriptionHandler), typeof(SubscriptionUpdatedMessage))
+                : base(typeof(MySubscriptionHandler), typeof(SubscriptionsUpdated))
             {
             }
 
@@ -54,7 +54,7 @@ namespace Abc.Zebus.Tests.Directory
 
         class MySubscriptionHandler : SubscriptionHandler<MyMessage>
         {
-            protected override void OnSubscriptions(SubscriptionsForType subscriptions, PeerId peerId)
+            protected override void OnSubscriptionsUpdated(SubscriptionsForType subscriptions, PeerId peerId)
             {
             }
         }
@@ -560,7 +560,7 @@ namespace Abc.Zebus.Tests.Directory
             // Assert
 
             _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
-            var subscriptionUpdatedMessage = _dispatchedMessage.Message as SubscriptionUpdatedMessage;
+            var subscriptionUpdatedMessage = _dispatchedMessage.Message as SubscriptionsUpdated;
             subscriptionUpdatedMessage.ShouldNotBeNull();
             subscriptionUpdatedMessage.Subscriptions.MessageTypeId.ShouldEqual(subscription.MessageTypeId);
             subscriptionUpdatedMessage.PeerId.ShouldEqual(_otherPeer.Id);
@@ -616,7 +616,7 @@ namespace Abc.Zebus.Tests.Directory
             // Assert
             _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
             _dispatchedMessage.ShouldNotBeNull();
-            var subscriptionUpdatedMessage = _dispatchedMessage.Message as SubscriptionUpdatedMessage;
+            var subscriptionUpdatedMessage = _dispatchedMessage.Message as SubscriptionsUpdated;
             subscriptionUpdatedMessage.ShouldNotBeNull();
             subscriptionUpdatedMessage.Subscriptions.MessageTypeId.ShouldEqual(subscription.MessageTypeId);
             subscriptionUpdatedMessage.PeerId.ShouldEqual(_otherPeer.Id);
@@ -663,7 +663,7 @@ namespace Abc.Zebus.Tests.Directory
 
             // Assert
             _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
-            var subscriptionUpdatedMessage = _dispatchedMessage.Message as SubscriptionUpdatedMessage;
+            var subscriptionUpdatedMessage = _dispatchedMessage.Message as SubscriptionsUpdated;
             subscriptionUpdatedMessage.ShouldNotBeNull();
             subscriptionUpdatedMessage.Subscriptions.ShouldEqual(subscription);
             subscriptionUpdatedMessage.PeerId.ShouldEqual(_otherPeer.Id);
