@@ -277,7 +277,7 @@ namespace Abc.Zebus.Directory
 
             peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
 
-            DispatchSubscriptionUpdatedMessages(peerDescriptor.PeerId, subscriptions);
+            DispatchSubscriptionsUpdatedMessages(peerDescriptor.PeerId, subscriptions);
         }
 
         public void Handle(PeerStarted message)
@@ -301,12 +301,12 @@ namespace Abc.Zebus.Directory
             _snapshotGeneratingMessageTypes = snapshotGeneratingMessageTypes;
         }
 
-        private void DispatchSubscriptionUpdatedMessages(PeerId peerId, Subscription[] subscriptions)
+        private void DispatchSubscriptionsUpdatedMessages(PeerId peerId, Subscription[] subscriptions)
         {
             if (peerId == _self.Id)
                 return;
 
-            var messageContext = GetMessageContextForSubscriptionUpdated();
+            var messageContext = GetMessageContextForSubscriptionsUpdated();
             var snapshotGeneratingMessageTypes = _snapshotGeneratingMessageTypes;
 
             foreach (var subscription in subscriptions)
@@ -314,17 +314,17 @@ namespace Abc.Zebus.Directory
                 if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
-                var subscriptionUpdatedMessage = new SubscriptionsUpdated(subscription, peerId);
-                _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
+                var subscriptionsUpdated = new SubscriptionsUpdated(subscription, peerId);
+                _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionsUpdated, null, (dispatch, result) => { }));
             }
         }
 
-        private void DispatchSubscriptionUpdatedMessages(PeerId peerId, SubscriptionsForType[] subscriptions)
+        private void DispatchSubscriptionsUpdatedMessages(PeerId peerId, SubscriptionsForType[] subscriptions)
         {
             if (peerId == _self.Id)
                 return;
 
-            var messageContext = GetMessageContextForSubscriptionUpdated();
+            var messageContext = GetMessageContextForSubscriptionsUpdated();
             var snapshotGeneratingMessageTypes = _snapshotGeneratingMessageTypes;
 
             foreach (var subscription in subscriptions)
@@ -332,12 +332,12 @@ namespace Abc.Zebus.Directory
                 if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
-                var subscriptionUpdatedMessage = new SubscriptionsUpdated(subscription, peerId);
-                _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionUpdatedMessage, null, (dispatch, result) => { }));
+                var subscriptionsUpdated = new SubscriptionsUpdated(subscription, peerId);
+                _messageDispatcher.Dispatch(new MessageDispatch(messageContext, subscriptionsUpdated, null, (dispatch, result) => { }));
             }
         }
 
-        private MessageContext GetMessageContextForSubscriptionUpdated()
+        private MessageContext GetMessageContextForSubscriptionsUpdated()
             => MessageContext.Current ?? MessageContext.CreateOverride(_self.Id, _self.EndPoint);
 
         private bool EnqueueIfRegistering(IEvent message)
@@ -412,7 +412,7 @@ namespace Abc.Zebus.Directory
 
             PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
 
-            DispatchSubscriptionUpdatedMessages(message.PeerDescriptor.PeerId, message.PeerDescriptor.Subscriptions);
+            DispatchSubscriptionsUpdatedMessages(message.PeerDescriptor.PeerId, message.PeerDescriptor.Subscriptions);
         }
 
         public void Handle(PeerSubscriptionsForTypesUpdated message)
@@ -431,7 +431,7 @@ namespace Abc.Zebus.Directory
 
             PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
 
-            DispatchSubscriptionUpdatedMessages(message.PeerId, message.SubscriptionsForType);
+            DispatchSubscriptionsUpdatedMessages(message.PeerId, message.SubscriptionsForType);
         }
 
         private void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
