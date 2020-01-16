@@ -14,7 +14,7 @@ namespace Abc.Zebus.Dispatch
         void LoadMessageHandlerInvokers();
 
         IEnumerable<MessageTypeId> GetHandledMessageTypes();
-        IEnumerable<IMessageHandlerInvoker> GetMessageHanlerInvokers();
+        IEnumerable<IMessageHandlerInvoker> GetMessageHandlerInvokers();
 
         void Dispatch(MessageDispatch dispatch);
         void Dispatch(MessageDispatch dispatch, Func<Type, bool> handlerFilter);
@@ -22,8 +22,12 @@ namespace Abc.Zebus.Dispatch
         void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker);
         void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker);
 
+        int Purge();
+
         void Stop();
         void Start();
-        int Purge();
+
+        event Action Starting;
+        event Action Stopping;
     }
 }

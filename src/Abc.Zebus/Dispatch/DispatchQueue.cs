@@ -71,6 +71,7 @@ namespace Abc.Zebus.Dispatch
             };
 
             _thread.Start();
+            _logger.InfoFormat("{0} started", Name);
         }
 
         public void Stop()
@@ -88,6 +89,7 @@ namespace Abc.Zebus.Dispatch
             _thread.Join();
 
             _queue = new FlushableBlockingCollection<Entry>();
+            _logger.InfoFormat("{0} stopped", Name);
         }
 
         private void ThreadProc()

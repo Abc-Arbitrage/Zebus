@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net471</TargetFramework>
+    <PackageId>Zebus.Directory.RocksDb</PackageId>
+    <Version>$(ZebusDirectoryVersion)</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RocksDbNative" Version="5.4.6.10" />
+    <PackageReference Include="RocksDbSharp" Version="5.4.6.11" />
+  </ItemGroup>
+
+</Project>

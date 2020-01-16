@@ -8,7 +8,6 @@ using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing;
-using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Tests.Scan;
@@ -569,7 +568,7 @@ namespace Abc.Zebus.Tests.Directory
 
         private void SetupMessageDispatcher()
         {
-            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            _messageDispatcher.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
             _messageDispatcher.Raise(x => x.MessageHandlerInvokersUpdated += () => { });
         }
 
@@ -640,7 +639,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_not_dispatch_subscriptionUpdated_messages_at_registration_for_different_event()
         {
             // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            _messageDispatcher.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
             DispatchedMessageForRegistration<FakeEvent>(true);
 
             // Act
@@ -722,7 +721,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_not_dispatch_subscriptionUpdated_to_self()
         {
             // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHanlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
+            _messageDispatcher.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new MyMessageHandlerInvoker() });
             var (subscription, descriptor) = DispatchedMessage<MyMessage>(_self);
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
 

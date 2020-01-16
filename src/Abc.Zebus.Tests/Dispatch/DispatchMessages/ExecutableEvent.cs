@@ -2,6 +2,7 @@
 using System.Threading;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Testing.Dispatch;
+using Abc.Zebus.Util;
 using ProtoBuf;
 
 namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
@@ -24,7 +25,7 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
             Callback?.Invoke(invocation);
 
             if (IsBlocking)
-                _blockingSignal.Wait();
+                _blockingSignal.Wait(5.Seconds());
         }
 
         public void Unblock()

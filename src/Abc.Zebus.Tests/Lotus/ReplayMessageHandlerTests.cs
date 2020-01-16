@@ -45,7 +45,6 @@ namespace Abc.Zebus.Tests.Lotus
 
         private class FakeMessageDispatcher : IMessageDispatcher
         {
-            public MessageDispatch LastDispatch;
             public Func<Type, bool> LastDispatchFilter;
 
             public void ConfigureAssemblyFilter(Func<Assembly, bool> assemblyFilter)
@@ -77,20 +76,18 @@ namespace Abc.Zebus.Tests.Lotus
                 throw new NotSupportedException();
             }
 
-            public IEnumerable<IMessageHandlerInvoker> GetMessageHanlerInvokers()
+            public IEnumerable<IMessageHandlerInvoker> GetMessageHandlerInvokers()
             {
                 throw new NotSupportedException();
             }
 
             public void Dispatch(MessageDispatch dispatch)
             {
-                LastDispatch = dispatch;
                 LastDispatchFilter = _ => true;
             }
 
             public void Dispatch(MessageDispatch dispatch, Func<Type, bool> handlerFilter)
             {
-                LastDispatch = dispatch;
                 LastDispatchFilter = handlerFilter;
             }
 
@@ -104,23 +101,20 @@ namespace Abc.Zebus.Tests.Lotus
                 throw new NotSupportedException();
             }
 
+            public event Action Starting = delegate { };
+            public event Action Stopping = delegate { };
+
             public void AddInvoker(IMessageHandlerInvoker newEventHandlerInvoker)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker)
-            {
-                throw new NotImplementedException();
-            }
-
-            public int Purge()
             {
                 throw new NotSupportedException();
             }
 
-            public int MessageDispatchedInQueueCount { get; private set; }
-            public void FlushMessageDispatchedInQueue()
+            public void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker)
+            {
+                throw new NotSupportedException();
+            }
+
+            public int Purge()
             {
                 throw new NotSupportedException();
             }

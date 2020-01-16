@@ -1,17 +1,16 @@
-﻿using System.Linq;
-using Abc.Zebus.Directory.Tests;
-using Abc.Zebus.Routing;
-using Abc.Zebus.Testing;
+﻿using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
-using Cassandra;
-using Cassandra.Data.Linq;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
+namespace Abc.Zebus.Directory.RocksDb.Tests
 {
-    public partial class CqlPeerRepositoryTests
+    partial class RocksDbPeerRepositoryTests
     {
         [Test]
         public void should_add_dynamic_subscriptions()
@@ -75,23 +74,25 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             _repository.AddOrUpdatePeer(peerDescriptor);
             _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
 
-			_repository.RemovePeer(peerDescriptor.PeerId);
+            _repository.RemovePeer(peerDescriptor.PeerId);
 
+            // Check it was removed
             _repository.Get(peerDescriptor.PeerId).ShouldBeNull();
-            var retrievedSubscriptions = DataContext.DynamicSubscriptions
-                                                    .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                                                    .Where(sub => sub.UselessKey == false && sub.PeerId == peerDescriptor.PeerId.ToString())
-                                                    .Execute();
-			retrievedSubscriptions.ShouldBeEmpty();
+
+            // Add it again just with a static subscription and check that it doesn't have any dynamic subscriptions
+            _repository.AddOrUpdatePeer(peerDescriptor);
+            var peerAddedAgain = _repository.Get(peerDescriptor.PeerId);
+            var staticSubscription = peerAddedAgain.Subscriptions.ExpectedSingle();
+            staticSubscription.IsMatchingAllMessages.ShouldBeTrue();
         }
 
         [Test]
-		public void should_not_add_dynamic_subscriptions_using_outdated_add_command()
+        public void should_not_add_dynamic_subscriptions_using_outdated_add_command()
         {
             var pastPeerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
-			pastPeerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddMinutes(-1).RoundToMillisecond();
+            pastPeerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddMinutes(-1).RoundToMillisecond();
             var presentPeerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
-			_repository.AddOrUpdatePeer(presentPeerDescriptor);
+            _repository.AddOrUpdatePeer(presentPeerDescriptor);
 
             _repository.RemoveDynamicSubscriptionsForTypes(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { MessageUtil.GetTypeId(typeof(int)) });
             _repository.AddDynamicSubscriptionsForTypes(pastPeerDescriptor.PeerId, pastPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
@@ -184,7 +185,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             fetched.Subscriptions.ShouldEqual(new[] { CreateSubscriptionFor<FakeCommand>() });
         }
 
-		[Test]
+        [Test]
         public void should_not_mixup_subscriptions_to_same_type_with_different_tokens()
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
@@ -278,6 +279,23 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
+        public void should_add_dynamic_subscriptions_with_binding_key()
+        {
+            var firstPeer = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
+            _repository.AddOrUpdatePeer(firstPeer);
+            _repository.AddDynamicSubscriptionsForTypes(firstPeer.PeerId, firstPeer.TimestampUtc.Value, new[] { CreateSubscriptionsForType<FakeCommand>(new BindingKey("toto")) });
+
+            var fetchedBefore = _repository.GetPeers().ToList();
+            var firstPeerSubs = fetchedBefore.Single(peer => peer.PeerId == firstPeer.PeerId);
+            firstPeerSubs.Subscriptions.Length.ShouldEqual(2);
+            firstPeerSubs.Subscriptions.ShouldEqual(new[]
+            {
+                CreateSubscriptionFor<FakeCommand>(),
+                CreateSubscriptionFor<FakeCommand>("toto")
+            });
+        }
+
+        [Test]
         public void should_remove_dynamic_subscriptions_for_peer()
         {
             var firstPeer = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
@@ -322,6 +340,23 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 
             var fetched = _repository.GetPeers().ExpectedSingle();
             fetched.Subscriptions.ShouldNotBeEmpty();
+        }
+
+        private class FakeCommand : ICommand
+        {
+        }
+    }
+
+    public static class PeerExtensions
+    {
+        public static PeerDescriptor ToPeerDescriptorWithRoundedTime(this Peer peer, bool isPersistent, params Type[] types)
+        {
+            return ToPeerDescriptor(peer, isPersistent, types);
+        }
+
+        public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, params Type[] types)
+        {
+            return new PeerDescriptor(peer.Id, "endpoint", isPersistent, true, true, DateTime.UtcNow, types.Select(x => new Subscription(new MessageTypeId(x.FullName))).ToArray());
         }
     }
 }

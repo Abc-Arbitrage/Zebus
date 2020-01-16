@@ -18,18 +18,37 @@ namespace Abc.Zebus.Hosting
         {
         }
 
+        /// <summary>
+        /// Invoked before <see cref="IBus.Start"/>.
+        /// </summary>
         public virtual void BeforeStart()
         {
         }
 
+        /// <summary>
+        /// Invoked during <see cref="IBus.Start"/>, after register but before starting dispatcher.
+        /// </summary>
+        public virtual void BeforeDispatcherStart()
+        {
+        }
+
+        /// <summary>
+        /// Invoked after <see cref="IBus.Start"/>.
+        /// </summary>
         public virtual void AfterStart()
         {
         }
 
+        /// <summary>
+        /// Invoked before <see cref="IBus.Stop"/>.
+        /// </summary>
         public virtual void BeforeStop()
         {
         }
 
+        /// <summary>
+        /// Invoked after <see cref="IBus.Stop"/>.
+        /// </summary>
         public virtual void AfterStop()
         {
         }

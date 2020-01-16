@@ -28,7 +28,7 @@ namespace Abc.Zebus
         /// (https://github.com/Abc-Arbitrage/Zebus/wiki/Persistence)
         /// </summary>
         bool IsPersistent { get; }
-        
+
         /// <summary>
         /// Mainly a debugging setting, setting it to false will prevent the Bus from connecting
         /// to a random Directory when needed

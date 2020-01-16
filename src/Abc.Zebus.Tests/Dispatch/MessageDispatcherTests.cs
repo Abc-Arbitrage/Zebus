@@ -38,20 +38,22 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _dispatchQueueFactory = new DispatchQueueFactory(_pipeManager);
 
-            _messageDispatcher = CreateAndStartDispatcher(_dispatchQueueFactory);
+            _messageDispatcher = CreateDispatcher(_dispatchQueueFactory);
         }
 
-        private MessageDispatcher CreateAndStartDispatcher(IDispatchQueueFactory dispatchQueueFactory)
+        private MessageDispatcher CreateDispatcher(IDispatchQueueFactory dispatchQueueFactory)
         {
-            var messageDispatcher = new MessageDispatcher(new IMessageHandlerInvokerLoader[]
+            var invokerLoaders = new IMessageHandlerInvokerLoader[]
             {
                 new SyncMessageHandlerInvokerLoader(_containerMock.Object),
                 new AsyncMessageHandlerInvokerLoader(_containerMock.Object),
-            }, dispatchQueueFactory);
+            };
+
+            var messageDispatcher = new MessageDispatcher(invokerLoaders, dispatchQueueFactory);
 
             messageDispatcher.ConfigureAssemblyFilter(x => x == GetType().Assembly);
             messageDispatcher.ConfigureHandlerFilter(type => type != typeof(SyncMessageHandlerInvokerLoaderTests.WrongAsyncHandler));
-            messageDispatcher.Start();
+
             return messageDispatcher;
         }
 
@@ -60,7 +62,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invokers = _messageDispatcher.GetMessageHanlerInvokers();
+            var invokers = _messageDispatcher.GetMessageHandlerInvokers();
             invokers.ShouldContain(x => x.MessageTypeId == new MessageTypeId(typeof(ScanCommand1)));
         }
 
@@ -69,7 +71,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invokers = _messageDispatcher.GetMessageHanlerInvokers().ToList();
+            var invokers = _messageDispatcher.GetMessageHandlerInvokers().ToList();
             invokers.ShouldContain(x => x.MessageHandlerType == typeof(ScanCommandHandler1) && x.MessageType == typeof(ScanCommand1));
             invokers.ShouldContain(x => x.MessageHandlerType == typeof(ScanCommandHandler1) && x.MessageType == typeof(ScanCommand2));
         }
@@ -81,7 +83,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invoker = _messageDispatcher.GetMessageHanlerInvokers().Single(x => x.MessageHandlerType == typeof(ScanCommandHandler2));
+            var invoker = _messageDispatcher.GetMessageHandlerInvokers().Single(x => x.MessageHandlerType == typeof(ScanCommandHandler2));
             invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
         }
 
@@ -92,7 +94,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invoker = _messageDispatcher.GetMessageHanlerInvokers().Single(x => x.MessageType == typeof(RoutableCommand));
+            var invoker = _messageDispatcher.GetMessageHandlerInvokers().Single(x => x.MessageType == typeof(RoutableCommand));
             invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
         }
 
@@ -111,7 +113,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.ConfigureAssemblyFilter(x => x.GetName().Name == "Abc.Zebus");
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var types = _messageDispatcher.GetMessageHanlerInvokers();
+            var types = _messageDispatcher.GetMessageHandlerInvokers();
             types.ShouldNotContain(x => x.MessageType.Assembly.FullName == GetType().Assembly.FullName);
         }
 
@@ -121,7 +123,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.ConfigureHandlerFilter(x => x == typeof(ScanCommandHandler1));
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var types = _messageDispatcher.GetMessageHanlerInvokers();
+            var types = _messageDispatcher.GetMessageHandlerInvokers();
             types.ShouldNotContain(x => x.MessageHandlerType != typeof(ScanCommandHandler1));
         }
 
@@ -142,7 +144,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_invoke_handle_method()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var handler = new ScanCommandHandler1();
             _containerMock.Setup(x => x.GetInstance(typeof(ScanCommandHandler1))).Returns(handler);
@@ -156,7 +158,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_invoke_both_sync_and_async_handlers()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var asyncHandler = new AsyncCommandHandler { WaitForSignal = true };
             _containerMock.Setup(x => x.GetInstance(typeof(AsyncCommandHandler))).Returns(asyncHandler);
@@ -178,7 +180,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_filter_invoker()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var asyncHandler = new AsyncCommandHandler();
             _containerMock.Setup(x => x.GetInstance(typeof(AsyncCommandHandler))).Returns(asyncHandler);
@@ -201,7 +203,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_build_and_run_pipe_invocation()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             _pipeManager.EnablePipe("TestPipe");
             var pipe = (TestPipe)_pipeManager.GetEnabledPipes(typeof(ScanCommandHandler1)).ExpectedSingle();
@@ -216,7 +218,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_build_and_run_pipe_invocation_async()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             _pipeManager.EnablePipe("TestPipe");
             var pipe = (TestPipe)_pipeManager.GetEnabledPipes(typeof(AsyncCommandHandler)).ExpectedSingle();
@@ -231,7 +233,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_catch_exceptions()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var command = new FailingCommand(new InvalidOperationException(":'("));
             var result = DispatchAndWaitForCompletion(command);
@@ -243,7 +245,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_catch_async_exceptions()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var command = new AsyncFailingCommand(new InvalidOperationException(":'("));
             var result = DispatchAndWaitForCompletion(command);
@@ -252,10 +254,12 @@ namespace Abc.Zebus.Tests.Dispatch
             error.ShouldEqual(command.Exception);
         }
 
+
+
         [Test]
         public void should_catch_async_exceptions_thrown_synchronously()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var command = new AsyncFailingCommand(new InvalidOperationException(":'("))
             {
@@ -273,7 +277,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _messageDispatcher.LoadMessageHandlerInvokers();
 
-            var invokersCount = _messageDispatcher.GetMessageHanlerInvokers().Count(x => x.MessageType == typeof(AsyncFailingCommand));
+            var invokersCount = _messageDispatcher.GetMessageHandlerInvokers().Count(x => x.MessageType == typeof(AsyncFailingCommand));
 
             invokersCount.ShouldEqual(1);
         }
@@ -281,7 +285,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_fail_dispatch_if_dispatching_to_an_handler_that_does_not_start_its_task()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var command = new AsyncDoNotStartTaskCommand();
             var result = DispatchAndWaitForCompletion(command);
@@ -292,11 +296,13 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_dispatch_to_event_handler()
         {
+            LoadAndStartDispatcher();
+
             IMessage receivedMessage = null;
             var predicateBuilder = new Mock<IBindingKeyPredicateBuilder>();
             predicateBuilder.Setup(x => x.GetPredicate(It.IsAny<Type>(), It.IsAny<BindingKey>())).Returns(_ => true);
 
-            _messageDispatcher.AddInvoker(new DynamicMessageHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent), new [] {BindingKey.Empty}, predicateBuilder.Object));
+            _messageDispatcher.AddInvoker(new DynamicMessageHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent), new[] { BindingKey.Empty }, predicateBuilder.Object));
 
             var evt = new FakeEvent(123);
             DispatchAndWaitForCompletion(evt);
@@ -307,7 +313,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_get_reply_code()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             int? replyCode = null;
             var context = MessageContext.CreateTest();
@@ -320,7 +326,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_purge_dispatch_queues()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var firstMessage = new ExecutableEvent { IsBlocking = true };
 
@@ -332,7 +338,7 @@ namespace Abc.Zebus.Tests.Dispatch
             Dispatch(new ExecutableEvent());
             Dispatch(new ExecutableEvent());
 
-            var dispatchQueue = _dispatchQueueFactory.DispatchQueues.ExpectedSingle();
+            var dispatchQueue = _dispatchQueueFactory.DispatchQueues.ExpectedSingle(x => x.Name == DispatchQueueNameScanner.DefaultQueueName);
             dispatchQueue.QueueLength.ShouldEqual(3);
 
             var purgeCount = _messageDispatcher.Purge();
@@ -346,7 +352,7 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_hide_task_scheduler()
         {
-            _messageDispatcher.LoadMessageHandlerInvokers();
+            LoadAndStartDispatcher();
 
             var syncHandler = new CapturingTaskSchedulerSyncCommandHandler();
             _containerMock.Setup(x => x.GetInstance(typeof(CapturingTaskSchedulerSyncCommandHandler))).Returns(syncHandler);
@@ -362,6 +368,37 @@ namespace Abc.Zebus.Tests.Dispatch
 
             syncHandler.TaskScheduler.ShouldEqual(TaskScheduler.Default);
             asyncHandler.TaskScheduler.ShouldEqual(TaskScheduler.Default);
+        }
+
+        [Test]
+        public void should_publish_starting_event_before_dispatch()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var startingSignal = new ManualResetEvent(false);
+            var startingHangSignal = new ManualResetEvent(false);
+            _messageDispatcher.Starting += () =>
+            {
+                startingSignal.Set();
+                startingHangSignal.WaitOne(10.Seconds()).ShouldBeTrue();
+            };
+
+            var dispatchTask = Dispatch(new ExecutableEvent());
+            var startingTask = Task.Run(() => _messageDispatcher.Start());
+
+            startingSignal.WaitOne(1.Second()).ShouldBeTrue();
+            dispatchTask.Wait(200.Milliseconds()).ShouldBeFalse();
+
+            startingHangSignal.Set();
+            startingTask.Wait(1.Second()).ShouldBeTrue();
+
+            dispatchTask.Wait(1.Second()).ShouldBeTrue();
+        }
+
+        private void LoadAndStartDispatcher()
+        {
+            _messageDispatcher.LoadMessageHandlerInvokers();
+            _messageDispatcher.Start();
         }
 
         private DispatchResult DispatchAndWaitForCompletion(IMessage message)

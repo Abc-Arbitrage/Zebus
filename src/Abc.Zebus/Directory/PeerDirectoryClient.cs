@@ -292,7 +292,7 @@ namespace Abc.Zebus.Directory
 
         private void MessageDispatcherOnMessageHandlerInvokersUpdated()
         {
-            var snapshotGeneratingMessageTypes = _messageDispatcher.GetMessageHanlerInvokers()
+            var snapshotGeneratingMessageTypes = _messageDispatcher.GetMessageHandlerInvokers()
                                                                    .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionHandler<>))?.GenericTypeArguments[0])
                                                                    .Where(x => x != null)
                                                                    .ToHashSet();
