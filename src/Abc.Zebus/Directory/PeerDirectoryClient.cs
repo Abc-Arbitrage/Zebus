@@ -307,10 +307,11 @@ namespace Abc.Zebus.Directory
                 return;
 
             var messageContext = GetMessageContextForSubscriptionUpdated();
+            var snapshotGeneratingMessageTypes = _snapshotGeneratingMessageTypes;
 
             foreach (var subscription in subscriptions)
             {
-                if (!_snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
+                if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
                 var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
@@ -324,10 +325,11 @@ namespace Abc.Zebus.Directory
                 return;
 
             var messageContext = GetMessageContextForSubscriptionUpdated();
+            var snapshotGeneratingMessageTypes = _snapshotGeneratingMessageTypes;
 
             foreach (var subscription in subscriptions)
             {
-                if (!_snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
+                if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
                 var subscriptionUpdatedMessage = new SubscriptionUpdatedMessage(subscription, peerId);
