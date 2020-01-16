@@ -72,7 +72,6 @@ namespace Abc.Zebus.Dispatch
             Thread.MemoryBarrier();
             _invokers = invokers;
             MessageHandlerInvokersUpdated?.Invoke();
-
         }
 
         public IEnumerable<MessageTypeId> GetHandledMessageTypes()
@@ -184,6 +183,7 @@ namespace Abc.Zebus.Dispatch
 
                 _invokers[newEventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
             }
+
             MessageHandlerInvokersUpdated?.Invoke();
         }
 
@@ -198,6 +198,7 @@ namespace Abc.Zebus.Dispatch
                 var newMessageTypeInvokers = new List<IMessageHandlerInvoker>(messageTypeInvokers.Where(x => x != eventHandlerInvoker));
                 _invokers[eventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
             }
+
             MessageHandlerInvokersUpdated?.Invoke();
         }
 

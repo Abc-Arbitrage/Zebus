@@ -9,7 +9,7 @@ namespace Abc.Zebus.Dispatch
         void ConfigureAssemblyFilter(Func<Assembly, bool> assemblyFilter);
         void ConfigureHandlerFilter(Func<Type, bool> handlerFilter);
         void ConfigureMessageFilter(Func<Type, bool> messageFilter);
-        event Action MessageHandlerInvokersUpdated ;
+        event Action MessageHandlerInvokersUpdated;
 
         void LoadMessageHandlerInvokers();
 
