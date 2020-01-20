@@ -329,7 +329,7 @@ namespace Abc.Zebus.Directory
 
             foreach (var subscription in subscriptions)
             {
-                if (!snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
+                if (subscription.BindingKeys == null || subscription.BindingKeys.Length == 0 || !snapshotGeneratingMessageTypes.Contains(subscription.MessageTypeId.GetMessageType()))
                     continue;
 
                 var subscriptionsUpdated = new SubscriptionsUpdated(subscription, peerId);
