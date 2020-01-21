@@ -605,6 +605,7 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
+        public async Task should_dispatch_subscriptionUpdated_messages_on_dynamic_subscription()
         {
             // Arrange
             SetupMessageDispatcher();
