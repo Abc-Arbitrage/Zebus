@@ -11,6 +11,7 @@ using Abc.Zebus.Lotus;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
+using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
@@ -57,8 +58,10 @@ namespace Abc.Zebus.Core
             _transport.MessageReceived += OnTransportMessageReceived;
             _directory = directory;
             _directory.PeerUpdated += OnPeerUpdated;
+            _directory.PeerSubscriptionsUpdated += DispatchSubscriptionsUpdatedMessages;
             _serializer = serializer;
             _messageDispatcher = messageDispatcher;
+            _messageDispatcher.MessageHandlerInvokersUpdated += MessageDispatcherOnMessageHandlerInvokersUpdated;
             _messageSendingStrategy = messageSendingStrategy;
             _stoppingStrategy = stoppingStrategy;
             _predicateBuilder = predicateBuilder;
@@ -239,7 +242,6 @@ namespace Abc.Zebus.Core
             var peersHandlingMessage = _directory.GetPeersHandlingMessage(message);
             if (targetPeerId != null)
                 peersHandlingMessage = peersHandlingMessage.Where(peer => peer.Id == targetPeerId).ToList();
-
 
             var localDispatchEnabled = LocalDispatch.Enabled;
             var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == PeerId);
@@ -552,8 +554,7 @@ namespace Abc.Zebus.Core
             messageContext.ReplyResponse = response;
         }
 
-        private void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction)
-            => _transport.OnPeerUpdated(peerId, peerUpdateAction);
+        private void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction) => _transport.OnPeerUpdated(peerId, peerUpdateAction);
 
         private void OnTransportMessageReceived(TransportMessage transportMessage)
         {
@@ -768,6 +769,31 @@ namespace Abc.Zebus.Core
             var processingFailed = new MessageProcessingFailed(transportMessage, string.Empty, errorMessage, SystemDateTime.UtcNow, null);
             Publish(processingFailed);
         }
+
+        private void MessageDispatcherOnMessageHandlerInvokersUpdated()
+        {
+            var snapshotGeneratingMessageTypes = _messageDispatcher.GetMessageHandlerInvokers()
+                                                                   .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionHandler<>))?.GenericTypeArguments[0])
+                                                                   .Where(x => x != null);
+
+            _directory.EnableSubscriptionsUpdatedFor(snapshotGeneratingMessageTypes);
+        }
+
+        private void DispatchSubscriptionsUpdatedMessages(PeerId peerId, IReadOnlyList<Subscription> subscriptions)
+        {
+            if (peerId == PeerId)
+                return;
+
+            var messageContext = GetMessageContextForSubscriptionsUpdated();
+            foreach (var subscription in subscriptions)
+            {
+                var subscriptionsUpdated = new SubscriptionsUpdated(subscription, peerId);
+                var dispatch = new MessageDispatch(messageContext, subscriptionsUpdated, _serializer, (d, result) => HandleDispatchErrors(d, result));
+                _messageDispatcher.Dispatch(dispatch);
+            }
+        }
+
+        private MessageContext GetMessageContextForSubscriptionsUpdated() => MessageContext.Current ?? MessageContext.CreateOverride(PeerId, EndPoint);
 
         private string DumpMessageOnDisk(MessageTypeId messageTypeId, Stream messageStream)
         {

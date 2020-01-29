@@ -28,7 +28,7 @@ namespace Abc.Zebus.Tests.Directory
 
             var subscriptionsByTypeId = subscriptions.GroupBy(x => x.MessageTypeId).ToDictionary(x => x.Key, x => x.Select(s=>s.BindingKey).ToArray());
 
-            _directory = new PeerDirectoryClient(_configurationMock.Object, _messageDispatcher.Object);
+            _directory = new PeerDirectoryClient(_configurationMock.Object);
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
 
             Console.WriteLine("Snapshot updates (add)");
@@ -48,7 +48,7 @@ namespace Abc.Zebus.Tests.Directory
                 }
             }
 
-            _directory = new PeerDirectoryClient(_configurationMock.Object, _messageDispatcher.Object);
+            _directory = new PeerDirectoryClient(_configurationMock.Object);
             _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
 
             Console.WriteLine("Snapshot updates per message type id (add)");

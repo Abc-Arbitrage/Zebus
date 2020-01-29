@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Lotus;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing;
@@ -29,8 +30,6 @@ namespace Abc.Zebus.Tests.Directory
         private TestBus _bus;
         private Peer _self;
         private Peer _otherPeer;
-        private Mock<IMessageDispatcher> _messageDispatcher;
-        private MessageDispatch _dispatchedMessage;
 
         [SetUp]
         public void Setup()
@@ -40,8 +39,7 @@ namespace Abc.Zebus.Tests.Directory
             _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(500.Milliseconds());
             _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(false);
 
-            _messageDispatcher = new Mock<IMessageDispatcher>();
-            _directory = new PeerDirectoryClient(_configurationMock.Object, _messageDispatcher.Object);
+            _directory = new PeerDirectoryClient(_configurationMock.Object);
             _bus = new TestBus();
             _self = new Peer(new PeerId("Abc.Testing.0"), "tcp://abctest:123");
             _otherPeer = new Peer(new PeerId("Abc.Testing.1"), "tcp://abctest:789");
@@ -486,212 +484,6 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public async Task should_dispatch_subscriptionsUpdated_messages_when_PeerStarted()
-        {
-            // Arrange
-            SetupMessageDispatcher();
-            var (subscription, descriptor) = DispatchedMessageForRegistration<TestMessage>();
-
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-
-            // Assert
-
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
-            var subscriptionsUpdated = _dispatchedMessage.Message as SubscriptionsUpdated;
-            subscriptionsUpdated.ShouldNotBeNull();
-            subscriptionsUpdated.Subscriptions.MessageTypeId.ShouldEqual(subscription.MessageTypeId);
-            subscriptionsUpdated.PeerId.ShouldEqual(_otherPeer.Id);
-        }
-
-        private void SetupMessageDispatcher()
-        {
-            _messageDispatcher.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker() });
-            _messageDispatcher.Raise(x => x.MessageHandlerInvokersUpdated += () => { });
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionsUpdated_messages_when_PeerStarted_and_no_handler_registered()
-        {
-            // Arrange
-            var (_, descriptor) = DispatchedMessageForRegistration<TestMessage>();
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionsUpdated_messages_when_PeerStarted_for_different_event()
-        {
-            // Arrange
-            SetupMessageDispatcher();
-            var (_, descriptor) = DispatchedMessageForRegistration<FakeEvent>();
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-
-            // Assert
-
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
-        public async Task should_dispatch_subscriptionsUpdated_messages_at_registration()
-        {
-            // Arrange
-            SetupMessageDispatcher();
-            var (subscription, _) = DispatchedMessageForRegistration<TestMessage>(true);
-
-            // Act
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
-            _dispatchedMessage.ShouldNotBeNull();
-            var subscriptionsUpdated = _dispatchedMessage.Message as SubscriptionsUpdated;
-            subscriptionsUpdated.ShouldNotBeNull();
-            subscriptionsUpdated.Subscriptions.MessageTypeId.ShouldEqual(subscription.MessageTypeId);
-            subscriptionsUpdated.PeerId.ShouldEqual(_otherPeer.Id);
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionsUpdated_messages_at_registration_and_no_handler_registered()
-        {
-            // Arrange
-            DispatchedMessageForRegistration<TestMessage>(true);
-
-            // Act
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionsUpdated_messages_at_registration_for_different_event()
-        {
-            // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker() });
-            DispatchedMessageForRegistration<FakeEvent>(true);
-
-            // Act
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionUpdated_messages_on_unsubscribe()
-        {
-            // Arrange
-            SetupMessageDispatcher();
-            var emptySubscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)));
-            var descriptor = DispatchedMessage(_otherPeer);
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.Now, emptySubscription));
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
-        public async Task should_dispatch_subscriptionUpdated_messages_on_dynamic_subscription()
-        {
-            // Arrange
-            SetupMessageDispatcher();
-            var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)), BindingKey.Empty);
-            var descriptor = DispatchedMessage(_otherPeer);
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.Now, subscription));
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
-            var subscriptionsUpdated = _dispatchedMessage.Message as SubscriptionsUpdated;
-            subscriptionsUpdated.ShouldNotBeNull();
-            subscriptionsUpdated.Subscriptions.ShouldEqual(subscription);
-            subscriptionsUpdated.PeerId.ShouldEqual(_otherPeer.Id);
-        }
-
-        private PeerDescriptor DispatchedMessage(Peer peer)
-        {
-            _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
-            _messageDispatcher.Setup(x => x.Dispatch(It.IsAny<MessageDispatch>())).Callback<MessageDispatch>(dispatch => { _dispatchedMessage = dispatch; });
-            var descriptor = peer.ToPeerDescriptor(true, new Subscription[0]);
-            return descriptor;
-        }
-
-        private (Subscription subscription, PeerDescriptor descriptor) DispatchedMessageForRegistration<TMessage>(bool shouldInstanciateRegistrationHandlerWithDescriptor = false)
-        {
-            var subscription = new Subscription(new MessageTypeId(typeof(TMessage)));
-            _messageDispatcher.Setup(x => x.Dispatch(It.IsAny<MessageDispatch>())).Callback<MessageDispatch>(dispatch => { _dispatchedMessage = dispatch; });
-            var descriptor = _otherPeer.ToPeerDescriptor(true, new[] { subscription });
-            _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(shouldInstanciateRegistrationHandlerWithDescriptor ? new[] { descriptor } : new PeerDescriptor[0]));
-            return (subscription, descriptor);
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionsUpdated_messages_when_subscriptionsUpdated_and_no_handler_registered()
-        {
-            // Arrange
-            var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)), BindingKey.Empty);
-            var descriptor = DispatchedMessage(_otherPeer);
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.Now, subscription));
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionsUpdated_messages_when_subscriptionsUpdated_for_different_message()
-        {
-            // Arrange
-            var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)), BindingKey.Empty);
-            var descriptor = DispatchedMessage(_otherPeer);
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.Now, subscription));
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
-        public async Task should_not_dispatch_subscriptionsUpdated_to_self()
-        {
-            // Arrange
-            _messageDispatcher.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker() });
-            var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)), BindingKey.Empty);
-            var descriptor = DispatchedMessage(_self);
-            await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
-
-            // Act
-            _directory.Handle(new PeerStarted(descriptor));
-            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.Now, subscription));
-
-            // Assert
-            _messageDispatcher.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
-        }
-
-        [Test]
         public void should_order_directory_peers_randomly()
         {
             _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(true);
@@ -1123,6 +915,88 @@ namespace Abc.Zebus.Tests.Directory
             _directory.TimeSinceLastPing.ShouldEqual(TimeSpan.MaxValue);
         }
 
+        [Test]
+        public async Task should_raise_peer_subscription_updated_event_only_for_enabled_types()
+        {
+            // Arrange
+            var subscriptions = CaptureSubscriptionsUpdated();
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(PeerStarted) });
+
+            // Act
+            await RegisterSelf(new[] { Subscription.Any<PeerStarted>(), Subscription.Any<PeerStopped>() });
+
+            // Assert
+            subscriptions.Count.ShouldEqual(1);
+        }
+
+        private List<Subscription> CaptureSubscriptionsUpdated()
+        {
+            var subscriptions = new List<Subscription>();
+            _directory.PeerSubscriptionsUpdated += (id, subs) => subscriptions.AddRange(subs);
+            return subscriptions;
+        }
+
+        [Test]
+        public async Task should_raise_peer_subscription_updated_event_when_registering()
+        {
+            // Arrange
+            var subscriptions = CaptureSubscriptionsUpdated();
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(PeerStarted) });
+
+            // Act
+            await RegisterSelf(new[] { Subscription.Any<PeerStarted>() });
+
+            // Assert
+            subscriptions.Count.ShouldEqual(1);
+        }
+
+        [Test]
+        public async Task should_raise_peer_subscription_updated_event_when_peer_starts()
+        {
+            // Arrange
+            var subscriptions = CaptureSubscriptionsUpdated();
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(PeerStarted) });
+            await RegisterSelf();
+
+            // Act
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false, new[] { Subscription.Any<PeerStarted>() })));
+
+            // Assert
+            subscriptions.Count.ShouldEqual(1);
+        }
+
+        [Test]
+        public async Task should_raise_peer_subscription_updated_event_when_peer_updates_static_subscription()
+        {
+            // Arrange
+            var subscriptions = CaptureSubscriptionsUpdated();
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(PeerStarted) });
+            await RegisterSelf();
+
+            // Act
+            _directory.Handle(new PeerSubscriptionsUpdated(_otherPeer.ToPeerDescriptor(false, new[] { Subscription.Any<PeerStarted>() })));
+
+            // Assert
+            subscriptions.Count.ShouldEqual(1);
+        }
+
+        [Test]
+        public async Task should_raise_peer_subscription_updated_event_when_peer_updates_dynamic_subscription()
+        {
+            // Arrange
+            var subscriptions = CaptureSubscriptionsUpdated();
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(PeerStarted) });
+            await RegisterSelf();
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
+
+            // Act
+            var subscription = Subscription.Any<PeerStarted>();
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.Now, new SubscriptionsForType(subscription.MessageTypeId, subscription.BindingKey)));
+
+            // Assert
+            subscriptions.Count.ShouldEqual(1);
+        }
+
         private class OtherFakeEvent1 : IEvent
         {
         }
@@ -1140,53 +1014,6 @@ namespace Abc.Zebus.Tests.Directory
             public OtherFakeEvent3(int id)
             {
                 Id = id;
-            }
-        }
-
-        class TestSnapshot : IEvent
-        {
-        }
-
-        class TestMessage : IEvent
-        {
-        }
-
-        class TestMessageHandlerInvoker : MessageHandlerInvoker
-        {
-            public TestMessageHandlerInvoker()
-                : base(typeof(TestSubscriptionHandler), typeof(SubscriptionsUpdated))
-            {
-            }
-
-            public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
-            {
-            }
-        }
-
-        class TestSubscriptionHandler : SubscriptionHandler<TestMessage>
-        {
-            protected override void OnSubscriptionsUpdated(SubscriptionsForType subscriptions, PeerId peerId)
-            {
-            }
-        }
-
-        class TestSnapshotGenerator : SubscriptionSnapshotGenerator<TestSnapshot, TestMessage>
-        {
-            public TestSnapshotGenerator(IBus bus)
-                : base(bus)
-            {
-            }
-
-            protected override TestSnapshot GenerateSnapshot(SubscriptionsForType subscription)
-            {
-                return new TestSnapshot();
-            }
-        }
-
-        class TestHandler : IMessageHandler<MessageHandlerInvokerLoaderTests.TestMessage>
-        {
-            public void Handle(MessageHandlerInvokerLoaderTests.TestMessage message)
-            {
             }
         }
     }

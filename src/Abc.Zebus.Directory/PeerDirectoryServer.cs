@@ -31,6 +31,7 @@ namespace Abc.Zebus.Directory
 
         public event Action Registered;
         public event Action<PeerId, PeerUpdateAction> PeerUpdated;
+        public event Action<PeerId, IReadOnlyList<Subscription>> PeerSubscriptionsUpdated = delegate {  };
 
         public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
@@ -50,6 +51,11 @@ namespace Abc.Zebus.Directory
         public bool IsPersistent(PeerId peerId)
         {
             return _peerRepository.IsPersistent(peerId).GetValueOrDefault();
+        }
+
+        public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
+        {
+            // Not supported on peer directory server
         }
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)

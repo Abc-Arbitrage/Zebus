@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Comparison;
@@ -24,7 +25,8 @@ namespace Abc.Zebus.Tests.Core
             public void should_configure_transport_when_configured()
             {
                 var transportMock = new Mock<ITransport>();
-                var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, null, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>(), _configuration.Object);
+                var messageDispatcher = new Mock<IMessageDispatcher>();
+                var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, messageDispatcher.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>(), _configuration.Object);
 
                 bus.Configure(_self.Id, _environment);
 
