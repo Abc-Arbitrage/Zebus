@@ -4,14 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory;
-using Abc.Zebus.Dispatch;
-using Abc.Zebus.Lotus;
 using Abc.Zebus.Routing;
-using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
-using Abc.Zebus.Tests.Scan;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using Moq;
@@ -972,6 +968,7 @@ namespace Abc.Zebus.Tests.Directory
             var subscriptions = CaptureSubscriptionsUpdated();
             _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(PeerStarted) });
             await RegisterSelf();
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(true)));
 
             // Act
             _directory.Handle(new PeerSubscriptionsUpdated(_otherPeer.ToPeerDescriptor(false, new[] { Subscription.Any<PeerStarted>() })));
