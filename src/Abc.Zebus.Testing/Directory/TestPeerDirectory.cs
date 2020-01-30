@@ -48,13 +48,13 @@ namespace Abc.Zebus.Testing.Directory
             return Task.CompletedTask;
         }
 
-        public void RegisterRemoteListener<TMEssage>()
-            where TMEssage : IMessage
+        public void RegisterRemoteListener<TMessage>()
+            where TMessage : IMessage
         {
             var peerDescriptor = Peers.GetValueOrAdd(_remote.Id, () => new PeerDescriptor(_remote.Id, _remote.EndPoint, true, _remote.IsUp, _remote.IsResponding, SystemDateTime.UtcNow));
             var subscriptions = new List<Subscription>(peerDescriptor.Subscriptions)
             {
-                new Subscription(new MessageTypeId(typeof(TMEssage)))
+                new Subscription(new MessageTypeId(typeof(TMessage)))
             };
 
             peerDescriptor.Subscriptions = subscriptions.ToArray();

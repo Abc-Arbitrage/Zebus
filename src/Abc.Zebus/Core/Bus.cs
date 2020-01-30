@@ -554,7 +554,8 @@ namespace Abc.Zebus.Core
             messageContext.ReplyResponse = response;
         }
 
-        private void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction) => _transport.OnPeerUpdated(peerId, peerUpdateAction);
+        private void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction)
+            => _transport.OnPeerUpdated(peerId, peerUpdateAction);
 
         private void OnTransportMessageReceived(TransportMessage transportMessage)
         {
@@ -788,12 +789,13 @@ namespace Abc.Zebus.Core
             foreach (var subscription in subscriptions)
             {
                 var subscriptionsUpdated = new SubscriptionsUpdated(subscription, peerId);
-                var dispatch = new MessageDispatch(messageContext, subscriptionsUpdated, _serializer, (d, result) => HandleDispatchErrors(d, result));
+                var dispatch = new MessageDispatch(messageContext, subscriptionsUpdated, _serializer, GetOnLocalMessageDispatchedContinuation(null));
                 _messageDispatcher.Dispatch(dispatch);
             }
         }
 
-        private MessageContext GetMessageContextForSubscriptionsUpdated() => MessageContext.Current ?? MessageContext.CreateOverride(PeerId, EndPoint);
+        private MessageContext GetMessageContextForSubscriptionsUpdated()
+            => MessageContext.Current ?? MessageContext.CreateOverride(PeerId, EndPoint);
 
         private string DumpMessageOnDisk(MessageTypeId messageTypeId, Stream messageStream)
         {

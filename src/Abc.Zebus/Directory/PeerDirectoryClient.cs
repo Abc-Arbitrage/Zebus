@@ -281,7 +281,7 @@ namespace Abc.Zebus.Directory
             peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
 
             var observedSubscriptions = GetObservedSubscriptions(subscriptions);
-            if (observedSubscriptions.Length > 0)
+            if (observedSubscriptions.Count > 0)
                 PeerSubscriptionsUpdated?.Invoke(peerDescriptor.PeerId, observedSubscriptions);
         }
 
@@ -368,17 +368,20 @@ namespace Abc.Zebus.Directory
             PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
 
             var observedSubscriptions = GetObservedSubscriptions(message.PeerDescriptor.Subscriptions);
-            if (observedSubscriptions.Length > 0)
+            if (observedSubscriptions.Count > 0)
                 PeerSubscriptionsUpdated?.Invoke(message.PeerDescriptor.PeerId, observedSubscriptions);
         }
 
-        private Subscription[] GetObservedSubscriptions(Subscription[] peerDescriptorSubscriptions)
+        private IReadOnlyList<Subscription> GetObservedSubscriptions(Subscription[] peerDescriptorSubscriptions)
         {
-            var observedSubscriptions = peerDescriptorSubscriptions?
-                                        .Where(x => _observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
-                                        .ToArray()
-                                        ?? Array.Empty<Subscription>();
-            return observedSubscriptions;
+            if (peerDescriptorSubscriptions == null)
+                return Array.Empty<Subscription>();
+
+            var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
+            if (observedSubscriptionMessageTypes.Count == 0)
+                return Array.Empty<Subscription>();
+
+            return peerDescriptorSubscriptions.Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType())).ToList();
         }
 
         public void Handle(PeerSubscriptionsForTypesUpdated message)
@@ -397,16 +400,23 @@ namespace Abc.Zebus.Directory
 
             PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
 
-            var observedSubscriptions = message.SubscriptionsForType?
-                                               .Where(x => _observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
-                                               .SelectMany(x => x.ToSubscriptions())
-                                               .ToArray()
-                                        ?? Array.Empty<Subscription>();
-            if (observedSubscriptions.Length > 0)
-                PeerSubscriptionsUpdated?.Invoke(message.PeerId, observedSubscriptions);
+            if (message.SubscriptionsForType != null)
+            {
+                var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
+                if (observedSubscriptionMessageTypes.Count != 0)
+                {
+                    var observedSubscriptions = message.SubscriptionsForType
+                                                       .Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
+                                                       .SelectMany(x => x.ToSubscriptions())
+                                                       .ToList();
+
+                    if (observedSubscriptions.Count > 0)
+                        PeerSubscriptionsUpdated?.Invoke(message.PeerId, observedSubscriptions);
+                }
+            }
         }
 
-        private void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
+        private static void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
         {
             if (peer.FailureReason == PeerEntryResult.FailureReasonType.PeerNotPresent)
                 _logger.WarnFormat("Received message but no peer existed: {0}", peerId);
