@@ -36,7 +36,6 @@ namespace Abc.Zebus.Core
         private readonly IMessageDispatcher _messageDispatcher;
         private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly IStoppingStrategy _stoppingStrategy;
-        private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private readonly IBusConfiguration _configuration;
 
         [CanBeNull]
@@ -51,7 +50,6 @@ namespace Abc.Zebus.Core
                    IMessageDispatcher messageDispatcher,
                    IMessageSendingStrategy messageSendingStrategy,
                    IStoppingStrategy stoppingStrategy,
-                   IBindingKeyPredicateBuilder predicateBuilder,
                    IBusConfiguration configuration)
         {
             _transport = transport;
@@ -64,7 +62,6 @@ namespace Abc.Zebus.Core
             _messageDispatcher.MessageHandlerInvokersUpdated += MessageDispatcherOnMessageHandlerInvokersUpdated;
             _messageSendingStrategy = messageSendingStrategy;
             _stoppingStrategy = stoppingStrategy;
-            _predicateBuilder = predicateBuilder;
             _configuration = configuration;
         }
 
@@ -334,7 +331,7 @@ namespace Abc.Zebus.Core
 
             var eventHandlerInvokers = request.Subscriptions
                                               .GroupBy(x => x.MessageTypeId)
-                                              .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList(), _predicateBuilder))
+                                              .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList()))
                                               .ToList();
 
             if (request.Batch != null)

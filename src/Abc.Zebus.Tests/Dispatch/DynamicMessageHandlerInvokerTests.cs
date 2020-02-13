@@ -1,9 +1,7 @@
-﻿using System;
-using Abc.Zebus.Dispatch;
+﻿using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
-using Moq;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Dispatch
@@ -11,30 +9,24 @@ namespace Abc.Zebus.Tests.Dispatch
     [TestFixture]
     public class DynamicMessageHandlerInvokerTests
     {
-        [Test]
-        public void should_do_this()
+        [TestCase(1, "lal", false)]
+        [TestCase(1, "toto", true)]
+        [TestCase(1, "titi", true)]
+        [TestCase(2, "titi", false)]
+        public void should_filter_messages_using_predicate(decimal id, string name, bool shouldBeHandled)
         {
-            var predicateBuilder = new Mock<IBindingKeyPredicateBuilder>();
+            // Arrange
             var bindingKey1 = new BindingKey("1", "toto", "*");
             var bindingKey2 = new BindingKey("1", "titi", "*");
-            predicateBuilder.Setup(x => x.GetPredicate(It.IsAny<Type>(), bindingKey1)).Returns(_ => true);
-            predicateBuilder.Setup(x => x.GetPredicate(It.IsAny<Type>(), bindingKey2)).Returns(_ => false);
-            var handler = new DynamicMessageHandlerInvoker(message => { }, typeof(FakeRoutableCommand), new[]
-            {
-                bindingKey1,
-                bindingKey2
-            }, predicateBuilder.Object);
-            
-            var shouldBeHandled = handler.ShouldHandle(new FakeRoutableCommand(1, "lal"));
+            var handler = new DynamicMessageHandlerInvoker(_ => { }, typeof(FakeRoutableCommand), new[] { bindingKey1, bindingKey2 });
 
-            shouldBeHandled.ShouldBeTrue();
-            predicateBuilder.Verify(x => x.GetPredicate(It.IsAny<Type>(), It.IsAny<BindingKey>()), Times.Exactly(2));
-        }
+            var message = new FakeRoutableCommand(id, name);
 
-        [Test]
-        public void should_handle_emtpy()
-        {
-            
+            // Act
+            var handled = handler.ShouldHandle(message);
+
+            // Assert
+            handled.ShouldEqual(shouldBeHandled);
         }
     }
 }

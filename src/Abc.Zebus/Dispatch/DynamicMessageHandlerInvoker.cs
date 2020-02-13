@@ -10,11 +10,13 @@ namespace Abc.Zebus.Dispatch
         private readonly Action<IMessage> _handler;
         private readonly List<Func<IMessage, bool>> _predicates;
 
-        public DynamicMessageHandlerInvoker(Action<IMessage> handler, Type messageType, ICollection<BindingKey> bindingKeys, IBindingKeyPredicateBuilder predicateBuilder)
+        public DynamicMessageHandlerInvoker(Action<IMessage> handler, Type messageType, ICollection<BindingKey> bindingKeys)
             : base(typeof(DummyHandler), messageType, false)
         {
             _handler = handler;
-            _predicates = bindingKeys.Select(x => predicateBuilder.GetPredicate(messageType, x)).ToList();
+
+            var messageTypeId = MessageUtil.GetTypeId(messageType);
+            _predicates = bindingKeys.Select(x => BindingKeyPredicateBuilder.BuildPredicate(messageTypeId, x)).ToList();
         }
 
         private class DummyHandler : IMessageHandler<IMessage>

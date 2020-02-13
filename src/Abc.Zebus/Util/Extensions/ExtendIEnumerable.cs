@@ -22,6 +22,10 @@ namespace Abc.Zebus.Util.Extensions
 #endif
 
         [Pure]
+        public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T> collection)
+            => collection ?? Enumerable.Empty<T>();
+
+        [Pure]
         public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)
         {
             var random = new Random();

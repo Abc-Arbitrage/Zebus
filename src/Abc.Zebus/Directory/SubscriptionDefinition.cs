@@ -13,7 +13,7 @@ namespace Abc.Zebus.Directory
 
         public SubscriptionDefinition(Type type, BindingKey bindingKey)
         {
-            var routingMembers = BindingKeyPredicateBuilder.GetRoutingMembers(type);
+            var routingMembers = MessageUtil.GetTypeId(type).Descriptor.RoutingMembers;
             Parts = bindingKey.GetParts()
                               .Zip(routingMembers, (p, m) => (p, m))
                               .Select((x, i) => new SubscriptionDefinitionPart(x.m.Member.Name, x.p, bindingKey.IsSharp(i) || bindingKey.IsStar(i)))

@@ -26,7 +26,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 var transportMock = new Mock<ITransport>();
                 var messageDispatcher = new Mock<IMessageDispatcher>();
-                var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, messageDispatcher.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>(), _configuration.Object);
+                var bus = new Bus(transportMock.Object, new Mock<IPeerDirectory>().Object, null, messageDispatcher.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), _configuration.Object);
 
                 bus.Configure(_self.Id, _environment);
 

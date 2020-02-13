@@ -8,19 +8,14 @@ namespace Abc.Zebus.Tests.Routing
     [TestFixture]
     public class BindingKeyPredicateBuilderTests
     {
-        private BindingKeyPredicateBuilder _builder;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _builder = new BindingKeyPredicateBuilder();
-        }
-
         [TestCaseSource(nameof(TestSources))]
         public void should_match_valid_message(ExpectedResult expectedResult)
         {
+            // Arrange
+            var messageTypeId = MessageUtil.TypeId<FakeRoutableCommand>();
+
             // Act
-            var predicate = _builder.GetPredicate(typeof(FakeRoutableCommand), expectedResult.BindingKey);
+            var predicate = BindingKeyPredicateBuilder.BuildPredicate(messageTypeId, expectedResult.BindingKey);
 
             // Assert
             predicate(expectedResult.Message).ShouldEqual(expectedResult.Result);
