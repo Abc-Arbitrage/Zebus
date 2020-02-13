@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -31,7 +32,7 @@ namespace Abc.Zebus.Directory
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
         private IEnumerable<Peer> _directoryPeers;
         private Peer _self;
-        private HashSet<Type> _observedSubscriptionMessageTypes = new HashSet<Type>();
+        private volatile HashSet<Type> _observedSubscriptionMessageTypes = new HashSet<Type>();
 
         public PeerDirectoryClient(IBusConfiguration configuration)
         {
@@ -236,9 +237,7 @@ namespace Abc.Zebus.Directory
 
         public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
         {
-            var subscriptionHandlingMessageTypes = types.ToHashSet();
-            Thread.MemoryBarrier();
-            _observedSubscriptionMessageTypes = subscriptionHandlingMessageTypes;
+            _observedSubscriptionMessageTypes = types.ToHashSet();
         }
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)
@@ -264,25 +263,26 @@ namespace Abc.Zebus.Directory
         {
             var subscriptions = peerDescriptor.Subscriptions ?? Array.Empty<Subscription>();
 
-            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId,
-                                               key => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex),
-                                               (key, entry) =>
-                                               {
-                                                   entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
-                                                   entry.Peer.IsUp = peerDescriptor.Peer.IsUp;
-                                                   entry.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
-                                                   entry.IsPersistent = peerDescriptor.IsPersistent;
-                                                   entry.TimestampUtc = peerDescriptor.TimestampUtc ?? DateTime.UtcNow;
-                                                   entry.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
-
-                                                   return entry;
-                                               });
-
+            var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, key => CreatePeerEntry(), (key, entry) => UpdatePeerEntry(entry));
             peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
 
             var observedSubscriptions = GetObservedSubscriptions(subscriptions);
             if (observedSubscriptions.Count > 0)
                 PeerSubscriptionsUpdated?.Invoke(peerDescriptor.PeerId, observedSubscriptions);
+
+            PeerEntry CreatePeerEntry() => new PeerEntry(peerDescriptor, _globalSubscriptionsIndex);
+
+            PeerEntry UpdatePeerEntry(PeerEntry entry)
+            {
+                entry.Peer.EndPoint = peerDescriptor.Peer.EndPoint;
+                entry.Peer.IsUp = peerDescriptor.Peer.IsUp;
+                entry.Peer.IsResponding = peerDescriptor.Peer.IsResponding;
+                entry.IsPersistent = peerDescriptor.IsPersistent;
+                entry.TimestampUtc = peerDescriptor.TimestampUtc ?? DateTime.UtcNow;
+                entry.HasDebuggerAttached = peerDescriptor.HasDebuggerAttached;
+
+                return entry;
+            }
         }
 
         public void Handle(PeerStarted message)
@@ -362,26 +362,29 @@ namespace Abc.Zebus.Directory
                 return;
             }
 
-            peer.Value.SetSubscriptions(message.PeerDescriptor.Subscriptions ?? Enumerable.Empty<Subscription>(), message.PeerDescriptor.TimestampUtc);
+            var subscriptions = message.PeerDescriptor.Subscriptions ?? Array.Empty<Subscription>();
+
+            peer.Value.SetSubscriptions(subscriptions, message.PeerDescriptor.TimestampUtc);
             peer.Value.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
             PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
 
-            var observedSubscriptions = GetObservedSubscriptions(message.PeerDescriptor.Subscriptions);
+            var observedSubscriptions = GetObservedSubscriptions(subscriptions);
             if (observedSubscriptions.Count > 0)
                 PeerSubscriptionsUpdated?.Invoke(message.PeerDescriptor.PeerId, observedSubscriptions);
         }
 
-        private IReadOnlyList<Subscription> GetObservedSubscriptions(Subscription[] peerDescriptorSubscriptions)
+        private IReadOnlyList<Subscription> GetObservedSubscriptions(Subscription[] subscriptions)
         {
-            if (peerDescriptorSubscriptions == null)
+            if (subscriptions.Length == 0)
                 return Array.Empty<Subscription>();
 
             var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
             if (observedSubscriptionMessageTypes.Count == 0)
                 return Array.Empty<Subscription>();
 
-            return peerDescriptorSubscriptions.Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType())).ToList();
+            return subscriptions.Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
+                                .ToList();
         }
 
         public void Handle(PeerSubscriptionsForTypesUpdated message)
@@ -396,23 +399,27 @@ namespace Abc.Zebus.Directory
                 return;
             }
 
-            peer.Value.SetSubscriptionsForType(message.SubscriptionsForType ?? Enumerable.Empty<SubscriptionsForType>(), message.TimestampUtc);
+            var subscriptionsForTypes = message.SubscriptionsForType ?? Array.Empty<SubscriptionsForType>();
+            peer.Value.SetSubscriptionsForType(subscriptionsForTypes, message.TimestampUtc);
 
             PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
 
-            if (message.SubscriptionsForType != null)
-            {
-                var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
-                if (observedSubscriptionMessageTypes.Count != 0)
-                {
-                    var observedSubscriptions = message.SubscriptionsForType
-                                                       .Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
-                                                       .SelectMany(x => x.ToSubscriptions())
-                                                       .ToList();
+            var observedSubscriptions = GetObservedSubscriptions();
+            if (observedSubscriptions.Count > 0)
+                PeerSubscriptionsUpdated?.Invoke(message.PeerId, observedSubscriptions);
 
-                    if (observedSubscriptions.Count > 0)
-                        PeerSubscriptionsUpdated?.Invoke(message.PeerId, observedSubscriptions);
-                }
+            IReadOnlyList<Subscription> GetObservedSubscriptions()
+            {
+                if (subscriptionsForTypes.Length == 0)
+                    return Array.Empty<Subscription>();
+
+                var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
+                if (observedSubscriptionMessageTypes.Count == 0)
+                    return Array.Empty<Subscription>();
+
+                return subscriptionsForTypes.Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
+                                            .SelectMany(x => x.ToSubscriptions())
+                                            .ToList();
             }
         }
 
