@@ -7,6 +7,8 @@ using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 
+#pragma warning disable 67
+
 namespace Abc.Zebus.Directory
 {
     public class PeerDirectoryServer : IPeerDirectory,
@@ -31,6 +33,7 @@ namespace Abc.Zebus.Directory
 
         public event Action Registered;
         public event Action<PeerId, PeerUpdateAction> PeerUpdated;
+        public event Action<PeerId, IReadOnlyList<Subscription>> PeerSubscriptionsUpdated;
 
         public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
@@ -50,6 +53,11 @@ namespace Abc.Zebus.Directory
         public bool IsPersistent(PeerId peerId)
         {
             return _peerRepository.IsPersistent(peerId).GetValueOrDefault();
+        }
+
+        public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
+        {
+            // Not supported on peer directory server
         }
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)

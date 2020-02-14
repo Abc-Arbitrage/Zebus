@@ -11,6 +11,7 @@ using Abc.Zebus.Lotus;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
+using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
@@ -20,7 +21,7 @@ using Newtonsoft.Json;
 
 namespace Abc.Zebus.Core
 {
-    public class Bus : IBus, IMessageDispatchFactory
+    public class Bus : IInternalBus, IMessageDispatchFactory
     {
         private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(Bus));
         private static readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
@@ -35,7 +36,6 @@ namespace Abc.Zebus.Core
         private readonly IMessageDispatcher _messageDispatcher;
         private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly IStoppingStrategy _stoppingStrategy;
-        private readonly IBindingKeyPredicateBuilder _predicateBuilder;
         private readonly IBusConfiguration _configuration;
 
         [CanBeNull]
@@ -44,17 +44,24 @@ namespace Abc.Zebus.Core
         private int _subscriptionsVersion;
         private int _status;
 
-        public Bus(ITransport transport, IPeerDirectory directory, IMessageSerializer serializer, IMessageDispatcher messageDispatcher, IMessageSendingStrategy messageSendingStrategy, IStoppingStrategy stoppingStrategy, IBindingKeyPredicateBuilder predicateBuilder, IBusConfiguration configuration)
+        public Bus(ITransport transport,
+                   IPeerDirectory directory,
+                   IMessageSerializer serializer,
+                   IMessageDispatcher messageDispatcher,
+                   IMessageSendingStrategy messageSendingStrategy,
+                   IStoppingStrategy stoppingStrategy,
+                   IBusConfiguration configuration)
         {
             _transport = transport;
             _transport.MessageReceived += OnTransportMessageReceived;
             _directory = directory;
             _directory.PeerUpdated += OnPeerUpdated;
+            _directory.PeerSubscriptionsUpdated += DispatchSubscriptionsUpdatedMessages;
             _serializer = serializer;
             _messageDispatcher = messageDispatcher;
+            _messageDispatcher.MessageHandlerInvokersUpdated += MessageDispatcherOnMessageHandlerInvokersUpdated;
             _messageSendingStrategy = messageSendingStrategy;
             _stoppingStrategy = stoppingStrategy;
-            _predicateBuilder = predicateBuilder;
             _configuration = configuration;
         }
 
@@ -216,10 +223,22 @@ namespace Abc.Zebus.Core
 
         public void Publish(IEvent message)
         {
+            PublishInternal(message, null);
+        }
+
+        public void Publish(IEvent message, PeerId targetPeerId)
+        {
+            PublishInternal(message, targetPeerId);
+        }
+
+        private void PublishInternal(IEvent message, PeerId? targetPeerId)
+        {
             if (!IsRunning)
                 throw new InvalidOperationException("Unable to publish message, the bus is not running");
 
             var peersHandlingMessage = _directory.GetPeersHandlingMessage(message);
+            if (targetPeerId != null)
+                peersHandlingMessage = peersHandlingMessage.Where(peer => peer.Id == targetPeerId).ToList();
 
             var localDispatchEnabled = LocalDispatch.Enabled;
             var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == PeerId);
@@ -312,7 +331,7 @@ namespace Abc.Zebus.Core
 
             var eventHandlerInvokers = request.Subscriptions
                                               .GroupBy(x => x.MessageTypeId)
-                                              .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList(), _predicateBuilder))
+                                              .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList()))
                                               .ToList();
 
             if (request.Batch != null)
@@ -748,6 +767,32 @@ namespace Abc.Zebus.Core
             var processingFailed = new MessageProcessingFailed(transportMessage, string.Empty, errorMessage, SystemDateTime.UtcNow, null);
             Publish(processingFailed);
         }
+
+        private void MessageDispatcherOnMessageHandlerInvokersUpdated()
+        {
+            var snapshotGeneratingMessageTypes = _messageDispatcher.GetMessageHandlerInvokers()
+                                                                   .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionHandler<>))?.GenericTypeArguments[0])
+                                                                   .Where(x => x != null);
+
+            _directory.EnableSubscriptionsUpdatedFor(snapshotGeneratingMessageTypes);
+        }
+
+        private void DispatchSubscriptionsUpdatedMessages(PeerId peerId, IReadOnlyList<Subscription> subscriptions)
+        {
+            if (peerId == PeerId)
+                return;
+
+            var messageContext = GetMessageContextForSubscriptionsUpdated();
+            foreach (var subscription in subscriptions)
+            {
+                var subscriptionsUpdated = new SubscriptionsUpdated(subscription, peerId);
+                var dispatch = new MessageDispatch(messageContext, subscriptionsUpdated, _serializer, GetOnLocalMessageDispatchedContinuation(null));
+                _messageDispatcher.Dispatch(dispatch);
+            }
+        }
+
+        private MessageContext GetMessageContextForSubscriptionsUpdated()
+            => MessageContext.Current ?? MessageContext.CreateOverride(PeerId, EndPoint);
 
         private string DumpMessageOnDisk(MessageTypeId messageTypeId, Stream messageStream)
         {

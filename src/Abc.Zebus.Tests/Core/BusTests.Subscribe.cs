@@ -629,7 +629,7 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.Setup(dir => dir.UpdateSubscriptionsAsync(It.IsAny<IBus>(), It.IsAny<IEnumerable<SubscriptionsForType>>())).Callback(
                     (IBus bus, IEnumerable<SubscriptionsForType> subs) =>
                     {
-                        var highestSubscriptionVersionNumber = subs.SelectMany(x => x.BindingKeys).Select(x => int.Parse(x.GetPart(0))).OrderBy(x => x).Last();
+                        var highestSubscriptionVersionNumber = subs.SelectMany(x => x.BindingKeys).Select(x => int.Parse(x.GetPartToken(0))).OrderBy(x => x).Last();
                         highestSubscriptionVersionOnEachUpdate.Enqueue(highestSubscriptionVersionNumber);
                     }).Returns(Task.CompletedTask);
             }

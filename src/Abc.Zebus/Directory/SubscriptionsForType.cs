@@ -38,6 +38,9 @@ namespace Abc.Zebus.Directory
         public Subscription[] ToSubscriptions()
             => BindingKeys?.Select(bindingKey => new Subscription(MessageTypeId, bindingKey)).ToArray() ?? new Subscription[0];
 
+        public IReadOnlyList<BindingKeyPart> GetBindingKeyPartsForMember(string memberName)
+            => BindingKeyUtil.GetPartsForMember(MessageTypeId, memberName, BindingKeys).ToList();
+
         public bool Equals(SubscriptionsForType other)
             => other != null && MessageTypeId == other.MessageTypeId && BindingKeys.SequenceEqual(other.BindingKeys);
 

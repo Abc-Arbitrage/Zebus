@@ -299,10 +299,8 @@ namespace Abc.Zebus.Tests.Dispatch
             LoadAndStartDispatcher();
 
             IMessage receivedMessage = null;
-            var predicateBuilder = new Mock<IBindingKeyPredicateBuilder>();
-            predicateBuilder.Setup(x => x.GetPredicate(It.IsAny<Type>(), It.IsAny<BindingKey>())).Returns(_ => true);
 
-            _messageDispatcher.AddInvoker(new DynamicMessageHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent), new[] { BindingKey.Empty }, predicateBuilder.Object));
+            _messageDispatcher.AddInvoker(new DynamicMessageHandlerInvoker(x => receivedMessage = x, typeof(FakeEvent), new[] { BindingKey.Empty }));
 
             var evt = new FakeEvent(123);
             DispatchAndWaitForCompletion(evt);

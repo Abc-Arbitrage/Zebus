@@ -3,14 +3,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Abc.Zebus.Core;
+using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Routing;
+using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Testing.UnitTesting;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Tests.Scan;
 using Abc.Zebus.Transport;
 using Moq;
 using NUnit.Framework;
@@ -21,6 +25,9 @@ namespace Abc.Zebus.Tests.Core
     {
         public class Dispatch : BusTests
         {
+            private MessageDispatch _dispatchedMessage;
+            private readonly Peer _otherPeer = new Peer(new PeerId("Abc.Testing.1"), "tcp://abctest:789");
+
             [Test]
             public void should_dispatch_received_message()
             {
@@ -209,7 +216,7 @@ namespace Abc.Zebus.Tests.Core
             public void should_stop_dispatcher_before_transport()
             {
                 var transportMock = new Mock<ITransport>();
-                var bus = new Bus(transportMock.Object, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>(), _configuration.Object);
+                var bus = new Bus(transportMock.Object, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), _configuration.Object);
                 var sequence = new SetupSequence();
                 _messageDispatcherMock.Setup(dispatch => dispatch.Stop()).InSequence(sequence);
                 transportMock.Setup(transport => transport.Stop()).InSequence(sequence);
@@ -218,6 +225,193 @@ namespace Abc.Zebus.Tests.Core
                 bus.Start();
                 bus.Stop();
                 sequence.Verify();
+            }
+
+            [Test]
+            public void should_start_observing_messages_when_handler_invokes_are_updated()
+            {
+                // Arrange
+                SetupMessageDispatcher();
+
+                // Act
+                _messageDispatcherMock.Raise(x => x.MessageHandlerInvokersUpdated += null);
+
+                // Assert
+                _directoryMock.Verify(x => x.EnableSubscriptionsUpdatedFor(It.Is<IEnumerable<Type>>(y => y.Single() == typeof(TestMessage))));
+            }
+
+            [Test]
+            public void should_dispatch_subscriptionsUpdated_messages_when_PeerStarted()
+            {
+                // Arrange
+                SetupMessageDispatcher();
+                var (subscription, descriptor) = CaptureDispatchedMessageForRegistration<TestMessage>();
+
+                // Act
+                RaisePeerUpdated(descriptor.PeerId, descriptor.Subscriptions);
+
+                // Assert
+                _messageDispatcherMock.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
+                var subscriptionsUpdated = _dispatchedMessage.Message as SubscriptionsUpdated;
+                subscriptionsUpdated.ShouldNotBeNull();
+                subscriptionsUpdated.Subscriptions.MessageTypeId.ShouldEqual(subscription.MessageTypeId);
+                subscriptionsUpdated.PeerId.ShouldEqual(_otherPeer.Id);
+            }
+
+            [Test]
+            public void should_not_dispatch_subscriptionsUpdated_messages_when_no_handler_registered()
+            {
+                // Act
+                _messageDispatcherMock.Raise(x => x.MessageHandlerInvokersUpdated += null);
+
+                // Assert
+                _directoryMock.Verify(x => x.EnableSubscriptionsUpdatedFor(It.Is<IEnumerable<Type>>(y => !y.Any())));
+            }
+
+            [Test]
+            public void should_not_dispatch_subscriptionsUpdated_messages_for_different_event()
+            {
+                // Arrange
+                _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker<FakeEvent>(), });
+
+                // Act
+                _messageDispatcherMock.Raise(x => x.MessageHandlerInvokersUpdated += null);
+
+                // Assert
+                _messageDispatcherMock.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
+            }
+
+            [Test]
+            public void should_not_dispatch_subscriptionUpdated_messages_on_peer_stopped()
+            {
+                // Arrange
+                SetupMessageDispatcher();
+                var descriptor = CaptureDispatchedMessage(_otherPeer);
+
+                // Act
+                RaisePeerUpdated(descriptor.PeerId, descriptor.Subscriptions);
+
+                // Assert
+                _messageDispatcherMock.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
+            }
+
+            [Test]
+            public void should_not_dispatch_subscriptionUpdated_messages_on_unsubscribe()
+            {
+                // Arrange
+                SetupMessageDispatcher();
+                var descriptor = CaptureDispatchedMessage(_otherPeer);
+
+                // Act
+                RaisePeerUpdated(descriptor.PeerId, descriptor.Subscriptions);
+
+                // Assert
+                _messageDispatcherMock.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
+            }
+
+            [Test]
+            public void should_dispatch_subscriptionUpdated_messages_on_dynamic_subscription()
+            {
+                // Arrange
+                SetupMessageDispatcher();
+                var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)), BindingKey.Empty);
+                var descriptor = CaptureDispatchedMessage(_otherPeer, subscription.ToSubscriptions());
+
+                // Act
+                RaisePeerUpdated(descriptor.PeerId, subscription.ToSubscriptions());
+
+                // Assert
+                _messageDispatcherMock.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Once);
+                var subscriptionsUpdated = _dispatchedMessage.Message as SubscriptionsUpdated;
+                subscriptionsUpdated.ShouldNotBeNull();
+                subscriptionsUpdated.Subscriptions.ShouldEqual(subscription);
+                subscriptionsUpdated.PeerId.ShouldEqual(_otherPeer.Id);
+            }
+
+            [Test]
+            public void should_not_dispatch_subscriptionsUpdated_to_self()
+            {
+                // Arrange
+                _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker() });
+                var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)), BindingKey.Empty);
+                var selfDescriptor = CaptureDispatchedMessage(_self, subscription.ToSubscriptions());
+                var otherDescriptor = CaptureDispatchedMessage(_otherPeer, subscription.ToSubscriptions());
+
+                // Act
+                RaisePeerUpdated(_self.Id, selfDescriptor.Subscriptions);
+
+                // Assert
+                _messageDispatcherMock.Verify(x => x.Dispatch(It.IsAny<MessageDispatch>()), Times.Never);
+            }
+
+            private void SetupMessageDispatcher()
+            {
+                _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker() });
+                _messageDispatcherMock.Raise(x => x.MessageHandlerInvokersUpdated += () => { });
+            }
+
+            private void RaisePeerUpdated(PeerId peerId, IReadOnlyList<Subscription> subscriptions) => _directoryMock.Raise(x => x.PeerSubscriptionsUpdated += null, peerId, subscriptions);
+
+            private PeerDescriptor CaptureDispatchedMessage(Peer peer, Subscription[] subscriptions = null)
+            {
+                _messageDispatcherMock.Setup(x => x.Dispatch(It.IsAny<MessageDispatch>())).Callback<MessageDispatch>(dispatch => { _dispatchedMessage = dispatch; });
+                var descriptor = peer.ToPeerDescriptor(true, subscriptions ?? new Subscription[0]);
+                return descriptor;
+            }
+
+            private (Subscription subscription, PeerDescriptor descriptor) CaptureDispatchedMessageForRegistration<TMessage>(bool shouldInstanciateRegistrationHandlerWithDescriptor = false)
+            {
+                var subscription = new Subscription(new MessageTypeId(typeof(TMessage)));
+                _messageDispatcherMock.Setup(x => x.Dispatch(It.IsAny<MessageDispatch>())).Callback<MessageDispatch>(dispatch => { _dispatchedMessage = dispatch; });
+                var descriptor = _otherPeer.ToPeerDescriptor(true, new[] { subscription });
+                return (subscription, descriptor);
+            }
+
+            class TestSnapshot : IEvent
+            {
+            }
+
+            class TestMessage : IEvent
+            {
+            }
+
+            class TestMessageHandlerInvoker : MessageHandlerInvoker
+            {
+                public TestMessageHandlerInvoker()
+                    : base(typeof(TestSubscriptionHandler), typeof(SubscriptionsUpdated))
+                {
+                }
+
+                public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
+                {
+                }
+            }
+
+            class TestSubscriptionHandler : SubscriptionHandler<TestMessage>
+            {
+                protected override void OnSubscriptionsUpdated(SubscriptionsForType subscriptions, PeerId peerId)
+                {
+                }
+            }
+
+            class TestSnapshotGenerator : SubscriptionSnapshotGenerator<TestSnapshot, TestMessage>
+            {
+                public TestSnapshotGenerator(IBus bus)
+                    : base(bus)
+                {
+                }
+
+                protected override TestSnapshot GenerateSnapshot(SubscriptionsForType subscription)
+                {
+                    return new TestSnapshot();
+                }
+            }
+
+            class TestHandler : IMessageHandler<MessageHandlerInvokerLoaderTests.TestMessage>
+            {
+                public void Handle(MessageHandlerInvokerLoaderTests.TestMessage message)
+                {
+                }
             }
         }
     }

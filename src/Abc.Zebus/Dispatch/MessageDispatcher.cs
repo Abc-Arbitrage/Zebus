@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Scan;
@@ -51,6 +50,8 @@ namespace Abc.Zebus.Dispatch
             _messageFilter = messageFilter;
         }
 
+        public event Action MessageHandlerInvokersUpdated;
+
         public void LoadMessageHandlerInvokers()
         {
             _status = Status.Loaded;
@@ -58,6 +59,8 @@ namespace Abc.Zebus.Dispatch
             _invokers = LoadInvokers();
 
             LoadDispatchQueues();
+
+            MessageHandlerInvokersUpdated?.Invoke();
         }
 
         private ConcurrentDictionary<MessageTypeId, List<IMessageHandlerInvoker>> LoadInvokers()
@@ -238,6 +241,8 @@ namespace Abc.Zebus.Dispatch
 
                 _invokers[newEventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
             }
+
+            MessageHandlerInvokersUpdated?.Invoke();
         }
 
         public void RemoveInvoker(IMessageHandlerInvoker eventHandlerInvoker)
@@ -251,6 +256,8 @@ namespace Abc.Zebus.Dispatch
                 var newMessageTypeInvokers = new List<IMessageHandlerInvoker>(messageTypeInvokers.Where(x => x != eventHandlerInvoker));
                 _invokers[eventHandlerInvoker.MessageTypeId] = newMessageTypeInvokers;
             }
+
+            MessageHandlerInvokersUpdated?.Invoke();
         }
 
         public int Purge()

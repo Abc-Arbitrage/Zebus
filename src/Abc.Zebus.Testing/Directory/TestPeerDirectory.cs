@@ -14,9 +14,11 @@ namespace Abc.Zebus.Testing.Directory
         public readonly ConcurrentDictionary<PeerId, PeerDescriptor> Peers = new ConcurrentDictionary<PeerId, PeerDescriptor>();
         public Peer Self;
         private readonly Peer _remote = new Peer(new PeerId("remote"), "endpoint");
+        private HashSet<Type> _typesToObserve;
 
         public event Action Registered = delegate { };
         public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
+        public event Action<PeerId, IReadOnlyList<Subscription>> PeerSubscriptionsUpdated = delegate { };
 
         public TimeSpan TimeSinceLastPing => TimeSpan.Zero;
 
@@ -34,7 +36,7 @@ namespace Abc.Zebus.Testing.Directory
             var newSubscriptions = SubscriptionsForType.CreateDictionary(Peers[Self.Id].Subscriptions);
             foreach (var subscriptionsForType in subscriptionsForTypes)
                 newSubscriptions[subscriptionsForType.MessageTypeId] = subscriptionsForType;
-            
+
             Peers[Self.Id] = Self.ToPeerDescriptor(true, newSubscriptions.Values.SelectMany(subForType => subForType.ToSubscriptions()));
             PeerUpdated(Self.Id, PeerUpdateAction.Updated);
             return Task.CompletedTask;
@@ -46,12 +48,13 @@ namespace Abc.Zebus.Testing.Directory
             return Task.CompletedTask;
         }
 
-        public void RegisterRemoteListener<TMEssage>() where TMEssage : IMessage
+        public void RegisterRemoteListener<TMessage>()
+            where TMessage : IMessage
         {
             var peerDescriptor = Peers.GetValueOrAdd(_remote.Id, () => new PeerDescriptor(_remote.Id, _remote.EndPoint, true, _remote.IsUp, _remote.IsResponding, SystemDateTime.UtcNow));
             var subscriptions = new List<Subscription>(peerDescriptor.Subscriptions)
             {
-                new Subscription(new MessageTypeId(typeof(TMEssage)))
+                new Subscription(new MessageTypeId(typeof(TMessage)))
             };
 
             peerDescriptor.Subscriptions = subscriptions.ToArray();
@@ -70,6 +73,11 @@ namespace Abc.Zebus.Testing.Directory
         public bool IsPersistent(PeerId peerId)
         {
             return Peers.TryGetValue(peerId, out var peer) && peer.IsPersistent;
+        }
+
+        public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
+        {
+            _typesToObserve = new HashSet<Type>(types);
         }
 
         public PeerDescriptor GetPeerDescriptor(PeerId peerId)

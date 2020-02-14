@@ -1,12 +1,13 @@
 #region (c)2009 Lokad - New BSD license
 
-// Copyright (c) Lokad 2009 
+// Copyright (c) Lokad 2009
 // Company: http://www.lokad.com
 // This code is released under the terms of the new BSD licence
 
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -51,6 +52,16 @@ namespace Abc.Zebus.Util.Extensions
                 return eventType.Name;
             var cleanShortName = eventType.Name.Substring(0, eventType.Name.IndexOf('`'));
             return cleanShortName + "<" + genericArgument.Name + ">";
+        }
+
+        public static IEnumerable<Type> GetBaseTypes(this Type type)
+        {
+            var baseType = type.BaseType;
+            while (baseType != null && baseType != typeof(object))
+            {
+                yield return baseType;
+                baseType = baseType.BaseType;
+            }
         }
     }
 }

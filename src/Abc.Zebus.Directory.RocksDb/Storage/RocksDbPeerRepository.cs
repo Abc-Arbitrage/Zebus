@@ -324,7 +324,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
                 binaryWriter.Write(bindingKey.PartCount);
 
                 for (var partIndex = 0; partIndex < bindingKey.PartCount; partIndex++)
-                    binaryWriter.Write(bindingKey.GetPart(partIndex));
+                    binaryWriter.Write(bindingKey.GetPartToken(partIndex));
             }
 
             return (memoryStream.GetBuffer(), memoryStream.Position);

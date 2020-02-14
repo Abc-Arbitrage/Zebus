@@ -62,6 +62,10 @@ namespace Abc.Zebus.Tests.Lotus
                 throw new NotSupportedException();
             }
 
+            public event Action MessageHandlerInvokersUpdated;
+
+            public void RaiseMessageHandlerInvokersUpdated() => MessageHandlerInvokersUpdated?.Invoke();
+
             public void LoadMessageHandlerInvokers()
             {
                 throw new NotSupportedException();

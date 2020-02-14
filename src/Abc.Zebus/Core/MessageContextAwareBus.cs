@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Abc.Zebus.Subscriptions;
 
 namespace Abc.Zebus.Core
 {
-    public class MessageContextAwareBus : IBus
+    public class MessageContextAwareBus : IInternalBus
     {
         private readonly IBus _bus;
         public readonly MessageContext MessageContext;
@@ -89,6 +90,12 @@ namespace Abc.Zebus.Core
         {
             add => _bus.Stopped += value;
             remove => _bus.Stopped -= value;
+        }
+
+        public void Publish(IEvent message, PeerId targetPeer)
+        {
+            var internalBus = (IInternalBus)_bus;
+            internalBus.Publish(message, targetPeer);
         }
 
         public void Dispose() => _bus.Dispose();
