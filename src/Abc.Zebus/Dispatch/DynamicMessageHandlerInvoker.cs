@@ -16,7 +16,7 @@ namespace Abc.Zebus.Dispatch
             _handler = handler;
 
             var messageTypeId = MessageUtil.GetTypeId(messageType);
-            _predicates = bindingKeys.Select(x => BindingKeyPredicateBuilder.BuildPredicate(messageTypeId, x)).ToList();
+            _predicates = bindingKeys.Select(x => BindingKeyUtil.BuildPredicate(messageTypeId, x)).ToList();
         }
 
         private class DummyHandler : IMessageHandler<IMessage>

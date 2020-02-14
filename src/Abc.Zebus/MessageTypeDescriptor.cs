@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Util;
-using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus
 {
@@ -14,20 +12,35 @@ namespace Abc.Zebus
     {
         public static readonly MessageTypeDescriptor Null = new MessageTypeDescriptor(null);
 
-        private MessageTypeDescriptor(string fullName, Type messageType = null, bool isPersistent = true, bool isInfrastructure = false, IEnumerable<RoutingMember> routingMembers = null)
+        private MessageTypeDescriptor(string fullName, Type messageType = null, bool isPersistent = true, bool isInfrastructure = false, RoutingMember[] routingMembers = null)
         {
             FullName = fullName;
             MessageType = messageType;
             IsPersistent = isPersistent;
             IsInfrastructure = isInfrastructure;
-            RoutingMembers = routingMembers.EmptyIfNull().OrderBy(x => x.RoutingPosition).ToList();
+            RoutingMembers = routingMembers ?? Array.Empty<RoutingMember>();
         }
 
         public string FullName { get; }
         public Type MessageType { get; }
         public bool IsPersistent { get; }
         public bool IsInfrastructure { get; }
-        public IReadOnlyList<RoutingMember> RoutingMembers { get; }
+        public RoutingMember[] RoutingMembers { get; }
+
+        public bool TryGetRoutingMemberByName(string memberName, out RoutingMember routingMember)
+        {
+            foreach (var member in RoutingMembers)
+            {
+                if (member.Member.Name == memberName)
+                {
+                    routingMember = member;
+                    return true;
+                }
+            }
+
+            routingMember = default;
+            return false;
+        }
 
         public static MessageTypeDescriptor Load(string fullName)
         {
@@ -49,25 +62,45 @@ namespace Abc.Zebus
 
             public static ParameterExpression ParameterExpression { get; } = Expression.Parameter(typeof(IMessage), "m");
 
-            public static IEnumerable<RoutingMember> GetAll(Type messageType)
+            public static RoutingMember[] GetAll(Type messageType)
             {
                 var castExpression = Expression.Convert(ParameterExpression, messageType);
 
                 return messageType.GetMembers(BindingFlags.Public | BindingFlags.Instance)
-                                  .Where(x => Attribute.IsDefined(x, typeof(RoutingPositionAttribute), true))
-                                  .Select(x => new RoutingMember(x.GetCustomAttribute<RoutingPositionAttribute>(true).Position, x, BuildToStringExpression(castExpression, x)));
+                                  .Select(x => (member: x, attribute: x.GetCustomAttribute<RoutingPositionAttribute>(true)))
+                                  .Where(x => x.attribute != null)
+                                  .OrderBy(x => x.attribute.Position)
+                                  .Select((x, index) => new RoutingMember(index, x.attribute.Position, x.member, BuildToStringExpression(castExpression, x.member)))
+                                  .ToArray();
             }
 
-            private RoutingMember(int routingPosition, MemberInfo member, MethodCallExpression toStringExpression)
+            private RoutingMember(int index, int position, MemberInfo member, MethodCallExpression toStringExpression)
             {
-                RoutingPosition = routingPosition;
+                Index = index;
+                RoutingPosition = position;
+                RoutingPosition = member.GetCustomAttribute<RoutingPositionAttribute>(true).Position;
                 Member = member;
                 ToStringExpression = toStringExpression;
+                ToStringDelegate = BuildToStringDelegate(toStringExpression);
             }
 
+            public int Index { get; }
             public int RoutingPosition { get; }
             public MemberInfo Member { get; }
             public MethodCallExpression ToStringExpression { get; }
+            public Func<IMessage, string> ToStringDelegate { get; }
+
+            public string GetValue(IMessage message)
+            {
+                try
+                {
+                    return ToStringDelegate(message);
+                }
+                catch (NullReferenceException)
+                {
+                    throw new InvalidOperationException($"Message of type {message.GetType().Name} is not valid. Member {Member.Name} part of the routing key at position {RoutingPosition} can not be null");
+                }
+            }
 
             private static MethodCallExpression BuildToStringExpression(Expression castExpression, MemberInfo member)
             {
@@ -90,11 +123,15 @@ namespace Abc.Zebus
                     throw new InvalidOperationException("Cannot define routing position on a member other than a field or property");
                 }
 
-                var getMemberValue = typeof(IConvertible).IsAssignableFrom(memberType) && memberType != typeof(string)
+                return typeof(IConvertible).IsAssignableFrom(memberType) && memberType != typeof(string)
                     ? Expression.Call(memberAccessor(castExpression), _toStringWithFormatMethod, Expression.Constant(CultureInfo.InvariantCulture))
                     : Expression.Call(memberAccessor(castExpression), _toStringMethod);
+            }
 
-                return getMemberValue;
+            private static Func<IMessage, string> BuildToStringDelegate(Expression toStringExpression)
+            {
+                var lambda = Expression.Lambda(typeof(Func<IMessage, string>), toStringExpression, ParameterExpression);
+                return (Func<IMessage, string>)lambda.Compile();
             }
         }
     }

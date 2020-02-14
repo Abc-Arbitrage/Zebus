@@ -12,12 +12,7 @@ namespace Abc.Zebus.Routing
     [ProtoContract]
     public readonly struct BindingKey : IEquatable<BindingKey>
     {
-        private const string _star = "*";
-        private const string _sharp = "#";
         public static readonly BindingKey Empty = new BindingKey();
-
-        private static readonly ConcurrentDictionary<Type, BindingKeyBuilder> _builders = new ConcurrentDictionary<Type, BindingKeyBuilder>();
-        private static readonly Func<Type, BindingKeyBuilder> _bindingKeyBuilderFactory = CreateBuilder;
 
         [ProtoMember(1, IsRequired = true)]
         private readonly string[] _parts;
@@ -35,18 +30,32 @@ namespace Abc.Zebus.Routing
         public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
 
         public bool IsSharp(int index)
-            => _parts[index] == _sharp;
+            => _parts[index] == BindingKeyPart.SharpToken;
 
         public bool IsStar(int index)
-            => _parts[index] == _star;
+            => _parts[index] == BindingKeyPart.StarToken;
 
         [Pure]
-        public string GetPart(int index)
+        public string GetPartToken(int index)
             => index < PartCount ? _parts[index] : null;
 
         [Pure]
-        public IEnumerable<string> GetParts()
-            => _parts?.ToList() ?? Enumerable.Empty<string>();
+        public BindingKeyPart GetPart(int index)
+        {
+            if (_parts == null)
+                return BindingKeyPart.Star;
+
+            if (index < _parts.Length)
+                return BindingKeyPart.Parse(_parts[index]);
+
+            for (var i = 0; i < _parts.Length; i++)
+            {
+                if (IsSharp(i))
+                    return BindingKeyPart.Star;
+            }
+
+            return BindingKeyPart.Null;
+        }
 
         public override bool Equals(object obj)
             => obj is BindingKey other && Equals(other);
@@ -85,68 +94,39 @@ namespace Abc.Zebus.Routing
         public override string ToString()
         {
             if (_parts == null)
-                return _sharp;
+                return BindingKeyPart.SharpToken;
 
             return string.Join(".", _parts);
         }
 
         internal static BindingKey Create(IMessage message)
-            => GetBindingKeyBuilder(message.GetType())?.BuildKey(message) ?? Empty;
-
-        internal static BindingKey Create(Type messageType, IDictionary<string, string> fieldValues)
-            => GetBindingKeyBuilder(messageType)?.BuildKey(fieldValues) ?? Empty;
-
-        private static BindingKeyBuilder GetBindingKeyBuilder(Type messageType)
-            => _builders.GetOrAdd(messageType, _bindingKeyBuilderFactory);
-
-        private static BindingKeyBuilder CreateBuilder(Type messageType)
         {
-            if (!Attribute.IsDefined(messageType, typeof(Routable)))
-                return null;
+            var routingMembers = message.TypeId().Descriptor.RoutingMembers;
+            if (routingMembers.Length == 0)
+                return Empty;
 
-            return new BindingKeyBuilder(messageType);
+            var parts = new string[routingMembers.Length];
+            for (var tokenIndex = 0; tokenIndex < parts.Length; ++tokenIndex)
+            {
+                parts[tokenIndex] = routingMembers[tokenIndex].GetValue(message);
+            }
+
+            return new BindingKey(parts);
         }
 
-        private class BindingKeyBuilder
+        internal static BindingKey Create(Type messageType, IDictionary<string, string> fieldValues)
         {
-            private readonly BindingKeyToken[] _tokens;
+            var routingMembers = MessageUtil.GetTypeId(messageType).Descriptor.RoutingMembers;
+            if (routingMembers.Length == 0)
+                return Empty;
 
-            public BindingKeyBuilder(Type messageType)
+            var parts = new string[routingMembers.Length];
+            for (var tokenIndex = 0; tokenIndex < routingMembers.Length; ++tokenIndex)
             {
-                var fields = from field in messageType.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                             let attributes = field.GetCustomAttributes(typeof(RoutingPositionAttribute), true)
-                             where attributes.Length == 1
-                             select new BindingKeyToken(((RoutingPositionAttribute)attributes[0]).Position, messageType, field);
-
-                var properties = from property in messageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                                 let attributes = property.GetCustomAttributes(typeof(RoutingPositionAttribute), true)
-                                 where attributes.Length == 1
-                                 select new BindingKeyToken(((RoutingPositionAttribute)attributes[0]).Position, messageType, property);
-
-                _tokens = fields.Concat(properties).OrderBy(x => x.Position).ToArray();
+                parts[tokenIndex] = fieldValues.GetValueOrDefault(routingMembers[tokenIndex].Member.Name, BindingKeyPart.StarToken);
             }
 
-            public BindingKey BuildKey(IMessage message)
-            {
-                var parts = new string[_tokens.Length];
-                for (var tokenIndex = 0; tokenIndex < parts.Length; ++tokenIndex)
-                {
-                    parts[tokenIndex] = _tokens[tokenIndex].GetValue(message);
-                }
-
-                return new BindingKey(parts);
-            }
-
-            public BindingKey BuildKey(IDictionary<string, string> fieldValues)
-            {
-                var parts = new string[_tokens.Length];
-                for (var tokenIndex = 0; tokenIndex < _tokens.Length; ++tokenIndex)
-                {
-                    parts[tokenIndex] = fieldValues.GetValueOrDefault(_tokens[tokenIndex].Name, _star);
-                }
-
-                return new BindingKey(parts);
-            }
+            return new BindingKey(parts);
         }
     }
 }

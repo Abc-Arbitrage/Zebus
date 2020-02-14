@@ -11,7 +11,7 @@ using NUnit.Framework;
 namespace Abc.Zebus.Tests
 {
     [TestFixture]
-    public partial class SubscriptionTests
+    public class SubscriptionTests
     {
         [SetUp]
         public void Setup()
@@ -192,7 +192,7 @@ namespace Abc.Zebus.Tests
         [Test]
         public void should_create_subscription_from_simple_predicate_in_generic_context()
         {
-            var subscription = CreateSubscription<FakeRoutableCommand>();
+            var subscription = CreateSubscription();
             subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommand)));
             subscription.BindingKey.ShouldEqual(new BindingKey(GetFieldValue().ToString(), "*", "*"));
         }
@@ -227,88 +227,45 @@ namespace Abc.Zebus.Tests
                        $"PeerId: {peerId}, TimestampUtc: {DateTime.Today:yyyy-MM-dd HH:mm:ss.fff}, Subscriptions: [{string.Join(", ", subscriptions.AsEnumerable())}]");
         }
 
-        [Test]
-        public void should_create_definition()
+        [TestCase(nameof(FakeRoutableCommand.Id), "123")]
+        [TestCase(nameof(FakeRoutableCommand.Name), "456")]
+        [TestCase(nameof(FakeRoutableCommand.OtherId), "793e1561-26e4-4737-817f-996b986c1666")]
+        public void should_get_part_for_member(string memberName, string expectedValue)
         {
             // Arrange
-            var subscription = CreateSubscription<FakeRoutableCommand>();
+            var otherId = Guid.Parse("793e1561-26e4-4737-817f-996b986c1666");
+            var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.Id == 123 && x.Name == "456" && x.OtherId == otherId);
 
             // Act
-            var definition = subscription.GetDefinition();
+            var part = subscription.GetBindingKeyPartForMember(memberName);
 
             // Assert
-            definition.Parts.Count.ShouldEqual(3);
-            CheckPart(definition.Parts[0], "Id", _field.ToString(), false);
-            CheckPart(definition.Parts[1], "Name", null, true);
-            CheckPart(definition.Parts[2], "OtherId", null, true);
+            part.ShouldEqual(BindingKeyPart.Parse(expectedValue));
         }
 
-        [Test]
-        public void should_create_definition_that_matches_last_routing_key()
-        {
-            // Arrange
-            var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.OtherId == Guid.Empty);
-
-            // Act
-            var definition = subscription.GetDefinition();
-
-            // Assert
-            definition.Parts.Count.ShouldEqual(3);
-            CheckPart(definition.Parts[0], "Id", null, true);
-            CheckPart(definition.Parts[1], "Name", null, true);
-            CheckPart(definition.Parts[2], "OtherId", Guid.Empty.ToString(), false);
-        }
-
-        [Test]
-        public void should_create_definition_that_matches_all()
+        [TestCase(nameof(FakeRoutableCommand.Id))]
+        [TestCase(nameof(FakeRoutableCommand.Name))]
+        [TestCase(nameof(FakeRoutableCommand.OtherId))]
+        public void should_get_part_for_member_that_matches_all(string memberName)
         {
             // Arrange
             var subscription = Subscription.Any<FakeRoutableCommand>();
 
             // Act
-            var definition = subscription.GetDefinition();
+            var part = subscription.GetBindingKeyPartForMember(memberName);
 
             // Assert
-            definition.MatchesAll.ShouldBeTrue();
-            definition.Parts.ShouldBeEmpty();
+            part.MatchesAllValues.ShouldBeTrue();
         }
 
         [Test]
-        public void should_get_match_for_routing_key_part_from_subscription_definition()
-        {
-            // Arrange
-            var subscription = Subscription.Matching<FakeRoutableCommand>(x => x.OtherId == Guid.Empty);
-            var definition = subscription.GetDefinition();
-
-            // Act
-            var result = definition.GetMatchForRoutingKeyPart(nameof(FakeRoutableCommand.Name));
-
-            // Assert
-            result.HasValue.ShouldBeTrue();
-            // ReSharper disable once PossibleInvalidOperationException
-            result.Value.ForAll.ShouldBeTrue();
-            result.Value.Value.ShouldBeNull();
-        }
-
-        [Test]
-        public void should_get_invalid_match_for_missing_routing_key_part_from_subscription_definition()
+        public void should_not_get_part_for_unknown_member()
         {
             // Arrange
             var subscription = Subscription.Any<FakeRoutableCommand>();
-            var definition = subscription.GetDefinition();
 
-            // Act
-            var result = definition.GetMatchForRoutingKeyPart("something that will not match");
-
-            // Assert
-            result.HasValue.ShouldBeFalse();
-        }
-
-        private static void CheckPart(SubscriptionDefinitionPart part, string name, string matchValue, bool matchesAll)
-        {
-            part.PropertyName.ShouldEqual(name);
-            part.Match.Value.ShouldEqual(matchValue);
-            part.Match.ForAll.ShouldEqual(matchesAll);
+            // Act, Assert
+            Assert.Throws<InvalidOperationException>(() => subscription.GetBindingKeyPartForMember("something that will not match"));
         }
 
         [Test]
@@ -330,10 +287,9 @@ namespace Abc.Zebus.Tests
             });
         }
 
-        private Subscription CreateSubscription<TMessage>()
-            where TMessage : FakeRoutableCommand
+        private Subscription CreateSubscription()
         {
-            return Subscription.Matching<TMessage>(x => x.Id == GetFieldValue());
+            return Subscription.Matching<FakeRoutableCommand>(x => x.Id == GetFieldValue());
         }
 
         private Subscription CreateSubscription(string bindingKey)

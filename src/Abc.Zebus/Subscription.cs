@@ -53,15 +53,20 @@ namespace Abc.Zebus
 
             for (var i = 0; i < routingKey.PartCount; i++)
             {
-                var evaluatedPart = BindingKey.GetPart(i);
+                var evaluatedPart = BindingKey.GetPartToken(i);
                 if (evaluatedPart == "#")
                     return true;
 
-                if (evaluatedPart != "*" && routingKey.GetPart(i) != evaluatedPart)
+                if (evaluatedPart != "*" && routingKey.GetPartToken(i) != evaluatedPart)
                     return false;
             }
 
             return routingKey.PartCount == BindingKey.PartCount;
+        }
+
+        public BindingKeyPart GetBindingKeyPartForMember(string memberName)
+        {
+            return BindingKeyUtil.GetPartForMember(MessageTypeId, memberName, BindingKey);
         }
 
         public bool Equals(Subscription other)
@@ -281,7 +286,5 @@ namespace Abc.Zebus
         {
             public T Any<T>() => default(T);
         }
-
-        public SubscriptionDefinition GetDefinition() => new SubscriptionDefinition(MessageTypeId.GetMessageType(), BindingKey);
     }
 }
