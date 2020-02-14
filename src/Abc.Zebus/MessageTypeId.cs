@@ -16,15 +16,9 @@ namespace Abc.Zebus
 
         private readonly MessageTypeDescriptor _descriptor;
 
-        public MessageTypeId(Type messageType)
-        {
-            _descriptor = MessageUtil.GetMessageTypeDescriptor(messageType);
-        }
+        public MessageTypeId(Type messageType) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(messageType);
 
-        public MessageTypeId(string fullName)
-        {
-            _descriptor = MessageUtil.GetMessageTypeDescriptor(fullName);
-        }
+        public MessageTypeId(string fullName) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(fullName);
 
         public string FullName => Descriptor.FullName;
 
