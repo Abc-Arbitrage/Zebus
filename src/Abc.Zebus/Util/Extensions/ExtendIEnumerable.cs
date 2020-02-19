@@ -20,7 +20,7 @@ namespace Abc.Zebus.Util.Extensions
         }
 
         [Pure]
-        public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T> collection)
+        public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T>? collection)
             => collection ?? Enumerable.Empty<T>();
 
         [Pure]

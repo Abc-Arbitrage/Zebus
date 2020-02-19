@@ -22,7 +22,7 @@ namespace Abc.Zebus
         public string? FullName => Descriptor?.FullName;
 
         [System.Diagnostics.Contracts.Pure]
-        public Type? GetMessageType() => Descriptor?.MessageType;
+        public Type? GetMessageType() => Descriptor.MessageType;
 
         [System.Diagnostics.Contracts.Pure]
         public bool IsInfrastructure() => Descriptor.IsInfrastructure;

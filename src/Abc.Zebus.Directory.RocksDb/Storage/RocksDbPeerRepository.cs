@@ -91,13 +91,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             }
         }
 
-        private RocksDbSharp.RocksDb GetDb()
-        {
-            if (_db == null)
-                throw new Exception("Peer repository is not started yet and database is null");
-
-            return _db;
-        }
+        private RocksDbSharp.RocksDb GetDb() => _db ?? throw new Exception("Peer repository is not started yet and database is null");
 
         public void AddOrUpdatePeer(PeerDescriptor peerDescriptor)
         {
