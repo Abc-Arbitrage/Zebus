@@ -10,7 +10,7 @@ using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Testing
 {
-    public class TestBus : IBus
+    public class TestBus : IBus, IInternalBus
     {
         private readonly ConcurrentDictionary<HandlerKey, Func<IMessage, object?>> _handlers = new ConcurrentDictionary<HandlerKey, Func<IMessage, object?>>();
         private readonly MessageComparer _messageComparer = new MessageComparer();
@@ -81,12 +81,24 @@ namespace Abc.Zebus.Testing
 
         public void Publish(IEvent message)
         {
+            Publish(message, null);
+        }
+
+        public void Publish(IEvent message, PeerId targetPeer)
+        {
+            Publish(message, (PeerId?)targetPeer);
+        }
+
+        private void Publish(IEvent message, PeerId? targetPeer)
+        {
             if (MessageSerializer.TryClone(message, out var clone))
                 message = (IEvent)clone;
 
             lock (_events)
             {
                 _events.Add(message);
+                if (targetPeer != null)
+                    _messagesByPeerId.GetValueOrAdd(targetPeer.Value, p => new List<IMessage>()).Add(message);
             }
 
             if (_handlers.TryGetValue(new HandlerKey(message.GetType(), default), out var handler))

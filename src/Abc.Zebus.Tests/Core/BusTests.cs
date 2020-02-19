@@ -39,11 +39,11 @@ namespace Abc.Zebus.Tests.Core
             _messageDispatcherMock = new Mock<IMessageDispatcher>();
             _messageSerializer = new TestMessageSerializer();
 
-            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), Mock.Of<IBindingKeyPredicateBuilder>(), _configuration.Object);
+            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), _configuration.Object);
             _bus.Configure(_self.Id, _environment);
 
             _invokers = new List<IMessageHandlerInvoker>();
-            _messageDispatcherMock.Setup(x => x.GetMessageHanlerInvokers()).Returns(_invokers);
+            _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(_invokers);
 
             _directoryMock.Setup(x => x.GetPeersHandlingMessage(It.IsAny<IMessage>())).Returns(new Peer[0]);
         }
@@ -55,19 +55,20 @@ namespace Abc.Zebus.Tests.Core
                 System.IO.Directory.Delete(_bus.DeserializationFailureDumpDirectoryPath, true);
         }
 
-        
-
-        private void AddInvoker<TMessage>(bool shouldBeSubscribedOnStartup) where TMessage : class, IMessage
+        private void AddInvoker<TMessage>(bool shouldBeSubscribedOnStartup)
+            where TMessage : class, IMessage
         {
             _invokers.Add(new TestMessageHandlerInvoker<TMessage>(shouldBeSubscribedOnStartup));
         }
 
-        private void SetupPeersHandlingMessage<TMessage>(params Peer[] peers) where TMessage : IMessage
+        private void SetupPeersHandlingMessage<TMessage>(params Peer[] peers)
+            where TMessage : IMessage
         {
             _directoryMock.Setup(x => x.GetPeersHandlingMessage(It.IsAny<TMessage>())).Returns(peers);
         }
 
-        private void SetupDispatch<TMessage>(TMessage message, Action<IMessage> invokerCallback = null, Exception error = null) where TMessage : IMessage
+        private void SetupDispatch<TMessage>(TMessage message, Action<IMessage> invokerCallback = null, Exception error = null)
+            where TMessage : IMessage
         {
             _messageDispatcherMock.Setup(x => x.Dispatch(It.Is<MessageDispatch>(dispatch => dispatch.Message.DeepCompare(message))))
                                   .Callback<MessageDispatch>(dispatch =>

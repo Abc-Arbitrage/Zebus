@@ -7,7 +7,7 @@ using ProtoBuf;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
 {
-    public static class StorageConvertionExtensions
+    public static class StorageConversionExtensions
     {
         public static StoragePeer ToStoragePeer(this PeerDescriptor peerDescriptor)
         {
@@ -47,8 +47,13 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
             var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
-            return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
-                                      storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+            return new PeerDescriptor(new PeerId(storagePeer.PeerId),
+                                      storagePeer.EndPoint,
+                                      storagePeer.IsPersistent,
+                                      storagePeer.IsUp,
+                                      storagePeer.IsResponding,
+                                      new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc),
+                                      allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
         public static PeerDescriptor? ToPeerDescriptor(this StoragePeer? storagePeer)
@@ -57,8 +62,13 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                 return null;
 
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
-            return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
-                                      storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), staticSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+            return new PeerDescriptor(new PeerId(storagePeer.PeerId),
+                                      storagePeer.EndPoint,
+                                      storagePeer.IsPersistent,
+                                      storagePeer.IsUp,
+                                      storagePeer.IsResponding,
+                                      new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc),
+                                      staticSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
         private static byte[] SerializeSubscriptions(Subscription[] subscriptions)
@@ -87,8 +97,12 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                     binaryWriter.Write(bindingKey.PartCount);
 
                     for (var partIndex = 0; partIndex < bindingKey.PartCount; partIndex++)
-                        binaryWriter.Write(bindingKey.GetPart(partIndex) ?? string.Empty);
+                    {
+                        var partToken = bindingKey.GetPartToken(partIndex) ?? "";
+                        binaryWriter.Write(partToken);
+                    }
                 }
+
                 return memoryStream.ToArray();
             }
         }
@@ -110,6 +124,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
                     bindingKeys[keyIndex] = new BindingKey(parts);
                 }
+
                 return bindingKeys;
             }
         }

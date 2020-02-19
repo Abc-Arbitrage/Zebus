@@ -21,9 +21,9 @@ namespace Abc.Zebus.Tests.Routing
                 var rountingKey = BindingKey.Create(message);
 
                 rountingKey.PartCount.ShouldEqual(3);
-                rountingKey.GetPart(0).ShouldEqual("42.42");
-                rountingKey.GetPart(1).ShouldEqual("name");
-                rountingKey.GetPart(2).ShouldEqual(message.OtherId.ToString());
+                rountingKey.GetPartToken(0).ShouldEqual("42.42");
+                rountingKey.GetPartToken(1).ShouldEqual("name");
+                rountingKey.GetPartToken(2).ShouldEqual(message.OtherId.ToString());
             }
         }
 
@@ -34,8 +34,8 @@ namespace Abc.Zebus.Tests.Routing
             var routingKey = BindingKey.Create(message);
 
             routingKey.PartCount.ShouldEqual(2);
-            routingKey.GetPart(0).ShouldEqual("100");
-            routingKey.GetPart(1).ShouldEqual("200");
+            routingKey.GetPartToken(0).ShouldEqual("100");
+            routingKey.GetPartToken(1).ShouldEqual("200");
 
             routingKey.ToString().ShouldEqual("100.200");
         }

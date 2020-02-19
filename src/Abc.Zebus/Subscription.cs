@@ -54,15 +54,20 @@ namespace Abc.Zebus
 
             for (var i = 0; i < routingKey.PartCount; i++)
             {
-                var evaluatedPart = BindingKey.GetPart(i);
+                var evaluatedPart = BindingKey.GetPartToken(i);
                 if (evaluatedPart == "#")
                     return true;
 
-                if (evaluatedPart != "*" && routingKey.GetPart(i) != evaluatedPart)
+                if (evaluatedPart != "*" && routingKey.GetPartToken(i) != evaluatedPart)
                     return false;
             }
 
             return routingKey.PartCount == BindingKey.PartCount;
+        }
+
+        public BindingKeyPart GetBindingKeyPartForMember(string memberName)
+        {
+            return BindingKeyUtil.GetPartForMember(MessageTypeId, memberName, BindingKey);
         }
 
         public bool Equals(Subscription? other)
@@ -95,7 +100,8 @@ namespace Abc.Zebus
             return $"{MessageTypeId} ({BindingKey})";
         }
 
-        public static Subscription ByExample<TMessage>(Expression<Func<Builder, TMessage>> factory) where TMessage : IMessage
+        public static Subscription ByExample<TMessage>(Expression<Func<Builder, TMessage>> factory)
+            where TMessage : IMessage
         {
             if (factory.Body.NodeType != ExpressionType.New)
                 throw new ArgumentException();
@@ -133,10 +139,12 @@ namespace Abc.Zebus
             return Expression.Lambda(expression).Compile().DynamicInvoke();
         }
 
-        public static Subscription Any<TMessage>() where TMessage : IMessage
+        public static Subscription Any<TMessage>()
+            where TMessage : IMessage
             => new Subscription(MessageUtil.TypeId<TMessage>());
 
-        public static Subscription Matching<TMessage>(Expression<Func<TMessage, bool>> predicate) where TMessage : IMessage
+        public static Subscription Matching<TMessage>(Expression<Func<TMessage, bool>> predicate)
+            where TMessage : IMessage
         {
             var fieldValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -158,22 +166,19 @@ namespace Abc.Zebus
 
         private static void AddFieldValue<TMessage>(Dictionary<string, string> fieldValues, Expression expression)
         {
-            var binaryExpression = expression as BinaryExpression;
-            if (binaryExpression != null)
+            if (expression is BinaryExpression binaryExpression)
             {
                 AddFieldValueFromBinaryExpression<TMessage>(fieldValues, binaryExpression);
                 return;
             }
 
-            var unaryExpression = expression as UnaryExpression;
-            if (unaryExpression != null)
+            if (expression is UnaryExpression unaryExpression)
             {
                 AddFieldValueFromUnaryExpression<TMessage>(fieldValues, unaryExpression);
                 return;
             }
 
-            var memberExpression = expression as MemberExpression;
-            if (memberExpression != null)
+            if (expression is MemberExpression memberExpression)
             {
                 AddFieldValueFromMemberExpression<TMessage>(fieldValues, memberExpression);
                 return;
@@ -192,14 +197,13 @@ namespace Abc.Zebus
 
             var currentFieldValue = false;
 
-            while (unaryExpression.Operand is UnaryExpression)
+            while (unaryExpression.Operand is UnaryExpression operand)
             {
                 currentFieldValue = !currentFieldValue;
-                unaryExpression = (UnaryExpression)unaryExpression.Operand;
+                unaryExpression = operand;
             }
 
-            var memberExpression = unaryExpression.Operand as MemberExpression;
-            if (memberExpression == null)
+            if (!(unaryExpression.Operand is MemberExpression memberExpression))
                 throw CreateArgumentException(unaryExpression);
 
             AddFieldValueFromMemberExpression<T>(fieldValues, memberExpression, currentFieldValue);
@@ -248,8 +252,7 @@ namespace Abc.Zebus
             if (memberExpression != null)
                 return IsMessageMemberExpression<TMessage>(memberExpression);
 
-            var unaryExpression = expression as UnaryExpression;
-            if (unaryExpression == null)
+            if (!(expression is UnaryExpression unaryExpression))
                 return false;
 
             memberExpression = unaryExpression.Operand as MemberExpression;
@@ -261,16 +264,13 @@ namespace Abc.Zebus
 
         private static bool IsMessageMemberExpression<TMessage>(MemberExpression memberExpression)
         {
-            var parameterExpression = memberExpression.Expression as ParameterExpression;
-            if (parameterExpression != null)
+            if (memberExpression.Expression is ParameterExpression parameterExpression)
                 return parameterExpression.Type == typeof(TMessage);
 
-            var convertExpression = memberExpression.Expression as UnaryExpression;
-            if (convertExpression == null || convertExpression.NodeType != ExpressionType.Convert)
+            if (!(memberExpression.Expression is UnaryExpression convertExpression) || convertExpression.NodeType != ExpressionType.Convert)
                 return false;
 
-            var typedParameterExpression = convertExpression.Operand as ParameterExpression;
-            if (typedParameterExpression == null)
+            if (!(convertExpression.Operand is ParameterExpression typedParameterExpression))
                 return false;
 
             return typedParameterExpression.Type.IsAssignableFrom(typeof(TMessage));

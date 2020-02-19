@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using ProtoBuf;
 
@@ -14,26 +15,22 @@ namespace Abc.Zebus
 
         private readonly MessageTypeDescriptor? _descriptor;
 
-        public MessageTypeId(Type? messageType)
-        {
-            _descriptor = MessageUtil.GetMessageTypeDescriptor(messageType);
-        }
+        public MessageTypeId(Type? messageType) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(messageType);
 
-        public MessageTypeId(string? fullName)
-        {
-            _descriptor = MessageUtil.GetMessageTypeDescriptor(fullName);
-        }
+        public MessageTypeId(string? fullName) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(fullName);
 
-        public string? FullName => _descriptor?.FullName;
+        public string? FullName => Descriptor?.FullName;
 
         [System.Diagnostics.Contracts.Pure]
-        public Type? GetMessageType() => _descriptor?.MessageType;
+        public Type? GetMessageType() => Descriptor?.MessageType;
 
         [System.Diagnostics.Contracts.Pure]
-        public bool IsInfrastructure() => _descriptor?.IsInfrastructure ?? false;
+        public bool IsInfrastructure() => Descriptor.IsInfrastructure;
 
         [System.Diagnostics.Contracts.Pure]
-        public bool IsPersistent() => _descriptor?.IsPersistent ?? true;
+        public bool IsPersistent() => Descriptor.IsPersistent;
+
+        internal MessageTypeDescriptor Descriptor => _descriptor ?? MessageTypeDescriptor.Null;
 
         public override string ToString()
         {
@@ -47,7 +44,7 @@ namespace Abc.Zebus
         public bool Equals(MessageTypeId other) => _descriptor == other._descriptor;
         public override bool Equals(object? obj) => obj is MessageTypeId messageTypeId && Equals(messageTypeId);
 
-        public override int GetHashCode() => _descriptor?.GetHashCode() ?? 0;
+        public override int GetHashCode() => Descriptor.GetHashCode();
 
         public static bool operator ==(MessageTypeId left, MessageTypeId right) => left.Equals(right);
         public static bool operator !=(MessageTypeId left, MessageTypeId right) => !left.Equals(right);

@@ -7,6 +7,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -53,6 +54,16 @@ namespace Abc.Zebus.Util.Extensions
                 return eventType.Name;
             var cleanShortName = eventType.Name.Substring(0, eventType.Name.IndexOf('`'));
             return cleanShortName + "<" + genericArgument.Name + ">";
+        }
+
+        public static IEnumerable<Type> GetBaseTypes(this Type type)
+        {
+            var baseType = type.BaseType;
+            while (baseType != null && baseType != typeof(object))
+            {
+                yield return baseType;
+                baseType = baseType.BaseType;
+            }
         }
     }
 }

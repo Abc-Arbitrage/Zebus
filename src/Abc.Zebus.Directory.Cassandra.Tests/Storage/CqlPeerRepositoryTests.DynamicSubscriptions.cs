@@ -28,7 +28,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
                 CreateSubscriptionFor<int>()
             });
         }
-        
+
         private Subscription CreateSubscriptionFor<TMessage>(params string[] bindingKeyParts)
         {
             return new Subscription(MessageUtil.GetTypeId(typeof(TMessage)), new BindingKey(bindingKeyParts));
@@ -111,7 +111,6 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 
             _repository.AddDynamicSubscriptionsForTypes(presentPeerDescriptor.PeerId, presentPeerDescriptor.TimestampUtc.Value, new[] { CreateSubscriptionsForType<int>() });
             _repository.RemoveDynamicSubscriptionsForTypes(pastPeerDescriptor.PeerId, pastPeerDescriptor.TimestampUtc.Value, new[] { MessageUtil.GetTypeId(typeof(int)) });
-            
 
             var fetched = _repository.Get(presentPeerDescriptor.Peer.Id);
             fetched.Subscriptions.ShouldEqual(new[]
@@ -244,11 +243,11 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             fetched.Subscriptions.ShouldEqual(new[]
             {
                 CreateSubscriptionFor<FakeCommand>()
-            });   
+            });
         }
 
         [Test]
-        public void should_handle_dynamic_subscriptions_with_empty_binding_key_aside_static_one()
+        public void should_handle_dynamic_subscriptions_with_empty_binding_key_beside_static_one()
         {
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
@@ -263,7 +262,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
-        public void should_handle_dynamic_subscriptions_with_empty_binding_key_aside_specific_one()
+        public void should_handle_dynamic_subscriptions_with_empty_binding_key_beside_specific_one()
         {
             var peerDescriptor = _peer1.ToPeerDescriptor(true, typeof(FakeCommand));
             _repository.AddOrUpdatePeer(peerDescriptor);
@@ -318,7 +317,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             {
                 _repository.RemoveAllDynamicSubscriptionsForPeer(peer.PeerId, peer.TimestampUtc.Value.AddMilliseconds(2));
             }
-            
+
             _repository.AddDynamicSubscriptionsForTypes(peer.PeerId, peer.TimestampUtc.Value.AddMilliseconds(3), new[] { subscriptionsForType });
 
             var fetched = _repository.GetPeers().ExpectedSingle();

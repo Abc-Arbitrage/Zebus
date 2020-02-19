@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Abc.Zebus.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Cassandra.Tests")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory.RocksDb.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.RocksDb.Tests")]

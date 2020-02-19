@@ -7,6 +7,7 @@ namespace Abc.Zebus.Directory
     public interface IPeerDirectory
     {
         event Action<PeerId, PeerUpdateAction> PeerUpdated;
+        event Action<PeerId, IReadOnlyList<Subscription>> PeerSubscriptionsUpdated;
 
         TimeSpan TimeSinceLastPing { get; }
 
@@ -18,6 +19,7 @@ namespace Abc.Zebus.Directory
         IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding);
 
         bool IsPersistent(PeerId peerId);
+        void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types);
 
         // TODO: move to a specific interface (IPeerDirectoryExplorer)
         PeerDescriptor? GetPeerDescriptor(PeerId peerId);

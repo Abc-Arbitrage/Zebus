@@ -52,6 +52,59 @@ namespace Abc.Zebus.Tests.Core
                     destination.ShouldHaveSamePropertiesAs(_peerUp);
                 }
             }
+
+            [Test]
+            public void should_publish_a_message_to_specific_peer()
+            {
+                using (MessageId.PauseIdGeneration())
+                {
+                    // Arrange
+                    var message = new FakeEvent(42);
+                    var anotherPeerUp = new Peer(new PeerId("Abc.Testing.other"), "somePeer");
+                    SetupPeersHandlingMessage<FakeEvent>(_peerUp, anotherPeerUp);
+                    var expectedTransportMessage = message.ToTransportMessage(_self);
+
+                    // Act
+                    _bus.Start();
+                    _bus.Publish(message, _peerUp.Id);
+
+                    // Assert
+
+                    var sentMessage = _transport.Messages.ExpectedSingle();
+                    expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
+                    var destination = sentMessage.Targets.ExpectedSingle();
+                    destination.ShouldHaveSamePropertiesAs(_peerUp);
+                }
+            }
+
+            [Test]
+            public void should_publish_a_message_to_All_peers()
+            {
+                using (MessageId.PauseIdGeneration())
+                {
+                    // Arrange
+                    var message = new FakeEvent(42);
+                    var anotherPeerUp = new Peer(new PeerId("Abc.Testing.other"), "somePeer");
+                    SetupPeersHandlingMessage<FakeEvent>(_peerUp, anotherPeerUp);
+                    var expectedTransportMessage = message.ToTransportMessage(_self);
+
+                    // Act
+                    _bus.Start();
+                    _bus.Publish(message);
+
+                    // Assert
+
+                    var sentMessage = _transport.Messages.ExpectedSingle();
+                    expectedTransportMessage.ShouldHaveSamePropertiesAs(sentMessage.TransportMessage);
+                    sentMessage.Targets.Count.ShouldEqual(2);
+                    var destination1 = sentMessage.Targets.ExpectedSingle(x => x.Id == _peerUp.Id);
+                    destination1.ShouldHaveSamePropertiesAs(_peerUp);
+                    var destination2 = sentMessage.Targets.ExpectedSingle(x => x.Id == anotherPeerUp.Id);
+                    destination2.ShouldHaveSamePropertiesAs(anotherPeerUp);
+
+
+                }
+            }
         }
     }
 }

@@ -29,8 +29,25 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue = new DispatchQueue(_pipeManager, 200, "Default");
         }
 
+        [TearDown]
+        public void Teardown()
+        {
+            _dispatchQueue.Stop();
+        }
+
         [Test]
         public void should_not_run_invoker_when_queue_is_not_started()
+        {
+            var message = new ExecutableEvent();
+            EnqueueInvocation(message);
+
+            Thread.Sleep(200);
+
+            message.HandleStarted.IsSet.ShouldBeFalse();
+        }
+
+        [Test]
+        public void should_not_run_invoker_before_start()
         {
             var message = new ExecutableEvent();
             EnqueueInvocation(message);
@@ -170,7 +187,7 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
-        public void should_restart()
+        public void should_restart([Values] bool startDelivering)
         {
             _dispatchQueue.Start();
             _dispatchQueue.Stop();
@@ -181,6 +198,21 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
 
             message.HandleStarted.Wait(5.Seconds()).ShouldBeTrue();
+            message.Unblock(); // If we don't release the message the test will stay blocked
+        }
+
+        [Test]
+        public void should_not_deliver_messages_until_started()
+        {
+            var executableEvent = new ExecutableEvent { IsBlocking = true };
+            EnqueueInvocation(executableEvent);
+
+            executableEvent.HandleStarted.Wait(100.Milliseconds()).ShouldBeFalse();
+
+            _dispatchQueue.Start();
+
+            executableEvent.HandleStarted.Wait(100.Milliseconds()).ShouldBeTrue();
+            executableEvent.Unblock();
         }
 
         [Test, Repeat(5)]
@@ -399,7 +431,7 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
-        public void should_internleave_sync_and_async_messages_properly()
+        public void should_interleave_sync_and_async_messages_properly()
         {
             var tcs = new TaskCompletionSource<object>();
 

@@ -145,7 +145,7 @@ namespace Abc.Zebus.Directory
                 _sharpNode?.AddAllPeers(peerCollector);
                 _starNode?.Accept(peerCollector, routingKey);
 
-                var nextPart = routingKey.GetPart(_nextPartIndex);
+                var nextPart = routingKey.GetPartToken(_nextPartIndex);
                 if (nextPart == null || _childNodes == null)
                     return;
 
@@ -163,7 +163,7 @@ namespace Abc.Zebus.Directory
                     return update;
                 }
 
-                var nextPart = subscription.GetPart(_nextPartIndex);
+                var nextPart = subscription.GetPartToken(_nextPartIndex);
 
                 if (subscription.IsSharp(_nextPartIndex) || nextPart == null)
                     return UpdateChildNode(GetOrCreateSharpNode(), peer, subscription, action, null, _removeSharpNode);

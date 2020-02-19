@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net471</TargetFramework>
+    <Platform>x64</Platform>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <Import Project="..\Abc.Zebus.Tests.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Directory.RocksDb\Abc.Zebus.Directory.RocksDb.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
+  </ItemGroup>
+
+</Project>
