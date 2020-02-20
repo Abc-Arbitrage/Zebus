@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using ProtoBuf;
 
@@ -19,7 +18,7 @@ namespace Abc.Zebus
 
         public MessageTypeId(string? fullName) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(fullName);
 
-        public string? FullName => Descriptor?.FullName;
+        public string? FullName => Descriptor.FullName;
 
         [System.Diagnostics.Contracts.Pure]
         public Type? GetMessageType() => Descriptor.MessageType;
