@@ -22,7 +22,7 @@ namespace Abc.Zebus.Scan
 
         private static string LoadQueueName(Type type)
         {
-            var queueNameAttribute = (DispatchQueueNameAttribute)Attribute.GetCustomAttribute(type, typeof(DispatchQueueNameAttribute), true);
+            var queueNameAttribute = (DispatchQueueNameAttribute?)Attribute.GetCustomAttribute(type, typeof(DispatchQueueNameAttribute), true);
             if (queueNameAttribute != null)
                 return queueNameAttribute.QueueName;
 
@@ -32,9 +32,9 @@ namespace Abc.Zebus.Scan
         private static string LoadQueueNameFromNamespace(Type type)
         {
             var assemblyCache = _assemblyCaches.GetOrAdd(type.Assembly, x => new AssemblyCache(x));
-            return assemblyCache.GetQueueNameFromNamespace(type.Namespace);
+            return assemblyCache.GetQueueNameFromNamespace(type.Namespace ?? string.Empty);
         }
- 
+
         private class AssemblyCache
         {
             private readonly Dictionary<string, string> _knownQueueNames = new Dictionary<string, string>();
@@ -47,7 +47,7 @@ namespace Abc.Zebus.Scan
                     if (queueNameProviderType.Namespace == null)
                         continue;
 
-                    var queueNameProvider = (IProvideDispatchQueueNameForCurrentNamespace)Activator.CreateInstance(queueNameProviderType);
+                    var queueNameProvider = (IProvideDispatchQueueNameForCurrentNamespace)Activator.CreateInstance(queueNameProviderType)!;
                     _knownQueueNames[queueNameProviderType.Namespace] = queueNameProvider.QueueName;
                 }
             }
@@ -62,7 +62,7 @@ namespace Abc.Zebus.Scan
                 var queueName = _knownQueueNames.GetValueOrDefault(@namespace);
                 if (queueName != null)
                     return queueName;
-                 
+
                 var parentNamespace = @namespace.Qualifier();
                 if (parentNamespace.Length == @namespace.Length)
                     return DefaultQueueName;

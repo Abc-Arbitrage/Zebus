@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 using ProtoBuf;
 
@@ -14,16 +12,16 @@ namespace Abc.Zebus
         public static readonly MessageTypeId PersistenceStopping = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStopping");
         public static readonly MessageTypeId PersistenceStoppingAck = new MessageTypeId("Abc.Zebus.PersistentTransport.PersistenceStoppingAck");
 
-        private readonly MessageTypeDescriptor _descriptor;
+        private readonly MessageTypeDescriptor? _descriptor;
 
-        public MessageTypeId(Type messageType) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(messageType);
+        public MessageTypeId(Type? messageType) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(messageType);
 
-        public MessageTypeId(string fullName) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(fullName);
+        public MessageTypeId(string? fullName) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(fullName);
 
-        public string FullName => Descriptor.FullName;
+        public string? FullName => Descriptor.FullName;
 
         [System.Diagnostics.Contracts.Pure]
-        public Type GetMessageType() => Descriptor.MessageType;
+        public Type? GetMessageType() => Descriptor.MessageType;
 
         [System.Diagnostics.Contracts.Pure]
         public bool IsInfrastructure() => Descriptor.IsInfrastructure;
@@ -35,14 +33,16 @@ namespace Abc.Zebus
 
         public override string ToString()
         {
+            if (FullName is null)
+                return "(unknown type)";
+
             var lastDotIndex = FullName.LastIndexOf('.');
             return lastDotIndex != -1 ? FullName.Substring(lastDotIndex + 1) : FullName;
         }
 
         public bool Equals(MessageTypeId other) => _descriptor == other._descriptor;
-        public override bool Equals(object obj) => obj is MessageTypeId messageTypeId && Equals(messageTypeId);
+        public override bool Equals(object? obj) => obj is MessageTypeId messageTypeId && Equals(messageTypeId);
 
-        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
         public override int GetHashCode() => Descriptor.GetHashCode();
 
         public static bool operator ==(MessageTypeId left, MessageTypeId right) => left.Equals(right);
@@ -53,7 +53,7 @@ namespace Abc.Zebus
         internal struct ProtobufSurrogate
         {
             [ProtoMember(1, IsRequired = true)]
-            private string FullName { get; set; }
+            private string? FullName { get; set; }
 
             private ProtobufSurrogate(MessageTypeId typeId)
             {

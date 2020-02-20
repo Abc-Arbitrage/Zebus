@@ -10,15 +10,15 @@ namespace Abc.Zebus
     public readonly struct PeerId : IEquatable<PeerId>
     {
         [ProtoMember(1, IsRequired = true)]
-        private readonly string _value;
+        private readonly string? _value;
 
-        public PeerId(string value)
+        public PeerId(string? value)
         {
             _value = value;
         }
 
         public bool Equals(PeerId other) => string.Equals(_value, other._value);
-        public override bool Equals(object obj) => obj is PeerId && Equals((PeerId)obj);
+        public override bool Equals(object? obj) => obj is PeerId peerId && Equals(peerId);
 
         public override int GetHashCode() => _value?.GetHashCode() ?? 0;
 

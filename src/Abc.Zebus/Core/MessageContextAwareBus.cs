@@ -54,13 +54,13 @@ namespace Abc.Zebus.Core
 
         public void Reply(int errorCode) => Reply(errorCode, null);
 
-        public void Reply(int errorCode, string message)
+        public void Reply(int errorCode, string? message)
         {
             MessageContext.ReplyCode = errorCode;
             MessageContext.ReplyMessage = message;
         }
 
-        public void Reply(IMessage response)
+        public void Reply(IMessage? response)
         {
             MessageContext.ReplyResponse = response;
         }
@@ -68,25 +68,25 @@ namespace Abc.Zebus.Core
         public void Start() => _bus.Start();
         public void Stop() => _bus.Stop();
 
-        public event Action Starting
+        public event Action? Starting
         {
             add => _bus.Starting += value;
             remove => _bus.Starting -= value;
         }
 
-        public event Action Started
+        public event Action? Started
         {
             add => _bus.Started += value;
             remove => _bus.Started -= value;
         }
 
-        public event Action Stopping
+        public event Action? Stopping
         {
             add => _bus.Stopping += value;
             remove => _bus.Stopping -= value;
         }
 
-        public event Action Stopped
+        public event Action? Stopped
         {
             add => _bus.Stopped += value;
             remove => _bus.Stopped -= value;

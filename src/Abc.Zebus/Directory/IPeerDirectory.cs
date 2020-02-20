@@ -22,7 +22,7 @@ namespace Abc.Zebus.Directory
         void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types);
 
         // TODO: move to a specific interface (IPeerDirectoryExplorer)
-        PeerDescriptor GetPeerDescriptor(PeerId peerId);
+        PeerDescriptor? GetPeerDescriptor(PeerId peerId);
 
         IEnumerable<PeerDescriptor> GetPeerDescriptors();
     }

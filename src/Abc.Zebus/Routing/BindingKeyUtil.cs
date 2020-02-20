@@ -31,7 +31,8 @@ namespace Abc.Zebus.Routing
             if (!subPredicates.Any())
                 return _ => true;
 
-            var finalExpression = subPredicates.Aggregate((Expression)null, (final, exp) => final == null ? exp : Expression.AndAlso(final, exp));
+            var empty = Expression.Empty();
+            var finalExpression = subPredicates.Aggregate<Expression, Expression>(empty, (final, exp) => final == empty ? exp : Expression.AndAlso(final, exp));
             return (Func<IMessage, bool>)Expression.Lambda(finalExpression, MessageTypeDescriptor.RoutingMember.ParameterExpression).Compile();
         }
 

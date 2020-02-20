@@ -10,6 +10,6 @@ namespace Abc.Zebus.Dispatch
             QueueName = queueName;
         }
 
-        public string QueueName { get; private set; }
+        public string QueueName { get; }
     }
 }

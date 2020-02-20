@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,9 +11,9 @@ namespace Abc.Zebus
 {
     internal class MessageTypeDescriptor
     {
-        public static readonly MessageTypeDescriptor Null = new MessageTypeDescriptor(null);
+        public static readonly MessageTypeDescriptor Null = new MessageTypeDescriptor(null!);
 
-        private MessageTypeDescriptor(string fullName, Type messageType = null, bool isPersistent = true, bool isInfrastructure = false, RoutingMember[] routingMembers = null)
+        private MessageTypeDescriptor(string fullName, Type? messageType = null, bool isPersistent = true, bool isInfrastructure = false, RoutingMember[]? routingMembers = null)
         {
             FullName = fullName;
             MessageType = messageType;
@@ -22,12 +23,12 @@ namespace Abc.Zebus
         }
 
         public string FullName { get; }
-        public Type MessageType { get; }
+        public Type? MessageType { get; }
         public bool IsPersistent { get; }
         public bool IsInfrastructure { get; }
         public RoutingMember[] RoutingMembers { get; }
 
-        public bool TryGetRoutingMemberByName(string memberName, out RoutingMember routingMember)
+        public bool TryGetRoutingMemberByName(string memberName, [MaybeNullWhen(false)] out RoutingMember routingMember)
         {
             foreach (var member in RoutingMembers)
             {
@@ -38,27 +39,30 @@ namespace Abc.Zebus
                 }
             }
 
-            routingMember = default;
+            routingMember = default!;
             return false;
         }
 
-        public static MessageTypeDescriptor Load(string fullName)
+        public static MessageTypeDescriptor Load(string? fullName)
         {
+            if (fullName == null)
+                return Null;
+
             var messageType = TypeUtil.Resolve(fullName);
             if (messageType == null)
                 return new MessageTypeDescriptor(fullName);
 
             var isPersistent = !Attribute.IsDefined(messageType, typeof(TransientAttribute));
             var isInfrastructure = Attribute.IsDefined(messageType, typeof(InfrastructureAttribute));
-            var routingMembers =  RoutingMember.GetAll(messageType);
+            var routingMembers = RoutingMember.GetAll(messageType);
 
             return new MessageTypeDescriptor(fullName, messageType, isPersistent, isInfrastructure, routingMembers);
         }
 
         public class RoutingMember
         {
-            private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod("ToString");
-            private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod("ToString");
+            private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString))!;
+            private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString))!;
 
             public static ParameterExpression ParameterExpression { get; } = Expression.Parameter(typeof(IMessage), "m");
 
@@ -69,8 +73,8 @@ namespace Abc.Zebus
                 return messageType.GetMembers(BindingFlags.Public | BindingFlags.Instance)
                                   .Select(x => (member: x, attribute: x.GetCustomAttribute<RoutingPositionAttribute>(true)))
                                   .Where(x => x.attribute != null)
-                                  .OrderBy(x => x.attribute.Position)
-                                  .Select((x, index) => new RoutingMember(index, x.attribute.Position, x.member, BuildToStringExpression(castExpression, x.member)))
+                                  .OrderBy(x => x.attribute!.Position)
+                                  .Select((x, index) => new RoutingMember(index, x.attribute!.Position, x.member, BuildToStringExpression(castExpression, x.member)))
                                   .ToArray();
             }
 
@@ -78,7 +82,6 @@ namespace Abc.Zebus
             {
                 Index = index;
                 RoutingPosition = position;
-                RoutingPosition = member.GetCustomAttribute<RoutingPositionAttribute>(true).Position;
                 Member = member;
                 ToStringExpression = toStringExpression;
                 ToStringDelegate = BuildToStringDelegate(toStringExpression);
@@ -88,7 +91,7 @@ namespace Abc.Zebus
             public int RoutingPosition { get; }
             public MemberInfo Member { get; }
             public MethodCallExpression ToStringExpression { get; }
-            public Func<IMessage, string> ToStringDelegate { get; }
+            private Func<IMessage, string> ToStringDelegate { get; }
 
             public string GetValue(IMessage message)
             {
@@ -106,6 +109,7 @@ namespace Abc.Zebus
             {
                 Func<Expression, Expression> memberAccessor;
                 Type memberType;
+
                 if (member.MemberType == MemberTypes.Property)
                 {
                     var propertyInfo = (PropertyInfo)member;

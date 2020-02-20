@@ -5,7 +5,7 @@ using Abc.Zebus.Transport;
 namespace Abc.Zebus.Persistence.Storage
 {
     /// <summary>
-    /// Statefull, non thread-safe serializer.
+    /// Stateful, non thread-safe serializer.
     /// </summary>
     internal class TransportMessageSerializer
     {

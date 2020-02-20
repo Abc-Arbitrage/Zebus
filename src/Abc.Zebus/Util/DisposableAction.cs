@@ -1,4 +1,4 @@
-// Copyright (c) Lokad 2009 
+// Copyright (c) Lokad 2009
 // https://github.com/Lokad/lokad-shared-libraries
 // This code is released under the terms of the new BSD licence
 
@@ -13,7 +13,7 @@ namespace Abc.Zebus.Util
     [Serializable]
     internal sealed class DisposableAction : IDisposable
     {
-        private Action _action;
+        private Action? _action;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DisposableAction"/> class.

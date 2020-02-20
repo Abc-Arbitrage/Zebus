@@ -19,7 +19,7 @@ namespace Abc.Zebus.Persistence.CQL.Data
 
         [PartitionKey]
         [Column("PeerId")]
-        public string PeerId { get; set; }
+        public string PeerId { get; set; } = default!;
 
         [Column("NonAckedMessageCount")]
         public int NonAckedMessageCount { get; set; }

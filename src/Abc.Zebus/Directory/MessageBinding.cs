@@ -24,7 +24,7 @@ namespace Abc.Zebus.Directory
         public bool Equals(MessageBinding other)
             => MessageTypeId == other.MessageTypeId && RoutingKey.Equals(other.RoutingKey);
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => obj is MessageBinding binding && Equals(binding);
 
         public override int GetHashCode()

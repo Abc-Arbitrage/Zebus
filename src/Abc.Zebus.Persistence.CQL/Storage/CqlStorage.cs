@@ -98,7 +98,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                                              (int)PeerState.MessagesTimeToLive.TotalSeconds,
                                                              ToUnixMicroSeconds(rowTimestamp));
 
-                var insertTask = _dataContext.Session.ExecuteAsync(boundStatement); 
+                var insertTask = _dataContext.Session.ExecuteAsync(boundStatement);
                 insertTasks.Add(insertTask);
                 insertTask.ContinueWith(t =>
                 {
@@ -127,7 +127,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             return _peerStateRepository.RemovePeer(peerId);
         }
 
-        public IMessageReader CreateMessageReader(PeerId peerId)
+        public IMessageReader? CreateMessageReader(PeerId peerId)
         {
             _log.Info($"Creating message reader for peer {peerId}");
             var peerState = _peerStateRepository.GetPeerStateFor(peerId);

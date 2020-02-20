@@ -36,7 +36,7 @@ namespace Abc.Zebus.Persistence.Util
             private readonly int _partitionSize;
             private int _currentCount;
 
-            private IEnumerator<T> _enumerator;
+            private IEnumerator<T>? _enumerator;
             private bool _hasMoreItems;
 
             public Partitioner(int partitionSize)
@@ -58,8 +58,8 @@ namespace Abc.Zebus.Persistence.Util
                 _currentCount = 0;
                 while (_hasMoreItems && _currentCount < _partitionSize)
                 {
-                    yield return _enumerator.Current;
-                    _hasMoreItems = _enumerator.MoveNext();
+                    yield return _enumerator!.Current;
+                    _hasMoreItems = _enumerator!.MoveNext();
                     _currentCount++;
                 }
             }

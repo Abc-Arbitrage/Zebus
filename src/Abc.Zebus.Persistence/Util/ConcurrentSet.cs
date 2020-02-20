@@ -5,17 +5,18 @@ using System.Collections.Generic;
 namespace Abc.Zebus.Persistence.Util
 {
     internal class ConcurrentSet<T> : ICollection<T>
+        where T : notnull
     {
-        private readonly ConcurrentDictionary<T, object> _items;
+        private readonly ConcurrentDictionary<T, object?> _items;
 
         public ConcurrentSet()
         {
-            _items = new ConcurrentDictionary<T, object>();
+            _items = new ConcurrentDictionary<T, object?>();
         }
 
         public ConcurrentSet(IEqualityComparer<T> comparer)
         {
-            _items = new ConcurrentDictionary<T, object>(comparer);
+            _items = new ConcurrentDictionary<T, object?>(comparer);
         }
 
         public ConcurrentSet(IEnumerable<T> items)
@@ -79,8 +80,7 @@ namespace Abc.Zebus.Persistence.Util
 
         public bool Remove(T item)
         {
-            object value;
-            return _items.TryRemove(item, out value);
+            return _items.TryRemove(item, out _);
         }
     }
 }

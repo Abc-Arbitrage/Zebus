@@ -21,7 +21,7 @@ namespace Abc.Zebus.Lotus
         public PeerId? FailingPeerIdOverride { get; set; }
 
         [ProtoMember(5, IsRequired = false)]
-        public string DetailsJson { get; set; }
+        public string? DetailsJson { get; set; }
 
         public CustomProcessingFailed(string sourceTypeFullName, string exceptionMessage)
             : this(sourceTypeFullName, exceptionMessage, SystemDateTime.UtcNow)
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Lotus
             ExceptionUtcTime = exceptionUtcTime;
         }
 
-        public CustomProcessingFailed WithDetails(object details)
+        public CustomProcessingFailed WithDetails(object? details)
         {
             DetailsJson = details != null ? JsonConvert.SerializeObject(details) : null;
             return this;

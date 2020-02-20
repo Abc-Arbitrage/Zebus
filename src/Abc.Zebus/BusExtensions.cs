@@ -39,7 +39,7 @@ namespace Abc.Zebus
             return Task.WhenAll(sendTasks);
         }
 
-        public static Task<bool> SendMany(this IBus bus, IEnumerable<ICommand> commands, Action<ICommand, CommandResult> onCommandExecuted = null)
+        public static Task<bool> SendMany(this IBus bus, IEnumerable<ICommand> commands, Action<ICommand, CommandResult>? onCommandExecuted = null)
         {
             var sendTasks = commands.Select(command =>
             {

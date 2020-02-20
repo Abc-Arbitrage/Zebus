@@ -18,8 +18,8 @@ namespace Abc.Zebus.Persistence.Transport
         private readonly ITransport _transport;
         private readonly IPeerDirectory _peerDirectory;
         private readonly IPersistenceConfiguration _configuration;
-        private Thread _receptionThread;
-        private CountdownEvent _ackCountdown;
+        private Thread? _receptionThread;
+        private CountdownEvent? _ackCountdown;
 
         public QueueingTransport(ITransport transport, IPeerDirectory peerDirectory, IPersistenceConfiguration configuration)
         {
@@ -28,7 +28,7 @@ namespace Abc.Zebus.Persistence.Transport
             _configuration = configuration;
         }
 
-        public event Action<TransportMessage> MessageReceived;
+        public event Action<TransportMessage>? MessageReceived;
 
         public PeerId PeerId => _transport.PeerId;
 
@@ -101,7 +101,7 @@ namespace Abc.Zebus.Persistence.Transport
             var newTargetsCount = _peerDirectory.GetPeerDescriptors().Count(desc => desc.PeerId != _transport.PeerId);
             if (newTargetsCount > targets.Count)
                 _logger.WarnFormat("The peer count on the bus raised from {0} to {1} during the graceful shutdown of the persistence, some messages might have been lost.", targets.Count, newTargetsCount);
-            
+
             _logger.InfoFormat("Stopping ZmqTransport");
             _transport.Stop();
 

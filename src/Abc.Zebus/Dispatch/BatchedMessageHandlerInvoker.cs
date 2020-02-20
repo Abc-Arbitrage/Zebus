@@ -9,11 +9,11 @@ namespace Abc.Zebus.Dispatch
 {
     public class BatchedMessageHandlerInvoker : MessageHandlerInvoker
     {
-        private static readonly MethodInfo _castMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast));
+        private static readonly MethodInfo _castMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast))!;
 
         private readonly IContainer _container;
         private readonly Action<object, IList<IMessage>> _handleAction;
-        private static readonly MethodInfo _toListMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList));
+        private static readonly MethodInfo _toListMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!;
 
         public BatchedMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
@@ -33,8 +33,9 @@ namespace Abc.Zebus.Dispatch
 
         public override bool CanMergeWith(IMessageHandlerInvoker other)
         {
-            var otherBatchedInvoker = other as BatchedMessageHandlerInvoker;
-            return otherBatchedInvoker != null && otherBatchedInvoker.MessageHandlerType == MessageHandlerType && otherBatchedInvoker.MessageType == MessageType;
+            return other is BatchedMessageHandlerInvoker otherBatchedInvoker
+                   && otherBatchedInvoker.MessageHandlerType == MessageHandlerType
+                   && otherBatchedInvoker.MessageType == MessageType;
         }
 
         private object CreateHandler(MessageContext messageContext)

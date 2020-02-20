@@ -26,7 +26,7 @@ namespace Abc.Zebus
 
         public bool Equals(MessageId other) => Value.Equals(other.Value);
 
-        public override bool Equals(object obj) => obj is MessageId id && Equals(id);
+        public override bool Equals(object? obj) => obj is MessageId id && Equals(id);
 
         public override int GetHashCode() => Value.GetHashCode();
 

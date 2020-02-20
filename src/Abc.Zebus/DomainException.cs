@@ -13,7 +13,7 @@ namespace Abc.Zebus
     {
         public int ErrorCode { get; private set; }
 
-        public DomainException(Exception innerException, int errorCode, string message)
+        public DomainException(Exception? innerException, int errorCode, string message)
             : base(message, innerException)
         {
             ErrorCode = errorCode;
@@ -24,7 +24,7 @@ namespace Abc.Zebus
         {
         }
 
-        public DomainException(string message, Exception innerException)
+        public DomainException(string message, Exception? innerException)
             : this(innerException, ErrorStatus.UnknownError.Code, message)
         {
         }

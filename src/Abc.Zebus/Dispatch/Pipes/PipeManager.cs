@@ -51,16 +51,16 @@ namespace Abc.Zebus.Dispatch.Pipes
             return new PipeInvocation(messageHandlerInvoker, messages, messageContext, pipes);
         }
 
-        public IEnumerable<IPipe> GetEnabledPipes(Type messageHandlerType) 
+        public IEnumerable<IPipe> GetEnabledPipes(Type messageHandlerType)
             => GetPipeList(messageHandlerType).EnabledPipes;
 
-        private PipeList GetPipeList(Type messageHandlerType) 
+        private PipeList GetPipeList(Type messageHandlerType)
             => _pipesByMessageType.GetOrAdd(messageHandlerType, _createPipeList);
 
-        private PipeList CreatePipeList(Type handlerType) 
+        private PipeList CreatePipeList(Type handlerType)
             => new PipeList(this, _pipeSources.SelectMany(x => x.GetPipes(handlerType)));
 
-        private bool IsPipeEnabled(IPipe pipe) 
+        private bool IsPipeEnabled(IPipe pipe)
             => !_disabledPipeNames.Contains(pipe.Name)
                && (pipe.IsAutoEnabled || _enabledPipeNames.Contains(pipe.Name));
 
@@ -77,7 +77,7 @@ namespace Abc.Zebus.Dispatch.Pipes
                 ReloadEnabledPipes();
             }
 
-            public IList<IPipe> EnabledPipes { get; private set; }
+            public IList<IPipe> EnabledPipes { get; private set; } = default!;
 
             internal void ReloadEnabledPipes()
             {

@@ -17,9 +17,9 @@ namespace Abc.Zebus.Testing
 {
     public static class TestExtensions
     {
-        public static TransportMessage ToTransportMessage(this IMessage message, Peer sender = null, bool? wasPersisted = null)
+        public static TransportMessage ToTransportMessage(this IMessage message, Peer? sender = null, bool? wasPersisted = null)
         {
-            sender = sender ?? new Peer(new PeerId("Abc.Testing.Peer"), "tcp://abctest:159");
+            sender ??= new Peer(new PeerId("Abc.Testing.Peer"), "tcp://abctest:159");
 
             var serializer = new MessageSerializer();
             var content = serializer.Serialize(message);
@@ -32,7 +32,7 @@ namespace Abc.Zebus.Testing
             return transportMessage.ToPersistTransportMessage(peerIds.ToList());
         }
 
-        public static IMessage ToMessage(this TransportMessage transportMessage)
+        public static IMessage? ToMessage(this TransportMessage transportMessage)
         {
             var serializer = new MessageSerializer();
             return serializer.ToMessage(transportMessage);
@@ -47,7 +47,7 @@ namespace Abc.Zebus.Testing
         {
             return new PeerDescriptor(peer.Id, peer.EndPoint, isPersistent, peer.IsUp, peer.IsResponding, SystemDateTime.UtcNow, subscriptions.ToArray());
         }
-        
+
         public static PeerDescriptor ToPeerDescriptor(this Peer peer, bool isPersistent, params MessageTypeId[] messageTypeIds)
         {
             return peer.ToPeerDescriptor(isPersistent, messageTypeIds.Select(x => new Subscription(x)));

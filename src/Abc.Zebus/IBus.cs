@@ -20,8 +20,8 @@ namespace Abc.Zebus
         Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler);
 
         void Reply(int errorCode);
-        void Reply(int errorCode, string message);
-        void Reply(IMessage response);
+        void Reply(int errorCode, string? message);
+        void Reply(IMessage? response);
 
         void Start();
         void Stop();

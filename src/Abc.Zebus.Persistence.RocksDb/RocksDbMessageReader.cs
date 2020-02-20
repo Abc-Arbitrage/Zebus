@@ -12,7 +12,7 @@ namespace Abc.Zebus.Persistence.RocksDb
         private readonly RocksDbSharp.RocksDb _db;
         private readonly PeerId _peerId;
         private readonly ColumnFamilyHandle _messagesColumnFamily;
-        private Iterator _iterator;
+        private Iterator? _iterator;
 
         public RocksDbMessageReader(RocksDbSharp.RocksDb db, in PeerId peerId, ColumnFamilyHandle messagesColumnFamily)
         {

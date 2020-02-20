@@ -13,8 +13,7 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
 
         private ISession GetOrCreateSession(Cluster cluster, string keySpace)
         {
-            ISession session;
-            if (!_sessions.TryGetValue(cluster, out session))
+            if (!_sessions.TryGetValue(cluster, out var session))
             {
                 session = cluster.Connect(keySpace);
                 _sessions.TryAdd(cluster, session);
@@ -24,8 +23,7 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
 
         private Cluster GetOrCreateCluster(string hosts, string defaultKeySpace, TimeSpan queryTimeout, string localDataCenter)
         {
-            Cluster cluster;
-            if (!_clusters.TryGetValue(hosts, out cluster))
+            if (!_clusters.TryGetValue(hosts, out var cluster))
             {
                 var contactPoints = hosts.Split(' ').ToArray();
 

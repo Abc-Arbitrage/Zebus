@@ -10,7 +10,7 @@ namespace Abc.Zebus.Util.Collections
         private readonly ManualResetEventSlim _addSignal = new ManualResetEventSlim();
         private volatile ConcurrentQueue<T> _queue = new ConcurrentQueue<T>();
         private volatile bool _isAddingCompleted;
-        private ManualResetEventSlim _isEmptySignal;
+        private ManualResetEventSlim? _isEmptySignal;
         private int _hasChangedSinceLastWaitForEmpty;
 
         public int Count => _queue.Count;

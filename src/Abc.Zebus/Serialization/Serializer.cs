@@ -31,31 +31,32 @@ namespace Abc.Zebus.Serialization
             }
         }
 
-        public static object Deserialize(Type messageType, Stream stream)
+        [return: NotNullIfNotNull("messageType")]
+        public static object? Deserialize(Type? messageType, Stream stream)
         {
-            if (messageType == null)
+            if (messageType is null)
                 return null;
 
             stream.Position = 0; // Reset position
 
-            object obj = null;
+            object? obj = null;
             if (!HasParameterLessConstructor(messageType) && messageType != typeof(string))
                 obj = FormatterServices.GetUninitializedObject(messageType);
 
             return RuntimeTypeModel.Default.Deserialize(stream, obj, messageType);
         }
 
-        public static bool TryClone<T>(T message, out T clone)
+        public static bool TryClone<T>(T? message, [NotNullWhen(true)] out T? clone)
             where T : class
         {
             var messageType = message?.GetType();
-            if (messageType!= null && RuntimeTypeModel.Default.CanSerialize(messageType))
+            if (messageType != null && RuntimeTypeModel.Default.CanSerialize(messageType))
             {
                 // Cannot use the DeepClone method as it doesn't handle classes without a parameterless constructor
 
                 using (var ms = new MemoryStream())
                 {
-                    Serialize(ms, message);
+                    Serialize(ms, message!);
                     ms.Position = 0;
                     clone = (T)Deserialize(messageType, ms);
                 }

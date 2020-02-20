@@ -52,7 +52,7 @@ namespace Abc.Zebus.Directory
             return GetDurationsAndReset(_subscriptionUpdateForTypesDurations);
         }
 
-        private IList<TimeSpan> GetDurationsAndReset(ConcurrentStack<TimeSpan> durations)
+        private static IList<TimeSpan> GetDurationsAndReset(ConcurrentStack<TimeSpan> durations)
         {
             var poppedItems = new TimeSpan[Math.Max(durations.Count, 10)];
             var poppedItemsCount = durations.TryPopRange(poppedItems, 0, poppedItems.Length);

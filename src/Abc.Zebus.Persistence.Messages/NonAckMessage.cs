@@ -7,9 +7,12 @@ namespace Abc.Zebus.Persistence.Messages
     {
         [ProtoMember(1, IsRequired = true)] public readonly string InstanceName;
         [ProtoMember(2, IsRequired = true)] public readonly int Count;
-        
-        private NonAckMessage() { }
-        
+
+        private NonAckMessage()
+        {
+            InstanceName = default!;
+        }
+
         public NonAckMessage(string instanceName, int count)
         {
             InstanceName = instanceName;

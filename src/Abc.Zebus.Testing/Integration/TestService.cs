@@ -9,20 +9,20 @@ namespace Abc.Zebus.Testing.Integration
 {
     public class TestService : IDisposable
     {
-        private Process _process;
+        private Process? _process;
         private TextWriter _outputWriter = Console.Out;
         private TextWriter _errorWriter = Console.Error;
         private string _serviceName;
         private readonly string _configurationFile;
         private readonly string _buildFile;
-        private Mutex _stopMutex;
+        private Mutex? _stopMutex;
         private bool _isMutexReleased;
         private string _buildDirectory;
         const string _hostFileName = "Abc.Zebus.Host.exe";
         private const string _tempFolder = @"C:\Dev\integration_tests";
 
         public bool RedirectOutput { get; set; }
-        
+
         public TestService(string serviceName, string configurationFile, string buildFile)
         {
             if (!System.IO.Directory.Exists(_tempFolder))
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Testing.Integration
 
             if(!File.Exists(configurationFile))
                 throw new ArgumentException("Unknown configuration file: " + configurationFile + ". Make sure that \"Copy to output directory\" is set.");
-            
+
             if(!File.Exists(buildFile))
                 throw new ArgumentException("Unknown build file: " + buildFile);
         }
@@ -58,7 +58,7 @@ namespace Abc.Zebus.Testing.Integration
                     WorkingDirectory = Path.GetDirectoryName(_buildFile),
                 }
             };
-            
+
             process.ErrorDataReceived += (sender, args) => LogError(args.Data);
             process.OutputDataReceived += (sender, args) => LogInfo(args.Data);
 
@@ -123,7 +123,7 @@ namespace Abc.Zebus.Testing.Integration
             LogInfo("Closing service");
             ReleaseMutex();
 
-            if (!_process.WaitForExit((int)timeout.TotalMilliseconds))
+            if (_process != null && !_process.WaitForExit((int)timeout.TotalMilliseconds))
                 Assert.Fail(_serviceName + " did not exit properly");
         }
 
@@ -145,6 +145,9 @@ namespace Abc.Zebus.Testing.Integration
 
         public void Kill()
         {
+            if (_process is null)
+                return;
+
             LogInfo("Killing service");
             _process.Kill();
         }

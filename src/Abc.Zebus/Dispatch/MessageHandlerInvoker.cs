@@ -15,10 +15,10 @@ namespace Abc.Zebus.Dispatch
     {
         private readonly Instance _instance;
         private bool? _isSingleton;
-        private IBus _bus;
+        private IBus? _bus;
 
         [ThreadStatic]
-        private static MessageContextAwareBus _dispatchBus;
+        private static MessageContextAwareBus? _dispatchBus;
 
         protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null)
         {
@@ -70,7 +70,7 @@ namespace Abc.Zebus.Dispatch
 
         internal static SubscriptionMode? GetExplicitSubscriptionMode(Type handlerType)
         {
-            var subscriptionModeAttribute = (SubscriptionModeAttribute)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
+            var subscriptionModeAttribute = (SubscriptionModeAttribute?)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
             if (subscriptionModeAttribute != null)
                 return subscriptionModeAttribute.SubscriptionMode;
 
@@ -86,7 +86,7 @@ namespace Abc.Zebus.Dispatch
             if (IsHandlerSingleton(container))
                 return container.GetInstance(MessageHandlerType);
 
-            _bus = _bus ?? container.GetInstance<IBus>();
+            _bus ??= container.GetInstance<IBus>();
             if (_bus == null)
                 return container.GetInstance(MessageHandlerType);
 
@@ -114,8 +114,8 @@ namespace Abc.Zebus.Dispatch
         private static Instance CreateConstructorInstance(Type messageHandlerType)
         {
             var inst = new ConstructorInstance(messageHandlerType);
-            inst.Dependencies.Add<IBus>(new LambdaInstance<IBus>("Dispatch IBus", () => _dispatchBus));
-            inst.Dependencies.Add<MessageContext>(new LambdaInstance<MessageContext>("Dispatch MessageContext", () => _dispatchBus.MessageContext));
+            inst.Dependencies.Add<IBus>(new LambdaInstance<IBus>("Dispatch IBus", () => _dispatchBus!));
+            inst.Dependencies.Add<MessageContext>(new LambdaInstance<MessageContext>("Dispatch MessageContext", () => _dispatchBus!.MessageContext));
             return inst;
         }
 

@@ -19,7 +19,7 @@ namespace Abc.Zebus.Persistence.Handlers
             _configuration = configuration;
         }
 
-        public MessageContext Context { get; set; }
+        public MessageContext Context { get; set; } = default!;
 
         public void Handle(MessageHandled message)
         {

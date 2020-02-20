@@ -9,7 +9,7 @@ namespace Abc.Zebus.Testing.Dispatch
         where TMessage : class, IEvent
     {
         public TestBatchedMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true)
-            : base(null, typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
+            : base(null!, typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
         {
         }
 

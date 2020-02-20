@@ -9,10 +9,10 @@ namespace Abc.Zebus
         private static readonly ConcurrentDictionary<string, MessageTypeDescriptor> _descriptorsByFullName = new ConcurrentDictionary<string, MessageTypeDescriptor>();
         private static readonly ConcurrentDictionary<Type, MessageTypeDescriptor> _descriptorsByType = new ConcurrentDictionary<Type, MessageTypeDescriptor>();
 
-        private static readonly Func<string, MessageTypeDescriptor> _loadDescriptorFromName = LoadMessageTypeDescriptor;
-        private static readonly Func<Type, MessageTypeDescriptor> _loadDescriptorFromType = LoadMessageTypeDescriptor;
+        private static readonly Func<string?, MessageTypeDescriptor> _loadDescriptorFromName = LoadMessageTypeDescriptor;
+        private static readonly Func<Type?, MessageTypeDescriptor> _loadDescriptorFromType = LoadMessageTypeDescriptor;
 
-        internal static MessageTypeDescriptor GetMessageTypeDescriptor(string fullName)
+        internal static MessageTypeDescriptor GetMessageTypeDescriptor(string? fullName)
         {
             if (fullName == null)
                 return MessageTypeDescriptor.Null;
@@ -20,12 +20,12 @@ namespace Abc.Zebus
             return _descriptorsByFullName.GetOrAdd(fullName, _loadDescriptorFromName);
         }
 
-        private static MessageTypeDescriptor LoadMessageTypeDescriptor(string fullName)
+        private static MessageTypeDescriptor LoadMessageTypeDescriptor(string? fullName)
         {
             return MessageTypeDescriptor.Load(fullName);
         }
 
-        internal static MessageTypeDescriptor GetMessageTypeDescriptor(Type messageType)
+        internal static MessageTypeDescriptor GetMessageTypeDescriptor(Type? messageType)
         {
             if (messageType == null)
                 return MessageTypeDescriptor.Null;
@@ -33,8 +33,11 @@ namespace Abc.Zebus
             return _descriptorsByType.GetOrAdd(messageType, _loadDescriptorFromType);
         }
 
-        private static MessageTypeDescriptor LoadMessageTypeDescriptor(Type messageType)
+        private static MessageTypeDescriptor LoadMessageTypeDescriptor(Type? messageType)
         {
+            if (messageType == null)
+                return MessageTypeDescriptor.Null;
+
             var fullName = TypeUtil.GetFullnameWithNoAssemblyOrVersion(messageType);
             return GetMessageTypeDescriptor(fullName);
         }

@@ -11,34 +11,34 @@ namespace Abc.Zebus
         internal static readonly string CurrentUserName = Environment.UserName;
 
         [ThreadStatic]
-        private static MessageContext _current;
+        private static MessageContext? _current;
 
         [ThreadStatic]
-        private static string _outboundInitiatorOverride;
+        private static string? _outboundInitiatorOverride;
 
         public virtual int ReplyCode { get; internal set; }
-        public virtual string ReplyMessage { get; internal set; }
-        public virtual IMessage ReplyResponse { get; internal set; }
+        public virtual string? ReplyMessage { get; internal set; }
+        public virtual IMessage? ReplyResponse { get; internal set; }
         public virtual MessageId MessageId { get; private set; }
-        public virtual OriginatorInfo Originator { get; private set; }
+        public virtual OriginatorInfo Originator { get; private set; } = default!;
 
         public PeerId SenderId => Originator.SenderId;
         public string SenderEndPoint => Originator.SenderEndPoint;
-        public string InitiatorUserName => Originator.InitiatorUserName;
+        public string? InitiatorUserName => Originator.InitiatorUserName;
 
         public Peer GetSender()
         {
             return new Peer(SenderId, SenderEndPoint);
         }
 
-        public static MessageContext Current => _current;
+        public static MessageContext? Current => _current;
 
         public static IDisposable SetCurrent(MessageContext context)
             => new MessageContextScope(context);
 
         public static IDisposable OverrideInitiatorUsername(string username)
         {
-            string currentInitiatorUsername = null,
+            string? currentInitiatorUsername = null,
                 previousOverride = _outboundInitiatorOverride;
 
             var current = Current;
@@ -95,7 +95,7 @@ namespace Abc.Zebus
             };
         }
 
-        internal static string GetInitiatorUserName()
+        internal static string? GetInitiatorUserName()
         {
             var current = Current;
             return current != null ? current.Originator.InitiatorUserName : (_outboundInitiatorOverride ?? CurrentUserName);
@@ -111,7 +111,7 @@ namespace Abc.Zebus
 
         private class MessageContextScope : IDisposable
         {
-            private readonly MessageContext _previous;
+            private readonly MessageContext? _previous;
             private int _disposed;
 
             public MessageContextScope(MessageContext context)

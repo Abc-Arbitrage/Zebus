@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 
 namespace Abc.Zebus
 {
     public class SubscriptionRequestBatch
     {
-        private readonly TaskCompletionSource<object> _submitCompletionSource = new TaskCompletionSource<object>();
-        private readonly TaskCompletionSource<object> _registerCompletionSource = new TaskCompletionSource<object>();
+        private readonly TaskCompletionSource<object?> _submitCompletionSource = new TaskCompletionSource<object?>();
+        private readonly TaskCompletionSource<object?> _registerCompletionSource = new TaskCompletionSource<object?>();
         private readonly List<SubscriptionRequest> _requests = new List<SubscriptionRequest>();
         private bool _isConsumed;
 
@@ -41,7 +40,7 @@ namespace Abc.Zebus
         internal Task WhenSubmittedAsync()
             => _submitCompletionSource.Task;
 
-        internal void NotifyRegistrationCompleted(Exception exception)
+        internal void NotifyRegistrationCompleted(Exception? exception)
         {
             if (exception != null)
                 _registerCompletionSource.SetException(exception);
@@ -60,8 +59,7 @@ namespace Abc.Zebus
             await _registerCompletionSource.Task.ConfigureAwait(false);
         }
 
-        [CanBeNull]
-        internal IEnumerable<Subscription> TryConsumeBatchSubscriptions()
+        internal IEnumerable<Subscription>? TryConsumeBatchSubscriptions()
         {
             lock (_requests)
             {

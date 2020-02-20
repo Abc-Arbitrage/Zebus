@@ -11,7 +11,7 @@ namespace Abc.Zebus.Directory
         public readonly PeerId PeerId;
 
         [ProtoMember(2, IsRequired = false)]
-        public readonly string PeerEndPoint;
+        public readonly string? PeerEndPoint;
 
         [ProtoMember(3, IsRequired = false)]
         public readonly DateTime? TimestampUtc;
@@ -21,7 +21,7 @@ namespace Abc.Zebus.Directory
         {
         }
 
-        public UnregisterPeerCommand(PeerId peerId, string peerEndPoint, DateTime? timestampUtc = null)
+        public UnregisterPeerCommand(PeerId peerId, string? peerEndPoint, DateTime? timestampUtc = null)
         {
             PeerId = peerId;
             PeerEndPoint = peerEndPoint;

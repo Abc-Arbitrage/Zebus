@@ -26,7 +26,8 @@ namespace Abc.Zebus.Util.Extensions
         ///<param name="inherit"><see cref="MemberInfo.GetCustomAttributes(Type,bool)"/></param>
         /// <returns><em>Null</em> if the attribute is not found</returns>
         /// <exception cref="InvalidOperationException">If there are 2 or more attributes</exception>
-        public static T GetAttribute<T>(this ICustomAttributeProvider target, bool inherit) where T : Attribute
+        public static T? GetAttribute<T>(this ICustomAttributeProvider target, bool inherit)
+            where T : Attribute
         {
             if (target.IsDefined(typeof (T), inherit))
             {
@@ -37,6 +38,7 @@ namespace Abc.Zebus.Util.Extensions
                 }
                 return (T) attributes[0];
             }
+
             return null;
         }
 

@@ -28,10 +28,10 @@ namespace Abc.Zebus.Persistence
         private readonly IPeerDirectory _peerDirectory;
         private readonly IMessageSendingStrategy _messageSendingStrategy;
         private readonly bool _isPersistent;
-        private BlockingCollection<TransportMessage> _pendingReceives;
+        private BlockingCollection<TransportMessage> _pendingReceives = new BlockingCollection<TransportMessage>();
         private bool _isRunning;
-        private Phase _phase;
-        private Thread _receptionThread;
+        private Phase _phase = default!;
+        private Thread? _receptionThread;
         private Guid? _currentReplayId;
         private volatile bool _persistenceIsDown;
 
@@ -48,7 +48,7 @@ namespace Abc.Zebus.Persistence
             _innerTransport.MessageReceived += OnTransportMessageReceived;
         }
 
-        public event Action<TransportMessage> MessageReceived;
+        public event Action<TransportMessage>? MessageReceived;
 
         public PeerId PeerId => _innerTransport.PeerId;
 
@@ -92,8 +92,7 @@ namespace Abc.Zebus.Persistence
 
             _logger.InfoFormat("Sending {0} enqueued messages to the persistence", _messagesWaitingForPersistence.Count);
 
-            TransportMessage messageToSend;
-            while (_messagesWaitingForPersistence.TryTake(out messageToSend))
+            while (_messagesWaitingForPersistence.TryTake(out var messageToSend))
             {
                 _innerTransport.Send(messageToSend, persistencePeers, new SendContext());
             }
@@ -132,7 +131,8 @@ namespace Abc.Zebus.Persistence
 
         public void Start()
         {
-            _pendingReceives = new BlockingCollection<TransportMessage>();
+            if (_pendingReceives.IsAddingCompleted)
+                _pendingReceives = new BlockingCollection<TransportMessage>();
 
             _phase.OnStart();
 
@@ -242,7 +242,7 @@ namespace Abc.Zebus.Persistence
         {
             if (_replayMessageTypeIds.Contains(transportMessage.MessageTypeId))
             {
-                var replayEvent = (IReplayEvent)_serializer.ToMessage(transportMessage);
+                var replayEvent = (IReplayEvent)_serializer.ToMessage(transportMessage)!;
                 if (replayEvent.ReplayId == _currentReplayId)
                     _phase.OnReplayEvent(replayEvent);
 

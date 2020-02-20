@@ -14,7 +14,7 @@ namespace Abc.Zebus.Transport
         private readonly ZmqContext _context;
         private readonly ZmqSocketOptions _options;
         private readonly IZmqOutboundSocketErrorHandler _errorHandler;
-        private ZmqSocket _socket;
+        private ZmqSocket? _socket;
         private int _failedSendCount;
         private bool _isInClosedState;
         private TimeSpan _closedStateDuration;
@@ -48,7 +48,7 @@ namespace Abc.Zebus.Transport
             }
             catch (Exception ex)
             {
-                _socket.Dispose();
+                _socket?.Dispose();
                 _socket = null;
                 IsConnected = false;
 
@@ -96,8 +96,8 @@ namespace Abc.Zebus.Transport
 
             try
             {
-                _socket.SetOption(ZmqSocketOption.LINGER, 0);
-                _socket.Dispose();
+                _socket!.SetOption(ZmqSocketOption.LINGER, 0);
+                _socket!.Dispose();
 
                 _logger.InfoFormat("Socket disconnected, Peer: {0}", PeerId);
             }
@@ -115,7 +115,7 @@ namespace Abc.Zebus.Transport
             if (!CanSendOrConnect(message))
                 return;
 
-            if (_socket.TrySend(buffer, 0, length, out var error))
+            if (_socket!.TrySend(buffer, 0, length, out var error))
             {
                 _failedSendCount = 0;
                 return;

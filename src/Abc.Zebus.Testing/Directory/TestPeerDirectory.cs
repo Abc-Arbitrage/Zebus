@@ -12,9 +12,9 @@ namespace Abc.Zebus.Testing.Directory
     public class TestPeerDirectory : IPeerDirectory
     {
         public readonly ConcurrentDictionary<PeerId, PeerDescriptor> Peers = new ConcurrentDictionary<PeerId, PeerDescriptor>();
-        public Peer Self;
+        public Peer Self = default!;
         private readonly Peer _remote = new Peer(new PeerId("remote"), "endpoint");
-        private HashSet<Type> _typesToObserve;
+        private HashSet<Type> _typesToObserve = new HashSet<Type>();
 
         public event Action Registered = delegate { };
         public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
@@ -80,7 +80,7 @@ namespace Abc.Zebus.Testing.Directory
             _typesToObserve = new HashSet<Type>(types);
         }
 
-        public PeerDescriptor GetPeerDescriptor(PeerId peerId)
+        public PeerDescriptor? GetPeerDescriptor(PeerId peerId)
         {
             return Peers.TryGetValue(peerId, out var peer)
                 ? peer

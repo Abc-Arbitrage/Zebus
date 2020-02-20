@@ -8,19 +8,21 @@ namespace Abc.Zebus.Serialization
     {
         public static TransportMessage ToTransportMessage(this IMessageSerializer serializer, IMessage message, PeerId peerId, string peerEndPoint)
         {
-            var persistMessageCommand = message as PersistMessageCommand;
-            if (persistMessageCommand != null)
+            if (message is PersistMessageCommand persistMessageCommand)
                 return ToTransportMessage(persistMessageCommand);
 
             return new TransportMessage(message.TypeId(), serializer.Serialize(message), peerId, peerEndPoint);
         }
 
-        public static IMessage ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage)
+        public static IMessage? ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage)
         {
+            if (transportMessage.Content is null)
+                return null;
+
             return ToMessage(serializer, transportMessage, transportMessage.MessageTypeId, transportMessage.Content);
         }
 
-        public static IMessage ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage, MessageTypeId messageTypeId, Stream content)
+        public static IMessage? ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage, MessageTypeId messageTypeId, Stream content)
         {
             if (transportMessage.IsPersistTransportMessage)
                 return ToPersistMessageCommand(transportMessage);
@@ -32,6 +34,6 @@ namespace Abc.Zebus.Serialization
             => persistMessageCommand.TransportMessage.ToPersistTransportMessage(persistMessageCommand.Targets);
 
         private static IMessage ToPersistMessageCommand(TransportMessage transportMessage)
-            => new PersistMessageCommand(transportMessage.UnpackPersistTransportMessage(), transportMessage.PersistentPeerIds);
+            => new PersistMessageCommand(transportMessage.UnpackPersistTransportMessage(), transportMessage.PersistentPeerIds!);
     }
 }

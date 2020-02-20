@@ -30,17 +30,20 @@ namespace Abc.Zebus.Directory
         private readonly IBusConfiguration _configuration;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
-        private IEnumerable<Peer> _directoryPeers;
-        private Peer _self;
+        private IEnumerable<Peer> _directoryPeers = Enumerable.Empty<Peer>();
+        private Peer _self = default!;
         private volatile HashSet<Type> _observedSubscriptionMessageTypes = new HashSet<Type>();
 
         public PeerDirectoryClient(IBusConfiguration configuration)
         {
             _configuration = configuration;
+
+            _messagesReceivedDuringRegister = new BlockingCollection<IEvent>();
+            _messagesReceivedDuringRegister.CompleteAdding();
         }
 
-        public event Action<PeerId, PeerUpdateAction> PeerUpdated;
-        public event Action<PeerId, IReadOnlyList<Subscription>> PeerSubscriptionsUpdated;
+        public event Action<PeerId, PeerUpdateAction>? PeerUpdated;
+        public event Action<PeerId, IReadOnlyList<Subscription>>? PeerSubscriptionsUpdated;
 
         public TimeSpan TimeSinceLastPing => _pingStopwatch.IsRunning ? _pingStopwatch.Elapsed : TimeSpan.MaxValue;
 
@@ -150,7 +153,7 @@ namespace Abc.Zebus.Directory
             {
                 var registration = await bus.Send(new RegisterPeerCommand(self), directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
 
-                var response = (RegisterPeerResponse)registration.Response;
+                var response = (RegisterPeerResponse?)registration.Response;
                 if (response?.PeerDescriptors == null)
                     return false;
 
@@ -240,7 +243,7 @@ namespace Abc.Zebus.Directory
             _observedSubscriptionMessageTypes = types.ToHashSet();
         }
 
-        public PeerDescriptor GetPeerDescriptor(PeerId peerId)
+        public PeerDescriptor? GetPeerDescriptor(PeerId peerId)
             => _peers.GetValueOrDefault(peerId)?.ToPeerDescriptor();
 
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()
@@ -297,9 +300,6 @@ namespace Abc.Zebus.Directory
 
         private bool EnqueueIfRegistering(IEvent message)
         {
-            if (_messagesReceivedDuringRegister == null)
-                return false;
-
             if (_messagesReceivedDuringRegister.IsAddingCompleted)
                 return false;
 
@@ -383,7 +383,11 @@ namespace Abc.Zebus.Directory
             if (observedSubscriptionMessageTypes.Count == 0)
                 return Array.Empty<Subscription>();
 
-            return subscriptions.Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
+            return subscriptions.Where(x =>
+                                {
+                                    var messageType = x.MessageTypeId.GetMessageType();
+                                    return messageType != null && observedSubscriptionMessageTypes.Contains(messageType);
+                                })
                                 .ToList();
         }
 
@@ -417,7 +421,11 @@ namespace Abc.Zebus.Directory
                 if (observedSubscriptionMessageTypes.Count == 0)
                     return Array.Empty<Subscription>();
 
-                return subscriptionsForTypes.Where(x => observedSubscriptionMessageTypes.Contains(x.MessageTypeId.GetMessageType()))
+                return subscriptionsForTypes.Where(x =>
+                                            {
+                                                var messageType = x.MessageTypeId.GetMessageType();
+                                                return messageType != null && observedSubscriptionMessageTypes.Contains(messageType);
+                                            })
                                             .SelectMany(x => x.ToSubscriptions())
                                             .ToList();
             }

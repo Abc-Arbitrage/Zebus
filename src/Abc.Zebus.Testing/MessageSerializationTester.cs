@@ -6,16 +6,16 @@ using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util.Extensions;
-using NUnit.Framework;
 using AutoFixture;
 using AutoFixture.Kernel;
+using NUnit.Framework;
 
 namespace Abc.Zebus.Testing
 {
     public static class MessageSerializationTester
     {
-        private static readonly MethodInfo _createMethod = typeof(SpecimenFactory).GetMethod("Create", new[] { typeof(ISpecimenBuilder) });
-        private static readonly MethodInfo _injectMethod = typeof(FixtureRegistrar).GetMethod("Inject");
+        private static readonly MethodInfo _createMethod = typeof(SpecimenFactory).GetMethod(nameof(SpecimenFactory.Create), new[] { typeof(ISpecimenBuilder) })!;
+        private static readonly MethodInfo _injectMethod = typeof(FixtureRegistrar).GetMethod(nameof(FixtureRegistrar.Inject))!;
 
         public static void CheckSerializationForTypesInSameAssemblyAs<T>(params object[] prebuiltObjects)
         {
@@ -44,6 +44,7 @@ namespace Abc.Zebus.Testing
         }
 
         public static void CheckSerializationFor<T>(T obj)
+            where T : notnull
         {
             var fixture = BuildFixture();
 
@@ -69,14 +70,14 @@ namespace Abc.Zebus.Testing
             method.Invoke(null, new[] { fixture, obj });
         }
 
-        private static void CheckSerializationForType(Fixture fixture, Type messageType, object message = null)
+        private static void CheckSerializationForType(Fixture fixture, Type messageType, object? message = null)
         {
             Console.Write("Testing {0} ", messageType.Name);
 
             if (message == null)
             {
                 var genericMethod = _createMethod.MakeGenericMethod(messageType);
-                message = genericMethod.Invoke(null, new object[] { fixture });
+                message = genericMethod.Invoke(null, new object[] { fixture })!;
             }
 
             Console.WriteLine("{{{0}}}", message);

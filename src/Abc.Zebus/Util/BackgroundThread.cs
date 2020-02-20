@@ -8,7 +8,7 @@ namespace Abc.Zebus.Util
     {
         private static readonly ILog _logger = LogManager.GetLogger(typeof(BackgroundThread));
 
-        public static Thread Start(ThreadStart startAction, Action abortAction = null)
+        public static Thread Start(ThreadStart startAction, Action? abortAction = null)
         {
             var thread = new Thread(Wrapper(startAction, abortAction))
             {
@@ -19,7 +19,7 @@ namespace Abc.Zebus.Util
             return thread;
         }
 
-        public static Thread Start<T>(Action<T> startAction, T state, Action abortAction = null)
+        public static Thread Start<T>(Action<T> startAction, T state, Action? abortAction = null)
         {
             var thread = new Thread(Wrapper(startAction, abortAction))
             {
@@ -42,13 +42,13 @@ namespace Abc.Zebus.Util
             }
         }
 
-        private static ParameterizedThreadStart Wrapper<T>(Action<T> action, Action abortAction)
+        private static ParameterizedThreadStart Wrapper<T>(Action<T> action, Action? abortAction)
         {
             return s =>
             {
                 try
                 {
-                    action((T)s);
+                    action((T)s!);
                 }
                 catch (ThreadAbortException ex)
                 {
@@ -64,7 +64,7 @@ namespace Abc.Zebus.Util
             };
         }
 
-        private static ThreadStart Wrapper(ThreadStart action, Action abortAction)
+        private static ThreadStart Wrapper(ThreadStart action, Action? abortAction)
         {
             return () =>
             {

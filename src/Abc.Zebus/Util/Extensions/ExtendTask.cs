@@ -7,7 +7,7 @@ namespace Abc.Zebus.Util.Extensions
 {
     internal static class ExtendTask
     {
-        public static async Task WithTimeoutAsync(this Task task, TimeSpan timeout, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task WithTimeoutAsync(this Task task, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (task.Status == TaskStatus.RanToCompletion)
                 return;
@@ -22,7 +22,7 @@ namespace Abc.Zebus.Util.Extensions
             await task.ConfigureAwait(false);
         }
 
-        public static async Task<T> WithTimeoutAsync<T>(this Task<T> task, TimeSpan timeout, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<T> WithTimeoutAsync<T>(this Task<T> task, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (task.Status == TaskStatus.RanToCompletion)
                 return task.Result;
@@ -45,7 +45,9 @@ namespace Abc.Zebus.Util.Extensions
             }
             catch (AggregateException ex)
             {
-                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                if (ex.InnerException != null)
+                    ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+
                 throw;
             }
         }

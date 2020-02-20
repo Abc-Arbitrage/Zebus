@@ -24,9 +24,9 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             _taskScheduler = taskScheduler;
         }
 
-        public event Action<DeadPeerDetectorEntry, DateTime> PeerTimeoutDetected;
-        public event Action<DeadPeerDetectorEntry, DateTime> PeerRespondingDetected;
-        public event Action<DeadPeerDetectorEntry, DateTime> PingTimeout;
+        public event Action<DeadPeerDetectorEntry, DateTime>? PeerTimeoutDetected;
+        public event Action<DeadPeerDetectorEntry, DateTime>? PeerRespondingDetected;
+        public event Action<DeadPeerDetectorEntry, DateTime>? PingTimeout;
 
         public PeerDescriptor Descriptor { get; set; }
         public DeadPeerStatus Status { get; private set; }
@@ -132,7 +132,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             _bus.Send(new PingPeerCommand(), Descriptor.Peer).ContinueWith(OnPingCommandAck, timestampUtc, _taskScheduler);
         }
 
-        public void OnPingCommandAck(Task<CommandResult> pingTask, object state)
+        public void OnPingCommandAck(Task<CommandResult> pingTask, object? state)
         {
             if (pingTask.IsFaulted)
             {
@@ -146,7 +146,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 return;
             }
 
-            var pingTimestampUtc = (DateTime)state;
+            var pingTimestampUtc = (DateTime)state!;
             var peerRespondingDetected = false;
 
             lock (_lock)

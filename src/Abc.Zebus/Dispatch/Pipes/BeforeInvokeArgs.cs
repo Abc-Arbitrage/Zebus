@@ -17,7 +17,7 @@
 
         public readonly PipeInvocation Invocation;
 
-        public object State
+        public object? State
         {
             get => _stateRef.Value;
             set => _stateRef.Value = value;
@@ -25,7 +25,7 @@
 
         public class StateRef
         {
-            public object Value;
+            public object? Value;
         }
     }
 }

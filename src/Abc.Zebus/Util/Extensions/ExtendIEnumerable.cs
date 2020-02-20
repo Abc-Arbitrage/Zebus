@@ -7,7 +7,6 @@ namespace Abc.Zebus.Util.Extensions
 {
     internal static class ExtendIEnumerable
     {
-#if !NETFWK
         [Pure]
         public static HashSet<T> ToHashSet<T>([InstantHandle] this IEnumerable<T> collection)
         {
@@ -19,10 +18,9 @@ namespace Abc.Zebus.Util.Extensions
         {
             return new HashSet<T>(collection, comparer);
         }
-#endif
 
         [Pure]
-        public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T> collection)
+        public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T>? collection)
             => collection ?? Enumerable.Empty<T>();
 
         [Pure]

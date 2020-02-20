@@ -54,7 +54,7 @@ namespace Abc.Zebus.Persistence.Runner
                 var inMemoryMessageMatcherInitializer = busFactory.Container.GetInstance<InMemoryMessageMatcherInitializer>();
                 inMemoryMessageMatcherInitializer.BeforeStart();
 
-                OldestNonAckedMessageUpdaterPeriodicAction oldestNonAckedMessageUpdaterPeriodicAction = null;
+                OldestNonAckedMessageUpdaterPeriodicAction? oldestNonAckedMessageUpdaterPeriodicAction = null;
                 if (useCassandraStorage)
                 {
                     oldestNonAckedMessageUpdaterPeriodicAction = busFactory.Container.GetInstance<OldestNonAckedMessageUpdaterPeriodicAction>();
@@ -79,7 +79,7 @@ namespace Abc.Zebus.Persistence.Runner
 
         private static string InBaseDirectory(string path)
         {
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, path);
         }
 
         private static void InjectPersistenceServiceSpecificConfiguration(BusFactory busFactory, AppSettingsConfiguration configuration, bool useCassandraStorage)

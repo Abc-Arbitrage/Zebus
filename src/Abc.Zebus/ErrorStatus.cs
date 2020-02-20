@@ -1,5 +1,3 @@
-using JetBrains.Annotations;
-
 namespace Abc.Zebus
 {
     internal class ErrorStatus
@@ -8,11 +6,9 @@ namespace Abc.Zebus
         public static readonly ErrorStatus UnknownError = new ErrorStatus(1, null);
 
         public int Code { get; }
+        public string? Message { get; }
 
-        [CanBeNull]
-        public string Message { get; }
-
-        public ErrorStatus(int code, string message)
+        public ErrorStatus(int code, string? message)
         {
             Code = code;
             Message = message;

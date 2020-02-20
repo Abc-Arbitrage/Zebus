@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Abc.Zebus.Dispatch;
@@ -9,6 +10,7 @@ using ProtoBuf;
 namespace Abc.Zebus.Core
 {
     [ProtoContract, Transient, Infrastructure]
+    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
     public class MessageExecutionCompleted : IMessage
     {
         public static readonly MessageTypeId TypeId = new MessageTypeId(typeof(MessageExecutionCompleted));
@@ -23,10 +25,10 @@ namespace Abc.Zebus.Core
         public MessageTypeId? PayloadTypeId { get; private set; }
 
         [ProtoMember(4, IsRequired = false)]
-        public byte[] Payload { get; private set; }
+        public byte[]? Payload { get; private set; }
 
         [ProtoMember(5, IsRequired = false)]
-        public string ResponseMessage { get; private set; } = string.Empty;
+        public string? ResponseMessage { get; private set; } = string.Empty;
 
         [Obsolete("Use the constructor with the responseMessage parameter")]
         public MessageExecutionCompleted(MessageId sourceCommandId, int errorCode)
@@ -34,14 +36,14 @@ namespace Abc.Zebus.Core
         {
         }
 
-        public MessageExecutionCompleted(MessageId sourceCommandId, int errorCode, string responseMessage)
+        public MessageExecutionCompleted(MessageId sourceCommandId, int errorCode, string? responseMessage)
         {
             SourceCommandId = sourceCommandId;
             ErrorCode = errorCode;
             ResponseMessage = responseMessage ?? string.Empty;
         }
 
-        public MessageExecutionCompleted(MessageId sourceCommandId, MessageTypeId payloadTypeId, byte[] payload)
+        public MessageExecutionCompleted(MessageId sourceCommandId, MessageTypeId payloadTypeId, byte[]? payload)
         {
             SourceCommandId = sourceCommandId;
             ErrorCode = 0;

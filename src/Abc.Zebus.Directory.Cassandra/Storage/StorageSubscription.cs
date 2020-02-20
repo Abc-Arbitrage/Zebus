@@ -10,13 +10,13 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         [ClusteringKey(0)]
         [Column("PeerId")]
-        public string PeerId { get; set; }
+        public string PeerId { get; set; } = default!;
 
         [ClusteringKey(1)]
         [Column("MessageTypeId")]
-        public string MessageTypeId { get; set; }
+        public string MessageTypeId { get; set; } = default!;
 
         [Column("SubscriptionBindings")]
-        public byte[] SubscriptionBindings { get; set; }
+        public byte[] SubscriptionBindings { get; set; } = default!;
     }
 }

@@ -9,7 +9,7 @@ namespace Abc.Zebus.Persistence
         IMessageReplayer CreateMessageReplayer(Peer peer, Guid replayId);
         void DeactivateMessageReplayers();
 
-        IMessageReplayer GetActiveMessageReplayer(PeerId peerId);
+        IMessageReplayer? GetActiveMessageReplayer(PeerId peerId);
         void SetActiveMessageReplayer(PeerId peerId, IMessageReplayer messageReplayer);
     }
 }

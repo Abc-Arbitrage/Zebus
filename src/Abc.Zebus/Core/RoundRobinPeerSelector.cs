@@ -8,7 +8,7 @@ namespace Abc.Zebus.Core
     {
         private readonly ConcurrentDictionary<Type, int> _peerIndexes = new ConcurrentDictionary<Type, int>();
 
-        public Peer GetTargetPeer(ICommand command, IList<Peer> handlingPeers)
+        public Peer? GetTargetPeer(ICommand command, IList<Peer> handlingPeers)
         {
             if (handlingPeers.Count == 1)
                 return handlingPeers[0];
@@ -18,8 +18,7 @@ namespace Abc.Zebus.Core
 
             var commandType = command.GetType();
 
-            int index;
-            if (!_peerIndexes.TryGetValue(commandType, out index))
+            if (!_peerIndexes.TryGetValue(commandType, out var index))
                 index = 0;
 
             if (index >= handlingPeers.Count)

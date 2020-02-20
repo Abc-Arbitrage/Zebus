@@ -122,7 +122,7 @@ namespace Abc.Zebus.Testing.Measurements
             public int G1Count;
             public int G2Count;
             public long MaxIterationIndex;
-            public List<long> Ticks;
+            public List<long> Ticks = default!;
         }
 
         public static IDisposable Throughput(int count)

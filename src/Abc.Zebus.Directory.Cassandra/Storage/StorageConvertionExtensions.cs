@@ -30,7 +30,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             return new StorageSubscription
             {
                 PeerId = peerId.ToString(),
-                MessageTypeId = subscriptionFortype.MessageTypeId.FullName,
+                MessageTypeId = subscriptionFortype.MessageTypeId.FullName!,
                 SubscriptionBindings = SerializeBindingKeys(subscriptionFortype.BindingKeys)
             };
         }
@@ -40,24 +40,35 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             return new SubscriptionsForType(new MessageTypeId(storageSubscription.MessageTypeId), DeserializeBindingKeys(storageSubscription.SubscriptionBindings));
         }
 
-        public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
+        public static PeerDescriptor? ToPeerDescriptor(this StoragePeer? storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
         {
             if (storagePeer?.StaticSubscriptionsBytes == null)
                 return null;
 
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
             var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
-            return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
-                                      storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+            return new PeerDescriptor(new PeerId(storagePeer.PeerId),
+                                      storagePeer.EndPoint,
+                                      storagePeer.IsPersistent,
+                                      storagePeer.IsUp,
+                                      storagePeer.IsResponding,
+                                      new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc),
+                                      allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
-        public static PeerDescriptor ToPeerDescriptor(this StoragePeer storagePeer)
+        public static PeerDescriptor? ToPeerDescriptor(this StoragePeer? storagePeer)
         {
             if (storagePeer == null)
                 return null;
+
             var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
-            return new PeerDescriptor(new PeerId(storagePeer.PeerId), storagePeer.EndPoint, storagePeer.IsPersistent, storagePeer.IsUp,
-                                      storagePeer.IsResponding, new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc), staticSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+            return new PeerDescriptor(new PeerId(storagePeer.PeerId),
+                                      storagePeer.EndPoint,
+                                      storagePeer.IsPersistent,
+                                      storagePeer.IsUp,
+                                      storagePeer.IsResponding,
+                                      new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc),
+                                      staticSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
         }
 
         private static byte[] SerializeSubscriptions(Subscription[] subscriptions)
@@ -86,8 +97,12 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                     binaryWriter.Write(bindingKey.PartCount);
 
                     for (var partIndex = 0; partIndex < bindingKey.PartCount; partIndex++)
-                        binaryWriter.Write(bindingKey.GetPartToken(partIndex));
+                    {
+                        var partToken = bindingKey.GetPartToken(partIndex) ?? "";
+                        binaryWriter.Write(partToken);
+                    }
                 }
+
                 return memoryStream.ToArray();
             }
         }
@@ -109,6 +124,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
                     bindingKeys[keyIndex] = new BindingKey(parts);
                 }
+
                 return bindingKeys;
             }
         }

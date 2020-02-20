@@ -43,6 +43,8 @@ namespace Abc.Zebus.Directory
         [UsedImplicitly]
         private PeerDescriptor()
         {
+            Peer = default!;
+            Subscriptions = Array.Empty<Subscription>();
         }
 
         public PeerId PeerId => Peer.Id;

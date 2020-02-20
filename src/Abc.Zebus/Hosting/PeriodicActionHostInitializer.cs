@@ -12,13 +12,13 @@ namespace Abc.Zebus.Hosting
     {
         protected readonly ILog _logger;
         private readonly IBus _bus;
-        private readonly Func<DateTime> _dueTimeUtcFunc;
-        private Timer _timer;
+        private readonly Func<DateTime>? _dueTimeUtcFunc;
+        private Timer? _timer;
         private int _exceptionCount;
         private DateTime _nextInvocationUtc;
         private DateTime _pauseEndTimeUtc;
 
-        protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime> dueTimeUtcFunc = null)
+        protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime>? dueTimeUtcFunc = null)
         {
             _logger = LogManager.GetLogger(GetType());
             _bus = bus;
@@ -141,7 +141,7 @@ namespace Abc.Zebus.Hosting
         {
             try
             {
-                _bus.Publish(new CustomProcessingFailed(GetType().FullName, error.ToString()));
+                _bus.Publish(new CustomProcessingFailed(GetType().FullName!, error.ToString()));
             }
             catch (Exception ex)
             {

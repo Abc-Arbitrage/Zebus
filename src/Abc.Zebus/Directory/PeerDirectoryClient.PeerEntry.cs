@@ -20,11 +20,11 @@ namespace Abc.Zebus.Directory
                 IsPersistent = descriptor.IsPersistent;
                 TimestampUtc = descriptor.TimestampUtc ?? DateTime.UtcNow;
                 HasDebuggerAttached = descriptor.HasDebuggerAttached;
-                
+
                 _globalSubscriptionsIndex = globalSubscriptionsIndex;
             }
 
-            public Peer Peer { get; private set; }
+            public Peer Peer { get; }
             public bool IsPersistent { get; set; }
             public DateTime TimestampUtc { get; set; }
             public bool HasDebuggerAttached { get; set; }
@@ -76,7 +76,7 @@ namespace Abc.Zebus.Directory
             private void SetSubscriptionsForType(MessageTypeId messageTypeId, IEnumerable<BindingKey> bindingKeys, DateTime? timestampUtc)
             {
                 var newBindingKeys = bindingKeys.ToHashSet();
-                
+
                 var messageTypeEntry = _peerSubscriptionsByMessageType.GetValueOrAdd(messageTypeId, MessageTypeEntry.Create);
                 if (messageTypeEntry.TimestampUtc > timestampUtc)
                     return;

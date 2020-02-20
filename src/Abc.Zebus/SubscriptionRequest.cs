@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus
@@ -13,8 +12,7 @@ namespace Abc.Zebus
 
         public bool ThereIsNoHandlerButIKnowWhatIAmDoing { get; set; }
 
-        [CanBeNull]
-        internal SubscriptionRequestBatch Batch { get; private set; }
+        internal SubscriptionRequestBatch? Batch { get; private set; }
 
         internal bool IsSubmitted { get; private set; }
         internal int? SubmissionSubscriptionsVersion { get; set; }

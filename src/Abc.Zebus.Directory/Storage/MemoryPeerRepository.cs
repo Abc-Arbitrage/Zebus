@@ -50,20 +50,17 @@ namespace Abc.Zebus.Directory.Storage
 
         public bool? IsPersistent(PeerId peerId)
         {
-            PeerEntry peerEntry;
-            return _peers.TryGetValue(peerId, out peerEntry) ? peerEntry.PeerDescriptor.IsPersistent: (bool?)null;
+            return _peers.TryGetValue(peerId, out var peerEntry) ? peerEntry.PeerDescriptor.IsPersistent: (bool?)null;
         }
 
-        public PeerDescriptor Get(PeerId peerId)
+        public PeerDescriptor? Get(PeerId peerId)
         {
-            PeerEntry peerEntry;
-            return _peers.TryGetValue(peerId, out peerEntry) ? peerEntry.GetMergedPeerDescriptor() : null;
+            return _peers.TryGetValue(peerId, out var peerEntry) ? peerEntry.GetMergedPeerDescriptor() : null;
         }
 
         public void RemovePeer(PeerId peerId)
         {
-            PeerEntry unused;
-            _peers.TryRemove(peerId, out unused);
+            _peers.TryRemove(peerId, out _);
         }
 
         public void SetPeerResponding(PeerId peerId, bool isResponding)
@@ -72,11 +69,10 @@ namespace Abc.Zebus.Directory.Storage
             if (peerEntry != null)
                 peerEntry.PeerDescriptor.Peer.IsResponding = isResponding;
         }
-        
-        private PeerEntry GetEntry(PeerId peerId)
+
+        private PeerEntry? GetEntry(PeerId peerId)
         {
-            PeerEntry peerEntry;
-            return _peers.TryGetValue(peerId, out peerEntry) ? peerEntry : null;
+            return _peers.TryGetValue(peerId, out var peerEntry) ? peerEntry : null;
         }
 
         public void AddDynamicSubscriptionsForTypes(PeerId peerId, DateTime timestampUtc, SubscriptionsForType[] subscriptionsForTypes)
@@ -103,9 +99,7 @@ namespace Abc.Zebus.Directory.Storage
         public void RemoveAllDynamicSubscriptionsForPeer(PeerId peerId, DateTime timestampUtc)
         {
             var peerEntry = GetEntry(peerId);
-            if (peerEntry == null)
-                return;
-            peerEntry.DynamicSubscriptions.Clear();
+            peerEntry?.DynamicSubscriptions.Clear();
         }
     }
 }

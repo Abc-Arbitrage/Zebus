@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using JetBrains.Annotations;
 using Abc.Zebus.Util.Extensions;
+using JetBrains.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus.Routing
@@ -15,7 +15,7 @@ namespace Abc.Zebus.Routing
         public static readonly BindingKey Empty = new BindingKey();
 
         [ProtoMember(1, IsRequired = true)]
-        private readonly string[] _parts;
+        private readonly string[]? _parts;
 
         public BindingKey(params string[] parts)
         {
@@ -30,14 +30,14 @@ namespace Abc.Zebus.Routing
         public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
 
         public bool IsSharp(int index)
-            => _parts[index] == BindingKeyPart.SharpToken;
+            => _parts?[index] == BindingKeyPart.SharpToken;
 
         public bool IsStar(int index)
-            => _parts[index] == BindingKeyPart.StarToken;
+            => _parts?[index] == BindingKeyPart.StarToken;
 
         [Pure]
-        public string GetPartToken(int index)
-            => index < PartCount ? _parts[index] : null;
+        public string? GetPartToken(int index)
+            => index < PartCount ? _parts![index] : null;
 
         [Pure]
         public BindingKeyPart GetPart(int index)
@@ -57,7 +57,7 @@ namespace Abc.Zebus.Routing
             return BindingKeyPart.Null;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => obj is BindingKey other && Equals(other);
 
         public bool Equals(BindingKey other)
@@ -106,6 +106,7 @@ namespace Abc.Zebus.Routing
                 return Empty;
 
             var parts = new string[routingMembers.Length];
+
             for (var tokenIndex = 0; tokenIndex < parts.Length; ++tokenIndex)
             {
                 parts[tokenIndex] = routingMembers[tokenIndex].GetValue(message);

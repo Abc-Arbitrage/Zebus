@@ -1,9 +1,9 @@
-﻿using Abc.Zebus.Directory.Storage;
-using Cassandra;
-using Cassandra.Data.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Abc.Zebus.Directory.Storage;
+using Cassandra;
+using Cassandra.Data.Linq;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
 {
@@ -26,7 +26,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                .FirstOrDefault();
         }
 
-        public PeerDescriptor Get(PeerId peerId)
+        public PeerDescriptor? Get(PeerId peerId)
         {
             var peerDynamicSubscriptions = _dataContext.DynamicSubscriptions
                                                        .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
@@ -50,7 +50,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                    .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
                    .Where(peer => peer.UselessKey == false)
                    .Execute()
-                   .Select(peer => peer.ToPeerDescriptor())
+                   .Select(peer => peer.ToPeerDescriptor()!)
                    .ToList();
             }
 
@@ -60,7 +60,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                                          .Execute()
                                                          .SelectMany(sub => sub.ToSubscriptionsForType().ToSubscriptions().Select(s => new { sub.PeerId, Subscription = s }))
                                                          .ToLookup(peerSub => peerSub.PeerId, peerSub=> peerSub.Subscription);
-                                                         
+
 
             return _dataContext.StoragePeers
                                .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
@@ -68,7 +68,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                .Execute()
                                .Select(peer => peer.ToPeerDescriptor(dynamicSubscriptionsByPeer[peer.PeerId]))
                                .Where(descriptor => descriptor != null)
-                               .ToList();
+                               .ToList()!;
         }
 
         public void AddOrUpdatePeer(PeerDescriptor peerDescriptor)
@@ -141,7 +141,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
                                               .SetTimestamp(timestampUtc);
                 batch.Append(deleteQuery);
             }
-            
+
             batch.Execute();
         }
 

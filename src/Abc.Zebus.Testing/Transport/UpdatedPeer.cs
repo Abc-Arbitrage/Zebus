@@ -23,7 +23,7 @@ namespace Abc.Zebus.Testing.Transport
             return PeerId.Equals(other.PeerId) && UpdateAction == other.UpdateAction;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
                 return false;

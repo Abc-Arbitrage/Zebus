@@ -15,7 +15,6 @@ using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
-using JetBrains.Annotations;
 using log4net;
 using Newtonsoft.Json;
 
@@ -38,8 +37,7 @@ namespace Abc.Zebus.Core
         private readonly IStoppingStrategy _stoppingStrategy;
         private readonly IBusConfiguration _configuration;
 
-        [CanBeNull]
-        private Task _processPendingUnsubscriptionsTask;
+        private Task? _processPendingUnsubscriptionsTask;
 
         private int _subscriptionsVersion;
         private int _status;
@@ -65,13 +63,13 @@ namespace Abc.Zebus.Core
             _configuration = configuration;
         }
 
-        public event Action Starting;
-        public event Action Started;
-        public event Action Stopping;
-        public event Action Stopped;
+        public event Action? Starting;
+        public event Action? Started;
+        public event Action? Stopping;
+        public event Action? Stopped;
 
         public PeerId PeerId { get; private set; }
-        public string Environment { get; private set; }
+        public string Environment { get; private set; } = string.Empty;
         public bool IsRunning => Status == BusStatus.Started || Status == BusStatus.Stopping;
         public string EndPoint => _transport.InboundEndPoint;
         public string DeserializationFailureDumpDirectoryPath { get; set; } = PathUtil.InBaseDirectory("deserialization_failure_dumps");
@@ -303,7 +301,7 @@ namespace Abc.Zebus.Core
             return taskCompletionSource.Task;
         }
 
-        public async Task<IDisposable> SubscribeAsync([NotNull] SubscriptionRequest request)
+        public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
         {
             ValidateSubscriptionRequest(request);
 
@@ -320,7 +318,7 @@ namespace Abc.Zebus.Core
             return new DisposableAction(() => RemoveSubscriptions(request));
         }
 
-        public async Task<IDisposable> SubscribeAsync([NotNull] SubscriptionRequest request, [NotNull] Action<IMessage> handler)
+        public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
         {
             ValidateSubscriptionRequest(request);
 
@@ -331,7 +329,11 @@ namespace Abc.Zebus.Core
 
             var eventHandlerInvokers = request.Subscriptions
                                               .GroupBy(x => x.MessageTypeId)
-                                              .Select(x => new DynamicMessageHandlerInvoker(handler, x.Key.GetMessageType(), x.Select(s => s.BindingKey).ToList()))
+                                              .Select(x => new DynamicMessageHandlerInvoker(
+                                                          handler,
+                                                          x.Key.GetMessageType() ?? throw new InvalidOperationException($"Could not resolve type {x.Key.FullName}"),
+                                                          x.Select(s => s.BindingKey).ToList()
+                                                      ))
                                               .ToList();
 
             if (request.Batch != null)
@@ -429,7 +431,7 @@ namespace Abc.Zebus.Core
 
         internal async Task WhenUnsubscribeCompletedAsync()
         {
-            Task task;
+            Task? task;
 
             lock (_subscriptions)
             {
@@ -532,7 +534,7 @@ namespace Abc.Zebus.Core
         public void Reply(int errorCode)
             => Reply(errorCode, null);
 
-        public void Reply(int errorCode, string message)
+        public void Reply(int errorCode, string? message)
         {
             var messageContext = MessageContext.Current;
             if (messageContext == null)
@@ -542,7 +544,7 @@ namespace Abc.Zebus.Core
             messageContext.ReplyMessage = message;
         }
 
-        public void Reply(IMessage response)
+        public void Reply(IMessage? response)
         {
             var messageContext = MessageContext.Current;
             if (messageContext == null)
@@ -567,10 +569,10 @@ namespace Abc.Zebus.Core
             }
         }
 
-        public MessageDispatch CreateMessageDispatch(TransportMessage transportMessage)
+        public MessageDispatch? CreateMessageDispatch(TransportMessage transportMessage)
             => CreateMessageDispatch(transportMessage, synchronousDispatch: false, sendAcknowledgment: false);
 
-        private MessageDispatch CreateMessageDispatch(TransportMessage transportMessage, bool synchronousDispatch, bool sendAcknowledgment = true)
+        private MessageDispatch? CreateMessageDispatch(TransportMessage transportMessage, bool synchronousDispatch, bool sendAcknowledgment = true)
         {
             var message = ToMessage(transportMessage);
             if (message == null)
@@ -615,7 +617,7 @@ namespace Abc.Zebus.Core
             };
         }
 
-        private void HandleDispatchErrors(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage failingTransportMessage = null)
+        private void HandleDispatchErrors(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage? failingTransportMessage = null)
         {
             if (!_configuration.IsErrorPublicationEnabled || !IsRunning || dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is DomainException))
                 return;
@@ -644,7 +646,7 @@ namespace Abc.Zebus.Core
                 jsonMessage = $"Unable to serialize message :{System.Environment.NewLine}{ex}";
             }
 
-            var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName).ToArray());
+            var messageProcessingFailed = new MessageProcessingFailed(failingTransportMessage, jsonMessage, errorMessage, SystemDateTime.UtcNow, dispatchResult.ErrorHandlerTypes.Select(x => x.FullName!).ToArray());
             Publish(messageProcessingFailed);
         }
 
@@ -657,13 +659,13 @@ namespace Abc.Zebus.Core
                 return;
 
             var errorMessage = $"Unable to handle local message\r\nMessage is not serializable\r\nMessageType: {messageTypeName}\r\nDispatch error: {dispatchErrorMessage}\r\nSerialization error: {serializationException}";
-            var processingFailed = new CustomProcessingFailed(GetType().FullName, errorMessage, SystemDateTime.UtcNow);
+            var processingFailed = new CustomProcessingFailed(GetType().FullName!, errorMessage, SystemDateTime.UtcNow);
             Publish(processingFailed);
         }
 
         private void HandleMessageExecutionCompleted(TransportMessage transportMessage)
         {
-            var message = (MessageExecutionCompleted)ToMessage(transportMessage);
+            var message = (MessageExecutionCompleted?)ToMessage(transportMessage);
             if (message == null)
                 return;
 
@@ -677,13 +679,13 @@ namespace Abc.Zebus.Core
             if (!_messageIdToTaskCompletionSources.TryRemove(message.SourceCommandId, out var taskCompletionSource))
                 return;
 
-            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId.Value, new MemoryStream(message.Payload), transportMessage) : null;
+            var response = message.PayloadTypeId != null ? ToMessage(message.PayloadTypeId.Value, new MemoryStream(message.Payload ?? Array.Empty<byte>()), transportMessage) : null;
             var commandResult = new CommandResult(message.ErrorCode, message.ResponseMessage, response);
 
             taskCompletionSource.SetResult(commandResult);
         }
 
-        protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult> taskCompletionSource)
+        protected virtual void HandleLocalMessage(IMessage message, TaskCompletionSource<CommandResult>? taskCompletionSource)
         {
             _messageLogger.LogReceiveMessageLocal(message);
 
@@ -696,7 +698,7 @@ namespace Abc.Zebus.Core
             _messageDispatcher.Dispatch(dispatch);
         }
 
-        private Action<MessageDispatch, DispatchResult> GetOnLocalMessageDispatchedContinuation(TaskCompletionSource<CommandResult> taskCompletionSource)
+        private Action<MessageDispatch, DispatchResult> GetOnLocalMessageDispatchedContinuation(TaskCompletionSource<CommandResult>? taskCompletionSource)
         {
             return (dispatch, dispatchResult) =>
             {
@@ -738,11 +740,14 @@ namespace Abc.Zebus.Core
         protected TransportMessage ToTransportMessage(IMessage message)
             => _serializer.ToTransportMessage(message, PeerId, EndPoint);
 
-        private IMessage ToMessage(TransportMessage transportMessage)
+        private IMessage? ToMessage(TransportMessage transportMessage)
             => ToMessage(transportMessage.MessageTypeId, transportMessage.Content, transportMessage);
 
-        private IMessage ToMessage(MessageTypeId messageTypeId, Stream messageStream, TransportMessage transportMessage)
+        private IMessage? ToMessage(MessageTypeId messageTypeId, Stream? messageStream, TransportMessage transportMessage)
         {
+            if (messageStream is null)
+                return null;
+
             try
             {
                 return _serializer.ToMessage(transportMessage, messageTypeId, messageStream);
@@ -774,7 +779,7 @@ namespace Abc.Zebus.Core
                                                                    .Select(x => x.MessageHandlerType.GetBaseTypes().SingleOrDefault(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(SubscriptionHandler<>))?.GenericTypeArguments[0])
                                                                    .Where(x => x != null);
 
-            _directory.EnableSubscriptionsUpdatedFor(snapshotGeneratingMessageTypes);
+            _directory.EnableSubscriptionsUpdatedFor(snapshotGeneratingMessageTypes!);
         }
 
         private void DispatchSubscriptionsUpdatedMessages(PeerId peerId, IReadOnlyList<Subscription> subscriptions)

@@ -11,10 +11,10 @@ namespace Abc.Zebus.Testing
         public static void Until([InstantHandle] Func<bool> exitCondition, int timeoutInSeconds)
             => Until(exitCondition, timeoutInSeconds.Seconds(), () => string.Empty);
 
-        public static void Until([InstantHandle] Func<bool> exitCondition, TimeSpan timeout, string message = null)
+        public static void Until([InstantHandle] Func<bool> exitCondition, TimeSpan timeout, string? message = null)
             => Until(exitCondition, timeout, () => message ?? "Timed out");
 
-        public static void Until([InstantHandle] Func<bool> exitCondition, TimeSpan timeout, Func<string> message)
+        public static void Until([InstantHandle] Func<bool> exitCondition, TimeSpan timeout, Func<string?> message)
         {
             var sw = Stopwatch.StartNew();
 
