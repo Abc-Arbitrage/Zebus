@@ -13,11 +13,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ZebusVersion>3.5.0</ZebusVersion>
+    <ZebusVersion>3.6.0</ZebusVersion>
     <ZebusContractsVersion>3.0.0</ZebusContractsVersion>
     <ZebusDirectoryVersion>$(ZebusVersion)</ZebusDirectoryVersion>
     <ZebusPersistenceVersion>$(ZebusVersion)</ZebusPersistenceVersion>
-    <ZebusTestingVersion>3.5.1</ZebusTestingVersion>
+    <ZebusTestingVersion>$(ZebusVersion)</ZebusTestingVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -26,7 +26,7 @@
     <Description>A lightweight Peer to Peer Service Bus</Description>
     <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Copyright © ABC arbitrage 2019</Copyright>
+    <Copyright>Copyright © ABC arbitrage 2020</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
