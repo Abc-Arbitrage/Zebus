@@ -33,6 +33,14 @@ namespace Abc.Zebus
             return _descriptorsByType.GetOrAdd(messageType, _loadDescriptorFromType);
         }
 
+        internal static MessageTypeDescriptor GetMessageTypeDescriptorSkipCache(Type? messageType)
+        {
+            if (messageType == null)
+                return MessageTypeDescriptor.Null;
+
+            return MessageTypeDescriptor.Load(messageType, TypeUtil.GetFullNameWithNoAssemblyOrVersion(messageType));
+        }
+
         private static MessageTypeDescriptor LoadMessageTypeDescriptor(Type? messageType)
         {
             if (messageType == null)

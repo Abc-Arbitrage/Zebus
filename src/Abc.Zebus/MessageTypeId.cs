@@ -14,9 +14,14 @@ namespace Abc.Zebus
 
         private readonly MessageTypeDescriptor? _descriptor;
 
-        public MessageTypeId(Type? messageType) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(messageType);
+        public MessageTypeId(Type? messageType)
+            => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(messageType);
 
-        public MessageTypeId(string? fullName) => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(fullName);
+        public MessageTypeId(string? fullName)
+            => _descriptor = MessageTypeDescriptorCache.GetMessageTypeDescriptor(fullName);
+
+        private MessageTypeId(MessageTypeDescriptor descriptor)
+            => _descriptor = descriptor;
 
         public string? FullName => Descriptor.FullName;
 
@@ -40,6 +45,9 @@ namespace Abc.Zebus
             return lastDotIndex != -1 ? FullName.Substring(lastDotIndex + 1) : FullName;
         }
 
+        internal static MessageTypeId GetMessageTypeIdSkipCache(Type? messageType)
+            => new MessageTypeId(MessageTypeDescriptorCache.GetMessageTypeDescriptorSkipCache(messageType));
+
         public bool Equals(MessageTypeId other) => _descriptor == other._descriptor;
         public override bool Equals(object? obj) => obj is MessageTypeId messageTypeId && Equals(messageTypeId);
 
@@ -56,9 +64,7 @@ namespace Abc.Zebus
             private string? FullName { get; set; }
 
             private ProtobufSurrogate(MessageTypeId typeId)
-            {
-                FullName = typeId.FullName;
-            }
+                => FullName = typeId.FullName;
 
             public static implicit operator MessageTypeId(ProtobufSurrogate value) => new MessageTypeId(value.FullName);
             public static implicit operator ProtobufSurrogate(MessageTypeId value) => new ProtobufSurrogate(value);

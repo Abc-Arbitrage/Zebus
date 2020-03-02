@@ -5,20 +5,18 @@ namespace Abc.Zebus
 {
     public static class MessageUtil
     {
-        public static MessageTypeId TypeId<T>() where T : IMessage
-        {
-            return GetTypeId(typeof(T));
-        }
+        public static MessageTypeId TypeId<T>()
+            where T : IMessage
+            => GetTypeId(typeof(T));
 
         public static MessageTypeId TypeId(this IMessage message)
-        {
-            return GetTypeId(message.GetType());
-        }
+            => GetTypeId(message.GetType());
 
         public static MessageTypeId GetTypeId(Type messageType)
-        {
-            return new MessageTypeId(messageType);
-        }
+            => new MessageTypeId(messageType);
+
+        public static MessageTypeId GetTypeIdSkipCache(Type messageType)
+            => MessageTypeId.GetMessageTypeIdSkipCache(messageType);
 
         /// <summary>
         /// Useful for advanced scenarios where a given type name is loaded multiple times.

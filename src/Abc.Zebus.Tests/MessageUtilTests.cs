@@ -94,7 +94,6 @@ namespace Abc.Zebus.Tests
         {
             var typeA = GenerateType(true);
             var typeB = GenerateType(false);
-
             typeB.FullName.ShouldEqual(typeA.FullName);
 
             MessageUtil.RegisterMessageType(typeA);
@@ -102,23 +101,38 @@ namespace Abc.Zebus.Tests
 
             MessageUtil.RegisterMessageType(typeB);
             new MessageTypeId(typeB).IsPersistent().ShouldBeFalse();
+        }
 
-            static Type GenerateType(bool persistent)
-            {
-                var moduleBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(Guid.NewGuid().ToString("N")), AssemblyBuilderAccess.Run)
-                                                   .DefineDynamicModule("Main");
+        [Test]
+        public void should_load_message_type_id_without_cache()
+        {
+            var typeA = GenerateType(true);
+            var typeB = GenerateType(false);
+            typeB.FullName.ShouldEqual(typeA.FullName);
 
-                var typeBuilder = moduleBuilder.DefineType(
-                    "GeneratedMessageType",
-                    TypeAttributes.AutoClass | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed,
-                    typeof(object)
-                );
+            // Cached
+            MessageUtil.GetTypeId(typeA).IsPersistent().ShouldEqual(MessageUtil.GetTypeId(typeB).IsPersistent());
 
-                if (!persistent)
-                    typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(TransientAttribute).GetConstructor(Type.EmptyTypes), Array.Empty<object>()));
+            // Uncached
+            MessageUtil.GetTypeIdSkipCache(typeA).IsPersistent().ShouldBeTrue();
+            MessageUtil.GetTypeIdSkipCache(typeB).IsPersistent().ShouldBeFalse();
+        }
 
-                return typeBuilder.CreateType();
-            }
+        private static Type GenerateType(bool persistent)
+        {
+            var moduleBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(Guid.NewGuid().ToString("N")), AssemblyBuilderAccess.Run)
+                                               .DefineDynamicModule("Main");
+
+            var typeBuilder = moduleBuilder.DefineType(
+                "GeneratedMessageType",
+                TypeAttributes.AutoClass | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed,
+                typeof(object)
+            );
+
+            if (!persistent)
+                typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(TransientAttribute).GetConstructor(Type.EmptyTypes), Array.Empty<object>()));
+
+            return typeBuilder.CreateType();
         }
 
         public class GenericEvent<T> : IEvent

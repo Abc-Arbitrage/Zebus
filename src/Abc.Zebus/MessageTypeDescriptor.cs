@@ -48,7 +48,14 @@ namespace Abc.Zebus
             if (fullName == null)
                 return Null;
 
-            var messageType = TypeUtil.Resolve(fullName);
+            return Load(TypeUtil.Resolve(fullName), fullName);
+        }
+
+        internal static MessageTypeDescriptor Load(Type? messageType, string? fullName)
+        {
+            if (fullName == null)
+                return Null;
+
             if (messageType == null)
                 return new MessageTypeDescriptor(fullName);
 
