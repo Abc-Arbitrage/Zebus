@@ -1,4 +1,4 @@
-﻿extern alias senderVersion;
+extern alias senderVersion;
 using System;
 using System.Collections.Generic;
 using Abc.Zebus.Testing.Extensions;
@@ -10,19 +10,19 @@ namespace Abc.Zebus.Tests
     public class MessageUtilTests
     {
         [Test]
-        public void should_detect_transcient_message()
+        public void should_detect_transient_message()
         {
-            new MessageTypeId(typeof(TranscientCommand)).IsPersistent().ShouldBeFalse();
+            new MessageTypeId(typeof(TransientCommand)).IsPersistent().ShouldBeFalse();
         }
 
         [Test]
-        public void non_transcient_messages_should_be_persistent()
+        public void non_transient_messages_should_be_persistent()
         {
             new MessageTypeId(typeof(NakedMessage)).IsPersistent().ShouldBeTrue();
         }
 
         [Test]
-        public void unknow_messages_should_be_persistent()
+        public void unknown_messages_should_be_persistent()
         {
             new MessageTypeId("Abc.Unknown").IsPersistent().ShouldBeTrue();
         }
@@ -40,11 +40,11 @@ namespace Abc.Zebus.Tests
         }
 
         [Test]
-        public void unknow_messages_should_not_be_infrastructure()
+        public void unknown_messages_should_not_be_infrastructure()
         {
             new MessageTypeId("Abc.Unknown").IsInfrastructure().ShouldBeFalse();
         }
-        
+
         [Test]
         public void should_handle_normal_messages()
         {
@@ -52,8 +52,7 @@ namespace Abc.Zebus.Tests
 
             messageTypeId.FullName.ShouldEqual("Abc.Zebus.Tests.ReallyNakedMessage");
         }
-        
-        
+
         [Test]
         public void should_handle_normal_nested_messages()
         {
@@ -61,7 +60,7 @@ namespace Abc.Zebus.Tests
 
             messageTypeId.FullName.ShouldEqual("Abc.Zebus.Tests.MessageUtilTests+NakedMessage");
         }
-        
+
         [Test]
         public void should_handle_generic_messages()
         {
@@ -90,11 +89,10 @@ namespace Abc.Zebus.Tests
 
         public class GenericEvent<T> : IEvent
         {
-            
         }
-        
+
         [Transient]
-        private class TranscientCommand : ICommand
+        private class TransientCommand : ICommand
         {
         }
 
@@ -107,7 +105,7 @@ namespace Abc.Zebus.Tests
         {
         }
     }
-    
+
     public class ReallyNakedMessage : ICommand
     {
     }

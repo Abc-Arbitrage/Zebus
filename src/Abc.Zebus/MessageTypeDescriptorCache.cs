@@ -38,7 +38,7 @@ namespace Abc.Zebus
             if (messageType == null)
                 return MessageTypeDescriptor.Null;
 
-            var fullName = TypeUtil.GetFullnameWithNoAssemblyOrVersion(messageType);
+            var fullName = TypeUtil.GetFullNameWithNoAssemblyOrVersion(messageType);
             return GetMessageTypeDescriptor(fullName);
         }
     }

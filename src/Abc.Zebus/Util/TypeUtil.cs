@@ -61,7 +61,7 @@ namespace Abc.Zebus.Util
             return type.MakeGenericType(genericTypes.ToArray());
         }
 
-        public static string GetFullnameWithNoAssemblyOrVersion(Type messageType)
+        public static string GetFullNameWithNoAssemblyOrVersion(Type messageType)
         {
             if (!messageType.IsGenericType)
                 return messageType.FullName!;
