@@ -12,9 +12,10 @@ namespace Abc.Zebus.Util
         private static readonly ConcurrentDictionary<string, Type?> _typesByNames = new ConcurrentDictionary<string, Type?>();
 
         public static Type? Resolve(string typeName)
-        {
-            return _typesByNames.GetOrAdd(typeName, FindTypeByName);
-        }
+            => _typesByNames.GetOrAdd(typeName, FindTypeByName);
+
+        public static void Register(Type type)
+            => _typesByNames[GetFullNameWithNoAssemblyOrVersion(type)] = type;
 
         private static Type? FindTypeByName(string typeName)
         {

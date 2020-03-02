@@ -41,5 +41,11 @@ namespace Abc.Zebus
             var fullName = TypeUtil.GetFullNameWithNoAssemblyOrVersion(messageType);
             return GetMessageTypeDescriptor(fullName);
         }
+
+        internal static void Remove(Type messageType)
+        {
+            _descriptorsByType.TryRemove(messageType, out _);
+            _descriptorsByFullName.TryRemove(TypeUtil.GetFullNameWithNoAssemblyOrVersion(messageType), out _);
+        }
     }
 }

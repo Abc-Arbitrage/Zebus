@@ -1,6 +1,8 @@
-extern alias senderVersion;
+﻿extern alias senderVersion;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using Abc.Zebus.Testing.Extensions;
 using NUnit.Framework;
 
@@ -85,6 +87,38 @@ namespace Abc.Zebus.Tests
         public void should_not_handle_generic_messages_with_more_than_one_generic_type()
         {
             Assert.Throws<InvalidOperationException>(() => MessageUtil.GetTypeId(typeof(GenericEvent<List<string>>)));
+        }
+
+        [Test]
+        public void should_resister_message_type()
+        {
+            var typeA = GenerateType(true);
+            var typeB = GenerateType(false);
+
+            typeB.FullName.ShouldEqual(typeA.FullName);
+
+            MessageUtil.RegisterMessageType(typeA);
+            new MessageTypeId(typeA).IsPersistent().ShouldBeTrue();
+
+            MessageUtil.RegisterMessageType(typeB);
+            new MessageTypeId(typeB).IsPersistent().ShouldBeFalse();
+
+            static Type GenerateType(bool persistent)
+            {
+                var moduleBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(Guid.NewGuid().ToString("N")), AssemblyBuilderAccess.Run)
+                                                   .DefineDynamicModule("Main");
+
+                var typeBuilder = moduleBuilder.DefineType(
+                    "GeneratedMessageType",
+                    TypeAttributes.AutoClass | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed,
+                    typeof(object)
+                );
+
+                if (!persistent)
+                    typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(TransientAttribute).GetConstructor(Type.EmptyTypes), Array.Empty<object>()));
+
+                return typeBuilder.CreateType();
+            }
         }
 
         public class GenericEvent<T> : IEvent
