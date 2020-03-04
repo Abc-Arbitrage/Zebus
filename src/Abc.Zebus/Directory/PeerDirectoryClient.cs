@@ -293,9 +293,9 @@ namespace Abc.Zebus.Directory
             if (EnqueueIfRegistering(message))
                 return;
 
-            PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
-
             AddOrUpdatePeerEntry(message.PeerDescriptor);
+
+            PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
         }
 
         private bool EnqueueIfRegistering(IEvent message)
@@ -408,26 +408,26 @@ namespace Abc.Zebus.Directory
 
             PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
 
-            var observedSubscriptions = GetObservedSubscriptions();
+            var observedSubscriptions = GetObservedSubscriptions(subscriptionsForTypes);
             if (observedSubscriptions.Count > 0)
                 PeerSubscriptionsUpdated?.Invoke(message.PeerId, observedSubscriptions);
 
-            IReadOnlyList<Subscription> GetObservedSubscriptions()
+            IReadOnlyList<Subscription> GetObservedSubscriptions(SubscriptionsForType[] subsForType)
             {
-                if (subscriptionsForTypes.Length == 0)
+                if (subsForType.Length == 0)
                     return Array.Empty<Subscription>();
 
                 var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
                 if (observedSubscriptionMessageTypes.Count == 0)
                     return Array.Empty<Subscription>();
 
-                return subscriptionsForTypes.Where(x =>
-                                            {
-                                                var messageType = x.MessageTypeId.GetMessageType();
-                                                return messageType != null && observedSubscriptionMessageTypes.Contains(messageType);
-                                            })
-                                            .SelectMany(x => x.ToSubscriptions())
-                                            .ToList();
+                return subsForType.Where(x =>
+                                  {
+                                      var messageType = x.MessageTypeId.GetMessageType();
+                                      return messageType != null && observedSubscriptionMessageTypes.Contains(messageType);
+                                  })
+                                  .SelectMany(x => x.ToSubscriptions())
+                                  .ToList();
             }
         }
 

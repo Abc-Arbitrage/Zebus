@@ -994,6 +994,67 @@ namespace Abc.Zebus.Tests.Directory
             subscriptions.Count.ShouldEqual(1);
         }
 
+        [Test]
+        public void should_be_able_to_query_peers_during_peer_updated_event()
+        {
+            // Arrange
+            IList<Peer> peersHandlingMessage = Array.Empty<Peer>();
+            _directory.PeerUpdated += (id, action) => peersHandlingMessage = _directory.GetPeersHandlingMessage(new FakeEvent(1));
+
+            // Act
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false, typeof(FakeEvent))));
+
+            // Assert
+            peersHandlingMessage.ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
+        }
+
+        [Test]
+        public void should_be_able_to_query_peers_during_peer_subscriptions_updated_event_on_start()
+        {
+            // Arrange
+            IList<Peer> peersHandlingMessage = Array.Empty<Peer>();
+            _directory.PeerSubscriptionsUpdated += (id, action) => peersHandlingMessage = _directory.GetPeersHandlingMessage(new FakeEvent(1));
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(FakeEvent) });
+
+            // Act
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false, typeof(FakeEvent))));
+
+            // Assert
+            peersHandlingMessage.ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
+        }
+
+        [Test]
+        public void should_be_able_to_query_peers_during_peer_subscriptions_updated_event_on_subscriptions_updated()
+        {
+            // Arrange
+            IList<Peer> peersHandlingMessage = Array.Empty<Peer>();
+            _directory.PeerSubscriptionsUpdated += (id, action) => peersHandlingMessage = _directory.GetPeersHandlingMessage(new FakeEvent(1));
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(FakeEvent) });
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
+
+            // Act
+            _directory.Handle(new PeerSubscriptionsUpdated(_otherPeer.ToPeerDescriptor(false, new MessageTypeId(typeof(FakeEvent)))));
+
+            // Assert
+            peersHandlingMessage.ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
+        }
+
+        [Test]
+        public void should_be_able_to_query_peers_during_peer_subscriptions_updated_event_on_subscriptions_for_types_updated()
+        {
+            // Arrange
+            IList<Peer> peersHandlingMessage = Array.Empty<Peer>();
+            _directory.PeerSubscriptionsUpdated += (id, action) => peersHandlingMessage = _directory.GetPeersHandlingMessage(new FakeEvent(1));
+            _directory.EnableSubscriptionsUpdatedFor(new[] { typeof(FakeEvent) });
+            _directory.Handle(new PeerStarted(_otherPeer.ToPeerDescriptor(false)));
+
+            // Act
+            _directory.Handle(new PeerSubscriptionsForTypesUpdated(_otherPeer.Id, DateTime.UtcNow, SubscriptionsForType.Create<FakeEvent>(new BindingKey(BindingKeyPart.SharpToken))));
+
+            // Assert
+            peersHandlingMessage.ExpectedSingle().Id.ShouldEqual(_otherPeer.Id);
+        }
+
         private class OtherFakeEvent1 : IEvent
         {
         }
