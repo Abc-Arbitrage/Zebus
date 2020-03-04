@@ -114,8 +114,8 @@ namespace Abc.Zebus.Tests
             MessageUtil.GetTypeId(typeA).IsPersistent().ShouldEqual(MessageUtil.GetTypeId(typeB).IsPersistent());
 
             // Uncached
-            MessageUtil.GetTypeIdSkipCache(typeA).IsPersistent().ShouldBeTrue();
-            MessageUtil.GetTypeIdSkipCache(typeB).IsPersistent().ShouldBeFalse();
+            MessageUtil.LoadTypeId(typeA).IsPersistent().ShouldBeTrue();
+            MessageUtil.LoadTypeId(typeB).IsPersistent().ShouldBeFalse();
         }
 
         private static Type GenerateType(bool persistent)

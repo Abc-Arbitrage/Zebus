@@ -45,8 +45,8 @@ namespace Abc.Zebus
             return lastDotIndex != -1 ? FullName.Substring(lastDotIndex + 1) : FullName;
         }
 
-        internal static MessageTypeId GetMessageTypeIdSkipCache(Type? messageType)
-            => new MessageTypeId(MessageTypeDescriptorCache.GetMessageTypeDescriptorSkipCache(messageType));
+        internal static MessageTypeId GetMessageTypeIdBypassCache(Type? messageType)
+            => new MessageTypeId(MessageTypeDescriptorCache.GetMessageTypeDescriptorBypassCache(messageType));
 
         public bool Equals(MessageTypeId other) => _descriptor == other._descriptor;
         public override bool Equals(object? obj) => obj is MessageTypeId messageTypeId && Equals(messageTypeId);

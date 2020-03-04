@@ -15,8 +15,8 @@ namespace Abc.Zebus
         public static MessageTypeId GetTypeId(Type messageType)
             => new MessageTypeId(messageType);
 
-        public static MessageTypeId GetTypeIdSkipCache(Type messageType)
-            => MessageTypeId.GetMessageTypeIdSkipCache(messageType);
+        public static MessageTypeId LoadTypeId(Type messageType)
+            => MessageTypeId.GetMessageTypeIdBypassCache(messageType);
 
         /// <summary>
         /// Useful for advanced scenarios where a given type name is loaded multiple times.
