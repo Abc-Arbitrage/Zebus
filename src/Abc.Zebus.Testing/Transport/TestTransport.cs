@@ -14,6 +14,7 @@ namespace Abc.Zebus.Testing.Transport
     public class TestTransport : ITransport
     {
         private readonly List<TransportMessageSent> _messages = new List<TransportMessageSent>();
+        private readonly List<TransportMessageSent> _messagesSentToPersistence = new List<TransportMessageSent>();
         private readonly List<UpdatedPeer> _updatedPeers = new List<UpdatedPeer>();
         private readonly List<TransportMessage> _ackedMessages = new List<TransportMessage>();
         private readonly MessageSerializer _messageSerializer = new MessageSerializer();
@@ -84,6 +85,9 @@ namespace Abc.Zebus.Testing.Transport
             if (peerList.Any() || context.PersistencePeer != null)
                 _messages.Add(new TransportMessageSent(message, peerList, context));
 
+            if (context.PersistencePeer != null || peerList.Count > 0 && peerList.All(x => x.Id.IsPersistence()))
+                _messagesSentToPersistence.Add(new TransportMessageSent(message, context.PersistencePeer ?? peerList.First(), true));
+
             var deserializedMessage = _messageSerializer.Deserialize(message.MessageTypeId, message.Content!);
             if (deserializedMessage != null)
                 MessagesSent.Add(deserializedMessage);
@@ -105,6 +109,17 @@ namespace Abc.Zebus.Testing.Transport
         }
 
         public IList<TransportMessageSent> Messages => _messages;
+
+        public IReadOnlyList<TransportMessageSent> MessagesSentToPersistence => _messagesSentToPersistence;
+
+        public void Clear()
+        {
+            _messages.Clear();
+            _messagesSentToPersistence.Clear();
+            _ackedMessages.Clear();
+            MessagesSent.Clear();
+            _updatedPeers.Clear();
+        }
 
         public IList<TransportMessage> AckedMessages => _ackedMessages;
 

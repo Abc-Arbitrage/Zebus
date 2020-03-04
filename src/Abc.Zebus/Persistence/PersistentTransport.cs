@@ -33,7 +33,7 @@ namespace Abc.Zebus.Persistence
         private Phase _phase = default!;
         private Thread? _receptionThread;
         private Guid? _currentReplayId;
-        private volatile bool _persistenceIsDown;
+        private volatile bool _persistenceIsUp = true;
 
         public PersistentTransport(IBusConfiguration configuration, ITransport innerTransport, IPeerDirectory peerDirectory, IMessageSendingStrategy messageSendingStrategy)
         {
@@ -72,12 +72,13 @@ namespace Abc.Zebus.Persistence
 
             if (peerUpdateAction == PeerUpdateAction.Started)
             {
-                _persistenceIsDown = false;
-                ReplayMessagesWaitingForPersistence();
+                _persistenceIsUp = true;
+                // stop here
+                ReplayMessagesWaitingForPersistence(GetPersistencePeers());
             }
             else if (peerUpdateAction == PeerUpdateAction.Decommissioned)
             {
-                _persistenceIsDown = true;
+                _persistenceIsUp = false;
             }
         }
 
@@ -86,10 +87,13 @@ namespace Abc.Zebus.Persistence
             _phase.OnRegistered();
         }
 
-        private void ReplayMessagesWaitingForPersistence()
+        private void ReplayMessagesWaitingForPersistence(IList<Peer> persistencePeers)
         {
-            var persistencePeers = GetPersistencePeers();
-
+            if (persistencePeers.Count == 0)
+            {
+                _logger.InfoFormat("Skipping replay as no persistence peers were found, messages will be replayed before next send");
+                return;
+            }
             _logger.InfoFormat("Sending {0} enqueued messages to the persistence", _messagesWaitingForPersistence.Count);
 
             while (_messagesWaitingForPersistence.TryTake(out var messageToSend))
@@ -119,9 +123,6 @@ namespace Abc.Zebus.Persistence
         {
             _logger.InfoFormat("Enqueing in temp persistence buffer: {0}", transportMessage.Id);
             _messagesWaitingForPersistence.Add(transportMessage);
-
-            if (!_persistenceIsDown)
-                ReplayMessagesWaitingForPersistence();
         }
 
         public void Configure(PeerId peerId, string environment)
@@ -174,7 +175,11 @@ namespace Abc.Zebus.Persistence
             var targetPeers = LoadTargetPeersAndUpdateContext(peers, isMessagePersistent, context);
 
             var mustBeSendToPersistence = context.PersistentPeerIds.Count != 0;
-            context.PersistencePeer = mustBeSendToPersistence ? GetPersistencePeers().FirstOrDefault() : null;
+            var persistencePeers = mustBeSendToPersistence ? GetPersistencePeers() : null;
+            context.PersistencePeer = persistencePeers?.FirstOrDefault();
+
+            if (persistencePeers != null && persistencePeers.Count > 0)
+                ReplayMessagesWaitingForPersistence(persistencePeers);
 
             _innerTransport.Send(message, targetPeers, context);
 
@@ -182,10 +187,7 @@ namespace Abc.Zebus.Persistence
                 Enqueue(new PersistMessageCommand(message, context.PersistentPeerIds));
         }
 
-        private IList<Peer> GetPersistencePeers()
-        {
-            return _persistenceIsDown ? _emptyPeerList : _peerDirectory.GetPeersHandlingMessage(_bindingForPersistence);
-        }
+        private IList<Peer> GetPersistencePeers() => _persistenceIsUp ? _peerDirectory.GetPeersHandlingMessage(_bindingForPersistence) : _emptyPeerList;
 
         private List<Peer> LoadTargetPeersAndUpdateContext(IEnumerable<Peer> peers, bool isMessagePersistent, SendContext context)
         {
@@ -251,7 +253,7 @@ namespace Abc.Zebus.Persistence
 
             if (transportMessage.MessageTypeId == MessageTypeId.PersistenceStopping)
             {
-                _persistenceIsDown = true;
+                _persistenceIsUp = false;
 
                 var ackMessage = new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), _innerTransport.PeerId, _innerTransport.InboundEndPoint);
 

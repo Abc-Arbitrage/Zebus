@@ -65,7 +65,7 @@ namespace Abc.Zebus.Tests.Persistence
                 StartMessageReplayCommandTargets = startMessageReplayMessage.Targets;
             }
 
-            InnerTransport.Messages.Clear();
+            InnerTransport.Clear();
         }
 
         [Test]

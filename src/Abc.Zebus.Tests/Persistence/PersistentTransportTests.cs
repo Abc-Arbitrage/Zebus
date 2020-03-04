@@ -14,6 +14,7 @@ using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
+using Moq;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Persistence
@@ -135,7 +136,6 @@ namespace Abc.Zebus.Tests.Persistence
                 if (msg == failingMessage)
                     throw new Exception("Failure");
                 successfullyReceivedMessages.Add(msg);
-
             };
 
             InnerTransport.RaiseMessageReceived(new ReplayPhaseEnded(StartMessageReplayCommand.ReplayId).ToTransportMessage());
@@ -270,7 +270,7 @@ namespace Abc.Zebus.Tests.Persistence
 
                 Transport.Send(message, new[] { AnotherPersistentPeer, AnotherNonPersistentPeer });
 
-                InnerTransport.ExpectExactly(new []
+                InnerTransport.ExpectExactly(new[]
                 {
                     new TransportMessageSent(message).To(AnotherPersistentPeer, true).To(AnotherNonPersistentPeer, false).ToPersistence(PersistencePeer),
                 });
@@ -348,7 +348,7 @@ namespace Abc.Zebus.Tests.Persistence
         [Test]
         public void should_not_lose_messages_when_persistent_transport_goes_down_and_comes_back_up()
         {
-            using(MessageId.PauseIdGeneration())
+            using (MessageId.PauseIdGeneration())
             {
                 // Stopping persistence
                 InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), PersistencePeer));
@@ -442,6 +442,54 @@ namespace Abc.Zebus.Tests.Persistence
                 Transport.Stop();
                 Transport.Start();
             }
+        }
+
+        [Test]
+        public void should_not_try_to_replay_when_no_persistence_peers_are_found()
+        {
+            // Arrange
+            SetupPeersHandlingMessage(Array.Empty<Peer>());
+            var downPeer = new Peer(new PeerId("Another.Peer"), "tcp://anotherpeer:123", false);
+
+            Transport.Send(new FakeCommand(123).ToTransportMessage(), new[] { downPeer });
+
+            // Act
+            Transport.OnPeerUpdated(new PeerId("Abc.Zebus.PersistenceService"), PeerUpdateAction.Started);
+
+            // Assert
+            InnerTransport.Messages.ShouldBeEmpty();
+            InnerTransport.MessagesSentToPersistence.ShouldBeEmpty();
+        }
+
+        [Test]
+        public void should_try_to_replay_waiting_messages_on_each_send()
+        {
+            // Arrange
+            SetupPeersHandlingMessage(Array.Empty<Peer>());
+            var downPeer = new Peer(new PeerId("Another.Peer"), "tcp://anotherpeer:123", false);
+
+            var messageToReplay = new FakeCommand(123).ToTransportMessage();
+            Transport.Send(messageToReplay, new[] { downPeer });
+            InnerTransport.Messages.ShouldBeEmpty();
+            InnerTransport.MessagesSentToPersistence.ShouldBeEmpty();
+
+            // Act
+            SetupPeersHandlingMessage(new[] { PersistencePeer });
+            var messageToEnqueue = new FakeCommand(124).ToTransportMessage();
+            Transport.Send(messageToEnqueue, new[] { downPeer });
+
+            // Assert
+            InnerTransport.MessagesSentToPersistence.Count.ShouldEqual(2);
+            foreach (var message in InnerTransport.MessagesSentToPersistence)
+            {
+                message.Targets.ExpectedSingle().Id.ShouldEqual(PersistencePeer.Id);
+            }
+        }
+
+        private void SetupPeersHandlingMessage(Peer[] peers)
+        {
+            PeerDirectory.Setup(x => x.GetPeersHandlingMessage(It.IsAny<IMessage>())).Returns(peers);
+            PeerDirectory.Setup(x => x.GetPeersHandlingMessage(It.IsAny<MessageBinding>())).Returns(peers);
         }
     }
 }
