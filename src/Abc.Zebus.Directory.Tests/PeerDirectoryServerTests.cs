@@ -136,9 +136,11 @@ namespace Abc.Zebus.Directory.Tests
             var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://badapple:123", typeof(string));
             _repositoryMock.Setup(repo => repo.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
 
-            var fetchedPeerDescriptor = _peerDirectory.GetPeerDescriptor(peerDescriptor.Peer.Id);
+            var fetchedPeerDescriptor = _peerDirectory.GetPeerDescriptor(peerDescriptor.PeerId);
+            var fetchedPeer = _peerDirectory.GetPeer(peerDescriptor.PeerId);
 
             fetchedPeerDescriptor.ShouldEqualDeeply(peerDescriptor);
+            fetchedPeer.ShouldEqualDeeply(peerDescriptor.Peer);
         }
 
         [Test]

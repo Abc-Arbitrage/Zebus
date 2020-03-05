@@ -221,29 +221,35 @@ namespace Abc.Zebus.Core
 
         public void Publish(IEvent message)
         {
-            PublishInternal(message, null);
-        }
-
-        public void Publish(IEvent message, PeerId targetPeerId)
-        {
-            PublishInternal(message, targetPeerId);
-        }
-
-        private void PublishInternal(IEvent message, PeerId? targetPeerId)
-        {
             if (!IsRunning)
                 throw new InvalidOperationException("Unable to publish message, the bus is not running");
 
             var peersHandlingMessage = _directory.GetPeersHandlingMessage(message);
-            if (targetPeerId != null)
-                peersHandlingMessage = peersHandlingMessage.Where(peer => peer.Id == targetPeerId).ToList();
+
+            PublishInternal(message, peersHandlingMessage);
+        }
+
+        public void Publish(IEvent message, PeerId targetPeerId)
+        {
+            if (!IsRunning)
+                throw new InvalidOperationException("Unable to publish message, the bus is not running");
+
+            var peer = _directory.GetPeer(targetPeerId) ?? throw new ArgumentException($"targetPeerId is unknown ({targetPeerId})");
+
+            PublishInternal(message, new List<Peer> { peer });
+        }
+
+        private void PublishInternal(IEvent message, IList<Peer> peers)
+        {
+            if (!IsRunning)
+                throw new InvalidOperationException("Unable to publish message, the bus is not running");
 
             var localDispatchEnabled = LocalDispatch.Enabled;
-            var shouldBeHandledLocally = localDispatchEnabled && peersHandlingMessage.Any(x => x.Id == PeerId);
+            var shouldBeHandledLocally = localDispatchEnabled && peers.Any(x => x.Id == PeerId);
             if (shouldBeHandledLocally)
                 HandleLocalMessage(message, null);
 
-            var targetPeers = shouldBeHandledLocally ? peersHandlingMessage.Where(x => x.Id != PeerId).ToList() : peersHandlingMessage;
+            var targetPeers = shouldBeHandledLocally ? peers.Where(x => x.Id != PeerId).ToList() : peers;
             LogAndSendMessage(message, targetPeers, true, shouldBeHandledLocally);
         }
 

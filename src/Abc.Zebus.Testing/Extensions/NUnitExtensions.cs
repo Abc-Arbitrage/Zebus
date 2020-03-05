@@ -384,6 +384,11 @@ namespace Abc.Zebus.Testing.Extensions
             }
         }
 
+        public static void ShouldHaveSize<T>(this IEnumerable<T> enumerable, int size)
+        {
+            enumerable.Count().ShouldEqual(size, $"Collection should contain {size} items");
+        }
+
         public static TSource ExpectedSingle<TSource>(this IEnumerable<TSource> source)
         {
             var items = source.ToList();

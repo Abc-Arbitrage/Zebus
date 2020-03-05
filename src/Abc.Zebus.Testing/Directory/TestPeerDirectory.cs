@@ -75,6 +75,11 @@ namespace Abc.Zebus.Testing.Directory
             return Peers.TryGetValue(peerId, out var peer) && peer.IsPersistent;
         }
 
+        public Peer? GetPeer(PeerId peerId)
+        {
+            return Peers.TryGetValue(peerId, out var peerDescriptor) ? peerDescriptor.Peer : null;
+        }
+
         public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
         {
             _typesToObserve = new HashSet<Type>(types);

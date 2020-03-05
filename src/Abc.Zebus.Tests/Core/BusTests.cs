@@ -65,6 +65,11 @@ namespace Abc.Zebus.Tests.Core
             where TMessage : IMessage
         {
             _directoryMock.Setup(x => x.GetPeersHandlingMessage(It.IsAny<TMessage>())).Returns(peers);
+
+            foreach (var peer in peers)
+            {
+                _directoryMock.Setup(x => x.GetPeer(peer.Id)).Returns(peer);
+            }
         }
 
         private void SetupDispatch<TMessage>(TMessage message, Action<IMessage> invokerCallback = null, Exception error = null)

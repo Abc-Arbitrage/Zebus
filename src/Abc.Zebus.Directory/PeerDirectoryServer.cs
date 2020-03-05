@@ -55,6 +55,11 @@ namespace Abc.Zebus.Directory
             return _peerRepository.IsPersistent(peerId).GetValueOrDefault();
         }
 
+        public Peer? GetPeer(PeerId peerId)
+        {
+            return _peerRepository.Get(peerId)?.Peer;
+        }
+
         public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
         {
             // Not supported on peer directory server

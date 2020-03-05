@@ -83,6 +83,7 @@ namespace Abc.Zebus.Tests.Directory
 
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle().Id.ShouldEqual(peer1.Id);
+            _directory.GetPeer(peer1.Id).ShouldNotBeNull();
 
             peers.Clear();
             var peer2 = new Peer(new PeerId("Abc.X.2"), "tcp://x:2");
@@ -90,6 +91,8 @@ namespace Abc.Zebus.Tests.Directory
 
             await _directory.RegisterAsync(_bus, _self, new Subscription[0]).ConfigureAwait(true);
             _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle().Id.ShouldEqual(peer2.Id);
+            _directory.GetPeer(peer1.Id).ShouldBeNull();
+            _directory.GetPeer(peer2.Id).ShouldNotBeNull();
         }
 
         [Test]
@@ -187,7 +190,9 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Handle(new PeerSubscriptionsUpdated(descriptor2));
 
             var targetPeer = _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
-            targetPeer.Id.ShouldEqual(_otherPeer.Id);
+            targetPeer.ShouldEqualDeeply(_otherPeer);
+
+            _directory.GetPeer(_otherPeer.Id).ShouldEqualDeeply(_otherPeer);
         }
 
         [Test]
@@ -209,7 +214,7 @@ namespace Abc.Zebus.Tests.Directory
             descriptor2.TimestampUtc = default(DateTime);
             _directory.Handle(new PeerSubscriptionsUpdated(descriptor2));
 
-            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldHaveSize(1);
 
             updates.ShouldEqual(2);
         }
@@ -229,7 +234,7 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Handle(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, DateTime.UtcNow, MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
             _directory.Handle(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, default(DateTime), MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
 
-            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
+            _directory.GetPeersHandlingMessage(new FakeCommand(0)).ShouldHaveSize(1);
 
             updates.ShouldEqual(2);
         }
@@ -246,7 +251,9 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Handle(new PeerSubscriptionsForTypesUpdated(peerDescriptor.PeerId, default(DateTime), MessageUtil.TypeId<FakeCommand>(), BindingKey.Empty));
 
             var targetPeer = _directory.GetPeersHandlingMessage(new FakeCommand(0)).ExpectedSingle();
-            targetPeer.Id.ShouldEqual(_otherPeer.Id);
+            targetPeer.ShouldEqualDeeply(_otherPeer);
+
+            _directory.GetPeer(_otherPeer.Id).ShouldEqualDeeply(_otherPeer);
         }
 
         [Test]
@@ -311,6 +318,8 @@ namespace Abc.Zebus.Tests.Directory
             var peerHandlingMessage = _directory.GetPeersHandlingMessage(new FakeEvent(0)).Single();
             peerHandlingMessage.Id.ShouldEqual(clientPeerDescriptor.Peer.Id);
             peerHandlingMessage.EndPoint.ShouldEqual(clientPeerDescriptor.Peer.EndPoint);
+
+            _directory.GetPeer(clientPeerDescriptor.PeerId).ShouldEqualDeeply(clientPeerDescriptor.Peer);
         }
 
         [Test]
@@ -323,8 +332,10 @@ namespace Abc.Zebus.Tests.Directory
             _directory.Handle(peerStarted);
 
             var peerDescriptor = _directory.GetPeerDescriptor(clientPeerDescriptor.Peer.Id);
+            var peer = _directory.GetPeer(clientPeerDescriptor.Peer.Id);
 
             peerDescriptor.ShouldHaveSamePropertiesAs(clientPeerDescriptor);
+            peer.ShouldEqualDeeply(clientPeerDescriptor.Peer);
         }
 
         [Test]

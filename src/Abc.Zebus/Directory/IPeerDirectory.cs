@@ -19,6 +19,7 @@ namespace Abc.Zebus.Directory
         IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding);
 
         bool IsPersistent(PeerId peerId);
+        Peer? GetPeer(PeerId peerId);
         void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types);
 
         // TODO: move to a specific interface (IPeerDirectoryExplorer)

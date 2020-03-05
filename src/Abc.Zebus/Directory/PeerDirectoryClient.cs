@@ -55,7 +55,7 @@ namespace Abc.Zebus.Directory
             _peers.Clear();
 
             var selfDescriptor = CreateSelfDescriptor(subscriptions);
-            AddOrUpdatePeerEntry(selfDescriptor);
+            AddOrUpdatePeerEntry(selfDescriptor, shouldRaisePeerUpdated: false);
 
             _messagesReceivedDuringRegister = new BlockingCollection<IEvent>();
 
@@ -163,7 +163,7 @@ namespace Abc.Zebus.Directory
                     return false;
                 }
 
-                response.PeerDescriptors?.ForEach(AddOrUpdatePeerEntry);
+                response.PeerDescriptors?.ForEach(peer => AddOrUpdatePeerEntry(peer, shouldRaisePeerUpdated: false));
 
                 return true;
             }
@@ -238,6 +238,11 @@ namespace Abc.Zebus.Directory
             return entry != null && entry.IsPersistent;
         }
 
+        public Peer? GetPeer(PeerId peerId)
+        {
+            return _peers.TryGetValue(peerId, out var entry) ? entry.Peer : null;
+        }
+
         public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
         {
             _observedSubscriptionMessageTypes = types.ToHashSet();
@@ -262,12 +267,15 @@ namespace Abc.Zebus.Directory
             return new Peer(peerId, endPoint);
         }
 
-        private void AddOrUpdatePeerEntry(PeerDescriptor peerDescriptor)
+        private void AddOrUpdatePeerEntry(PeerDescriptor peerDescriptor, bool shouldRaisePeerUpdated)
         {
             var subscriptions = peerDescriptor.Subscriptions ?? Array.Empty<Subscription>();
 
             var peerEntry = _peers.AddOrUpdate(peerDescriptor.PeerId, key => CreatePeerEntry(), (key, entry) => UpdatePeerEntry(entry));
             peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
+
+            if (shouldRaisePeerUpdated)
+                PeerUpdated?.Invoke(peerDescriptor.Peer.Id, PeerUpdateAction.Started);
 
             var observedSubscriptions = GetObservedSubscriptions(subscriptions);
             if (observedSubscriptions.Count > 0)
@@ -293,9 +301,7 @@ namespace Abc.Zebus.Directory
             if (EnqueueIfRegistering(message))
                 return;
 
-            AddOrUpdatePeerEntry(message.PeerDescriptor);
-
-            PeerUpdated?.Invoke(message.PeerDescriptor.Peer.Id, PeerUpdateAction.Started);
+            AddOrUpdatePeerEntry(message.PeerDescriptor, true);
         }
 
         private bool EnqueueIfRegistering(IEvent message)
@@ -411,24 +417,24 @@ namespace Abc.Zebus.Directory
             var observedSubscriptions = GetObservedSubscriptions(subscriptionsForTypes);
             if (observedSubscriptions.Count > 0)
                 PeerSubscriptionsUpdated?.Invoke(message.PeerId, observedSubscriptions);
+        }
 
-            IReadOnlyList<Subscription> GetObservedSubscriptions(SubscriptionsForType[] subsForType)
-            {
-                if (subsForType.Length == 0)
-                    return Array.Empty<Subscription>();
+        private IReadOnlyList<Subscription> GetObservedSubscriptions(SubscriptionsForType[] subscriptionsForTypes)
+        {
+            if (subscriptionsForTypes.Length == 0)
+                return Array.Empty<Subscription>();
 
-                var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
-                if (observedSubscriptionMessageTypes.Count == 0)
-                    return Array.Empty<Subscription>();
+            var observedSubscriptionMessageTypes = _observedSubscriptionMessageTypes;
+            if (observedSubscriptionMessageTypes.Count == 0)
+                return Array.Empty<Subscription>();
 
-                return subsForType.Where(x =>
-                                  {
-                                      var messageType = x.MessageTypeId.GetMessageType();
-                                      return messageType != null && observedSubscriptionMessageTypes.Contains(messageType);
-                                  })
-                                  .SelectMany(x => x.ToSubscriptions())
-                                  .ToList();
-            }
+            return subscriptionsForTypes.Where(x =>
+                                        {
+                                            var messageType = x.MessageTypeId.GetMessageType();
+                                            return messageType != null && observedSubscriptionMessageTypes.Contains(messageType);
+                                        })
+                                        .SelectMany(x => x.ToSubscriptions())
+                                        .ToList();
         }
 
         private static void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
