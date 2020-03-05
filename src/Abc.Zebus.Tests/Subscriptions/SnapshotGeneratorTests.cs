@@ -1,11 +1,9 @@
-using System.Collections.Generic;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing;
-using Abc.Zebus.Testing.Extensions;
 using NUnit.Framework;
 
-namespace Abc.Zebus.Tests.SubscriptionHandling
+namespace Abc.Zebus.Tests.Subscriptions
 {
     [TestFixture]
     public class SnapshotGeneratorTests

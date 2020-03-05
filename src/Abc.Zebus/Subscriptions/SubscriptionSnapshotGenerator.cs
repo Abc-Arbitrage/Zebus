@@ -1,4 +1,3 @@
-using System;
 using Abc.Zebus.Directory;
 
 namespace Abc.Zebus.Subscriptions
@@ -8,6 +7,12 @@ namespace Abc.Zebus.Subscriptions
     /// </summary>
     /// <typeparam name="TSnapshotMessage">The type of the snapshot message</typeparam>
     /// <typeparam name="TMessage">The type of the message whose subscriptions will trigger a snapshot</typeparam>
+    /// <remarks>
+    /// Notes:
+    /// - The <see cref="GenerateSnapshot"/> method will be invoked after the directory state is updated.
+    /// - Messages can be sent to the subscribing peer before the snapshot.
+    /// - The subscribing peer should properly handle (discard) messages received before the snapshot.
+    /// </remarks>
     public abstract class SubscriptionSnapshotGenerator<TSnapshotMessage, TMessage> : SubscriptionHandler<TMessage>
         where TSnapshotMessage : IEvent
         where TMessage : IEvent

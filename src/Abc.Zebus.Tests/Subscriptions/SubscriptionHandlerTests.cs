@@ -2,10 +2,9 @@ using Abc.Zebus.Directory;
 using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
-using Abc.Zebus.Tests.Scan;
 using NUnit.Framework;
 
-namespace Abc.Zebus.Tests.SubscriptionHandling
+namespace Abc.Zebus.Tests.Subscriptions
 {
     [TestFixture]
     public class SubscriptionHandlerTests
