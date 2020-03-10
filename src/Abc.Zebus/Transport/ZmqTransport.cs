@@ -272,7 +272,6 @@ namespace Abc.Zebus.Transport
         private bool IsValidTransportMessage(TransportMessage transportMessage)
         {
             return transportMessage.Id.Value != default
-                   && transportMessage.Environment != default
                    && transportMessage.MessageTypeId.FullName != default
                    && transportMessage.Originator != default;
         }
