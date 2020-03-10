@@ -242,6 +242,9 @@ namespace Abc.Zebus.Transport
             {
                 var transportMessage = inputStream.ReadTransportMessage();
 
+                if (!IsValidTransportMessage(transportMessage))
+                    return;
+
                 if (!IsFromCurrentEnvironment(transportMessage))
                     return;
 
@@ -264,6 +267,14 @@ namespace Abc.Zebus.Transport
             {
                 _logger.ErrorFormat("Failed to process inbound transport message: {0}", ex);
             }
+        }
+
+        private bool IsValidTransportMessage(TransportMessage transportMessage)
+        {
+            return transportMessage.Id.Value != default
+                   && transportMessage.Environment != default
+                   && transportMessage.MessageTypeId.FullName != default
+                   && transportMessage.Originator != default;
         }
 
         private void OnEndOfStreamAck(TransportMessage transportMessage)
