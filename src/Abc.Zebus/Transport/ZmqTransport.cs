@@ -372,7 +372,10 @@ namespace Abc.Zebus.Transport
         {
             var outboundSocket = GetConnectedOutboundSocket(target, transportMessage);
             if (!outboundSocket.IsConnected)
+            {
+                _logger.Error($"Could not send message of type {transportMessage.MessageTypeId.FullName} to peer {target.Id} because outbound socket was not connected");
                 return;
+            }
 
             try
             {
