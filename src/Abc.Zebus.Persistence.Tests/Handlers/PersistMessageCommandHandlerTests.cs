@@ -1,70 +1,94 @@
-﻿using System.Collections.Generic;
-using Abc.Zebus.Persistence.Handlers;
-using Abc.Zebus.Persistence.Matching;
-using Abc.Zebus.Persistence.Storage;
-using Abc.Zebus.Persistence.Tests.TestUtil;
+﻿using Abc.Zebus.Persistence.Handlers;
+using Abc.Zebus.Persistence.Tests.Matching;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
-using Abc.Zebus.Util;
+using Abc.Zebus.Testing.Extensions;
 using Moq;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Persistence.Tests.Handlers
 {
-    public class PersistMessageCommandHandlerTests : HandlerTestFixture<PersistMessageCommandHandler>
+    [TestFixture]
+    public class PersistMessageCommandHandlerTests
     {
-        private InMemoryMessageMatcher _inMemoryMessageMatcher;
-        private Mock<IStorage> _storageMock;
+        private PersistMessageCommandHandler _handler;
+        private Mock<IMessageReplayerRepository> _replayerRepository;
+        private TestInMemoryMessageMatcher _messageMatcher;
+        private Mock<IPersistenceConfiguration> _configuration;
 
-        protected override void BeforeBuildingHandler()
+        [SetUp]
+        public void SetUp()
         {
-            base.BeforeBuildingHandler();
+            _replayerRepository = new Mock<IMessageReplayerRepository>();
+            _messageMatcher = new TestInMemoryMessageMatcher();
+            _configuration = new Mock<IPersistenceConfiguration>();
 
-            _storageMock = new Mock<IStorage>();
-            var persistenceConfigurationMock = new Mock<IPersistenceConfiguration>();
-            persistenceConfigurationMock.SetupGet(conf => conf.PersisterBatchSize).Returns(() => 100);
-
-            _inMemoryMessageMatcher = new InMemoryMessageMatcher(persistenceConfigurationMock.Object, _storageMock.Object, Bus);
-            _inMemoryMessageMatcher.Start();
-            MockContainer.Register<IInMemoryMessageMatcher>(_inMemoryMessageMatcher);
-        }
-
-        [TearDown]
-        public override void Teardown()
-        {
-            _inMemoryMessageMatcher.Stop();
-
-            base.Teardown();
+            _handler = new PersistMessageCommandHandler(_replayerRepository.Object, _messageMatcher, _configuration.Object);
         }
 
         [Test]
         public void should_persist_message()
         {
-            using (SystemDateTime.PauseTime())
-            {
-                var transportMessage = new FakeCommand(42).ToTransportMessage();
+            // Arrange
+            var transportMessage = new FakeCommand(42).ToTransportMessage();
+            var peerId = new PeerId("Abc.Testing.Target");
 
-                var peerId = new PeerId("Abc.Testing.Target");
-                var command = new PersistMessageCommand(transportMessage, new[] { peerId });
-                Handler.Handle(command);
+            // Act
+            _handler.Handle(new PersistMessageCommand(transportMessage, peerId));
 
-                Wait.Until(() => _inMemoryMessageMatcher.CassandraInsertCount == 1, 2.Seconds());
-                _storageMock.Verify(x=>x.Write(It.IsAny<IList<MatcherEntry>>()), Times.Once);
-            }
+            // Assert
+            var message = _messageMatcher.Messages.ExpectedSingle();
+            message.peerId.ShouldEqual(peerId);
+            message.messageId.ShouldEqual(transportMessage.Id);
+            message.messageTypeId.ShouldEqual(transportMessage.MessageTypeId);
+            message.transportMessageBytes.ShouldEqual(Serializer.Serialize(transportMessage).ToArray());
         }
+
+        [Test]
+        public void should_ignore_message_with_empty_type()
+        {
+            // Arrange
+            var transportMessage = new FakeCommand(42).ToTransportMessage();
+            var targetPeerId = new PeerId("Abc.Testing.Target");
+            transportMessage.MessageTypeId = default;
+
+            // Act
+            _handler.Handle(new PersistMessageCommand(transportMessage, targetPeerId));
+
+            // Assert
+            _messageMatcher.Messages.ShouldBeEmpty();
+        }
+
+        [Test]
+        public void should_ignore_message_with_empty_target()
+        {
+            // Arrange
+            var transportMessage = new FakeCommand(42).ToTransportMessage();
+            var invalidTargetPeerId = new PeerId("");
+            var targetPeerId = new PeerId("Abc.Peer.0");
+
+            // Act
+            _handler.Handle(new PersistMessageCommand(transportMessage, invalidTargetPeerId, targetPeerId));
+
+            // Assert
+            _messageMatcher.Messages.ShouldHaveSize(1);
+        }
+
         [Test]
         public void should_send_message_to_replayer()
         {
-            var targetPeer = new PeerId("Abc.Testing.Target");
+            // Arrange
+            var targetPeerId = new PeerId("Abc.Testing.Target");
             var replayerMock = new Mock<IMessageReplayer>();
-            MockContainer.GetMock<IMessageReplayerRepository>().Setup(x => x.GetActiveMessageReplayer(targetPeer)).Returns(replayerMock.Object);
-            var transportMessage = new FakeCommand(1).ToTransportMessage();
-            var command = new PersistMessageCommand(transportMessage, new[] { targetPeer });
-            
-            Handler.Handle(command);
+            _replayerRepository.Setup(x => x.GetActiveMessageReplayer(targetPeerId)).Returns(replayerMock.Object);
 
+            var transportMessage = new FakeCommand(1).ToTransportMessage();
+
+            // Act
+            _handler.Handle(new PersistMessageCommand(transportMessage, targetPeerId));
+
+            // Assert
             replayerMock.Verify(x => x.AddLiveMessage(transportMessage));
         }
-
-       
     }
 }

@@ -27,11 +27,23 @@ namespace Abc.Zebus.Persistence.Handlers
                 return;
 
             var transportMessage = message.TransportMessage;
+            if (string.IsNullOrEmpty(transportMessage.MessageTypeId.FullName))
+            {
+                _log.Error($"Message received with empty TypeId, MessageId: {transportMessage.Id}, SenderId: {transportMessage.Originator.SenderId}");
+                return;
+            }
+
             var transportMessageBytes = _serializer.Serialize(transportMessage);
             foreach (var target in message.Targets)
             {
+                if (string.IsNullOrEmpty(target.ToString()))
+                {
+                    _log.Error($"Message received with empty target, MessageId: {transportMessage.Id}, SenderId: {transportMessage.Originator.SenderId}");
+                    continue;
+                }
+
                 if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(target.ToString()))
-                    _log.Info($"Message received for peer {target}. MessageId: {transportMessage.Id}. MessageType: {transportMessage.MessageTypeId}");
+                    _log.Info($"Message received for peer {target}, MessageId: {transportMessage.Id}, MessageType: {transportMessage.MessageTypeId}");
 
                 _messageReplayerRepository.GetActiveMessageReplayer(target)?.AddLiveMessage(transportMessage);
                 _inMemoryMessageMatcher.EnqueueMessage(target, transportMessage.Id, transportMessage.MessageTypeId, transportMessageBytes);

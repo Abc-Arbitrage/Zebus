@@ -11,7 +11,7 @@ using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 
-namespace Abc.Zebus.Persistence.Tests.Batching
+namespace Abc.Zebus.Persistence.Tests.Matching
 {
     [TestFixture]
     public class InMemoryMessageMatcherTests
@@ -25,7 +25,7 @@ namespace Abc.Zebus.Persistence.Tests.Batching
         private Mock<IPersistenceConfiguration> _configurationMock;
         private Mock<IStorage> _storageMock;
         private Action<IList<MatcherEntry>> _storeBatchFunc;
-        
+
         [SetUp]
         public void Setup()
         {
