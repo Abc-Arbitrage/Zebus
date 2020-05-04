@@ -149,7 +149,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public Task UpdateNewOldestMessageTimestamp(PeerState peer)
         {
-            var newOldestUnackedTimestampMinusSafetyOffset = GetOldestUnackedMessageTimestampInTicks(peer) - PeerState.OldestNonAckedMessageTimestampSafetyOffset.Ticks;
+            var newOldestUnackedTimestampMinusSafetyOffset = ComputeOldestUnackedMessageTimestampInTicks(peer) - PeerState.OldestNonAckedMessageTimestampSafetyOffset.Ticks;
             if (newOldestUnackedTimestampMinusSafetyOffset == peer.OldestNonAckedMessageTimestampInTicks)
                 return Task.CompletedTask;
 
@@ -181,7 +181,10 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                                           .ExecuteAsync();
         }
 
-        private long GetOldestUnackedMessageTimestampInTicks(PeerState peer)
+        /// <summary>
+        /// public for debug / analysis.
+        /// </summary>
+        public long ComputeOldestUnackedMessageTimestampInTicks(PeerState peer)
         {
             var peerId = peer.PeerId.ToString();
             var bucketIds = BucketIdHelper.GetBucketsCollection(peer.OldestNonAckedMessageTimestampInTicks);
