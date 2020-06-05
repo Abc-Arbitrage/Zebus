@@ -14,7 +14,7 @@ namespace Abc.Zebus.Testing.Transport
             UpdateAction = updateAction;
         }
 
-        public bool Equals(UpdatedPeer other)
+        public bool Equals(UpdatedPeer? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
