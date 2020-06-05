@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="RocksDbNative" Version="5.4.6.10" />
-    <PackageReference Include="RocksDbSharp" Version="5.4.6.11" />
+    <PackageReference Include="RocksDbNative" Version="6.2.2" />
+    <PackageReference Include="RocksDbSharp" Version="6.2.2" />
   </ItemGroup>
 
 </Project>

@@ -66,7 +66,7 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             _peersColumnFamily = _db.GetColumnFamily("Peers");
             _subscriptionsColumnFamily = _db.GetColumnFamily("Subscriptions");
 
-            static ColumnFamilyOptions ColumnFamilyOptions() => new ColumnFamilyOptions().SetCompression(CompressionTypeEnum.rocksdb_no_compression)
+            static ColumnFamilyOptions ColumnFamilyOptions() => new ColumnFamilyOptions().SetCompression(Compression.No)
                                                                                          .SetLevelCompactionDynamicLevelBytes(true)
                                                                                          .SetArenaBlockSize(16 * 1024);
         }

@@ -39,6 +39,9 @@ jobs:
     pool:
       vmImage: ubuntu-latest
     steps:
+      - script: sudo apt-get install libsnappy-dev
+        displayName: Install RocksDb dependencies
+
       - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
