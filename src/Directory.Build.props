@@ -10,13 +10,15 @@
     <DebugType>embedded</DebugType>
     <Deterministic>true</Deterministic>
     <Nullable>enable</Nullable>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <PropertyGroup>
-    <ZebusVersion>3.6.2</ZebusVersion>
+    <ZebusVersion>3.7.0</ZebusVersion>
     <ZebusContractsVersion>3.0.0</ZebusContractsVersion>
     <ZebusDirectoryVersion>$(ZebusVersion)</ZebusDirectoryVersion>
-    <ZebusPersistenceVersion>3.6.3</ZebusPersistenceVersion>
+    <ZebusPersistenceVersion>$(ZebusVersion)</ZebusPersistenceVersion>
     <ZebusTestingVersion>$(ZebusVersion)</ZebusTestingVersion>
   </PropertyGroup>
 
@@ -26,8 +28,7 @@
     <Description>A lightweight Peer to Peer Service Bus</Description>
     <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Copyright © ABC arbitrage 2020</Copyright>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <Copyright>Copyright © ABC arbitrage $([System.DateTime]::Now.ToString('yyyy'))</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(NCrunch)' == '1'">
@@ -36,7 +37,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TF_BUILD)' != ''">
-    <DeterministicSourcePaths>true</DeterministicSourcePaths>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>
