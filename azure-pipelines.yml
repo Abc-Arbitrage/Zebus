@@ -5,7 +5,7 @@ variables:
 jobs:
   - job: Windows
     pool:
-      vmImage: windows-2019
+      vmImage: windows-latest
     steps:
       - task: DotNetCoreCLI@2
         displayName: Build
@@ -36,18 +36,18 @@ jobs:
 
   - job: Linux
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
     steps:
       - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
           command: build
           projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
-          arguments: --configuration $(BuildConfiguration) --framework netcoreapp2.1
+          arguments: --configuration $(BuildConfiguration) --framework netcoreapp3.1
 
       - task: DotNetCoreCLI@2
         displayName: Test
         inputs:
           command: test
           projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
-          arguments: --configuration $(BuildConfiguration) --framework netcoreapp2.1
+          arguments: --configuration $(BuildConfiguration) --framework netcoreapp3.1
