@@ -482,7 +482,10 @@ namespace Abc.Zebus.Tests.Dispatch
 
             lock (sequence)
             {
-                sequence.ShouldEqual(Enumerable.Range(1, 5));
+                sequence.ToArray().ShouldEqualOneOf(
+                    new[] { 1, 2, 3, 4, 5 },
+                    new[] { 1, 2, 3, 5, 4 }
+                );
             }
 
             void AddSequence(int i)

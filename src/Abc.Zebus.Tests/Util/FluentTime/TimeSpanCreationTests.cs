@@ -37,17 +37,6 @@ namespace Abc.Zebus.Tests.Util.FluentTime
         }
 
         [Test]
-        public void Note_difference_with_TimeSpanFromMilliseconds_which_accepts_double_but_is_only_millisecond_precise()
-        {
-            Assert.That(TimeSpan.FromMilliseconds(1.5),
-                        Is.EqualTo(TimeSpan.FromMilliseconds(2)));
-            // ... which is unexpected to most. Therefore ...
-            Assert.That(1.5.Milliseconds(),
-                        Is.Not.EqualTo(TimeSpan.FromMilliseconds(1.5)));
-            // It's too bad, but I think this follows the principle of least surprise.
-        }
-
-        [Test]
         public void Creates_TimeSpans_readably_with_singular_aliases()
         {
             Assert.That(1.Week(), Is.EqualTo(TimeSpan.FromDays(7)));
