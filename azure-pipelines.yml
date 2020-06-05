@@ -1,6 +1,7 @@
 
 variables:
   BuildConfiguration: Release
+  LinuxTargetFramework: netcoreapp3.1
 
 jobs:
   - job: Windows
@@ -42,12 +43,12 @@ jobs:
         displayName: Build
         inputs:
           command: build
-          projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
-          arguments: --configuration $(BuildConfiguration) --framework netcoreapp3.1
+          projects: src/**/*.Tests.csproj
+          arguments: --configuration $(BuildConfiguration) --framework $(LinuxTargetFramework)
 
       - task: DotNetCoreCLI@2
         displayName: Test
         inputs:
           command: test
-          projects: src/Abc.Zebus.Tests/Abc.Zebus.Tests.csproj
-          arguments: --configuration $(BuildConfiguration) --framework netcoreapp3.1
+          projects: src/**/*.Tests.csproj
+          arguments: --configuration $(BuildConfiguration) --framework $(LinuxTargetFramework)
