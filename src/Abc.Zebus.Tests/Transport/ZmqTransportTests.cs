@@ -390,7 +390,7 @@ namespace Abc.Zebus.Tests.Transport
         public void should_not_wait_blocked_peers_on_every_send()
         {
             var senderTransport = CreateAndStartZmqTransport();
-            senderTransport.SocketOptions.SendHighWaterMark = 1;
+            senderTransport.SocketOptions.SendHighWaterMark = 3;
             senderTransport.SocketOptions.SendTimeout = 20.Milliseconds();
             senderTransport.SocketOptions.SendRetriesBeforeSwitchingToClosedState = 0;
 
