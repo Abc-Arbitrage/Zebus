@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <Version>$(ZebusPersistenceVersion)</Version>
     <Platform>x64</Platform>
     <Platforms>AnyCPU;x64</Platforms>
@@ -14,7 +14,7 @@
     <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="RocksDbNative" Version="6.2.2" />
   </ItemGroup>
