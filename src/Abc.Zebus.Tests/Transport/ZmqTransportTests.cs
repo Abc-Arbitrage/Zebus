@@ -391,7 +391,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
             senderTransport.SocketOptions.SendHighWaterMark = 3;
-            senderTransport.SocketOptions.SendTimeout = 20.Milliseconds();
+            senderTransport.SocketOptions.SendTimeout = 100.Milliseconds();
             senderTransport.SocketOptions.SendRetriesBeforeSwitchingToClosedState = 0;
 
             var receivedMessages = new List<TransportMessage>();
@@ -419,7 +419,7 @@ namespace Abc.Zebus.Tests.Transport
             Wait.Until(() => receivedMessages.Count == 10, 10.Seconds(), "Timed out while waiting for messages");
             receiverStopwatch.Stop();
             Console.WriteLine("Elapsed time to get messages: " + receiverStopwatch.Elapsed);
-            receiverStopwatch.ElapsedMilliseconds.ShouldBeLessOrEqualThan(200, "Throughput is too low");
+            receiverStopwatch.ElapsedMilliseconds.ShouldBeLessOrEqualThan(1000, "Throughput is too low");
         }
 
         [Test]
