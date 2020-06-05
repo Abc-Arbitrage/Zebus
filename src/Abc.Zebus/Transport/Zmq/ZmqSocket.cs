@@ -37,11 +37,8 @@ namespace Abc.Zebus.Transport.Zmq
             if (_handle == IntPtr.Zero)
                 return;
 
-            while (ZmqNative.close(_handle) == -1)
+            if (ZmqNative.close(_handle) == -1)
             {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
                 if (canThrow)
                     ZmqUtil.ThrowLastError("Could not close ZMQ socket");
             }
@@ -96,48 +93,28 @@ namespace Abc.Zebus.Transport.Zmq
 
         public void Bind(string endpoint)
         {
-            while (ZmqNative.bind(_handle, endpoint) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
+            if (ZmqNative.bind(_handle, endpoint) == -1)
                 ZmqUtil.ThrowLastError($"Unable to bind ZMQ socket to {endpoint}");
-            }
         }
 
         public bool TryUnbind(string endpoint)
         {
-            while (ZmqNative.unbind(_handle, endpoint) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
+            if (ZmqNative.unbind(_handle, endpoint) == -1)
                 return false;
-            }
 
             return true;
         }
 
         public void Connect(string endpoint)
         {
-            while (ZmqNative.connect(_handle, endpoint) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
+            if (ZmqNative.connect(_handle, endpoint) == -1)
                 ZmqUtil.ThrowLastError($"Unable to connect ZMQ socket to {endpoint}");
-            }
         }
 
         public bool TryDisconnect(string endpoint)
         {
-            while (ZmqNative.disconnect(_handle, endpoint) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
+            if (ZmqNative.disconnect(_handle, endpoint) == -1)
                 return false;
-            }
 
             return true;
         }

@@ -7,24 +7,14 @@ namespace Abc.Zebus.Transport.Zmq
     {
         public static void Init(ZmqMessage* message)
         {
-            while (ZmqNative.msg_init(message) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
+            if (ZmqNative.msg_init(message) == -1)
                 ZmqUtil.ThrowLastError("Could not initialize ZMQ message");
-            }
         }
 
         public static void Close(ZmqMessage* message)
         {
-            while (ZmqNative.msg_close(message) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
+            if (ZmqNative.msg_close(message) == -1)
                 ZmqUtil.ThrowLastError("Could not close ZMQ message");
-            }
         }
     }
 }
