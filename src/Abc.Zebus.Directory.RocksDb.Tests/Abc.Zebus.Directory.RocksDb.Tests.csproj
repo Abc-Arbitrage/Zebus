@@ -13,4 +13,8 @@
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="RocksDbNative" Version="6.2.2" />
+  </ItemGroup>
+
 </Project>

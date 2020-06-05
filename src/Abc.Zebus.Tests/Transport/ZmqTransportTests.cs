@@ -278,7 +278,7 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.Send(new FakeCommand(0).ToTransportMessage(), new[] { receiver });
             Wait.Until(() => receivedMessages.Count == 2, 2.Seconds(), "unable to receive message");
         }
-       
+
         [Test, Repeat(10)]
         public void should_not_reuse_a_port_used_in_another_envionment()
         {
@@ -296,7 +296,7 @@ namespace Abc.Zebus.Tests.Transport
             Console.WriteLine("{0} => {1}", endpoint.GetPort(), expectedPort);
         }
 
-        [Test, Repeat(5)] 
+        [Test, Repeat(5)]
         public void should_terminate_zmq_connection_of_a_forgotten_peer_after_some_time()
         {
             var senderTransport = CreateAndStartZmqTransport();
@@ -416,7 +416,7 @@ namespace Abc.Zebus.Tests.Transport
             }
 
             var receiverStopwatch = Stopwatch.StartNew();
-            Wait.Until(() => receivedMessages.Count == 10, 2.Seconds(), "Timed out while waiting for messages");
+            Wait.Until(() => receivedMessages.Count == 10, 10.Seconds(), "Timed out while waiting for messages");
             receiverStopwatch.Stop();
             Console.WriteLine("Elapsed time to get messages: " + receiverStopwatch.Elapsed);
             receiverStopwatch.ElapsedMilliseconds.ShouldBeLessOrEqualThan(200, "Throughput is too low");
@@ -586,7 +586,7 @@ namespace Abc.Zebus.Tests.Transport
             transport2.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer1 });
             Wait.Until(() => transport1.OutboundSocketCount == 1, 10.Seconds());
             Wait.Until(() => transport2.OutboundSocketCount == 1, 10.Seconds());
-            
+
             transport2.Stop();
 
             Wait.Until(() => transport1.OutboundSocketCount == 0, 10.Seconds());

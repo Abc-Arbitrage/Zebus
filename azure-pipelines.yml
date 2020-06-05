@@ -21,6 +21,8 @@ jobs:
           command: test
           projects: src/**/*.Tests.csproj
           arguments: --configuration $(BuildConfiguration)
+          publishTestResults: true
+          testRunTitle: Windows
 
       - task: DotNetCoreCLI@2
         displayName: Pack
@@ -55,3 +57,5 @@ jobs:
           command: test
           projects: src/**/*.Tests.csproj
           arguments: --configuration $(BuildConfiguration) --framework $(LinuxTargetFramework)
+          publishTestResults: true
+          testRunTitle: Linux
