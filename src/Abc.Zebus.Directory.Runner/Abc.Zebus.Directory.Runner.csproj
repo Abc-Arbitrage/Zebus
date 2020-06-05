@@ -8,15 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Contracts\Abc.Zebus.Contracts.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Directory.Cassandra\Abc.Zebus.Directory.Cassandra.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Directory.RocksDb\Abc.Zebus.Directory.RocksDb.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj" />
     <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>

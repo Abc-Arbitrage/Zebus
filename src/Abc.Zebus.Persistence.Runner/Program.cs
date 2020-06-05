@@ -19,7 +19,10 @@ using Abc.Zebus.Persistence.Transport;
 using Abc.Zebus.Transport;
 using log4net;
 using log4net.Config;
+using log4net.Core;
 using StructureMap;
+
+#nullable enable
 
 namespace Abc.Zebus.Persistence.Runner
 {
@@ -36,7 +39,7 @@ namespace Abc.Zebus.Persistence.Runner
                 _cancelKeySignal.Set();
             };
 
-            XmlConfigurator.ConfigureAndWatch(new FileInfo(InBaseDirectory("log4net.config")));
+            XmlConfigurator.ConfigureAndWatch(LoggerManager.GetRepository(typeof(Program).Assembly), new FileInfo(InBaseDirectory("log4net.config")));
             _log.Info("Starting persistence");
 
             var appSettingsConfiguration = new AppSettingsConfiguration();

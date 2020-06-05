@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Zebus.Directory.RocksDb</PackageId>
     <Version>$(ZebusDirectoryVersion)</Version>
   </PropertyGroup>
