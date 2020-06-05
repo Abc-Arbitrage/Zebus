@@ -1,12 +1,18 @@
 
 variables:
   BuildConfiguration: Release
+  NetCoreSdkVersion: 3.1.x
 
 jobs:
   - job: Windows
     pool:
       vmImage: windows-latest
     steps:
+      - task: UseDotNet@2
+        displayName: Install .NET Core SDK
+        inputs:
+          version: $(NetCoreSdkVersion)
+
       - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
@@ -38,6 +44,11 @@ jobs:
     pool:
       vmImage: ubuntu-latest
     steps:
+      - task: UseDotNet@2
+        displayName: Install .NET Core SDK
+        inputs:
+          version: $(NetCoreSdkVersion)
+
       - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
