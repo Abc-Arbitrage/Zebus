@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
@@ -8,8 +9,6 @@ using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace Abc.Zebus.Directory.DeadPeerDetection
 {
@@ -105,7 +104,20 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private bool IsNotInTheProtectedList(PeerDescriptor descriptor)
         {
             var peerId = descriptor.PeerId.ToString();
-            return !_configuration.WildcardsForPeersNotToDecommissionOnTimeout.Any(x => Operators.LikeString(peerId, x, CompareMethod.Text));
+
+            foreach (var wildcardPattern in _configuration.WildcardsForPeersNotToDecommissionOnTimeout ?? Array.Empty<string>())
+            {
+                var pattern = Regex.Escape(wildcardPattern.Trim());
+                pattern = pattern.Replace(@"\?", ".");
+                pattern = pattern.Replace(@"\*", ".*?");
+                pattern = pattern.Replace(@"\#", "[0-9]");
+                pattern = "^" + pattern + "$";
+
+                if (Regex.IsMatch(peerId, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                    return false;
+            }
+
+            return true;
         }
 
         private void OnPeerResponding(DeadPeerDetectorEntry entry, DateTime timeoutTimestampUtc)

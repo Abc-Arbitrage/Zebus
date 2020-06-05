@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using log4net.Config;
+using log4net.Core;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Directory.Tests
@@ -12,7 +13,7 @@ namespace Abc.Zebus.Directory.Tests
         public void SetUp()
         {
             var configurationFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config");
-            XmlConfigurator.Configure(new FileInfo(configurationFile));
+            XmlConfigurator.Configure(LoggerManager.GetRepository(typeof(Log4netConfigurator).Assembly), new FileInfo(configurationFile));
         }
     }
 }
