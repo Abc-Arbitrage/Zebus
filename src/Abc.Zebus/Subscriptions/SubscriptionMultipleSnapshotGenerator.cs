@@ -14,13 +14,13 @@ namespace Abc.Zebus.Subscriptions
     /// - Messages can be sent to the subscribing peer before the snapshot.
     /// - The subscribing peer should properly handle (discard) messages received before the snapshot.
     /// </remarks>
-    public abstract class MultipleSubscriptionSnapshotGenerator<TSnapshotMessage, TMessage> : SubscriptionHandler<TMessage>
+    public abstract class SubscriptionMultipleSnapshotGenerator<TSnapshotMessage, TMessage> : SubscriptionHandler<TMessage>
         where TSnapshotMessage : IEvent
         where TMessage : IEvent
     {
         private readonly IBus _bus;
 
-        protected MultipleSubscriptionSnapshotGenerator(IBus bus)
+        protected SubscriptionMultipleSnapshotGenerator(IBus bus)
         {
             _bus = bus;
         }
