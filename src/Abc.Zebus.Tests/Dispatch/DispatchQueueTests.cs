@@ -546,6 +546,12 @@ namespace Abc.Zebus.Tests.Dispatch
                 task.Result.Errors.ShouldBeEmpty();
         }
 
+        [Test, Timeout(5000)]
+        public void should_not_wait_for_all_messages_processed_when_not_started()
+        {
+            _dispatchQueue.WaitUntilAllMessagesAreProcessed();
+        }
+
         private static void Throw()
         {
             throw new Exception("Test");

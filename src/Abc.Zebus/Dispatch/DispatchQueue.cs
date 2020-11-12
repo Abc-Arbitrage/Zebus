@@ -87,6 +87,7 @@ namespace Abc.Zebus.Dispatch
             _queue.CompleteAdding();
 
             _thread?.Join();
+            _thread = null;
 
             _queue = new FlushableBlockingCollection<Entry>();
             _logger.InfoFormat("{0} stopped", Name);
@@ -240,6 +241,9 @@ namespace Abc.Zebus.Dispatch
         /// </returns>
         public bool WaitUntilAllMessagesAreProcessed()
         {
+            if (_thread is null)
+                return false;
+
             bool continueWait, hasChanged = false;
 
             do
