@@ -488,18 +488,18 @@ namespace Abc.Zebus.Directory
             }
 
             public PeerEntryResult(PeerEntry value)
-                : this()
             {
                 Value = value;
+                FailureReason = null;
             }
 
             public PeerEntryResult(FailureReasonType failureReason)
-                : this()
             {
+                Value = null;
                 FailureReason = failureReason;
             }
 
-            public PeerEntry Value { get; }
+            public PeerEntry? Value { get; }
             public FailureReasonType? FailureReason { get; }
         }
     }
