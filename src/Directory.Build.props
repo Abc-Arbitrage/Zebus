@@ -12,6 +12,8 @@
     <Nullable>enable</Nullable>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(TF_BUILD)' != ''">true</ContinuousIntegrationBuild>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' != ''">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -29,15 +31,12 @@
     <PackageProjectUrl>https://github.com/Abc-Arbitrage/Zebus</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Copyright © ABC arbitrage $([System.DateTime]::Now.ToString('yyyy'))</Copyright>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\output</PackageOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(NCrunch)' == '1'">
     <EnableSourceLink>false</EnableSourceLink>
     <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TF_BUILD)' != ''">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>
