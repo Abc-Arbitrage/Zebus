@@ -2,6 +2,6 @@
 {
     public interface IMessageContextAware
     {
-        MessageContext Context { get; set; } 
+        MessageContext? Context { get; set; }
     }
 }

@@ -36,7 +36,7 @@ namespace Abc.Zebus.Directory.Handlers
             _blacklistedMachines = configuration.BlacklistedMachines.ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
-        public MessageContext Context { get; set; } = default!;
+        public MessageContext? Context { get; set; }
 
         public void Handle(DecommissionPeerCommand message)
         {
@@ -45,7 +45,7 @@ namespace Abc.Zebus.Directory.Handlers
 
         public void Handle(RegisterPeerCommand message)
         {
-            if (_blacklistedMachines.Contains(Context.Originator.SenderMachineName!))
+            if (_blacklistedMachines.Contains(Context!.Originator.SenderMachineName!))
                 throw new InvalidOperationException($"Peer {Context.SenderId} on host {Context.Originator.SenderMachineName} is not allowed to register on this directory");
 
             var peerTimestampUtc = message.Peer.TimestampUtc;

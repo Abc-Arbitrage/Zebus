@@ -9,11 +9,11 @@
             _messageReplayerRepository = messageReplayerRepository;
         }
 
-        public MessageContext Context { get; set; } = default!;
+        public MessageContext? Context { get; set; }
 
         public void Handle(StartMessageReplayCommand message)
         {
-            var peer = Context.GetSender();
+            var peer = Context!.GetSender();
 
             var currentMessageReplayer = _messageReplayerRepository.GetActiveMessageReplayer(peer.Id);
             currentMessageReplayer?.Cancel();

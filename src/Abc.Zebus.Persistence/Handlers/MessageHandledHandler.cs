@@ -19,14 +19,14 @@ namespace Abc.Zebus.Persistence.Handlers
             _configuration = configuration;
         }
 
-        public MessageContext Context { get; set; } = default!;
+        public MessageContext? Context { get; set; }
 
         public void Handle(MessageHandled message)
         {
-            if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(Context.SenderId.ToString()))
+            if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(Context!.SenderId.ToString()))
                 _log.Info($"Ack received from peer {Context.SenderId}. MessageId: {message.MessageId}");
 
-            _inMemoryMessageMatcher.EnqueueAck(Context.SenderId, message.MessageId);
+            _inMemoryMessageMatcher.EnqueueAck(Context!.SenderId, message.MessageId);
 
             var activeMessageReplayer = _messageReplayerRepository.GetActiveMessageReplayer(Context.SenderId);
             activeMessageReplayer?.Handle(message);
