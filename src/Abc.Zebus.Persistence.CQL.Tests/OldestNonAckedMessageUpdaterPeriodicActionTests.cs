@@ -23,6 +23,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
         public override void CreateSchema()
         {
             IgnoreWhenSet("TF_BUILD");
+            IgnoreWhenSet("GITHUB_ACTIONS");
             base.CreateSchema();
         }
 

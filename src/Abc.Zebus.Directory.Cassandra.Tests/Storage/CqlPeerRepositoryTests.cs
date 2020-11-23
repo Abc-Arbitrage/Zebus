@@ -24,6 +24,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         public override void CreateSchema()
         {
             IgnoreWhenSet("TF_BUILD");
+            IgnoreWhenSet("GITHUB_ACTIONS");
             base.CreateSchema();
         }
 
