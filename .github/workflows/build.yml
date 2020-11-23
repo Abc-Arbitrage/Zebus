@@ -27,7 +27,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore src/Abc.Zebus.sln
 
       - name: Pack
-        run: dotnet pack --configuration Release --no-build src/Abc.Zebus.sln
+        run: dotnet pack --configuration Release --no-restore src/Abc.Zebus.sln
 
       - name: Test
         run: dotnet test --configuration Release --no-build src/Abc.Zebus.sln
