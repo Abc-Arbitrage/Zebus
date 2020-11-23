@@ -34,7 +34,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests
             base.CreateSchema();
         }
 
-        private void IgnoreWhenSet(string environmentVariable)
+        private static void IgnoreWhenSet(string environmentVariable)
         {
             var env = Environment.GetEnvironmentVariable(environmentVariable);
             if (!string.IsNullOrEmpty(env) && bool.TryParse(env, out var isSet) && isSet)

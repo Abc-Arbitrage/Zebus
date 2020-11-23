@@ -62,7 +62,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         [OneTimeTearDown]
         public void DropSchema()
         {
-            Session.Execute(new SimpleStatement($"drop keyspace \"{_keySpace}\";"));
+            Session?.Execute(new SimpleStatement($"drop keyspace \"{_keySpace}\";"));
             _sessionManager.Dispose();
         }
 

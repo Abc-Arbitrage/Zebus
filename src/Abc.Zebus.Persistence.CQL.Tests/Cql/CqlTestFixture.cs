@@ -30,7 +30,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests.Cql
         protected ISession Session { get; private set; }
 
         public Mock<TConfig> ConfigurationMock { get; private set; }
-        
+
         [OneTimeSetUp]
         public virtual void CreateSchema()
         {
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Persistence.CQL.Tests.Cql
         [OneTimeTearDown]
         public void DropSchema()
         {
-            Session.Execute(new SimpleStatement($"drop keyspace \"{_keySpace}\";"));
+            Session?.Execute(new SimpleStatement($"drop keyspace \"{_keySpace}\";"));
             _sessionManager.Dispose();
         }
 
