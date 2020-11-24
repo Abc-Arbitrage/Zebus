@@ -54,16 +54,10 @@ jobs:
         run: sudo apt-get install libsnappy-dev
 
       - name: Restore
-        run: dotnet restore src/Abc.Zebus.sln
+        run: dotnet restore src/Abc.Zebus.Tests.proj
 
       - name: Build
-        run: |
-          for testProject in src/**/*.Tests.csproj; do
-            dotnet build --configuration Release --framework ${{ env.BUILD_LINUX_TEST_TFM }} --no-restore $testProject
-          done
+        run: dotnet build --configuration Release --framework ${{ env.BUILD_LINUX_TEST_TFM }} --no-restore src/Abc.Zebus.Tests.proj
 
       - name: Test
-        run: |
-          for testProject in src/**/*.Tests.csproj; do
-            dotnet test --configuration Release --framework ${{ env.BUILD_LINUX_TEST_TFM }} --no-build $testProject
-          done
+        run: dotnet test --configuration Release --framework ${{ env.BUILD_LINUX_TEST_TFM }} --no-build src/Abc.Zebus.Tests.proj
