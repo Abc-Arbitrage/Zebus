@@ -61,7 +61,7 @@ namespace Abc.Zebus
             if (memberExpr == null)
                 return string.Empty;
 
-            var attr = (DescriptionAttribute)memberExpr.Member.GetCustomAttributes(typeof(DescriptionAttribute)).FirstOrDefault();
+            var attr = (DescriptionAttribute?)memberExpr.Member.GetCustomAttributes(typeof(DescriptionAttribute)).FirstOrDefault();
 
             return attr != null ? attr.Description : string.Empty;
         }

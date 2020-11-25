@@ -44,10 +44,10 @@ namespace Abc.Zebus.Persistence.Runner
 
             var appSettingsConfiguration = new AppSettingsConfiguration();
             var useCassandraStorage = ConfigurationManager.AppSettings["PersistenceStorage"] == "Cassandra";
-            var busFactory = new BusFactory().WithConfiguration(appSettingsConfiguration, ConfigurationManager.AppSettings["Environment"])
+            var busFactory = new BusFactory().WithConfiguration(appSettingsConfiguration, ConfigurationManager.AppSettings["Environment"]!)
                                              .WithScan()
-                                             .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"])
-                                             .WithPeerId(ConfigurationManager.AppSettings["PeerId"]);
+                                             .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"]!)
+                                             .WithPeerId(ConfigurationManager.AppSettings["PeerId"]!);
 
             InjectPersistenceServiceSpecificConfiguration(busFactory, appSettingsConfiguration, useCassandraStorage);
 

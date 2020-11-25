@@ -111,7 +111,7 @@ namespace Abc.Zebus
             using (CultureScope.Invariant())
             {
                 var newExpression = (NewExpression)factory.Body;
-                var parameters = newExpression.Constructor.GetParameters();
+                var parameters = newExpression.Constructor!.GetParameters();
 
                 for (var argumentIndex = 0; argumentIndex < newExpression.Arguments.Count; ++argumentIndex)
                 {

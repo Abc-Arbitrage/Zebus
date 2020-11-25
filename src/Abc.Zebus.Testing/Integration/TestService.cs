@@ -55,7 +55,7 @@ namespace Abc.Zebus.Testing.Integration
                     RedirectStandardError = RedirectOutput,
                     CreateNoWindow = true,
                     Arguments = "-buildfile:" + Path.GetFileName(_buildFile) + " build-only -D:build.dir=\"" + _buildDirectory + "\"",
-                    WorkingDirectory = Path.GetDirectoryName(_buildFile),
+                    WorkingDirectory = Path.GetDirectoryName(_buildFile)!,
                 }
             };
 
@@ -103,12 +103,12 @@ namespace Abc.Zebus.Testing.Integration
                 _process.BeginOutputReadLine();
         }
 
-        private void LogError(string text)
+        private void LogError(string? text)
         {
             _errorWriter.WriteLine("[{0:HH:mm:ss.fff}][{1}Manager] {2}", DateTime.Now, _serviceName, text);
         }
 
-        private void LogInfo(string text)
+        private void LogInfo(string? text)
         {
             _outputWriter.WriteLine("[{0:HH:mm:ss.fff}][{1}Manager] {2}", DateTime.Now, _serviceName, text);
         }

@@ -7,7 +7,7 @@ var target = Argument("target", "Default");
 var paths = new {
     src = MakeAbsolute(Directory("./../src")).FullPath,
     solution = MakeAbsolute(File("./../src/Abc.Zebus.sln")).FullPath,
-    nugetOutput = MakeAbsolute(Directory("./../output/nuget")).FullPath,
+    nugetOutput = MakeAbsolute(Directory("./../output")).FullPath,
 };
 
 //////////////////////////////////////////////////////////////////////

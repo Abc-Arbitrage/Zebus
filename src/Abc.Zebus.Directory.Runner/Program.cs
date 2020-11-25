@@ -40,17 +40,17 @@ namespace Abc.Zebus.Directory.Runner
             };
 
             XmlConfigurator.ConfigureAndWatch(LogManager.GetRepository(typeof(Program).Assembly), new FileInfo(PathUtil.InBaseDirectory("log4net.config")));
-            var storageType = ConfigurationManager.AppSettings["Storage"];
+            var storageType = ConfigurationManager.AppSettings["Storage"]!;
             _log.Info($"Starting in directory with storage type '{storageType}'");
 
             var busFactory = new BusFactory();
             InjectDirectoryServiceSpecificConfiguration(busFactory, Enum.Parse<StorageType>(storageType));
 
             busFactory
-                .WithConfiguration(new AppSettingsBusConfiguration(), ConfigurationManager.AppSettings["Environment"])
+                .WithConfiguration(new AppSettingsBusConfiguration(), ConfigurationManager.AppSettings["Environment"]!)
                 .WithScan()
-                .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"])
-                .WithPeerId(ConfigurationManager.AppSettings["PeerId"]);
+                .WithEndpoint(ConfigurationManager.AppSettings["Endpoint"]!)
+                .WithPeerId(ConfigurationManager.AppSettings["PeerId"]!);
 
             using (busFactory.CreateAndStartBus())
             {
