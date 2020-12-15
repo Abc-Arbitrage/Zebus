@@ -367,10 +367,6 @@ namespace Abc.Zebus.Tests.Core
                 return (subscription, descriptor);
             }
 
-            class TestSnapshot : IEvent
-            {
-            }
-
             class TestMessage : IEvent
             {
             }
@@ -390,26 +386,6 @@ namespace Abc.Zebus.Tests.Core
             class TestSubscriptionHandler : SubscriptionHandler<TestMessage>
             {
                 protected override void OnSubscriptionsUpdated(SubscriptionsForType subscriptions, PeerId peerId)
-                {
-                }
-            }
-
-            class TestSnapshotGenerator : SubscriptionSnapshotGenerator<TestSnapshot, TestMessage>
-            {
-                public TestSnapshotGenerator(IBus bus)
-                    : base(bus)
-                {
-                }
-
-                protected override TestSnapshot GenerateSnapshot(SubscriptionsForType subscription)
-                {
-                    return new TestSnapshot();
-                }
-            }
-
-            class TestHandler : IMessageHandler<MessageHandlerInvokerLoaderTests.TestMessage>
-            {
-                public void Handle(MessageHandlerInvokerLoaderTests.TestMessage message)
                 {
                 }
             }
