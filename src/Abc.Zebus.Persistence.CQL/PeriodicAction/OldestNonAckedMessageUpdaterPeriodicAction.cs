@@ -46,8 +46,15 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
             if (peer.Removed)
                 return;
 
-            _cqlStorage.UpdateNewOldestMessageTimestamp(peer)
-                       .Wait(_configuration.OldestMessagePerPeerCheckPeriod);
+            try
+            {
+                _cqlStorage.UpdateNewOldestMessageTimestamp(peer)
+                           .Wait(_configuration.OldestMessagePerPeerCheckPeriod);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to update oldest message timestamp for peer {peer.PeerId}", ex);
+            }
         }
     }
 }
