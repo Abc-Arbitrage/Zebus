@@ -366,16 +366,28 @@ namespace Abc.Zebus.Testing
         }
 
         /// <summary>
-        /// Executes handler asynchronously (simulate remotely handled messages).
+        /// Executes handler asynchronously (simulate remotely handled messages or messages handled in
+        /// a different dispatch queue).
         /// </summary>
         public class AsyncHandlerExecutor : IHandlerExecutor
         {
             public Task<CommandResult> Execute(ICommand command, Func<IMessage, object?>? handler)
             {
-                return Task.Factory.StartNew(() =>
+                return Task.Run(() =>
                 {
-                    var result = handler?.Invoke(command);
-                    return new CommandResult(0, null, result);
+                    try
+                    {
+                        var response = handler?.Invoke(command);
+                        return new CommandResult(0, null, response);
+                    }
+                    catch (DomainException ex)
+                    {
+                        return new CommandResult(ex.ErrorCode, ex.Message, null);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommandResult(1, ex.Message, null);
+                    }
                 });
             }
         }
