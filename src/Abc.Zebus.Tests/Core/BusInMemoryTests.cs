@@ -30,7 +30,7 @@ namespace Abc.Zebus.Tests.Core
             _peerDirectory = new TestPeerDirectory();
 
             _bus = new BusFactory(_container)
-                .WithHandlers(typeof(EventPublisherEventHandler))
+                .WithHandlers(typeof(EventPublisherEventHandler), typeof(CommandHandleThatReplyAndThrow))
                 .CreateAndStartInMemoryBus(_peerDirectory, _transport);
         }
 
@@ -73,6 +73,28 @@ namespace Abc.Zebus.Tests.Core
             _bus.Publish(new Event());
 
             _transport.Messages.SelectMany(x => x.Targets).Count().ShouldEqual(peerCount);
+        }
+
+        [Test]
+        public async Task should_preserve_reply_object_on_error()
+        {
+            var response = await _bus.Send(new Command());
+
+            response.IsSuccess.ShouldBeFalse();
+            response.Response.ShouldNotBeNull();
+            response.Response.ShouldEqualDeeply(new CommandResponse { Id = 42 });
+        }
+
+        [ProtoContract]
+        public class Command : ICommand
+        {
+        }
+
+        [ProtoContract]
+        public class CommandResponse : IMessage
+        {
+            [ProtoMember(1)]
+            public int Id { get; set; }
         }
 
         [ProtoContract]
@@ -118,6 +140,23 @@ namespace Abc.Zebus.Tests.Core
                 {
                     Processed = true;
                 }
+            }
+        }
+
+        public class CommandHandleThatReplyAndThrow : IMessageHandler<Command>
+        {
+            private readonly IBus _bus;
+
+            public CommandHandleThatReplyAndThrow(IBus bus)
+            {
+                _bus = bus;
+            }
+
+            public void Handle(Command message)
+            {
+                _bus.Reply(new CommandResponse { Id = 42 });
+
+                throw new Exception("By design");
             }
         }
     }

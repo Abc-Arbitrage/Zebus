@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Abc.Zebus.Testing.Comparison;
+using JetBrains.Annotations;
 using KellermanSoftware.CompareNetObjects;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
@@ -118,6 +119,7 @@ namespace Abc.Zebus.Testing.Extensions
             Assert.IsNull(anObject, message);
         }
 
+        [ContractAnnotation("anObject: null => halt")]
         public static void ShouldNotBeNull(this object? anObject, string? message = null)
         {
             Assert.IsNotNull(anObject, message);
