@@ -18,8 +18,8 @@ namespace Abc.Zebus.Persistence.Handlers
 
         public void Handle(PublishNonAckMessagesCountCommand message)
         {
-            var allNonAckedCounts = _storage.GetNonAckedMessageCounts();
-            var updatedNonAckedCounts = _nonAckedCountCache.GetUpdatedValues(allNonAckedCounts.Select(x => new NonAckedCount(x.Key, x.Value)));
+            var nonAckedCounts = _storage.GetNonAckedMessageCounts();
+            var updatedNonAckedCounts = _nonAckedCountCache.Update(nonAckedCounts.Select(x => new NonAckedCount(x.Key, x.Value)));
             var messagesCount = updatedNonAckedCounts.Select(x => new NonAckMessage(x.PeerId.ToString(), x.Count))
                                                      .ToArray();
 

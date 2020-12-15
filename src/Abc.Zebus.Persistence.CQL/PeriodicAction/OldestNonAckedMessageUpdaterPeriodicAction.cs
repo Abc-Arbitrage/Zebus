@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Hosting;
 using Abc.Zebus.Persistence.CQL.Storage;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Util;
+using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Persistence.CQL.PeriodicAction
 {
@@ -25,20 +25,21 @@ namespace Abc.Zebus.Persistence.CQL.PeriodicAction
 
         public override void DoPeriodicAction()
         {
-            var isGlobalCheck = SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
-            var allPeersDictionary = _cqlStorage.GetAllKnownPeers().ToDictionary(state => state.PeerId);
-            IEnumerable<PeerState> peersToCheck = allPeersDictionary.Values;
-            var updatedPeers = _nonAckedCountCache.GetUpdatedValues(peersToCheck.Select(x => new NonAckedCount(x.PeerId, x.NonAckedMessageCount)));
+            var isGlobalCheck = ShouldPerformGlobalCheck();
+            var peers = _cqlStorage.GetAllKnownPeers().AsList();
+            var updatedNonAckedCounts = _nonAckedCountCache.Update(peers.Select(x => new NonAckedCount(x.PeerId, x.NonAckedMessageCount)));
+            var updatedPeerIds = updatedNonAckedCounts.Select(x => x.PeerId).ToHashSet();
+            var peersToCheck = isGlobalCheck ? peers : peers.Where(x => updatedPeerIds.Contains(x.PeerId));
+
             if (isGlobalCheck)
-            {
                 _lastGlobalCheck = SystemDateTime.UtcNow;
-            }
-            else
-            {
-                peersToCheck = updatedPeers.Select(x => allPeersDictionary[x.PeerId]);
-            }
 
             Parallel.ForEach(peersToCheck, new ParallelOptions { MaxDegreeOfParallelism = 10 }, UpdateOldestNonAckedMessage);
+        }
+
+        private bool ShouldPerformGlobalCheck()
+        {
+            return SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
         }
 
         private void UpdateOldestNonAckedMessage(PeerState peer)

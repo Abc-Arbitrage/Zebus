@@ -4,22 +4,22 @@ namespace Abc.Zebus.Persistence.Storage
 {
     public class NonAckedCountCache
     {
-        private readonly Dictionary<PeerId, NonAckedCount> _nonAckedCounts = new Dictionary<PeerId, NonAckedCount>();
+        private readonly Dictionary<PeerId, int> _nonAckedCounts = new Dictionary<PeerId, int>();
 
-        public IEnumerable<NonAckedCount> GetUpdatedValues(IEnumerable<NonAckedCount> allNonAckedCounts)
+        /// <summary>
+        /// Update non-acked counts and return the collection of modified elements.
+        /// </summary>
+        public IEnumerable<NonAckedCount> Update(IEnumerable<NonAckedCount> nonAckedCounts)
         {
-            var updatedPeers = new List<NonAckedCount>();
-
-            foreach (var nonAckedCount in allNonAckedCounts)
+            foreach (var nonAckedCount in nonAckedCounts)
             {
-                if (_nonAckedCounts.TryGetValue(nonAckedCount.PeerId, out var previousNonAckedCount) && previousNonAckedCount.Count == nonAckedCount.Count)
+                if (_nonAckedCounts.TryGetValue(nonAckedCount.PeerId, out var previousCount) && previousCount == nonAckedCount.Count)
                     continue;
 
-                _nonAckedCounts[nonAckedCount.PeerId] = nonAckedCount;
-                updatedPeers.Add(nonAckedCount);
-            }
+                _nonAckedCounts[nonAckedCount.PeerId] = nonAckedCount.Count;
 
-            return updatedPeers;
+                yield return nonAckedCount;
+            }
         }
     }
 }
