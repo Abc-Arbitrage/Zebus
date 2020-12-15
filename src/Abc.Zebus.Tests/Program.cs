@@ -91,7 +91,7 @@ namespace Abc.Zebus.Tests
             var bus = BusPerformanceTests.CreateAndStartSender();
 
             var running = true;
-            var task = Task.Factory.StartNew(() =>
+            var task = Task.Run(() =>
             {
                 var i = 0;
                 while (running)

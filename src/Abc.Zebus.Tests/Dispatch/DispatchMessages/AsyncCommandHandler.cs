@@ -11,18 +11,18 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
 
         public Task Handle(AsyncCommand message)
         {
-            return Task.Factory.StartNew(() =>
-                {
-                    if (WaitForSignal)
-                        message.Signal.WaitOne(2.Seconds());
+            return Task.Run(() =>
+            {
+                if (WaitForSignal)
+                    message.Signal.WaitOne(2.Seconds());
 
-                    CalledSignal.Set();
-                });
+                CalledSignal.Set();
+            });
         }
 
         public Task Handle(DispatchCommand message)
         {
-            return Task.Factory.StartNew(() =>
+            return Task.Run(() =>
             {
                 if (WaitForSignal)
                     message.Signal.WaitOne(2.Seconds());

@@ -10,7 +10,7 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
 
         public void Handle(DispatchCommand message)
         {
-            Task.Factory.StartNew(() =>
+            Task.Run(() =>
             {
                 TaskScheduler = TaskScheduler.Current;
                 Signal.Set();

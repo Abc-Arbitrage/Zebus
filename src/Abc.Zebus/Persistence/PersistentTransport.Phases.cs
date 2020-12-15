@@ -110,7 +110,7 @@ namespace Abc.Zebus.Persistence
 
             private async void StartReplayEventTimeoutDetector()
             {
-                await Task.Factory.StartNew(() =>
+                await Task.Run(() =>
                 {
                     var configuration = Transport._configuration;
 

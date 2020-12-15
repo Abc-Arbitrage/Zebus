@@ -37,7 +37,7 @@ namespace Abc.Zebus.Persistence.Tests.Initialization
             var hasActiveMessageReplayers = true;
             _messageReplayerRepositoryMock.Setup(x => x.HasActiveMessageReplayers()).Returns(() => hasActiveMessageReplayers);
 
-            var task = Task.Factory.StartNew(() => _initializer.BeforeStop());
+            var task = Task.Run(() => _initializer.BeforeStop());
             task.Wait(300.Milliseconds()).ShouldBeFalse();
 
             hasActiveMessageReplayers = false;

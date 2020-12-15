@@ -39,7 +39,7 @@ namespace Abc.Zebus.Persistence.Tests.Transport
             };
             peerDirectoryMock.Setup(dir => dir.GetPeerDescriptors())
                              .Returns(_allPeers);
-            
+
             _configurationMock.SetupGet(conf => conf.QueuingTransportStopTimeout).Returns(100.Milliseconds());
             _transport = new QueueingTransport(_innerTransport, peerDirectoryMock.Object, _configurationMock.Object);
 
@@ -169,7 +169,7 @@ namespace Abc.Zebus.Persistence.Tests.Transport
                 _transport.Start();
 
                 var stopped = false;
-                Task.Factory.StartNew(() =>
+                Task.Run(() =>
                 {
                     _transport.Stop();
                     stopped = true;
@@ -200,7 +200,7 @@ namespace Abc.Zebus.Persistence.Tests.Transport
                 _transport.Start();
 
                 var stopped = false;
-                Task.Factory.StartNew(() =>
+                Task.Run(() =>
                 {
                     _transport.Stop();
                     stopped = true;

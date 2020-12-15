@@ -9,7 +9,7 @@ namespace Abc.Zebus.Tests.Dispatch.DispatchMessages
             if (message.ThrowSynchronously)
                 throw message.Exception;
 
-            return Task.Factory.StartNew(() => { throw message.Exception; });
+            return Task.Run(() => throw message.Exception);
         }
     }
 }

@@ -160,7 +160,7 @@ namespace Abc.Zebus.Dispatch
 
             _status = Status.Stopped;
 
-            var stopTasks = _dispatchQueues.Values.Select(dispatchQueue => Task.Factory.StartNew(dispatchQueue.Stop)).ToArray();
+            var stopTasks = _dispatchQueues.Values.Select(dispatchQueue => Task.Run(dispatchQueue.Stop)).ToArray();
             Task.WaitAll(stopTasks);
         }
 

@@ -494,7 +494,7 @@ namespace Abc.Zebus.Tests.Transport
             var sendingTransport = CreateAndStartZmqTransport();
             var shouldSendMessages = true;
 
-            Task.Factory.StartNew(() =>
+            Task.Run(() =>
             {
                 var sendCount = 0;
                 var spinWait = new SpinWait();

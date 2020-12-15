@@ -74,8 +74,8 @@ namespace Abc.Zebus.Tests
                 }
             };
 
-            var task1 = Task.Factory.StartNew(taskAction);
-            var task2 = Task.Factory.StartNew(taskAction);
+            var task1 = Task.Run(taskAction);
+            var task2 = Task.Run(taskAction);
 
             Task.WaitAll(task1, task2);
 
