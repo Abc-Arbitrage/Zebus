@@ -50,7 +50,7 @@ namespace Abc.Zebus.Transport
             _socket?.Dispose();
         }
 
-        public CodedInputStream? Receive(TimeSpan? timeout = null)
+        public ProtoBufferReader? Receive(TimeSpan? timeout = null)
         {
             var receiveTimeout = timeout ?? _options.ReceiveTimeout;
             if (receiveTimeout != _lastReceiveTimeout)
@@ -60,7 +60,7 @@ namespace Abc.Zebus.Transport
             }
 
             if (_socket!.TryReadMessage(ref _readBuffer, out var messageLength, out var error))
-                return new CodedInputStream(_readBuffer, 0, messageLength);
+                return new ProtoBufferReader(_readBuffer, 0, messageLength);
 
             // EAGAIN: Non-blocking mode was requested and no messages are available at the moment.
             if (error == ZmqErrorCode.EAGAIN || messageLength == 0)

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
@@ -19,10 +20,10 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
-            var outputStream = new CodedOutputStream();
+            var outputStream = new ProtoBufferWriter();
             outputStream.WriteTransportMessage(transportMessage);
 
-            var inputStream = new CodedInputStream(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -38,10 +39,10 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transportMessage = new EmptyCommand().ToTransportMessage();
 
-            var outputStream = new CodedOutputStream();
+            var outputStream = new ProtoBufferWriter();
             outputStream.WriteTransportMessage(transportMessage);
 
-            var inputStream = new CodedInputStream(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -55,6 +56,28 @@ namespace Abc.Zebus.Tests.Transport
             deserializedMessage.ShouldNotBeNull();
         }
 
+        [TestCase("1")]
+        [TestCase("123456789")]
+        [TestCase("E0A16850-A1DA-4ABB-970A-CFC8F15314CF")]
+        [TestCase("\0")]
+        [TestCase("\0\0\0\0\0\0")]
+        public void should_not_throw_on_invalid_message(string content)
+        {
+            var buffer = Encoding.ASCII.GetBytes(content);
+
+            var inputStream = new ProtoBufferReader(buffer, 0, buffer.Length);
+            TransportMessage transportMessage = null;
+            bool? result = null;
+
+            Assert.DoesNotThrow(() => result = inputStream.TryReadTransportMessage(out transportMessage));
+
+            result.ShouldNotBeNull();
+            result.ShouldEqual(false);
+            transportMessage.ShouldNotBeNull();
+            transportMessage.Id.ShouldEqual(default(MessageId));
+            transportMessage.Environment.ShouldBeNull();
+        }
+
         [Test]
         public void should_read_message_with_persistent_peer_ids()
         {
@@ -65,11 +88,11 @@ namespace Abc.Zebus.Tests.Transport
                 new PeerId("Abc.Testing.B"),
             };
 
-            var outputStream = new CodedOutputStream();
+            var outputStream = new ProtoBufferWriter();
             outputStream.WriteTransportMessage(transportMessage);
             outputStream.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
 
-            var inputStream = new CodedInputStream(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -85,7 +108,7 @@ namespace Abc.Zebus.Tests.Transport
             var stream = new MemoryStream();
             Serializer.Serialize(stream, transportMessage);
 
-            var inputStream = new CodedInputStream(stream.GetBuffer(), 0, (int)stream.Length);
+            var inputStream = new ProtoBufferReader(stream.GetBuffer(), 0, (int)stream.Length);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -101,10 +124,10 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
-            var outputStream = new CodedOutputStream();
+            var outputStream = new ProtoBufferWriter();
             outputStream.WriteTransportMessage(transportMessage);
 
-            var inputStream = new CodedInputStream(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
             inputStream.ReadTransportMessage();
 
             const int count = 100_000_000;

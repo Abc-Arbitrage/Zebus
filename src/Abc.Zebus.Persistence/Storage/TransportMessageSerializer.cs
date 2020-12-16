@@ -10,12 +10,12 @@ namespace Abc.Zebus.Persistence.Storage
     internal class TransportMessageSerializer
     {
         private readonly int _maximumCapacity;
-        private CodedOutputStream _outputStream;
+        private ProtoBufferWriter _outputStream;
 
         public TransportMessageSerializer(int maximumCapacity = 50 * 1024)
         {
             _maximumCapacity = maximumCapacity;
-            _outputStream = new CodedOutputStream();
+            _outputStream = new ProtoBufferWriter();
         }
 
         public byte[] Serialize(TransportMessage transportMessage)
@@ -28,7 +28,7 @@ namespace Abc.Zebus.Persistence.Storage
 
             // prevent service from leaking after fat transport message serializations
             if (_outputStream.Position > _maximumCapacity)
-                _outputStream = new CodedOutputStream(new byte[_maximumCapacity]);
+                _outputStream = new ProtoBufferWriter(new byte[_maximumCapacity]);
 
             return bytes;
         }

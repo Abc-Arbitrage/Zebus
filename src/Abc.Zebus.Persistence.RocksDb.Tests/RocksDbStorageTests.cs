@@ -263,7 +263,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         {
             public static TransportMessage Deserialize(byte[] bytes)
             {
-                var inputStream = new CodedInputStream(bytes, 0, bytes.Length);
+                var inputStream = new ProtoBufferReader(bytes, 0, bytes.Length);
                 var readTransportMessage = inputStream.ReadTransportMessage();
                 return readTransportMessage;
             }

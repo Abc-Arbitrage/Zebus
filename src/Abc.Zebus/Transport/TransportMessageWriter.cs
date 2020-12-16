@@ -8,7 +8,7 @@ namespace Abc.Zebus.Transport
     {
         private static readonly MemoryStream _emptyStream = new MemoryStream(new byte[0]);
 
-        internal static void WriteTransportMessage(this CodedOutputStream output, TransportMessage transportMessage, string? environmentOverride = null)
+        internal static void WriteTransportMessage(this ProtoBufferWriter output, TransportMessage transportMessage, string? environmentOverride = null)
         {
             output.WriteRawTag(1 << 3 | 2);
             Write(output, transportMessage.Id);
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Transport
                 WriteWasPersisted(output, transportMessage.WasPersisted.Value);
         }
 
-        internal static void SetWasPersisted(this CodedOutputStream output, bool wasPersisted)
+        internal static void SetWasPersisted(this ProtoBufferWriter output, bool wasPersisted)
         {
             if (output.TryWriteBoolAtSavedPosition(wasPersisted))
                 return;
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Transport
             WriteWasPersisted(output, wasPersisted);
         }
 
-        internal static void WritePersistentPeerIds(this CodedOutputStream output, TransportMessage transportMessage, List<PeerId>? persistentPeerIdOverride)
+        internal static void WritePersistentPeerIds(this ProtoBufferWriter output, TransportMessage transportMessage, List<PeerId>? persistentPeerIdOverride)
         {
             var peerIds = persistentPeerIdOverride ?? transportMessage.PersistentPeerIds;
             if (peerIds == null)
@@ -59,7 +59,7 @@ namespace Abc.Zebus.Transport
                 output.WriteRawTag(7 << 3 | 2);
 
                 var peerIdStringLength = GetUtf8ByteCount(peerIdString);
-                var peerIdLength = 1 + CodedOutputStream.ComputeStringSize(peerIdStringLength);
+                var peerIdLength = 1 + ProtoBufferWriter.ComputeStringSize(peerIdStringLength);
 
                 output.WriteLength(peerIdLength);
                 output.WriteRawTag(1 << 3 | 2);
@@ -67,16 +67,16 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        private static void Write(CodedOutputStream output, MessageId messageId)
+        private static void Write(ProtoBufferWriter output, MessageId messageId)
         {
-            var size = 1 + GetMessageSizeWithLength(CodedOutputStream.GuidSize);
+            var size = 1 + GetMessageSizeWithLength(ProtoBufferWriter.GuidSize);
             output.WriteLength(size);
             output.WriteRawTag(1 << 3 | 2);
 
             output.WriteGuid(messageId.Value);
         }
 
-        private static void Write(CodedOutputStream output, MessageTypeId messageTypeId)
+        private static void Write(ProtoBufferWriter output, MessageTypeId messageTypeId)
         {
             if (messageTypeId.FullName == null)
             {
@@ -85,14 +85,14 @@ namespace Abc.Zebus.Transport
             else
             {
                 var fullNameLength = GetUtf8ByteCount(messageTypeId.FullName);
-                var size = 1 + CodedOutputStream.ComputeStringSize(fullNameLength);
+                var size = 1 + ProtoBufferWriter.ComputeStringSize(fullNameLength);
                 output.WriteLength(size);
                 output.WriteRawTag(1 << 3 | 2);
                 output.WriteString(messageTypeId.FullName, fullNameLength);
             }
         }
 
-        private static void Write(CodedOutputStream output, OriginatorInfo originatorInfo)
+        private static void Write(ProtoBufferWriter output, OriginatorInfo originatorInfo)
         {
             var size = 0;
 
@@ -109,7 +109,7 @@ namespace Abc.Zebus.Transport
             else
             {
                 senderIdStringLength = GetUtf8ByteCount(senderIdString);
-                senderIdLength = 1 + CodedOutputStream.ComputeStringSize(senderIdStringLength);
+                senderIdLength = 1 + ProtoBufferWriter.ComputeStringSize(senderIdStringLength);
                 size += 1 + GetMessageSizeWithLength(senderIdLength);
             }
 
@@ -122,7 +122,7 @@ namespace Abc.Zebus.Transport
             else
             {
                 senderEndPointLength = GetUtf8ByteCount(originatorInfo.SenderEndPoint);
-                size += 1 + CodedOutputStream.ComputeStringSize(senderEndPointLength);
+                size += 1 + ProtoBufferWriter.ComputeStringSize(senderEndPointLength);
             }
 
             // SenderMachineName
@@ -134,7 +134,7 @@ namespace Abc.Zebus.Transport
             else
             {
                 senderMachineNameLength = GetUtf8ByteCount(originatorInfo.SenderMachineName);
-                size += 1 + CodedOutputStream.ComputeStringSize(senderMachineNameLength);
+                size += 1 + ProtoBufferWriter.ComputeStringSize(senderMachineNameLength);
             }
 
             // InitiatorUserName
@@ -146,7 +146,7 @@ namespace Abc.Zebus.Transport
             else
             {
                 initiatorUserNameLength = GetUtf8ByteCount(originatorInfo.InitiatorUserName);
-                size += 1 + CodedOutputStream.ComputeStringSize(initiatorUserNameLength);
+                size += 1 + ProtoBufferWriter.ComputeStringSize(initiatorUserNameLength);
             }
 
             output.WriteLength(size);
@@ -179,7 +179,7 @@ namespace Abc.Zebus.Transport
 
         private static int GetMessageSizeWithLength(int size)
         {
-            return size + CodedOutputStream.ComputeLengthSize(size);
+            return size + ProtoBufferWriter.ComputeLengthSize(size);
         }
 
         private static unsafe int GetUtf8ByteCount(string s)
@@ -189,13 +189,13 @@ namespace Abc.Zebus.Transport
                 for (var index = 0; index < s.Length; index++)
                 {
                     if (c[index] >= 128)
-                        return CodedOutputStream.Utf8Encoding.GetByteCount(c, s.Length);
+                        return ProtoBufferWriter.Utf8Encoding.GetByteCount(c, s.Length);
                 }
             }
             return s.Length;
         }
 
-        private static void WriteWasPersisted(CodedOutputStream output, bool value)
+        private static void WriteWasPersisted(ProtoBufferWriter output, bool value)
         {
             output.WriteRawTag(6 << 3 | 0);
             output.SavePosition();

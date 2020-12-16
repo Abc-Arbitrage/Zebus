@@ -231,21 +231,19 @@ namespace Abc.Zebus.Transport
         {
             inboundSocket.Disconnect();
 
-            CodedInputStream? inputStream;
+            ProtoBufferReader? inputStream;
             while ((inputStream = inboundSocket.Receive(100.Milliseconds())) != null)
                 DeserializeAndForwardTransportMessage(inputStream);
         }
 
-        private void DeserializeAndForwardTransportMessage(CodedInputStream inputStream)
+        private void DeserializeAndForwardTransportMessage(ProtoBufferReader inputStream)
         {
             try
             {
-                var transportMessage = inputStream.ReadTransportMessage();
-
-                if (!IsValidTransportMessage(transportMessage))
+                if (!inputStream.TryReadTransportMessage(out var transportMessage))
                     return;
 
-                if (!IsFromCurrentEnvironment(transportMessage))
+                if (!IsValidTransportMessage(transportMessage) || !IsFromCurrentEnvironment(transportMessage))
                     return;
 
                 if (transportMessage.MessageTypeId == MessageTypeId.EndOfStream)
@@ -323,7 +321,7 @@ namespace Abc.Zebus.Transport
             Thread.CurrentThread.Name = "ZmqTransport.OutboundProc";
             _logger.DebugFormat("Starting outbound proc...");
 
-            var outputStream = new CodedOutputStream();
+            var outputStream = new ProtoBufferWriter();
 
             foreach (var socketAction in _outboundSocketActions!.GetConsumingEnumerable())
             {
@@ -342,7 +340,7 @@ namespace Abc.Zebus.Transport
             _logger.InfoFormat("OutboundProc terminated");
         }
 
-        private void WriteTransportMessageAndSendToPeers(TransportMessage transportMessage, List<Peer> peers, SendContext context, CodedOutputStream outputStream)
+        private void WriteTransportMessageAndSendToPeers(TransportMessage transportMessage, List<Peer> peers, SendContext context, ProtoBufferWriter outputStream)
         {
             outputStream.Reset();
             outputStream.WriteTransportMessage(transportMessage, _environment);
@@ -368,7 +366,7 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        private void SendToPeer(TransportMessage transportMessage, CodedOutputStream outputStream, Peer target)
+        private void SendToPeer(TransportMessage transportMessage, ProtoBufferWriter outputStream, Peer target)
         {
             var outboundSocket = GetConnectedOutboundSocket(target, transportMessage);
             if (!outboundSocket.IsConnected)
@@ -415,7 +413,7 @@ namespace Abc.Zebus.Transport
             return outboundSocket;
         }
 
-        private void GracefullyDisconnectOutboundSockets(CodedOutputStream outputStream)
+        private void GracefullyDisconnectOutboundSockets(ProtoBufferWriter outputStream)
         {
             var connectedOutboundSockets = _outboundSockets.Values.Where(x => x.IsConnected).ToList();
 
@@ -430,7 +428,7 @@ namespace Abc.Zebus.Transport
             DisconnectPeers(connectedOutboundSockets.Select(x => x.PeerId).ToList());
         }
 
-        private void SendEndOfStreamMessages(List<ZmqOutboundSocket> connectedOutboundSockets, CodedOutputStream outputStream)
+        private void SendEndOfStreamMessages(List<ZmqOutboundSocket> connectedOutboundSockets, ProtoBufferWriter outputStream)
         {
             foreach (var outboundSocket in connectedOutboundSockets)
             {

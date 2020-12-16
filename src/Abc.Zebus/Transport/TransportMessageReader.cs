@@ -8,47 +8,83 @@ namespace Abc.Zebus.Transport
 {
     internal static class TransportMessageReader
     {
-        internal static TransportMessage ReadTransportMessage(this CodedInputStream input)
+        internal static TransportMessage ReadTransportMessage(this ProtoBufferReader input)
         {
-            var transportMessage = new TransportMessage { Content = Stream.Null };
-
-            while (!input.IsAtEnd && input.TryReadTag(out var number, out var wireType))
-            {
-                switch (number)
-                {
-                    case 1:
-                        transportMessage.Id = ReadMessageId(input);
-                        break;
-                    case 2:
-                        transportMessage.MessageTypeId = ReadMessageTypeId(input);
-                        break;
-                    case 3:
-                        transportMessage.Content = ReadStream(input);
-                        break;
-                    case 4:
-                        transportMessage.Originator = ReadOriginatorInfo(input);
-                        break;
-                    case 5:
-                        transportMessage.Environment = input.ReadString();
-                        break;
-                    case 6:
-                        transportMessage.WasPersisted = input.ReadBool();
-                        break;
-                    case 7:
-                        transportMessage.PersistentPeerIds = ReadPeerIds(input, transportMessage.PersistentPeerIds);
-                        break;
-                    default:
-                        SkipUnknown(input, wireType);
-                        break;
-                }
-            }
-
-            return transportMessage;
+            return input.TryReadTransportMessage(out var transportMessage) ? transportMessage : new TransportMessage();
         }
 
-        private static OriginatorInfo ReadOriginatorInfo(CodedInputStream input)
+        internal static bool TryReadTransportMessage(this ProtoBufferReader input, out TransportMessage transportMessage)
         {
-            var length = input.ReadLength();
+            transportMessage = new TransportMessage { Content = Stream.Null };
+
+            while (input.CanRead(1))
+            {
+                if (!input.TryReadMember(transportMessage))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadMember(this ProtoBufferReader input, TransportMessage transportMessage)
+        {
+            if (!input.TryReadTag(out var number, out var wireType))
+                return false;
+
+            switch (number)
+            {
+                case 1:
+                    if (!input.TryReadSingleGuid(out var id))
+                        return false;
+                    transportMessage.Id = new MessageId(id);
+                    break;
+                case 2:
+                    if (!input.TryReadSingleString(out var messageTypeId))
+                        return false;
+                    transportMessage.MessageTypeId = new MessageTypeId(messageTypeId);
+                    break;
+                case 3:
+                    if (!input.TryReadStream(out var content))
+                        return false;
+                    transportMessage.Content = content;
+                    break;
+                case 4:
+                    if (!input.TryReadOriginatorInfo(out var originator))
+                        return false;
+                    transportMessage.Originator = originator ?? new OriginatorInfo();
+                    break;
+                case 5:
+                    if (!input.TryReadString(out var environment))
+                        return false;
+                    transportMessage.Environment = environment;
+                    break;
+                case 6:
+                    if (!input.TryReadBool(out var wasPersisted))
+                        return false;
+                    transportMessage.WasPersisted = wasPersisted;
+                    break;
+                case 7:
+                    if (!input.TryReadSingleString(out var persistentPeerId))
+                        return false;
+                    transportMessage.PersistentPeerIds ??= new List<PeerId>();
+                    transportMessage.PersistentPeerIds.Add(new PeerId(persistentPeerId));
+                    break;
+                default:
+                    if (!input.TrySkipUnknown(wireType))
+                        return false;
+                    break;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadOriginatorInfo(this ProtoBufferReader input, out OriginatorInfo? originatorInfo)
+        {
+            originatorInfo = default;
+
+            if (!input.TryReadLength(out var length))
+                return false;
+
             var endPosition = input.Position + length;
 
             var senderId = new PeerId();
@@ -60,105 +96,120 @@ namespace Abc.Zebus.Transport
                 switch (number)
                 {
                     case 1:
-                        senderId = ReadPeerId(input);
+                        if (!input.TryReadSingleString(out var peerId))
+                            return false;
+                        senderId = new PeerId(peerId);
                         break;
                     case 2:
-                        senderEndPoint = input.ReadString();
+                        if (!input.TryReadString(out senderEndPoint))
+                            return false;
                         break;
                     case 5:
-                        initiatorUserName = input.ReadString();
+                        if (!input.TryReadString(out initiatorUserName))
+                            return false;
                         break;
                     default:
-                        SkipUnknown(input, wireType);
+                        if (!input.TrySkipUnknown(wireType))
+                            return false;
                         break;
                 }
             }
 
-            return new OriginatorInfo(senderId, senderEndPoint!, null, initiatorUserName);
+            originatorInfo = new OriginatorInfo(senderId, senderEndPoint!, null, initiatorUserName);
+            return true;
         }
 
-        private static PeerId ReadPeerId(CodedInputStream input)
+        private static bool TryReadStream(this ProtoBufferReader input, out Stream? value)
         {
-            var value = ReadSingleField(input, x => x.ReadString());
-            return new PeerId(value);
+            if (!input.TryReadLength(out var length) || !input.TryReadRawBytes(length, out var bytes))
+            {
+                value = default;
+                return false;
+            }
+
+            value = new MemoryStream(bytes);
+            return true;
         }
 
-        private static MessageId ReadMessageId(CodedInputStream input)
+        private static bool TryReadSingleString(this ProtoBufferReader input, out string? value)
         {
-            var guid = ReadSingleField(input, x => x.ReadGuid());
-            return new MessageId(guid);
-        }
+            value = default;
 
-        private static MessageTypeId ReadMessageTypeId(CodedInputStream input)
-        {
-            var fullName = ReadSingleField(input, x => x.ReadString());
-            return new MessageTypeId(fullName);
-        }
+            if (!input.TryReadLength(out var length))
+                return false;
 
-        private static Stream ReadStream(CodedInputStream input)
-        {
-            var length = input.ReadLength();
-            return new MemoryStream(input.ReadRawBytes(length));
-        }
-
-        private static T ReadSingleField<T>(CodedInputStream input, Func<CodedInputStream, T> read)
-        {
-            var length = input.ReadLength();
             var endPosition = input.Position + length;
-
-            var value = default(T)!;
-
             while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
             {
                 switch (number)
                 {
                     case 1:
-                        value = read.Invoke(input);
+                        if (!input.TryReadString(out value))
+                            return false;
                         break;
                     default:
-                        SkipUnknown(input, wireType);
+                        if (!input.TrySkipUnknown(wireType))
+                            return false;
                         break;
                 }
             }
 
-            return value;
+            return true;
         }
 
-        private static List<PeerId> ReadPeerIds(CodedInputStream input, List<PeerId>? peerIds)
+        private static bool TryReadSingleGuid(this ProtoBufferReader input, out Guid value)
         {
-            if (peerIds == null)
-                peerIds = new List<PeerId>();
+            value = default;
 
-            var value = ReadSingleField(input, x => x.ReadString());
-            peerIds.Add(new PeerId(value));
+            if (!input.TryReadLength(out var length))
+                return false;
 
-            return peerIds;
+            var endPosition = input.Position + length;
+            while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
+            {
+                switch (number)
+                {
+                    case 1:
+                        if (!input.TryReadGuid(out value))
+                            return false;
+                        break;
+                    default:
+                        if (!input.TrySkipUnknown(wireType))
+                            return false;
+                        break;
+                }
+            }
+
+            return true;
         }
 
-        private static void SkipUnknown(CodedInputStream input, WireType wireType)
+        private static bool TrySkipUnknown(this ProtoBufferReader input, WireType wireType)
         {
             switch (wireType)
             {
                 case WireType.None:
-                    break;
+                    return false;
+
                 case WireType.Variant:
-                    input.ReadRawVarint32();
-                    break;
+                    return input.TryReadRawVariant(out _);
+
                 case WireType.Fixed64:
-                    input.ReadFixed64();
-                    break;
+                    return input.TryReadFixed64(out _);
+
                 case WireType.String:
-                    input.SkipString();
-                    break;
+                    return input.TrySkipString();
+
                 case WireType.StartGroup:
-                    break;
+                    return false;
+
                 case WireType.EndGroup:
-                    break;
+                    return false;
+
                 case WireType.Fixed32:
-                    input.ReadFixed32();
-                    break;
+                    return input.TryReadFixed32(out _);
+
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    return false;
             }
         }
     }
