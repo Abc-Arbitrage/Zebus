@@ -23,7 +23,7 @@ namespace Abc.Zebus.Tests.Transport
             var outputStream = new ProtoBufferWriter();
             outputStream.WriteTransportMessage(transportMessage);
 
-            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, outputStream.Position);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -42,7 +42,7 @@ namespace Abc.Zebus.Tests.Transport
             var outputStream = new ProtoBufferWriter();
             outputStream.WriteTransportMessage(transportMessage);
 
-            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, outputStream.Position);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -65,7 +65,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var buffer = Encoding.ASCII.GetBytes(content);
 
-            var inputStream = new ProtoBufferReader(buffer, 0, buffer.Length);
+            var inputStream = new ProtoBufferReader(buffer, buffer.Length);
             TransportMessage transportMessage = null;
             bool? result = null;
 
@@ -92,7 +92,7 @@ namespace Abc.Zebus.Tests.Transport
             outputStream.WriteTransportMessage(transportMessage);
             outputStream.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
 
-            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, outputStream.Position);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -108,7 +108,7 @@ namespace Abc.Zebus.Tests.Transport
             var stream = new MemoryStream();
             Serializer.Serialize(stream, transportMessage);
 
-            var inputStream = new ProtoBufferReader(stream.GetBuffer(), 0, (int)stream.Length);
+            var inputStream = new ProtoBufferReader(stream.GetBuffer(), (int)stream.Length);
             var deserialized = inputStream.ReadTransportMessage();
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
@@ -127,7 +127,7 @@ namespace Abc.Zebus.Tests.Transport
             var outputStream = new ProtoBufferWriter();
             outputStream.WriteTransportMessage(transportMessage);
 
-            var inputStream = new ProtoBufferReader(outputStream.Buffer, 0, outputStream.Position);
+            var inputStream = new ProtoBufferReader(outputStream.Buffer, outputStream.Position);
             inputStream.ReadTransportMessage();
 
             const int count = 100_000_000;
@@ -135,7 +135,7 @@ namespace Abc.Zebus.Tests.Transport
             {
                 for (var i = 0; i < count; i++)
                 {
-                    inputStream.Position = 0;
+                    inputStream.Reset();
                     inputStream.ReadTransportMessage();
                 }
             }

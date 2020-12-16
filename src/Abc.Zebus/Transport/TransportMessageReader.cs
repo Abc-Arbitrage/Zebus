@@ -15,7 +15,11 @@ namespace Abc.Zebus.Transport
 
         internal static bool TryReadTransportMessage(this ProtoBufferReader input, out TransportMessage transportMessage)
         {
-            transportMessage = new TransportMessage { Content = Stream.Null };
+            transportMessage = new TransportMessage
+            {
+                Content = Stream.Null,
+                Originator = new OriginatorInfo(),
+            };
 
             while (input.CanRead(1))
             {
@@ -49,9 +53,9 @@ namespace Abc.Zebus.Transport
                     transportMessage.Content = content;
                     break;
                 case 4:
-                    if (!input.TryReadOriginatorInfo(out var originator))
+                    if (!input.TryReadOriginatorInfo(out var originator) || originator == null)
                         return false;
-                    transportMessage.Originator = originator ?? new OriginatorInfo();
+                    transportMessage.Originator = originator;
                     break;
                 case 5:
                     if (!input.TryReadString(out var environment))

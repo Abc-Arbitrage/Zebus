@@ -12,18 +12,17 @@ namespace Abc.Zebus.Serialization.Protobuf
         private readonly int _size;
         private int _position;
 
-        public ProtoBufferReader(byte[] buffer, int offset, int length)
+        public ProtoBufferReader(byte[] buffer, int length)
         {
             _buffer = buffer;
-            _position = offset;
             _size = length;
         }
 
-        public int Position
-        {
-            get => _position;
-            set => _position = value;
-        }
+        public int Position => _position;
+
+        public int Length => _size;
+
+        public void Reset() => _position = 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool CanRead(int length) => _size - _position >= length;

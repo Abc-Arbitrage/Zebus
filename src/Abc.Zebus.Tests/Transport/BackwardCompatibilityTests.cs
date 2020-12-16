@@ -21,7 +21,7 @@ namespace Abc.Zebus.Tests.Transport
             var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId };
 
             var stream = GetTransportMessageStream_1_4_1();
-            var codedInputStream = new ProtoBufferReader(stream.GetBuffer(), 0, (int)stream.Length);
+            var codedInputStream = new ProtoBufferReader(stream.GetBuffer(), (int)stream.Length);
 
             var message = codedInputStream.ReadTransportMessage();
             message.ShouldHaveSamePropertiesAs(expectedMessage);
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Tests.Transport
             var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId, WasPersisted = false };
 
             var stream = GetTransportMessageStream_1_4_1();
-            var codedInputStream = new ProtoBufferReader(stream.GetBuffer(), 0, (int)stream.Length);
+            var codedInputStream = new ProtoBufferReader(stream.GetBuffer(), (int)stream.Length);
 
             var message = codedInputStream.ReadTransportMessage();
             message.ShouldHaveSamePropertiesAs(expectedMessage, "WasPersisted");

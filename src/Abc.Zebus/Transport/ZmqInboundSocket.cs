@@ -60,7 +60,7 @@ namespace Abc.Zebus.Transport
             }
 
             if (_socket!.TryReadMessage(ref _readBuffer, out var messageLength, out var error))
-                return new ProtoBufferReader(_readBuffer, 0, messageLength);
+                return new ProtoBufferReader(_readBuffer, messageLength);
 
             // EAGAIN: Non-blocking mode was requested and no messages are available at the moment.
             if (error == ZmqErrorCode.EAGAIN || messageLength == 0)
