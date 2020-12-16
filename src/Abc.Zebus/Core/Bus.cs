@@ -226,7 +226,7 @@ namespace Abc.Zebus.Core
 
             var peersHandlingMessage = _directory.GetPeersHandlingMessage(message);
 
-            PublishInternal(message, peersHandlingMessage);
+            PublishImpl(message, peersHandlingMessage);
         }
 
         public void Publish(IEvent message, PeerId targetPeerId)
@@ -236,14 +236,11 @@ namespace Abc.Zebus.Core
 
             var peer = _directory.GetPeer(targetPeerId);
             if (peer != null)
-                PublishInternal(message, new List<Peer> { peer });
+                PublishImpl(message, new List<Peer> { peer });
         }
 
-        private void PublishInternal(IEvent message, IList<Peer> peers)
+        private void PublishImpl(IEvent message, IList<Peer> peers)
         {
-            if (!IsRunning)
-                throw new InvalidOperationException("Unable to publish message, the bus is not running");
-
             var localDispatchEnabled = LocalDispatch.Enabled;
             var shouldBeHandledLocally = localDispatchEnabled && peers.Any(x => x.Id == PeerId);
             if (shouldBeHandledLocally)
@@ -265,7 +262,7 @@ namespace Abc.Zebus.Core
             var self = peers.FirstOrDefault(x => x.Id == PeerId);
 
             if (self != null)
-                return Send(message, self);
+                return SendImpl(message, self);
 
             if (peers.Count > 1)
             {
@@ -273,7 +270,7 @@ namespace Abc.Zebus.Core
                 throw new InvalidOperationException(exceptionMessage);
             }
 
-            return Send(message, peers[0]);
+            return SendImpl(message, peers[0]);
         }
 
         public Task<CommandResult> Send(ICommand message, Peer peer)
@@ -284,6 +281,11 @@ namespace Abc.Zebus.Core
             if (!IsRunning)
                 throw new InvalidOperationException("Unable to send message, the bus is not running");
 
+            return SendImpl(message, peer);
+        }
+
+        private Task<CommandResult> SendImpl(ICommand message, Peer peer)
+        {
             var taskCompletionSource = new TaskCompletionSource<CommandResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             if (LocalDispatch.Enabled && peer.Id == PeerId)
