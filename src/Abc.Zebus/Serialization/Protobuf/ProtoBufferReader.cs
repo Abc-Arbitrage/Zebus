@@ -224,5 +224,12 @@ namespace Abc.Zebus.Serialization.Protobuf
             _position += size;
             return true;
         }
+
+        public string ToDebugString(int byteLength)
+        {
+            return _size <= byteLength
+                ? Convert.ToBase64String(_buffer, 0, _size)
+                : Convert.ToBase64String(_buffer, 0, byteLength) + "...";
+        }
     }
 }
