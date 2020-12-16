@@ -234,9 +234,9 @@ namespace Abc.Zebus.Core
             if (!IsRunning)
                 throw new InvalidOperationException("Unable to publish message, the bus is not running");
 
-            var peer = _directory.GetPeer(targetPeerId) ?? throw new ArgumentException($"targetPeerId is unknown ({targetPeerId})");
-
-            PublishInternal(message, new List<Peer> { peer });
+            var peer = _directory.GetPeer(targetPeerId);
+            if (peer != null)
+                PublishInternal(message, new List<Peer> { peer });
         }
 
         private void PublishInternal(IEvent message, IList<Peer> peers)

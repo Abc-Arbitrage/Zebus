@@ -78,7 +78,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void should_fail_when_publishing_a_message_to_an_unknown_peer()
+            public void should_not_fail_when_publishing_a_message_to_an_unknown_peer()
             {
                 using (MessageId.PauseIdGeneration())
                 {
@@ -87,8 +87,11 @@ namespace Abc.Zebus.Tests.Core
 
                     _bus.Start();
 
-                    // Act, Assert
-                    Assert.Throws<ArgumentException>(() => _bus.Publish(message, new PeerId("Abc.Unknown.0")));
+                    // Act
+                    Assert.DoesNotThrow(() => _bus.Publish(message, new PeerId("Abc.Unknown.0")));
+
+                    // Assert
+                    _transport.Messages.ShouldBeEmpty();
                 }
             }
 
