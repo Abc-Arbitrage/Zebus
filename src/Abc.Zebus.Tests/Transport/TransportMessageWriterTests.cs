@@ -20,10 +20,10 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
-            var stream = new ProtoBufferWriter();
-            stream.WriteTransportMessage(transportMessage);
+            var writer = new ProtoBufferWriter();
+            writer.WriteTransportMessage(transportMessage);
 
-            var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(writer.Buffer, 0, writer.Position));
             deserialized.Id.ShouldEqual(transportMessage.Id);
             deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
             deserialized.GetContentBytes().ShouldEqual(transportMessage.GetContentBytes());
@@ -38,10 +38,10 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
-            var stream = new ProtoBufferWriter();
-            stream.WriteTransportMessage(transportMessage);
+            var writer = new ProtoBufferWriter();
+            writer.WriteTransportMessage(transportMessage);
 
-            var deserialized = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserialized = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(writer.Buffer, 0, writer.Position));
             deserialized.Id.ShouldEqual(transportMessage.Id);
             deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
             deserialized.Content.ShouldEqual(transportMessage.GetContentBytes());
@@ -63,11 +63,11 @@ namespace Abc.Zebus.Tests.Transport
                 new PeerId("Abc.Testing.B"),
             };
 
-            var stream = new ProtoBufferWriter();
-            stream.WriteTransportMessage(transportMessage);
-            stream.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
+            var writer = new ProtoBufferWriter();
+            writer.WriteTransportMessage(transportMessage);
+            writer.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
 
-            var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserialized = Serializer.Deserialize<TransportMessage>(new MemoryStream(writer.Buffer, 0, writer.Position));
             deserialized.Id.ShouldEqual(transportMessage.Id);
             deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
             deserialized.PersistentPeerIds.ShouldBeEquivalentTo(transportMessage.PersistentPeerIds);
@@ -80,10 +80,10 @@ namespace Abc.Zebus.Tests.Transport
             transportMessage.Environment = null;
             transportMessage.Originator = new OriginatorInfo(new PeerId(null), null, null, null);
 
-            var stream = new ProtoBufferWriter();
-            stream.WriteTransportMessage(transportMessage);
+            var writer = new ProtoBufferWriter();
+            writer.WriteTransportMessage(transportMessage);
 
-            var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(writer.Buffer, 0, writer.Position));
             deserializedTransportMessage1.Id.ShouldEqual(transportMessage.Id);
             deserializedTransportMessage1.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
             deserializedTransportMessage1.GetContentBytes().ShouldEqual(transportMessage.GetContentBytes());
@@ -101,11 +101,11 @@ namespace Abc.Zebus.Tests.Transport
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
             transportMessage.WasPersisted = previousWasPersistedValue;
 
-            var stream = new ProtoBufferWriter();
-            stream.WriteTransportMessage(transportMessage);
-            stream.SetWasPersisted(newWasPersistedValue);
+            var writer = new ProtoBufferWriter();
+            writer.WriteTransportMessage(transportMessage);
+            writer.SetWasPersisted(newWasPersistedValue);
 
-            var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserializedTransportMessage1 = Serializer.Deserialize<TransportMessage>(new MemoryStream(writer.Buffer, 0, writer.Position));
             deserializedTransportMessage1.Id.ShouldEqual(transportMessage.Id);
             deserializedTransportMessage1.Environment.ShouldEqual(transportMessage.Environment);
             deserializedTransportMessage1.WasPersisted.ShouldEqual(newWasPersistedValue);
@@ -116,17 +116,17 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
 
-            var stream = new ProtoBufferWriter();
-            stream.WriteTransportMessage(transportMessage);
+            var writer = new ProtoBufferWriter();
+            writer.WriteTransportMessage(transportMessage);
 
-            var deserialized1 = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserialized1 = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(writer.Buffer, 0, writer.Position));
             deserialized1.WasPersisted.ShouldEqual(true);
 
-            stream.Reset();
+            writer.Reset();
             transportMessage.WasPersisted = false;
-            stream.WriteTransportMessage(transportMessage);
+            writer.WriteTransportMessage(transportMessage);
 
-            var deserialized2 = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(stream.Buffer, 0, stream.Position));
+            var deserialized2 = Serializer.Deserialize<TransportMessage_1_5_0>(new MemoryStream(writer.Buffer, 0, writer.Position));
             deserialized2.WasPersisted.ShouldEqual(false);
         }
 
@@ -134,17 +134,17 @@ namespace Abc.Zebus.Tests.Transport
         public void MeasureWritePerformance()
         {
             var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
-            var stream = new ProtoBufferWriter();
+            var writer = new ProtoBufferWriter();
 
-            stream.WriteTransportMessage(transportMessage);
+            writer.WriteTransportMessage(transportMessage);
 
             const int count = 10 * 1000 * 1000;
             using (Measure.Throughput(count))
             {
                 for (var i = 0; i < count; i++)
                 {
-                    stream.Reset();
-                    stream.WriteTransportMessage(transportMessage);
+                    writer.Reset();
+                    writer.WriteTransportMessage(transportMessage);
                 }
             }
         }

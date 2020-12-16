@@ -192,11 +192,11 @@ namespace Abc.Zebus.Transport
             {
                 while (_isListening)
                 {
-                    var inputStream = inboundSocket.Receive();
-                    if (inputStream == null)
+                    var bufferReader = inboundSocket.Receive();
+                    if (bufferReader == null)
                         continue;
 
-                    DeserializeAndForwardTransportMessage(inputStream);
+                    DeserializeAndForwardTransportMessage(bufferReader);
                 }
 
                 GracefullyDisconnectInboundSocket(inboundSocket);
@@ -231,16 +231,16 @@ namespace Abc.Zebus.Transport
         {
             inboundSocket.Disconnect();
 
-            ProtoBufferReader? inputStream;
-            while ((inputStream = inboundSocket.Receive(100.Milliseconds())) != null)
-                DeserializeAndForwardTransportMessage(inputStream);
+            ProtoBufferReader? bufferReader;
+            while ((bufferReader = inboundSocket.Receive(100.Milliseconds())) != null)
+                DeserializeAndForwardTransportMessage(bufferReader);
         }
 
-        private void DeserializeAndForwardTransportMessage(ProtoBufferReader inputStream)
+        private void DeserializeAndForwardTransportMessage(ProtoBufferReader bufferReader)
         {
             try
             {
-                if (!TryDeserializeTransportMessage(inputStream, out var transportMessage))
+                if (!TryDeserializeTransportMessage(bufferReader, out var transportMessage))
                     return;
 
                 if (!ValidateTransportMessage(transportMessage))
@@ -267,12 +267,12 @@ namespace Abc.Zebus.Transport
             }
         }
 
-        private bool TryDeserializeTransportMessage(ProtoBufferReader reader, out TransportMessage transportMessage)
+        private bool TryDeserializeTransportMessage(ProtoBufferReader bufferReader, out TransportMessage transportMessage)
         {
-            if (reader.TryReadTransportMessage(out transportMessage))
+            if (bufferReader.TryReadTransportMessage(out transportMessage))
                 return true;
 
-            _logger.Debug($"Unable to read transport message, Length: {reader.Length}, Bytes: {reader.ToDebugString(50)}");
+            _logger.Debug($"Unable to read transport message, Length: {bufferReader.Length}, Bytes: {bufferReader.ToDebugString(50)}");
 
             return false;
         }
@@ -346,7 +346,7 @@ namespace Abc.Zebus.Transport
             Thread.CurrentThread.Name = "ZmqTransport.OutboundProc";
             _logger.DebugFormat("Starting outbound proc...");
 
-            var outputStream = new ProtoBufferWriter();
+            var bufferWriter = new ProtoBufferWriter();
 
             foreach (var socketAction in _outboundSocketActions!.GetConsumingEnumerable())
             {
@@ -356,42 +356,42 @@ namespace Abc.Zebus.Transport
                 }
                 else
                 {
-                    WriteTransportMessageAndSendToPeers(socketAction.Message, socketAction.Targets, socketAction.Context, outputStream);
+                    WriteTransportMessageAndSendToPeers(socketAction.Message, socketAction.Targets, socketAction.Context, bufferWriter);
                 }
             }
 
-            GracefullyDisconnectOutboundSockets(outputStream);
+            GracefullyDisconnectOutboundSockets(bufferWriter);
 
             _logger.InfoFormat("OutboundProc terminated");
         }
 
-        private void WriteTransportMessageAndSendToPeers(TransportMessage transportMessage, List<Peer> peers, SendContext context, ProtoBufferWriter outputStream)
+        private void WriteTransportMessageAndSendToPeers(TransportMessage transportMessage, List<Peer> peers, SendContext context, ProtoBufferWriter bufferWriter)
         {
-            outputStream.Reset();
-            outputStream.WriteTransportMessage(transportMessage, _environment);
+            bufferWriter.Reset();
+            bufferWriter.WriteTransportMessage(transportMessage, _environment);
 
             if (context.PersistencePeer == null && transportMessage.IsPersistTransportMessage)
             {
-                outputStream.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
+                bufferWriter.WritePersistentPeerIds(transportMessage, transportMessage.PersistentPeerIds);
             }
 
             foreach (var target in peers)
             {
                 var isPersistent = context.WasPersisted(target.Id);
-                outputStream.SetWasPersisted(isPersistent);
+                bufferWriter.SetWasPersisted(isPersistent);
 
-                SendToPeer(transportMessage, outputStream, target);
+                SendToPeer(transportMessage, bufferWriter, target);
             }
 
             if (context.PersistencePeer != null)
             {
-                outputStream.WritePersistentPeerIds(transportMessage, context.PersistentPeerIds);
+                bufferWriter.WritePersistentPeerIds(transportMessage, context.PersistentPeerIds);
 
-                SendToPeer(transportMessage, outputStream, context.PersistencePeer);
+                SendToPeer(transportMessage, bufferWriter, context.PersistencePeer);
             }
         }
 
-        private void SendToPeer(TransportMessage transportMessage, ProtoBufferWriter outputStream, Peer target)
+        private void SendToPeer(TransportMessage transportMessage, ProtoBufferWriter bufferWriter, Peer target)
         {
             var outboundSocket = GetConnectedOutboundSocket(target, transportMessage);
             if (!outboundSocket.IsConnected)
@@ -402,7 +402,7 @@ namespace Abc.Zebus.Transport
 
             try
             {
-                outboundSocket.Send(outputStream.Buffer, outputStream.Position, transportMessage);
+                outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
             }
             catch (Exception ex)
             {
@@ -438,13 +438,13 @@ namespace Abc.Zebus.Transport
             return outboundSocket;
         }
 
-        private void GracefullyDisconnectOutboundSockets(ProtoBufferWriter outputStream)
+        private void GracefullyDisconnectOutboundSockets(ProtoBufferWriter bufferWriter)
         {
             var connectedOutboundSockets = _outboundSockets.Values.Where(x => x.IsConnected).ToList();
 
             _outboundSocketsToStop = new CountdownEvent(connectedOutboundSockets.Count);
 
-            SendEndOfStreamMessages(connectedOutboundSockets, outputStream);
+            SendEndOfStreamMessages(connectedOutboundSockets, bufferWriter);
 
             _logger.InfoFormat("Waiting for {0} outbound socket end of stream acks", _outboundSocketsToStop.InitialCount);
             if (!_outboundSocketsToStop.Wait(_configuration.WaitForEndOfStreamAckTimeout))
@@ -453,16 +453,16 @@ namespace Abc.Zebus.Transport
             DisconnectPeers(connectedOutboundSockets.Select(x => x.PeerId).ToList());
         }
 
-        private void SendEndOfStreamMessages(List<ZmqOutboundSocket> connectedOutboundSockets, ProtoBufferWriter outputStream)
+        private void SendEndOfStreamMessages(List<ZmqOutboundSocket> connectedOutboundSockets, ProtoBufferWriter bufferWriter)
         {
             foreach (var outboundSocket in connectedOutboundSockets)
             {
                 _logger.InfoFormat("Sending EndOfStream to {0}", outboundSocket.EndPoint);
 
                 var endOfStreamMessage = new TransportMessage(MessageTypeId.EndOfStream, new MemoryStream(), PeerId, InboundEndPoint) { WasPersisted = false };
-                outputStream.Reset();
-                outputStream.WriteTransportMessage(endOfStreamMessage, _environment);
-                outboundSocket.Send(outputStream.Buffer, outputStream.Position, endOfStreamMessage);
+                bufferWriter.Reset();
+                bufferWriter.WriteTransportMessage(endOfStreamMessage, _environment);
+                outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, endOfStreamMessage);
             }
         }
 

@@ -21,9 +21,9 @@ namespace Abc.Zebus.Tests.Transport
             var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId };
 
             var stream = GetTransportMessageStream_1_4_1();
-            var codedInputStream = new ProtoBufferReader(stream.GetBuffer(), (int)stream.Length);
+            var bufferReader = new ProtoBufferReader(stream.GetBuffer(), (int)stream.Length);
 
-            var message = codedInputStream.ReadTransportMessage();
+            var message = bufferReader.ReadTransportMessage();
             message.ShouldHaveSamePropertiesAs(expectedMessage);
         }
 
@@ -36,9 +36,9 @@ namespace Abc.Zebus.Tests.Transport
             var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId, WasPersisted = false };
 
             var stream = GetTransportMessageStream_1_4_1();
-            var codedInputStream = new ProtoBufferReader(stream.GetBuffer(), (int)stream.Length);
+            var bufferReader = new ProtoBufferReader(stream.GetBuffer(), (int)stream.Length);
 
-            var message = codedInputStream.ReadTransportMessage();
+            var message = bufferReader.ReadTransportMessage();
             message.ShouldHaveSamePropertiesAs(expectedMessage, "WasPersisted");
             message.WasPersisted.ShouldBeNull();
         }
@@ -61,10 +61,10 @@ namespace Abc.Zebus.Tests.Transport
                 Originator = new OriginatorInfo(),
                 Content = new MemoryStream(),
             };
-            var newOutput = new ProtoBufferWriter();
-            newOutput.WriteTransportMessage(newTransportMessage);
+            var bufferWriter = new ProtoBufferWriter();
+            bufferWriter.WriteTransportMessage(newTransportMessage);
 
-            newOutput.ToArray().SequenceEqual(oldOutput.ToArray()).ShouldBeTrue();
+            bufferWriter.ToArray().SequenceEqual(oldOutput.ToArray()).ShouldBeTrue();
         }
 
         private MemoryStream GetTransportMessageStream_1_4_1()

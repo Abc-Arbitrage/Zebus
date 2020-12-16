@@ -8,12 +8,12 @@ namespace Abc.Zebus.Transport
 {
     internal static class TransportMessageReader
     {
-        internal static TransportMessage ReadTransportMessage(this ProtoBufferReader input)
+        internal static TransportMessage ReadTransportMessage(this ProtoBufferReader reader)
         {
-            return input.TryReadTransportMessage(out var transportMessage) ? transportMessage : new TransportMessage();
+            return reader.TryReadTransportMessage(out var transportMessage) ? transportMessage : new TransportMessage();
         }
 
-        internal static bool TryReadTransportMessage(this ProtoBufferReader input, out TransportMessage transportMessage)
+        internal static bool TryReadTransportMessage(this ProtoBufferReader reader, out TransportMessage transportMessage)
         {
             transportMessage = new TransportMessage
             {
@@ -21,60 +21,60 @@ namespace Abc.Zebus.Transport
                 Originator = new OriginatorInfo(),
             };
 
-            while (input.CanRead(1))
+            while (reader.CanRead(1))
             {
-                if (!input.TryReadMember(transportMessage))
+                if (!reader.TryReadMember(transportMessage))
                     return false;
             }
 
             return true;
         }
 
-        private static bool TryReadMember(this ProtoBufferReader input, TransportMessage transportMessage)
+        private static bool TryReadMember(this ProtoBufferReader reader, TransportMessage transportMessage)
         {
-            if (!input.TryReadTag(out var number, out var wireType))
+            if (!reader.TryReadTag(out var number, out var wireType))
                 return false;
 
             switch (number)
             {
                 case 1:
-                    if (!input.TryReadSingleGuid(out var id))
+                    if (!reader.TryReadSingleGuid(out var id))
                         return false;
                     transportMessage.Id = new MessageId(id);
                     break;
                 case 2:
-                    if (!input.TryReadSingleString(out var messageTypeId))
+                    if (!reader.TryReadSingleString(out var messageTypeId))
                         return false;
                     transportMessage.MessageTypeId = new MessageTypeId(messageTypeId);
                     break;
                 case 3:
-                    if (!input.TryReadStream(out var content))
+                    if (!reader.TryReadStream(out var content))
                         return false;
                     transportMessage.Content = content;
                     break;
                 case 4:
-                    if (!input.TryReadOriginatorInfo(out var originator) || originator == null)
+                    if (!reader.TryReadOriginatorInfo(out var originator) || originator == null)
                         return false;
                     transportMessage.Originator = originator;
                     break;
                 case 5:
-                    if (!input.TryReadString(out var environment))
+                    if (!reader.TryReadString(out var environment))
                         return false;
                     transportMessage.Environment = environment;
                     break;
                 case 6:
-                    if (!input.TryReadBool(out var wasPersisted))
+                    if (!reader.TryReadBool(out var wasPersisted))
                         return false;
                     transportMessage.WasPersisted = wasPersisted;
                     break;
                 case 7:
-                    if (!input.TryReadSingleString(out var persistentPeerId))
+                    if (!reader.TryReadSingleString(out var persistentPeerId))
                         return false;
                     transportMessage.PersistentPeerIds ??= new List<PeerId>();
                     transportMessage.PersistentPeerIds.Add(new PeerId(persistentPeerId));
                     break;
                 default:
-                    if (!input.TrySkipUnknown(wireType))
+                    if (!reader.TrySkipUnknown(wireType))
                         return false;
                     break;
             }
@@ -82,38 +82,38 @@ namespace Abc.Zebus.Transport
             return true;
         }
 
-        private static bool TryReadOriginatorInfo(this ProtoBufferReader input, out OriginatorInfo? originatorInfo)
+        private static bool TryReadOriginatorInfo(this ProtoBufferReader reader, out OriginatorInfo? originatorInfo)
         {
             originatorInfo = default;
 
-            if (!input.TryReadLength(out var length))
+            if (!reader.TryReadLength(out var length))
                 return false;
 
-            var endPosition = input.Position + length;
+            var endPosition = reader.Position + length;
 
             var senderId = new PeerId();
             string? senderEndPoint = null;
             string? initiatorUserName = null;
 
-            while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
+            while (reader.Position < endPosition && reader.TryReadTag(out var number, out var wireType))
             {
                 switch (number)
                 {
                     case 1:
-                        if (!input.TryReadSingleString(out var peerId))
+                        if (!reader.TryReadSingleString(out var peerId))
                             return false;
                         senderId = new PeerId(peerId);
                         break;
                     case 2:
-                        if (!input.TryReadString(out senderEndPoint))
+                        if (!reader.TryReadString(out senderEndPoint))
                             return false;
                         break;
                     case 5:
-                        if (!input.TryReadString(out initiatorUserName))
+                        if (!reader.TryReadString(out initiatorUserName))
                             return false;
                         break;
                     default:
-                        if (!input.TrySkipUnknown(wireType))
+                        if (!reader.TrySkipUnknown(wireType))
                             return false;
                         break;
                 }
@@ -123,9 +123,9 @@ namespace Abc.Zebus.Transport
             return true;
         }
 
-        private static bool TryReadStream(this ProtoBufferReader input, out Stream? value)
+        private static bool TryReadStream(this ProtoBufferReader reader, out Stream? value)
         {
-            if (!input.TryReadLength(out var length) || !input.TryReadRawBytes(length, out var bytes))
+            if (!reader.TryReadLength(out var length) || !reader.TryReadRawBytes(length, out var bytes))
             {
                 value = default;
                 return false;
@@ -135,24 +135,24 @@ namespace Abc.Zebus.Transport
             return true;
         }
 
-        private static bool TryReadSingleString(this ProtoBufferReader input, out string? value)
+        private static bool TryReadSingleString(this ProtoBufferReader reader, out string? value)
         {
             value = default;
 
-            if (!input.TryReadLength(out var length))
+            if (!reader.TryReadLength(out var length))
                 return false;
 
-            var endPosition = input.Position + length;
-            while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
+            var endPosition = reader.Position + length;
+            while (reader.Position < endPosition && reader.TryReadTag(out var number, out var wireType))
             {
                 switch (number)
                 {
                     case 1:
-                        if (!input.TryReadString(out value))
+                        if (!reader.TryReadString(out value))
                             return false;
                         break;
                     default:
-                        if (!input.TrySkipUnknown(wireType))
+                        if (!reader.TrySkipUnknown(wireType))
                             return false;
                         break;
                 }
@@ -161,24 +161,24 @@ namespace Abc.Zebus.Transport
             return true;
         }
 
-        private static bool TryReadSingleGuid(this ProtoBufferReader input, out Guid value)
+        private static bool TryReadSingleGuid(this ProtoBufferReader reader, out Guid value)
         {
             value = default;
 
-            if (!input.TryReadLength(out var length))
+            if (!reader.TryReadLength(out var length))
                 return false;
 
-            var endPosition = input.Position + length;
-            while (input.Position < endPosition && input.TryReadTag(out var number, out var wireType))
+            var endPosition = reader.Position + length;
+            while (reader.Position < endPosition && reader.TryReadTag(out var number, out var wireType))
             {
                 switch (number)
                 {
                     case 1:
-                        if (!input.TryReadGuid(out value))
+                        if (!reader.TryReadGuid(out value))
                             return false;
                         break;
                     default:
-                        if (!input.TrySkipUnknown(wireType))
+                        if (!reader.TrySkipUnknown(wireType))
                             return false;
                         break;
                 }
@@ -187,7 +187,7 @@ namespace Abc.Zebus.Transport
             return true;
         }
 
-        private static bool TrySkipUnknown(this ProtoBufferReader input, WireType wireType)
+        private static bool TrySkipUnknown(this ProtoBufferReader reader, WireType wireType)
         {
             switch (wireType)
             {
@@ -195,13 +195,13 @@ namespace Abc.Zebus.Transport
                     return false;
 
                 case WireType.Variant:
-                    return input.TryReadRawVariant(out _);
+                    return reader.TryReadRawVariant(out _);
 
                 case WireType.Fixed64:
-                    return input.TryReadFixed64(out _);
+                    return reader.TryReadFixed64(out _);
 
                 case WireType.String:
-                    return input.TrySkipString();
+                    return reader.TrySkipString();
 
                 case WireType.StartGroup:
                     return false;
@@ -210,7 +210,7 @@ namespace Abc.Zebus.Transport
                     return false;
 
                 case WireType.Fixed32:
-                    return input.TryReadFixed32(out _);
+                    return reader.TryReadFixed32(out _);
 
                 default:
                     return false;

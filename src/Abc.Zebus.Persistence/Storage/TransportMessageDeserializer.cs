@@ -7,8 +7,8 @@ namespace Abc.Zebus.Persistence.Storage
     {
         public static TransportMessage Deserialize(byte[] bytes)
         {
-            var inputStream = new ProtoBufferReader(bytes, bytes.Length);
-            return inputStream.ReadTransportMessage();
+            var bufferReader = new ProtoBufferReader(bytes, bytes.Length);
+            return bufferReader.ReadTransportMessage();
         }
     }
 }

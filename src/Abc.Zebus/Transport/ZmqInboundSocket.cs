@@ -50,6 +50,7 @@ namespace Abc.Zebus.Transport
             _socket?.Dispose();
         }
 
+        // TODO: return Span instead of ProtoBufferReader
         public ProtoBufferReader? Receive(TimeSpan? timeout = null)
         {
             var receiveTimeout = timeout ?? _options.ReceiveTimeout;
