@@ -194,9 +194,6 @@ namespace Abc.Zebus.Transport
                 case WireType.None:
                     return false;
 
-                case WireType.Variant:
-                    return reader.TryReadRawVariant(out _);
-
                 case WireType.Fixed64:
                     return reader.TryReadFixed64(out _);
 
