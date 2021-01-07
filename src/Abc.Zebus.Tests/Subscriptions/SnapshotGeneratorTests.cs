@@ -8,40 +8,58 @@ namespace Abc.Zebus.Tests.Subscriptions
     [TestFixture]
     public class SnapshotGeneratorTests
     {
-        private class EventTest : IEvent
+        private class TestEvent : IEvent
         {
         }
 
-        private class SnapshotTest : IEvent
+        private class TestSnapshot : IEvent
         {
         }
 
-        private class SnapshotGeneratorTest : SubscriptionSnapshotGenerator<SnapshotTest, EventTest>
+        private class TestSnapshotGenerator : SubscriptionSnapshotGenerator<TestSnapshot, TestEvent>
         {
-            public SnapshotGeneratorTest(IBus bus)
+            private readonly TestSnapshot _testSnapshot;
+
+            public TestSnapshotGenerator(IBus bus, TestSnapshot testSnapshot)
                 : base(bus)
             {
+                _testSnapshot = testSnapshot;
             }
 
-            protected override SnapshotTest GenerateSnapshot(SubscriptionsForType messageSubscription)
+            protected override TestSnapshot GenerateSnapshot(SubscriptionsForType messageSubscription)
             {
-                return new SnapshotTest();
+                return _testSnapshot;
             }
         }
 
         [Test]
-        public void should_Generate_snapshot_and_publish_it_to_the_specified_peer()
+        public void should_generate_snapshot_and_publish_it_to_the_specified_peer()
         {
             // Arrange
             var testBus = new TestBus();
-            var snapshotGenerator = new SnapshotGeneratorTest(testBus);
+            var snapshotGenerator = new TestSnapshotGenerator(testBus, new TestSnapshot());
 
             // Act
             var peerId = new PeerId("testPeerId");
-            snapshotGenerator.Handle(new SubscriptionsUpdated(new SubscriptionsForType(new MessageTypeId(typeof(EventTest))), peerId));
+            snapshotGenerator.Handle(new SubscriptionsUpdated(new SubscriptionsForType(new MessageTypeId(typeof(TestEvent))), peerId));
 
             // Assert
-            testBus.ExpectExactly(peerId, new SnapshotTest());
+            testBus.ExpectExactly(peerId, new TestSnapshot());
+        }
+
+        [Test]
+        public void should_not_generate_snapshot_if_snapshot_generator_returns_null()
+        {
+            // Arrange
+            var testBus = new TestBus();
+            var snapshotGenerator = new TestSnapshotGenerator(testBus, null);
+
+            // Act
+            var peerId = new PeerId("testPeerId");
+            snapshotGenerator.Handle(new SubscriptionsUpdated(new SubscriptionsForType(new MessageTypeId(typeof(TestEvent))), peerId));
+
+            // Assert
+            testBus.ExpectNothing();
         }
     }
 }
