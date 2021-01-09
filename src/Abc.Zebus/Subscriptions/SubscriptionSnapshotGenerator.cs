@@ -12,9 +12,10 @@ namespace Abc.Zebus.Subscriptions
     /// - The <see cref="GenerateSnapshot"/> method will be invoked after the directory state is updated.
     /// - Messages can be sent to the subscribing peer before the snapshot.
     /// - The subscribing peer should properly handle (discard) messages received before the snapshot.
+    /// - If the implementer of GenerateSnapshot returns null, no snapshot message will be sent.
     /// </remarks>
     public abstract class SubscriptionSnapshotGenerator<TSnapshotMessage, TMessage> : SubscriptionHandler<TMessage>
-        where TSnapshotMessage : IEvent
+        where TSnapshotMessage : class, IEvent
         where TMessage : IEvent
     {
         private readonly IBus _bus;
@@ -27,6 +28,9 @@ namespace Abc.Zebus.Subscriptions
         protected sealed override void OnSubscriptionsUpdated(SubscriptionsForType subscriptions, PeerId peerId)
         {
             var snapshot = GenerateSnapshot(subscriptions);
+            if (snapshot == null)
+                return;
+
             var internalBus = (IInternalBus)_bus;
             internalBus.Publish(snapshot, peerId);
         }
@@ -36,6 +40,6 @@ namespace Abc.Zebus.Subscriptions
         /// </summary>
         /// <param name="messageSubscription">The subscription of <see cref="TMessage"/></param>
         /// <returns>An instance of the snapshot message</returns>
-        protected abstract TSnapshotMessage GenerateSnapshot(SubscriptionsForType messageSubscription);
+        protected abstract TSnapshotMessage? GenerateSnapshot(SubscriptionsForType messageSubscription);
     }
 }
