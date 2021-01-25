@@ -29,20 +29,15 @@ Task("Compile").Does(() => DotNetCoreMSBuild(paths.solution, new DotNetCoreMSBui
     .SetMaxCpuCount(0)
 ));
 
-Task("Run-Unit-Tests").Does(() =>
+Task("Run-Unit-Tests").DoesForEach(() => GetFiles("./../src/Abc.Zebus*.Tests/*.csproj"), testProject =>
 {
-    var testProjects = GetFiles("./../src/Abc.Zebus*.Tests/*.csproj");
+    Information($"Testing: {testProject}");
 
-    foreach (var testProject in testProjects)
-    {
-        Information($"Testing: {testProject}");
-
-        DotNetCoreTest(testProject.FullPath, new DotNetCoreTestSettings {
-            Configuration = "Release",
-            NoBuild = true
-        });
-    }
-});
+    DotNetCoreTest(testProject.FullPath, new DotNetCoreTestSettings {
+        Configuration = "Release",
+        NoBuild = true
+    });
+}).DeferOnError();
 
 //////////////////////////////////////////////////////////////////////
 // TASK TARGETS
