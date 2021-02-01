@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net48;netcoreapp2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net48;net5.0;netstandard2.0</TargetFrameworks>
     <PackageId>Zebus.Testing</PackageId>
     <Description>Test tools for Zebus</Description>
     <Version>$(ZebusTestingVersion)</Version>
@@ -11,11 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoFixture" Version="4.11.0" />
-    <PackageReference Include="CompareNETObjects" Version="4.66.0" />
-    <PackageReference Include="Moq" Version="4.14.1" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="System.Management" Version="4.7.0" />
+    <PackageReference Include="AutoFixture" Version="4.15.0" />
+    <PackageReference Include="CompareNETObjects" Version="4.71.0" />
+    <PackageReference Include="Moq" Version="4.16.0" />
+    <PackageReference Include="NUnit" Version="3.13.1" />
+    <PackageReference Include="System.Management" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

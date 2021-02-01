@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Abc.Zebus.Core;
 using Abc.Zebus.Util;
@@ -13,6 +14,7 @@ using NUnit.Framework;
 namespace Abc.Zebus.Testing.Integration
 {
     [TestFixture]
+    [Platform("Win")]
     public abstract class IntegrationTestFixture
     {
         private IBus _controlBus;
@@ -156,6 +158,9 @@ ______________________________________________________________________________
 
         private static void KillInstance(string serviceFolder, string machineName)
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new InvalidOperationException("Integration tests are only supported on Windows");
+
             try
             {
                 var managementScope = new ManagementScope(@"\\" + machineName + @"\ROOT\CIMV2", new ConnectionOptions());
