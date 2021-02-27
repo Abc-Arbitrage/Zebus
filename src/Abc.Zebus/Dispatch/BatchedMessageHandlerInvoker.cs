@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using StructureMap;
+using Abc.Zebus.DependencyInjection;
 
 namespace Abc.Zebus.Dispatch
 {
@@ -11,14 +11,14 @@ namespace Abc.Zebus.Dispatch
     {
         private static readonly MethodInfo _castMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast))!;
 
-        private readonly IContainer _container;
+        private readonly IDependencyInjectionContainer _container;
         private readonly Action<object, IList<IMessage>> _handleAction;
         private static readonly MethodInfo _toListMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!;
 
-        public BatchedMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
+        public BatchedMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = container;
+            _container = containerProvider  != null ? containerProvider.GetContainer() : null!;
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 

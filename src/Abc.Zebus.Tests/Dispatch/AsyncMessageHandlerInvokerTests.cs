@@ -2,7 +2,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
+using Abc.Zebus.DependencyInjection;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Scan;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages;
@@ -24,7 +26,9 @@ namespace Abc.Zebus.Tests.Dispatch
                 x.For<IBus>().Use(new Mock<IBus>().Object);
                 x.ForSingletonOf<ErroringAsyncHandler>().Use(new ErroringAsyncHandler());
             });
-            var handlerInvoker = new AsyncMessageHandlerInvoker(container, typeof(ErroringAsyncHandler), typeof(ScanCommand1));
+
+            var containerProvider = new StructureMapContainerProvider(container);
+            var handlerInvoker = new AsyncMessageHandlerInvoker(containerProvider, typeof(ErroringAsyncHandler), typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             var invocation = new ScanCommand1().ToInvocation(messageContext);
 
@@ -44,7 +48,8 @@ namespace Abc.Zebus.Tests.Dispatch
                 x.ForSingletonOf<TestAsyncHandlerHelper>().Use(handlerData);
             });
 
-            var invoker = new AsyncMessageHandlerInvoker(container, typeof(TestAsyncHandler), typeof(ScanCommand1));
+            var containerProvider = new StructureMapContainerProvider(container);
+            var invoker = new AsyncMessageHandlerInvoker(containerProvider, typeof(TestAsyncHandler), typeof(ScanCommand1));
 
             var messageContext1 = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             var messageContext2 = MessageContext.CreateOverride(new PeerId("Abc.Testing.1"), null);

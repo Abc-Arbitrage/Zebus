@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Abc.Zebus.DependencyInjection;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Util.Extensions;
-using StructureMap;
 
 namespace Abc.Zebus.Scan
 {
@@ -12,15 +12,15 @@ namespace Abc.Zebus.Scan
         private readonly Type _genericHandlerType;
         private readonly Type _handlerType;
 
-        protected MessageHandlerInvokerLoader(IContainer container, Type genericHandlerType)
+        protected MessageHandlerInvokerLoader(IDependencyInjectionContainerProvider containerProvider, Type genericHandlerType)
         {
             _handlerType = genericHandlerType.GetInterfaces().Single();
             _genericHandlerType = genericHandlerType;
 
-            Container = container;
+            ContainerProvider = containerProvider;
         }
 
-        protected IContainer Container { get; }
+        protected IDependencyInjectionContainerProvider ContainerProvider { get; }
 
         public IEnumerable<IMessageHandlerInvoker> LoadMessageHandlerInvokers(TypeSource typeSource)
         {

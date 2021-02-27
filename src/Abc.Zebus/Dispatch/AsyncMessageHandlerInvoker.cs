@@ -2,19 +2,19 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using StructureMap;
+using Abc.Zebus.DependencyInjection;
 
 namespace Abc.Zebus.Dispatch
 {
     public class AsyncMessageHandlerInvoker : MessageHandlerInvoker
     {
-        private readonly IContainer _container;
+        private readonly IDependencyInjectionContainer _container;
         private readonly Func<object, IMessage, Task> _handleAction;
 
-        public AsyncMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
+        public AsyncMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = container;
+            _container = containerProvider.GetContainer();
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 

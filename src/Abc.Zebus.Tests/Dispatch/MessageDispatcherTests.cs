@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Abc.Zebus.DependencyInjection;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Routing;
@@ -43,10 +44,11 @@ namespace Abc.Zebus.Tests.Dispatch
 
         private MessageDispatcher CreateDispatcher(IDispatchQueueFactory dispatchQueueFactory)
         {
+            var containerProvider = new StructureMapContainerProvider(_containerMock.Object);
             var invokerLoaders = new IMessageHandlerInvokerLoader[]
             {
-                new SyncMessageHandlerInvokerLoader(_containerMock.Object),
-                new AsyncMessageHandlerInvokerLoader(_containerMock.Object),
+                new SyncMessageHandlerInvokerLoader(containerProvider),
+                new AsyncMessageHandlerInvokerLoader(containerProvider),
             };
 
             var messageDispatcher = new MessageDispatcher(invokerLoaders, dispatchQueueFactory);

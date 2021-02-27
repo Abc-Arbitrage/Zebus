@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using StructureMap;
+using Abc.Zebus.DependencyInjection;
+using Abc.Zebus.Scan;
 
 namespace Abc.Zebus.Dispatch
 {
     public class SyncMessageHandlerInvoker : MessageHandlerInvoker
     {
-        private readonly IContainer _container;
+        private readonly IDependencyInjectionContainer _container;
         private readonly Action<object, IMessage> _handleAction;
 
-        public SyncMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
-            : this(container, handlerType, messageType, shouldBeSubscribedOnStartup, GenerateHandleAction(handlerType, messageType))
+        public SyncMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
+            : this(containerProvider, handlerType, messageType, shouldBeSubscribedOnStartup, GenerateHandleAction(handlerType, messageType))
         {
         }
 
-        protected SyncMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup, Action<object, IMessage> handleAction)
+        protected SyncMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup, Action<object, IMessage> handleAction)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = container;
+            _container = containerProvider.GetContainer();
             _handleAction = handleAction;
         }
 

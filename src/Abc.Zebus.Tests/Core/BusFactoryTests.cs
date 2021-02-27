@@ -1,9 +1,11 @@
 ﻿using Abc.Zebus.Core;
+using Abc.Zebus.Dispatch;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Directory;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
+using Lamar;
 using NUnit.Framework;
 using ProtoBuf;
 
@@ -19,7 +21,11 @@ namespace Abc.Zebus.Tests.Core
 
             var bus = new BusFactory()
                 .WithHandlers(typeof(Handler))
-                .ConfigureContainer(x => x.ForSingletonOf<Handler>().Use(handler))
+                .ConfigureContainer(x =>
+                {
+                    x.ForSingletonOf<IContainer>().Use<Container>();
+                    x.ForSingletonOf<Handler>().Use(handler);
+                })
                 .CreateAndStartInMemoryBus();
 
             var task = bus.Send(new FakeCommand(123));

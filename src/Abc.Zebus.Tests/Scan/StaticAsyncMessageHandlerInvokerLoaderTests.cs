@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Abc.Zebus.DependencyInjection;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Testing.Extensions;
@@ -15,7 +16,7 @@ namespace Abc.Zebus.Tests.Scan
         [Test]
         public void should_load_async_invoker()
         {
-            var invokerLoader = new AsyncMessageHandlerInvokerLoader(new Container());
+            var invokerLoader = new AsyncMessageHandlerInvokerLoader(new StructureMapContainerProvider(new Container()));
             var invokers = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromAssembly(this)).ToList();
 
             var fakeHandlerInvoker = invokers.SingleOrDefault(x => x.MessageHandlerType == typeof(FakeHandler));

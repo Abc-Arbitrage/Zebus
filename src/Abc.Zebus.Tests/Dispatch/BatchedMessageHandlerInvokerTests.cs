@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Abc.Zebus.DependencyInjection;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Dispatch.Pipes;
+using Abc.Zebus.Scan;
 using Abc.Zebus.Testing.Extensions;
 using NUnit.Framework;
 using StructureMap;
@@ -22,7 +24,8 @@ namespace Abc.Zebus.Tests.Dispatch
                 new Message { Id = 2 },
             };
 
-            var invoker = new BatchedMessageHandlerInvoker(container, typeof(Handler), typeof(Message));
+            var containerProvider = new StructureMapContainerProvider(container);
+            var invoker = new BatchedMessageHandlerInvoker(containerProvider, typeof(Handler), typeof(Message));
             var invocation = new PipeInvocation(invoker, messages, MessageContext.CreateTest(), new IPipe[0]);
 
             invocation.Run();

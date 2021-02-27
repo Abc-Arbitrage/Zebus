@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Abc.Zebus.Core;
+using Abc.Zebus.DependencyInjection;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Scan;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
@@ -26,7 +28,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 x.ForSingletonOf<MessageContextAwareCommandHandler>().Use(handler);
             });
 
-            var invoker = new SyncMessageHandlerInvoker(container, typeof(MessageContextAwareCommandHandler), typeof(ScanCommand1));
+            var invoker = new SyncMessageHandlerInvoker(new StructureMapContainerProvider(container), typeof(MessageContextAwareCommandHandler), typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
 
             var invocationMock = new Mock<IMessageHandlerInvocation>();
@@ -42,7 +44,7 @@ namespace Abc.Zebus.Tests.Dispatch
         public void should_inject_context_in_handler_constructor()
         {
             var container = new Container(x => x.For<IBus>().Use(new Mock<IBus>().Object));
-            var invoker = new SyncMessageHandlerInvoker(container, typeof(CommandHandlerWithMessageContextInConstructor), typeof(CommandHandlerWithMessageContextInConstructorCommand));
+            var invoker = new SyncMessageHandlerInvoker(new StructureMapContainerProvider(container), typeof(CommandHandlerWithMessageContextInConstructor), typeof(CommandHandlerWithMessageContextInConstructorCommand));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             var command = new CommandHandlerWithMessageContextInConstructorCommand();
             var invocation = command.ToInvocation(messageContext);
@@ -65,7 +67,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 x.For<IEqualityComparer<string>>().Use(equalityComparer);
             });
 
-            var invoker = new SyncMessageHandlerInvoker(container, typeof(CommandHandlerWithThreeConstructorArguments), typeof(ScanCommand1));
+            var invoker = new SyncMessageHandlerInvoker(new StructureMapContainerProvider(container), typeof(CommandHandlerWithThreeConstructorArguments), typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
 
             var handler = (CommandHandlerWithThreeConstructorArguments)invoker.CreateHandler(messageContext);
@@ -83,7 +85,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var busMock = new Mock<IBus>();
             var container = new Container(x => x.ForSingletonOf<IBus>().Use(busMock.Object));
 
-            var invoker = new SyncMessageHandlerInvoker(container, typeof(CommandHandlerWithOneConstructorArgument), typeof(ScanCommand1));
+            var invoker = new SyncMessageHandlerInvoker(new StructureMapContainerProvider(container), typeof(CommandHandlerWithOneConstructorArgument), typeof(ScanCommand1));
 
             var messageContext1 = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             var handler1 = (CommandHandlerWithOneConstructorArgument)invoker.CreateHandler(messageContext1);
@@ -105,7 +107,7 @@ namespace Abc.Zebus.Tests.Dispatch
                 x.ForSingletonOf<CommandHandlerWithOneConstructorArgument>().Use<CommandHandlerWithOneConstructorArgument>();
             });
 
-            var invoker = new SyncMessageHandlerInvoker(container, typeof(CommandHandlerWithOneConstructorArgument), typeof(ScanCommand1));
+            var invoker = new SyncMessageHandlerInvoker(new StructureMapContainerProvider(container), typeof(CommandHandlerWithOneConstructorArgument), typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
 
             var handler1 = (CommandHandlerWithOneConstructorArgument)invoker.CreateHandler(messageContext);
@@ -136,7 +138,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
         private static void MeasureHandlerCreationPerformances(Container container, Type handlerType)
         {
-            var invoker = new SyncMessageHandlerInvoker(container, handlerType, typeof(ScanCommand1));
+            var invoker = new SyncMessageHandlerInvoker(new StructureMapContainerProvider(container), handlerType, typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             invoker.CreateHandler(messageContext);
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Abc.Zebus.DependencyInjection;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
@@ -16,7 +17,7 @@ namespace Abc.Zebus.Tests.Scan
         [Test]
         public void should_load_queue_name()
         {
-            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new StructureMapContainerProvider(new Container()));
             var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandlerWithQueueName1>()).ExpectedSingle();
 
             invoker.DispatchQueueName.ShouldEqual("DispatchQueue1");
@@ -25,7 +26,7 @@ namespace Abc.Zebus.Tests.Scan
         [Test]
         public void should_switch_to_manual_subscription_mode_when_specified()
         {
-            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new StructureMapContainerProvider(new Container()));
             var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandlerWithManualSubscriptionMode>()).ExpectedSingle();
 
             invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
@@ -34,7 +35,7 @@ namespace Abc.Zebus.Tests.Scan
         [Test]
         public void should_switch_to_auto_subscription_mode_when_specified()
         {
-            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new StructureMapContainerProvider(new Container()));
             var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableHandlerWithAutoSubscriptionMode>()).ExpectedSingle();
 
             invoker.ShouldBeSubscribedOnStartup.ShouldBeTrue();
@@ -43,14 +44,14 @@ namespace Abc.Zebus.Tests.Scan
         [Test]
         public void should_throw_exception_if_method_is_async_void()
         {
-            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new StructureMapContainerProvider(new Container()));
             Assert.Throws<InvalidProgramException>(() => invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<WrongAsyncHandler>()).ToList());
         }
 
         [Test]
         public void should_not_throw_if_scanning_handler_with_several_handle_methods()
         {
-            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new StructureMapContainerProvider(new Container()));
             Assert.DoesNotThrow(() => invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandler>()).ToList());
         }
 
