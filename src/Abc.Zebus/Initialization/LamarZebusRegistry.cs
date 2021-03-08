@@ -26,6 +26,7 @@ namespace Abc.Zebus.Initialization
             ForSingletonOf<IPersistentTransport>().Use<PersistentTransport>().Ctor<ITransport>().Is<ZmqTransport>();
             ForSingletonOf<ITransport>().Use<PersistentTransport>().Ctor<ITransport>().Is<ZmqTransport>();
 
+            Injectable<MessageContext>();
             ForSingletonOf<IBus>().Use<Bus>();
             ForSingletonOf<IMessageDispatchFactory>().Use<Bus>();
 
