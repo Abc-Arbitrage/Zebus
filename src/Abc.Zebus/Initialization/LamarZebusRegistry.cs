@@ -18,22 +18,22 @@ namespace Abc.Zebus.Initialization
         {
             ForSingletonOf<IDependencyInjectionContainerProvider>().Use<LamarContainerProvider>();
             ForSingletonOf<IMessageDispatcher>().Use<MessageDispatcher>();
-            ForSingletonOf<IProvideQueueLength>().Use<MessageDispatcher>();
+            ForSingletonOf<IProvideQueueLength>().Use(x => (IProvideQueueLength)x.GetInstance<IMessageDispatcher>());
 
             ForSingletonOf<IDispatchQueueFactory>().Use<DispatchQueueFactory>();
             For<IMessageSerializer>().Use<MessageSerializer>();
 
             ForSingletonOf<IPersistentTransport>().Use<PersistentTransport>().Ctor<ITransport>().Is<ZmqTransport>();
-            ForSingletonOf<ITransport>().Use<PersistentTransport>().Ctor<ITransport>().Is<ZmqTransport>();
+            ForSingletonOf<ITransport>().Use(x => x.GetInstance<IPersistentTransport>());
 
             Injectable<MessageContext>();
             ForSingletonOf<IBus>().Use<Bus>();
-            ForSingletonOf<IMessageDispatchFactory>().Use<Bus>();
+            ForSingletonOf<IMessageDispatchFactory>().Use(x => (IMessageDispatchFactory)x.GetInstance<IBus>());
 
             ForSingletonOf<IPipeManager>().Use<PipeManager>();
 
             ForSingletonOf<PeerDirectoryClient>().Use<PeerDirectoryClient>();
-            ForSingletonOf<IPeerDirectory>().Use<PeerDirectoryClient>();
+            ForSingletonOf<IPeerDirectory>().Use(x => x.GetInstance<PeerDirectoryClient>());
 
             For<IMessageHandlerInvokerLoader>().Add<SyncMessageHandlerInvokerLoader>();
             For<IMessageHandlerInvokerLoader>().Add<AsyncMessageHandlerInvokerLoader>();
