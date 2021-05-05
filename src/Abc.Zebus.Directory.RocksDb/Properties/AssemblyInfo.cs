@@ -10,3 +10,5 @@ using System.Runtime.InteropServices;
 [assembly: Guid("e1aab939-601a-4cbd-a4ef-3847da7530c9")]
 
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.RocksDb.Tests")]
+
+[module: SkipLocalsInit]

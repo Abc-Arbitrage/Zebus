@@ -39,7 +39,7 @@ namespace Abc.Zebus.Transport.Zmq
 
         public static Version GetVersion()
         {
-            int major, minor, patch;
+            int major = 0, minor = 0, patch = 0;
             ZmqNative.version(&major, &minor, &patch);
             return new Version(major, minor, patch);
         }

@@ -8,3 +8,5 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Abc.Zebus.PersistenceService.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Testing")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Tests")]
+
+[module: SkipLocalsInit]
