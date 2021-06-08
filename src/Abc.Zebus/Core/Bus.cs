@@ -627,7 +627,7 @@ namespace Abc.Zebus.Core
 
         private void HandleDispatchErrors(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage? failingTransportMessage = null)
         {
-            if (!_configuration.IsErrorPublicationEnabled || !IsRunning || dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is DomainException))
+            if (!_configuration.IsErrorPublicationEnabled || !IsRunning || dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is MessageProcessingException { ShouldPublishError: false }))
                 return;
 
             var errorMessages = dispatchResult.Errors.Select(error => error.ToString());
@@ -635,8 +635,7 @@ namespace Abc.Zebus.Core
 
             try
             {
-                if (failingTransportMessage == null)
-                    failingTransportMessage = ToTransportMessage(dispatch.Message);
+                failingTransportMessage ??= ToTransportMessage(dispatch.Message);
             }
             catch (Exception ex)
             {

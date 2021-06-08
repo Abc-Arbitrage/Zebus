@@ -100,7 +100,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
             _configurationMock.SetupGet(x => x.IsPersistent).Returns(true);
-            _bus.AddHandler<RegisterPeerCommand>(x => throw new DomainException(DirectoryErrorCodes.PeerAlreadyExists, "Peer already exists"));
+            _bus.AddHandler<RegisterPeerCommand>(_ => throw new MessageProcessingException("Peer already exists") { ErrorCode = DirectoryErrorCodes.PeerAlreadyExists });
 
             using (SystemDateTime.PauseTime())
             {

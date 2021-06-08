@@ -79,20 +79,20 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void shoud_send_a_completion_message_with_domain_exception_error_code_and_message()
+            public void should_send_a_completion_message_with_message_processing_exception_error_code_and_message()
             {
                 using (MessageId.PauseIdGeneration())
                 {
-                    const int domainExceptionValue = 5000;
-                    const string domainExceptionMessage = "Domain Exception";
+                    const int errorCode = 5000;
+                    const string exceptionMessage = "Domain Exception";
 
                     var command = new FakeCommand(123);
-                    SetupDispatch(command, error: new DomainException(domainExceptionValue, domainExceptionMessage));
+                    SetupDispatch(command, error: new MessageProcessingException(exceptionMessage) { ErrorCode = errorCode });
                     var transportMessageReceived = command.ToTransportMessage(_peerUp);
 
                     _transport.RaiseMessageReceived(transportMessageReceived);
 
-                    var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, domainExceptionValue, domainExceptionMessage).ToTransportMessage(_self);
+                    var expectedTransportMessage = new MessageExecutionCompleted(transportMessageReceived.Id, errorCode, exceptionMessage).ToTransportMessage(_self);
                     _transport.ExpectExactly(new TransportMessageSent(expectedTransportMessage, _peerUp));
                 }
             }
