@@ -14,6 +14,7 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.UnitTesting;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Util;
+using Abc.Zebus.Util.Extensions;
 using Moq;
 using NUnit.Framework;
 
@@ -581,11 +582,22 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void should_not_subscribe_when_bus_is_stopped()
+            public async Task should_subscribe_when_bus_is_stopped()
             {
-                AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
+                var subscriptions = new List<Subscription>();
+                _directoryMock.Setup(x => x.RegisterAsync(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
+                              .Callback<IBus, Peer, IEnumerable<Subscription>>((_, _, items) => subscriptions.AddRange(items))
+                              .Returns(Task.CompletedTask);
 
-                Assert.Throws<InvalidOperationException>(() => _bus.Subscribe(Subscription.Any<FakeCommand>()));
+                var task = _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
+
+                task.IsCompleted.ShouldBeFalse();
+                subscriptions.ShouldBeEmpty();
+
+                _bus.Start();
+
+                await task.WithTimeoutAsync(10.Seconds());
+                subscriptions.ExpectedSingle().MessageTypeId.ShouldEqual(MessageUtil.TypeId<FakeCommand>());
             }
 
             [Test]

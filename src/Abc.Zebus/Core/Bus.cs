@@ -127,9 +127,9 @@ namespace Abc.Zebus.Core
             }
             catch (Exception ex)
             {
+                Interlocked.Exchange(ref _busStartedTcs, null)?.TrySetException(ex);
                 InternalStop(registered);
                 Status = BusStatus.Stopped;
-                Interlocked.Exchange(ref _busStartedTcs, null)?.TrySetException(ex);
                 throw;
             }
 
@@ -202,7 +202,6 @@ namespace Abc.Zebus.Core
                 _subscriptions.Clear();
                 _pendingUnsubscriptions.Clear();
                 _processPendingUnsubscriptionsTask = null;
-                _busStartedTcs = null;
 
                 unchecked
                 {
@@ -219,6 +218,7 @@ namespace Abc.Zebus.Core
                 Status = BusStatus.Stopped;
             }
 
+            Interlocked.Exchange(ref _busStartedTcs, null)?.TrySetException(new InvalidOperationException("The bus has been stopped"));
             _messageIdToTaskCompletionSources.Clear();
         }
 
@@ -320,7 +320,7 @@ namespace Abc.Zebus.Core
             if (IsRunning && !request.ThereIsNoHandlerButIKnowWhatIAmDoing)
                 EnsureMessageHandlerInvokerExists(request.Subscriptions);
 
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(_subscriptionsVersion);
 
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
@@ -338,7 +338,7 @@ namespace Abc.Zebus.Core
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
 
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(_subscriptionsVersion);
 
             var eventHandlerInvokers = request.Subscriptions
                                               .GroupBy(x => x.MessageTypeId)
@@ -377,8 +377,6 @@ namespace Abc.Zebus.Core
 
         private async Task AddSubscriptionsAsync(SubscriptionRequest request)
         {
-            request.SubmissionSubscriptionsVersion = _subscriptionsVersion;
-
             if (request.Batch != null)
             {
                 var batchSubscriptions = request.Batch.TryConsumeBatchSubscriptions();
@@ -407,6 +405,9 @@ namespace Abc.Zebus.Core
 
             async Task SendSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
             {
+                if (request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                    throw new InvalidOperationException("The bus has been stopped before the subscriptions have been sent");
+
                 var updatedTypes = new HashSet<MessageTypeId>();
 
                 lock (_subscriptions)
