@@ -26,7 +26,7 @@ namespace Abc.Zebus.Core
 
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new();
         private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new();
-        private readonly Dictionary<Subscription, int> _subscriptions = new();
+        private readonly Dictionary<Subscription, SubscriptionStatus> _subscriptions = new();
         private readonly HashSet<MessageTypeId> _pendingUnsubscriptions = new();
         private readonly ITransport _transport;
         private readonly IPeerDirectory _directory;
@@ -147,8 +147,8 @@ namespace Abc.Zebus.Core
             {
                 foreach (var invoker in autoSubscribeInvokers)
                 {
-                    var subscription = new Subscription(invoker.MessageTypeId);
-                    _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                    var status = GetOrAddSubscriptionStatus(new Subscription(invoker.MessageTypeId));
+                    status.CurrentSubscriptionCount++;
                 }
             }
         }
@@ -157,8 +157,21 @@ namespace Abc.Zebus.Core
         {
             lock (_subscriptions)
             {
-                return _subscriptions.Keys.ToList();
+                return _subscriptions.Where(i => !i.Value.IsEmpty)
+                                     .Select(i => i.Key)
+                                     .ToList();
             }
+        }
+
+        private SubscriptionStatus GetOrAddSubscriptionStatus(Subscription subscription)
+        {
+            if (!_subscriptions.TryGetValue(subscription, out var status))
+            {
+                status = new SubscriptionStatus();
+                _subscriptions.Add(subscription, status);
+            }
+
+            return status;
         }
 
         public virtual void Stop()
@@ -199,7 +212,14 @@ namespace Abc.Zebus.Core
 
             lock (_subscriptions)
             {
-                _subscriptions.Clear();
+                foreach (var (subscription, status) in _subscriptions.ToList())
+                {
+                    status.CurrentSubscriptionCount = 0;
+
+                    if (status.IsEmpty)
+                        _subscriptions.Remove(subscription);
+                }
+
                 _pendingUnsubscriptions.Clear();
                 _processPendingUnsubscriptionsTask = null;
 
@@ -414,10 +434,10 @@ namespace Abc.Zebus.Core
                 {
                     foreach (var subscription in subscriptions)
                     {
-                        var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
-                        _subscriptions[subscription] = subscriptionCount + 1;
+                        var status = GetOrAddSubscriptionStatus(subscription);
+                        status.CurrentSubscriptionCount++;
 
-                        if (subscriptionCount <= 0)
+                        if (status.CurrentSubscriptionCount <= 1)
                             updatedTypes.Add(subscription.MessageTypeId);
                     }
                 }
@@ -485,17 +505,18 @@ namespace Abc.Zebus.Core
 
                 foreach (var subscription in request.Subscriptions)
                 {
-                    var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
-                    if (subscriptionCount <= 1)
+                    if (!_subscriptions.TryGetValue(subscription, out var status))
+                        continue;
+
+                    status.CurrentSubscriptionCount--;
+
+                    if (status.CurrentSubscriptionCount <= 0)
                     {
-                        _subscriptions.Remove(subscription);
+                        if (status.IsEmpty)
+                            _subscriptions.Remove(subscription);
 
                         if (IsRunning)
                             _pendingUnsubscriptions.Add(subscription.MessageTypeId);
-                    }
-                    else
-                    {
-                        _subscriptions[subscription] = subscriptionCount - 1;
                     }
                 }
 
@@ -857,6 +878,13 @@ namespace Abc.Zebus.Core
             Stopping,
             Starting,
             Started
+        }
+
+        private class SubscriptionStatus
+        {
+            public int CurrentSubscriptionCount;
+
+            public bool IsEmpty => CurrentSubscriptionCount <= 0;
         }
     }
 }
