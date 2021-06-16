@@ -573,16 +573,16 @@ namespace Abc.Zebus.Tests.Core
                 request.AddToBatch(batch);
 
                 _bus.Start();
-                var _ = _bus.SubscribeAsync(request);
+                _ = _bus.SubscribeAsync(request);
 
                 _bus.Stop();
 
                 var submitTask = batch.SubmitAsync();
-                Assert.Throws<AggregateException>(() => submitTask.Wait()).InnerExceptions.ExpectedSingle().ShouldBe<InvalidOperationException>();
+                Assert.Throws<AggregateException>(() => submitTask.Wait(10.Seconds())).InnerExceptions.ExpectedSingle().ShouldBe<InvalidOperationException>();
             }
 
             [Test]
-            public async Task should_subscribe_when_bus_is_stopped()
+            public void should_subscribe_when_bus_is_stopped()
             {
                 var subscriptions = new List<Subscription>();
                 _directoryMock.Setup(x => x.RegisterAsync(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
@@ -591,12 +591,11 @@ namespace Abc.Zebus.Tests.Core
 
                 var task = _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
 
-                task.IsCompleted.ShouldBeFalse();
+                task.IsCompleted.ShouldBeTrue();
                 subscriptions.ShouldBeEmpty();
 
                 _bus.Start();
 
-                await task.WithTimeoutAsync(10.Seconds());
                 subscriptions.ExpectedSingle().MessageTypeId.ShouldEqual(MessageUtil.TypeId<FakeCommand>());
             }
 

@@ -37,7 +37,6 @@ namespace Abc.Zebus.Core
         private readonly IBusConfiguration _configuration;
 
         private Task? _processPendingUnsubscriptionsTask;
-        private TaskCompletionSource<object?>? _busStartedTcs;
 
         private int _subscriptionsVersion;
         private int _status;
@@ -125,15 +124,13 @@ namespace Abc.Zebus.Core
                 _logger.DebugFormat("Starting message dispatcher...");
                 _messageDispatcher.Start();
             }
-            catch (Exception ex)
+            catch
             {
-                Interlocked.Exchange(ref _busStartedTcs, null)?.TrySetException(ex);
                 InternalStop(registered);
                 Status = BusStatus.Stopped;
                 throw;
             }
 
-            Interlocked.Exchange(ref _busStartedTcs, null)?.TrySetResult(null);
             Started?.Invoke();
         }
 
@@ -150,6 +147,11 @@ namespace Abc.Zebus.Core
                     var status = GetOrAddSubscriptionStatus(new Subscription(invoker.MessageTypeId));
                     status.CurrentSubscriptionCount++;
                 }
+
+                foreach (var status in _subscriptions.Values)
+                {
+                    status.CurrentSubscriptionCount += status.StartupSubscriptionCount;
+                }
             }
         }
 
@@ -157,7 +159,7 @@ namespace Abc.Zebus.Core
         {
             lock (_subscriptions)
             {
-                return _subscriptions.Where(i => !i.Value.IsEmpty)
+                return _subscriptions.Where(i => i.Value.CurrentSubscriptionCount > 0)
                                      .Select(i => i.Key)
                                      .ToList();
             }
@@ -238,7 +240,6 @@ namespace Abc.Zebus.Core
                 Status = BusStatus.Stopped;
             }
 
-            Interlocked.Exchange(ref _busStartedTcs, null)?.TrySetException(new InvalidOperationException("The bus has been stopped"));
             _messageIdToTaskCompletionSources.Clear();
         }
 
@@ -340,7 +341,7 @@ namespace Abc.Zebus.Core
             if (IsRunning && !request.ThereIsNoHandlerButIKnowWhatIAmDoing)
                 EnsureMessageHandlerInvokerExists(request.Subscriptions);
 
-            request.MarkAsSubmitted(_subscriptionsVersion);
+            request.MarkAsSubmitted(_subscriptionsVersion, IsRunning);
 
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
@@ -358,7 +359,7 @@ namespace Abc.Zebus.Core
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
 
-            request.MarkAsSubmitted(_subscriptionsVersion);
+            request.MarkAsSubmitted(_subscriptionsVersion, IsRunning);
 
             var eventHandlerInvokers = request.Subscriptions
                                               .GroupBy(x => x.MessageTypeId)
@@ -397,6 +398,21 @@ namespace Abc.Zebus.Core
 
         private async Task AddSubscriptionsAsync(SubscriptionRequest request)
         {
+            if (request.IsStartupRequest)
+            {
+                lock (_subscriptions)
+                {
+                    foreach (var subscription in request.Subscriptions)
+                    {
+                        var status = GetOrAddSubscriptionStatus(subscription);
+                        status.StartupSubscriptionCount++;
+                    }
+
+                    if (!IsRunning)
+                        return;
+                }
+            }
+
             if (request.Batch != null)
             {
                 var batchSubscriptions = request.Batch.TryConsumeBatchSubscriptions();
@@ -442,36 +458,13 @@ namespace Abc.Zebus.Core
                     }
                 }
 
-                if (IsRunning)
+                if (updatedTypes.Count != 0)
                 {
-                    if (updatedTypes.Count != 0)
-                    {
-                        // Wait until all unsubscriptions are completed to prevent race conditions
-                        await WhenUnsubscribeCompletedAsync().ConfigureAwait(false);
-                        await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
-                    }
-                }
-                else
-                {
-                    await WhenBusStartedAsync().ConfigureAwait(false);
+                    // Wait until all unsubscriptions are completed to prevent race conditions
+                    await WhenUnsubscribeCompletedAsync().ConfigureAwait(false);
+                    await UpdateDirectorySubscriptionsAsync(updatedTypes).ConfigureAwait(false);
                 }
             }
-        }
-
-        private Task WhenBusStartedAsync()
-        {
-            if (IsRunning)
-                return Task.CompletedTask;
-
-            var tcs = Volatile.Read(ref _busStartedTcs);
-
-            if (tcs is null)
-            {
-                tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
-                tcs = Interlocked.CompareExchange(ref _busStartedTcs, tcs, null) ?? tcs;
-            }
-
-            return IsRunning ? Task.CompletedTask : tcs.Task;
         }
 
         internal async Task WhenUnsubscribeCompletedAsync()
@@ -500,7 +493,21 @@ namespace Abc.Zebus.Core
         {
             lock (_subscriptions)
             {
-                if (request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                if (request.IsStartupRequest)
+                {
+                    foreach (var subscription in request.Subscriptions)
+                    {
+                        if (!_subscriptions.TryGetValue(subscription, out var status))
+                            continue;
+
+                        status.StartupSubscriptionCount--;
+
+                        if (status.IsEmpty)
+                            _subscriptions.Remove(subscription);
+                    }
+                }
+
+                if (!IsRunning || request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
                     return;
 
                 foreach (var subscription in request.Subscriptions)
@@ -515,8 +522,7 @@ namespace Abc.Zebus.Core
                         if (status.IsEmpty)
                             _subscriptions.Remove(subscription);
 
-                        if (IsRunning)
-                            _pendingUnsubscriptions.Add(subscription.MessageTypeId);
+                        _pendingUnsubscriptions.Add(subscription.MessageTypeId);
                     }
                 }
 
@@ -883,8 +889,9 @@ namespace Abc.Zebus.Core
         private class SubscriptionStatus
         {
             public int CurrentSubscriptionCount;
+            public int StartupSubscriptionCount;
 
-            public bool IsEmpty => CurrentSubscriptionCount <= 0;
+            public bool IsEmpty => CurrentSubscriptionCount <= 0 && StartupSubscriptionCount <= 0;
         }
     }
 }
