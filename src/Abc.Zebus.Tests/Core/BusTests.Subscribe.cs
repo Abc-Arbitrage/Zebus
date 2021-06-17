@@ -729,6 +729,41 @@ namespace Abc.Zebus.Tests.Core
                 subscriptionTask.IsFaulted.ShouldBeTrue();
             }
 
+            [Test]
+            public async Task should_add_invoker_for_startup_subscription_after_restart()
+            {
+                var addedInvokers = CaptureAddedInvokers();
+
+                var subscription = await _bus.SubscribeAsync(Subscription.Any<FakeCommand>(), msg => { });
+
+                addedInvokers.ShouldBeEmpty();
+
+                _bus.Start();
+
+                addedInvokers.ExpectedSingle().MessageType.ShouldEqual(typeof(FakeCommand));
+
+                _bus.Stop();
+                addedInvokers.Clear();
+                _bus.Start();
+
+                addedInvokers.ExpectedSingle().MessageType.ShouldEqual(typeof(FakeCommand));
+            }
+
+            [Test]
+            public async Task should_not_add_invoker_for_startup_subscription_when_subscription_is_disposed()
+            {
+                var addedInvokers = CaptureAddedInvokers();
+
+                var subscription = await _bus.SubscribeAsync(Subscription.Any<FakeCommand>(), msg => { });
+                subscription.Dispose();
+
+                addedInvokers.ShouldBeEmpty();
+
+                _bus.Start();
+
+                addedInvokers.ShouldBeEmpty();
+            }
+
             private void SendParallelSubscriptionUpdates(int threadCount, int subscriptionCountPerThread)
             {
                 var subscriptionVersion = 0;
@@ -773,6 +808,16 @@ namespace Abc.Zebus.Tests.Core
                 var subscriptions = new List<SubscriptionsForType>();
                 _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
                 return subscriptions;
+            }
+
+            private List<IMessageHandlerInvoker> CaptureAddedInvokers()
+            {
+                var invokers = new List<IMessageHandlerInvoker>();
+
+                _messageDispatcherMock.Setup(x => x.AddInvoker(It.IsAny<IMessageHandlerInvoker>()))
+                                      .Callback((IMessageHandlerInvoker i) => invokers.Add(i));
+
+                return invokers;
             }
         }
     }
