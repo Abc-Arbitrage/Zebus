@@ -505,10 +505,15 @@ namespace Abc.Zebus.Core
                         if (status.IsEmpty)
                             _subscriptions.Remove(subscription);
                     }
-                }
 
-                if (!IsRunning || request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
-                    return;
+                    if (!IsRunning)
+                        return;
+                }
+                else
+                {
+                    if (!IsRunning || request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                        return;
+                }
 
                 foreach (var subscription in request.Subscriptions)
                 {

@@ -29,8 +29,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: false);
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
-                var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+                var subscriptions = CaptureSubscriptionUpdates();
 
                 _bus.Start();
                 _bus.Subscribe(Subscription.Any<FakeCommand>());
@@ -44,8 +43,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 AddInvoker<FakeCommand>(shouldBeSubscribedOnStartup: true);
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
-                var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+                var subscriptions = CaptureSubscriptionUpdates();
 
                 _bus.Start();
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
@@ -60,8 +58,7 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
                 _bus.Start();
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "firstRoutingValue")));
-                var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+                var subscriptions = CaptureSubscriptionUpdates();
 
                 _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "secondRoutingValue")));
 
@@ -117,8 +114,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
 
-                var directorySubscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
+                var directorySubscriptions = CaptureSubscriptionUpdates();
 
                 _bus.Start();
 
@@ -144,11 +140,7 @@ namespace Abc.Zebus.Tests.Core
 
                 _bus.Start();
 
-                var subscriptions = new List<Subscription>();
-
-                var subscription = _bus.Subscribe(subscriptions.ToArray());
-                subscriptions.Count.ShouldEqual(0);
-
+                var subscription = _bus.Subscribe(Enumerable.Empty<Subscription>());
                 subscription.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();
             }
@@ -163,8 +155,7 @@ namespace Abc.Zebus.Tests.Core
                 subscriptions.Add(Subscription.ByExample(x => new FakeRoutableCommand(1, "toto")));
                 subscriptions.Add(Subscription.ByExample(x => new FakeRoutableCommand(2, "name")));
                 var subscription = _bus.Subscribe(subscriptions.ToArray());
-                var directorySubscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
+                var directorySubscriptions = CaptureSubscriptionUpdates();
 
                 subscription.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();
@@ -180,8 +171,7 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: true);
                 _bus.Start();
                 var subscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
-                var directorySubscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), directorySubscriptions);
+                var directorySubscriptions = CaptureSubscriptionUpdates();
 
                 subscription.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();
@@ -197,8 +187,7 @@ namespace Abc.Zebus.Tests.Core
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
                 _bus.Start();
                 var subscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "name")));
-                var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+                var subscriptions = CaptureSubscriptionUpdates();
 
                 subscription.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();
@@ -216,8 +205,7 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Start();
                 var firstSubscription = _bus.Subscribe<FakeCommand>(cmd => { });
                 var secondSubscription = _bus.Subscribe(Subscription.ByExample(x => new FakeRoutableCommand(1, "plop")));
-                var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+                var subscriptions = CaptureSubscriptionUpdates();
 
                 firstSubscription.Dispose();
                 await _bus.WhenUnsubscribeCompletedAsync();
@@ -485,8 +473,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 AddInvoker<FakeRoutableCommand>(shouldBeSubscribedOnStartup: false);
 
-                var subscriptions = new List<SubscriptionsForType>();
-                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+                var subscriptions = CaptureSubscriptionUpdates();
 
                 _bus.Start();
 
@@ -584,11 +571,7 @@ namespace Abc.Zebus.Tests.Core
             [Test]
             public void should_subscribe_when_bus_is_stopped()
             {
-                var subscriptions = new List<Subscription>();
-                _directoryMock.Setup(x => x.RegisterAsync(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
-                              .Callback<IBus, Peer, IEnumerable<Subscription>>((_, _, items) => subscriptions.AddRange(items))
-                              .Returns(Task.CompletedTask);
-
+                var subscriptions = CaptureRegistrationSubscriptions();
                 var task = _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
 
                 task.IsCompleted.ShouldBeTrue();
@@ -617,10 +600,139 @@ namespace Abc.Zebus.Tests.Core
                 _directoryMock.Verify(i => i.UpdateSubscriptionsAsync(_bus, It.IsAny<IEnumerable<SubscriptionsForType>>()), Times.Never);
             }
 
+            [Test]
+            public async Task should_keep_startup_subscriptions_after_a_restart()
+            {
+                await _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
+
+                _bus.Start();
+                _bus.Stop();
+
+                var subscriptions = CaptureRegistrationSubscriptions();
+
+                _bus.Start();
+
+                subscriptions.ExpectedSingle().MessageTypeId.ShouldEqual(MessageUtil.TypeId<FakeCommand>());
+            }
+
+            [Test]
+            public async Task should_cancel_startup_subscriptions_before_start()
+            {
+                var registrations = CaptureRegistrationSubscriptions();
+                var updates = CaptureSubscriptionUpdates();
+
+                var subscription = await _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
+                subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
+                _bus.Start();
+
+                registrations.ShouldBeEmpty();
+                updates.ShouldBeEmpty();
+            }
+
+            [Test]
+            public async Task should_cancel_startup_subscriptions_after_start()
+            {
+                var registrations = CaptureRegistrationSubscriptions();
+                var updates = CaptureSubscriptionUpdates();
+
+                var subscription = await _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
+
+                _bus.Start();
+
+                registrations.ExpectedSingle();
+                updates.ShouldBeEmpty();
+
+                subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
+                updates.ExpectedSingle().BindingKeys.ShouldBeEmpty();
+
+                _bus.Stop();
+
+                registrations.Clear();
+                updates.Clear();
+
+                _bus.Start();
+
+                registrations.ShouldBeEmpty();
+                updates.ShouldBeEmpty();
+            }
+
+            [Test]
+            public async Task should_cancel_startup_subscriptions_after_stop()
+            {
+                var registrations = CaptureRegistrationSubscriptions();
+                var updates = CaptureSubscriptionUpdates();
+
+                var subscription = await _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
+
+                _bus.Start();
+
+                registrations.ExpectedSingle();
+                registrations.Clear();
+                updates.ShouldBeEmpty();
+
+                _bus.Stop();
+
+                subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
+                _bus.Start();
+
+                registrations.ShouldBeEmpty();
+                updates.ShouldBeEmpty();
+            }
+
+            [Test]
+            public async Task should_cancel_startup_subscriptions_after_second_start()
+            {
+                var registrations = CaptureRegistrationSubscriptions();
+                var updates = CaptureSubscriptionUpdates();
+
+                var subscription = await _bus.SubscribeAsync(Subscription.Any<FakeCommand>());
+
+                _bus.Start();
+                _bus.Stop();
+
+                registrations.Clear();
+                updates.Clear();
+
+                _bus.Start();
+
+                subscription.Dispose();
+                await _bus.WhenUnsubscribeCompletedAsync();
+
+                registrations.ExpectedSingle();
+                updates.ExpectedSingle().BindingKeys.ShouldBeEmpty();
+
+                _bus.Stop();
+
+                registrations.Clear();
+                updates.Clear();
+
+                _bus.Start();
+
+                registrations.ShouldBeEmpty();
+                updates.ShouldBeEmpty();
+            }
+
+            [Test]
+            public void should_throw_on_batched_startup_subscription()
+            {
+                var batch = new SubscriptionRequestBatch();
+                var request = new SubscriptionRequest(Subscription.Any<FakeCommand>());
+                request.AddToBatch(batch);
+
+                var subscriptionTask = _bus.SubscribeAsync(request);
+                subscriptionTask.IsFaulted.ShouldBeTrue();
+            }
+
             private void SendParallelSubscriptionUpdates(int threadCount, int subscriptionCountPerThread)
             {
                 var subscriptionVersion = 0;
-                var subscribertasks = Enumerable.Range(0, threadCount).Select(ite => Task.Run(async () =>
+                var subscriberTasks = Enumerable.Range(0, threadCount).Select(ite => Task.Run(async () =>
                 {
                     for (var i = 0; i < subscriptionCountPerThread; ++i)
                     {
@@ -632,7 +744,7 @@ namespace Abc.Zebus.Tests.Core
                     }
                 })).ToArray();
 
-                Task.WaitAll(subscribertasks);
+                Task.WaitAll(subscriberTasks);
             }
 
             private void CaptureHighestVersionOnUpdate(ConcurrentQueue<int> highestSubscriptionVersionOnEachUpdate)
@@ -643,6 +755,24 @@ namespace Abc.Zebus.Tests.Core
                         var highestSubscriptionVersionNumber = subs.SelectMany(x => x.BindingKeys).Select(x => int.Parse(x.GetPartToken(0))).OrderBy(x => x).Last();
                         highestSubscriptionVersionOnEachUpdate.Enqueue(highestSubscriptionVersionNumber);
                     }).Returns(Task.CompletedTask);
+            }
+
+            private List<Subscription> CaptureRegistrationSubscriptions()
+            {
+                var subscriptions = new List<Subscription>();
+
+                _directoryMock.Setup(x => x.RegisterAsync(_bus, It.Is<Peer>(p => p.DeepCompare(_self)), It.IsAny<IEnumerable<Subscription>>()))
+                              .Callback<IBus, Peer, IEnumerable<Subscription>>((_, _, items) => subscriptions.AddRange(items))
+                              .Returns(Task.CompletedTask);
+
+                return subscriptions;
+            }
+
+            private List<SubscriptionsForType> CaptureSubscriptionUpdates()
+            {
+                var subscriptions = new List<SubscriptionsForType>();
+                _directoryMock.CaptureEnumerable((IBus)_bus, (x, bus, items) => x.UpdateSubscriptionsAsync(bus, items), subscriptions);
+                return subscriptions;
             }
         }
     }

@@ -45,6 +45,9 @@ namespace Abc.Zebus
             IsSubmitted = true;
             SubmissionSubscriptionsVersion = subscriptionsVersion;
             IsStartupRequest = !isRunning;
+
+            if (IsStartupRequest && Batch != null)
+                throw new InvalidOperationException("Startup subscriptions should not be batched");
         }
 
         private void EnsureNotSubmitted()
