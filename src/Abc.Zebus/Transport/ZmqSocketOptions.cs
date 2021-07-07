@@ -25,13 +25,6 @@ namespace Abc.Zebus.Transport
             KeepAlive = KeepAliveOptions.On(30.Seconds(), 3.Seconds());
         }
 
-        [Obsolete("Use ReceiveTimeout instead")]
-        public TimeSpan ReadTimeout
-        {
-            get => ReceiveTimeout;
-            set => ReceiveTimeout = value;
-        }
-
         /// <summary>
         /// Configures ZMQ_SNDHWM (high water mark for outbound messages).
         /// </summary>
