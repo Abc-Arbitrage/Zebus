@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-	<ZebusVersion>3.8.0</ZebusVersion>
+	<ZebusVersion>3.8.1</ZebusVersion>
     <ZebusContractsVersion>3.0.0</ZebusContractsVersion>
     <ZebusDirectoryVersion>$(ZebusVersion)</ZebusDirectoryVersion>
     <ZebusPersistenceVersion>$(ZebusVersion)</ZebusPersistenceVersion>
