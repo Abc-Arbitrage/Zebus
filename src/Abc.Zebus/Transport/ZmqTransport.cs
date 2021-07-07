@@ -97,7 +97,7 @@ namespace Abc.Zebus.Transport
             _context = new ZmqContext();
 
             if (SocketOptions.MaximumSocketCount != null)
-                _context.SetOption(ZmqContextOption.ZMQ_MAX_SOCKETS, SocketOptions.MaximumSocketCount.Value);
+                _context.SetOption(ZmqContextOption.MAX_SOCKETS, SocketOptions.MaximumSocketCount.Value);
 
             var startSequenceState = new InboundProcStartSequenceState();
 
