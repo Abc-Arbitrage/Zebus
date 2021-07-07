@@ -22,11 +22,13 @@ namespace Abc.Zebus.Tests.Transport
     {
         private const string _environment = "Test";
         private List<ZmqTransport> _transports;
+        private ZmqSocketOptions _zmqSocketOptions;
 
         [SetUp]
         public void Setup()
         {
             _transports = new List<ZmqTransport>();
+            _zmqSocketOptions = new ZmqSocketOptions();
         }
 
         [TearDown]
@@ -49,7 +51,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
             configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(100.Milliseconds());
-            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
+            var transport = new ZmqTransport(configurationMock.Object, _zmqSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
 
             Assert.That(transport.Stop, Throws.Nothing);
         }
@@ -382,6 +384,31 @@ namespace Abc.Zebus.Tests.Transport
         }
 
         [Test]
+        public void should_not_support_more_than_maximum_sockets()
+        {
+            const int maximumSocketCount = 4;
+
+            _zmqSocketOptions.MaximumSocketCount = maximumSocketCount;
+
+            var senderTransport = CreateAndStartZmqTransport();
+
+            var receivedMessages = new List<TransportMessage>();
+            var receiverTransports = Enumerable.Range(0, maximumSocketCount + 2)
+                                               .AsParallel()
+                                               .Select(_ => CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .ToList();
+
+            var message = new FakeCommand(999).ToTransportMessage();
+            senderTransport.Send(message, receiverTransports.Select(x => new Peer(x.PeerId, x.InboundEndPoint)));
+
+            Wait.Until(() => receivedMessages.Count == maximumSocketCount - 1, 10.Seconds());
+
+            Thread.Sleep(1.Second());
+
+            receivedMessages.Count.ShouldEqual(maximumSocketCount - 1);
+        }
+
+        [Test]
         public void should_not_block_when_hitting_high_water_mark()
         {
             var senderTransport = CreateAndStartZmqTransport();
@@ -623,7 +650,7 @@ namespace Abc.Zebus.Tests.Transport
             if (peerId == null)
                 peerId = $"Abc.Testing.{Guid.NewGuid():N}";
 
-            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
+            var transport = new ZmqTransport(configurationMock.Object, _zmqSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
             transport.SetLogId(_transports.Count);
 
             transport.SocketOptions.SendTimeout = 500.Milliseconds();
