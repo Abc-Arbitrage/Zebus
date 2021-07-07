@@ -110,5 +110,10 @@ namespace Abc.Zebus.Testing
         {
             return subscriptions.Where(x => x.MessageTypeId == MessageUtil.TypeId<T>());
         }
+
+        public static Peer GetPeer(this ZmqTransport transport)
+        {
+            return new Peer(transport.PeerId, transport.InboundEndPoint);
+        }
     }
 }

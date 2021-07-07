@@ -63,7 +63,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var transport2ReceivedMessages = new ConcurrentBag<TransportMessage>();
             var transport2 = CreateAndStartZmqTransport(onMessageReceived: transport2ReceivedMessages.Add, environment: "NotTest");
-            var transport2Peer = new Peer(transport2.PeerId, transport2.InboundEndPoint);
+            var transport2Peer = transport2.GetPeer();
 
             var message = new FakeCommand(1).ToTransportMessage();
             transport1.Send(message, new[] { transport2Peer });
@@ -79,8 +79,8 @@ namespace Abc.Zebus.Tests.Transport
 
             var receivedMessages = new ConcurrentBag<TransportMessage>();
             var destinationTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add, environment: "NotTest");
-            var destinationPeer = new Peer(destinationTransport.PeerId, destinationTransport.InboundEndPoint);
-            var nonExistingPeer = new Peer(new PeerId("Abc.NonExistingPeer.2"), "tcp://non_existing_peer:1234");
+            var destinationPeer = destinationTransport.GetPeer();
+            var nonExistingPeer = new Peer(new PeerId("Abc.NonExistingPeer.2"), "tcp://non-existing-peer:1234");
 
             var message = new FakeCommand(1).ToTransportMessage();
             senderTransport.Send(message, new[] { nonExistingPeer });
@@ -97,7 +97,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var transport2ReceivedMessages = new ConcurrentBag<TransportMessage>();
             var transport2 = CreateAndStartZmqTransport(onMessageReceived: transport2ReceivedMessages.Add, environment: "NotTest");
-            var transport2Peer = new Peer(transport2.PeerId, transport2.InboundEndPoint);
+            var transport2Peer = transport2.GetPeer();
 
             var message1 = new FakeCommand(1).ToTransportMessage();
             var message2 = new FakeCommand(2).ToTransportMessage();
@@ -116,11 +116,11 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transport1ReceivedMessages = new ConcurrentBag<TransportMessage>();
             var transport1 = CreateAndStartZmqTransport(onMessageReceived: transport1ReceivedMessages.Add);
-            var transport1Peer = new Peer(transport1.PeerId, transport1.InboundEndPoint);
+            var transport1Peer = transport1.GetPeer();
 
             var transport2ReceivedMessages = new ConcurrentBag<TransportMessage>();
             var transport2 = CreateAndStartZmqTransport(onMessageReceived: transport2ReceivedMessages.Add);
-            var transport2Peer = new Peer(transport2.PeerId, transport2.InboundEndPoint);
+            var transport2Peer = transport2.GetPeer();
 
             var message1 = new FakeCommand(1).ToTransportMessage();
             transport1.Send(message1, new[] { transport2Peer });
@@ -151,11 +151,11 @@ namespace Abc.Zebus.Tests.Transport
 
             var receiverMessages = new ConcurrentBag<TransportMessage>();
             var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receiverMessages.Add);
-            var receiverPeer = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+            var receiverPeer = receiverTransport.GetPeer();
 
             var persistenceMessages = new ConcurrentBag<TransportMessage>();
             var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
-            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+            var persistencePeer = persistenceTransport.GetPeer();
 
             var message = new FakeCommand(999).ToTransportMessage();
             senderTransport.Send(message, new[] { receiverPeer }, new SendContext { PersistentPeerIds = { receiverPeer.Id }, PersistencePeer = persistencePeer });
@@ -185,7 +185,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var persistenceMessages = new ConcurrentBag<TransportMessage>();
             var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
-            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+            var persistencePeer = persistenceTransport.GetPeer();
 
             var message = new FakeCommand(999).ToTransportMessage();
             senderTransport.Send(message, Enumerable.Empty<Peer>(), new SendContext { PersistentPeerIds = { receiverPeerId }, PersistencePeer = persistencePeer });
@@ -208,7 +208,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var persistenceMessages = new ConcurrentBag<TransportMessage>();
             var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
-            var persistencePeer = new Peer(persistenceTransport.PeerId, persistenceTransport.InboundEndPoint);
+            var persistencePeer = persistenceTransport.GetPeer();
 
             var message = new FakeCommand(999).ToTransportMessage().ToPersistTransportMessage(receiverPeerId);
             senderTransport.Send(message, new[] { persistencePeer });
@@ -227,7 +227,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var receivedMessages = new ConcurrentBag<TransportMessage>();
             var receiver = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
-            var receivingPeer = new Peer(receiver.PeerId, receiver.InboundEndPoint);
+            var receivingPeer = receiver.GetPeer();
             var message = new FakeCommand(1).ToTransportMessage();
             var otherMessage = new FakeCommand(2).ToTransportMessage();
 
@@ -246,10 +246,10 @@ namespace Abc.Zebus.Tests.Transport
             var receivedMessages = new ConcurrentBag<TransportMessage>();
 
             var receiver1 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
-            var receivingPeer1 = new Peer(receiver1.PeerId, receiver1.InboundEndPoint);
+            var receivingPeer1 = receiver1.GetPeer();
 
             var receiver2 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
-            var receivingPeer2 = new Peer(receiver2.PeerId, receiver2.InboundEndPoint);
+            var receivingPeer2 = receiver2.GetPeer();
 
             var message = new FakeCommand(1).ToTransportMessage();
 
@@ -267,7 +267,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var receivedMessages = new ConcurrentBag<TransportMessage>();
             var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
-            var receiver = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+            var receiver = receiverTransport.GetPeer();
 
             senderTransport.Send(new FakeCommand(0).ToTransportMessage(), new[] { receiver });
             Wait.Until(() => receivedMessages.Count == 1, 2.Seconds());
@@ -303,7 +303,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
             var receiverTransport = CreateAndStartZmqTransport();
-            var receiverPeer = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+            var receiverPeer = receiverTransport.GetPeer();
 
             var message = new FakeCommand(1).ToTransportMessage();
             senderTransport.Send(message, new[] { receiverPeer });
@@ -326,7 +326,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
             var receiverTransport = CreateAndStartZmqTransport();
-            var receiverPeer = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+            var receiverPeer = receiverTransport.GetPeer();
 
             var message = new FakeCommand(1).ToTransportMessage();
             senderTransport.Send(message, new[] { receiverPeer });
@@ -342,9 +342,9 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
 
-            var receviedMessages = new List<TransportMessage>();
-            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receviedMessages.Add);
-            var receiver = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+            var receivedMessages = new List<TransportMessage>();
+            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receiver = receiverTransport.GetPeer();
 
             for (var i = 0; i < 10; ++i)
             {
@@ -352,18 +352,18 @@ namespace Abc.Zebus.Tests.Transport
                 senderTransport.Send(message, new[] { receiver });
             }
 
-            Wait.Until(() => receviedMessages.Count == 10, 1.Second());
+            Wait.Until(() => receivedMessages.Count == 10, 1.Second());
 
             for (var i = 0; i < 10; ++i)
             {
-                var message = (FakeCommand)receviedMessages[i].ToMessage();
+                var message = (FakeCommand)receivedMessages[i].ToMessage();
                 message.FakeId.ShouldEqual(i);
             }
         }
 
         [Timeout(10 * 60 * 1000)]
         [TestCase(10)]
-        [TestCase(50)]
+        [TestCase(25)]
         // Cases with high peer counts are too slow to run automatically, but they are required to validate edge cases.
         [TestCase(1000, Explicit = true)]
         [TestCase(1100, Explicit = true)]
@@ -373,12 +373,14 @@ namespace Abc.Zebus.Tests.Transport
 
             var receivedMessages = new List<TransportMessage>();
             var receiverTransports = Enumerable.Range(0, peerCount)
+                                               .Select(_ => CreateZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .ToList()
                                                .AsParallel()
-                                               .Select(_ => CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .Select(StartZmqTransport)
                                                .ToList();
 
             var message = new FakeCommand(999).ToTransportMessage();
-            senderTransport.Send(message, receiverTransports.Select(x => new Peer(x.PeerId, x.InboundEndPoint)));
+            senderTransport.Send(message, receiverTransports.Select(x => x.GetPeer()));
 
             Wait.Until(() => receivedMessages.Count == peerCount, 30.Second());
         }
@@ -394,12 +396,14 @@ namespace Abc.Zebus.Tests.Transport
 
             var receivedMessages = new List<TransportMessage>();
             var receiverTransports = Enumerable.Range(0, maximumSocketCount + 2)
+                                               .Select(_ => CreateZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .ToList()
                                                .AsParallel()
-                                               .Select(_ => CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .Select(StartZmqTransport)
                                                .ToList();
 
             var message = new FakeCommand(999).ToTransportMessage();
-            senderTransport.Send(message, receiverTransports.Select(x => new Peer(x.PeerId, x.InboundEndPoint)));
+            senderTransport.Send(message, receiverTransports.Select(x => x.GetPeer()));
 
             Wait.Until(() => receivedMessages.Count == maximumSocketCount - 1, 10.Seconds());
 
@@ -416,12 +420,12 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.SocketOptions.SendTimeout = 50.Milliseconds();
             senderTransport.SocketOptions.SendRetriesBeforeSwitchingToClosedState = 2;
 
-            var receviedMessages = new List<TransportMessage>();
-            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receviedMessages.Add);
-            var upReceiver = new Peer(upReceiverTransport.PeerId, upReceiverTransport.InboundEndPoint);
+            var receivedMessages = new List<TransportMessage>();
+            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var upReceiver = upReceiverTransport.GetPeer();
 
             var downReceiverTransport = CreateAndStartZmqTransport();
-            var downReceiver = new Peer(downReceiverTransport.PeerId, downReceiverTransport.InboundEndPoint);
+            var downReceiver = downReceiverTransport.GetPeer();
 
             downReceiverTransport.Stop();
 
@@ -431,7 +435,7 @@ namespace Abc.Zebus.Tests.Transport
                 senderTransport.Send(message, new[] { upReceiver, downReceiver });
 
                 var expectedMessageCount = i;
-                Wait.Until(() => receviedMessages.Count == expectedMessageCount, 2.Seconds(), "Failed to send message after " + i + " successful sent");
+                Wait.Until(() => receivedMessages.Count == expectedMessageCount, 2.Seconds(), "Failed to send message after " + i + " successful sent");
             }
         }
 
@@ -445,10 +449,10 @@ namespace Abc.Zebus.Tests.Transport
 
             var receivedMessages = new List<TransportMessage>();
             var upReceiverTransport = CreateAndStartZmqTransport( onMessageReceived: receivedMessages.Add);
-            var upReceiver = new Peer(upReceiverTransport.PeerId, upReceiverTransport.InboundEndPoint);
+            var upReceiver = upReceiverTransport.GetPeer();
 
             var downReceiverTransport = CreateAndStartZmqTransport();
-            var downReceiver = new Peer(downReceiverTransport.PeerId, downReceiverTransport.InboundEndPoint);
+            var downReceiver = downReceiverTransport.GetPeer();
 
             Console.WriteLine("Stopping receiver");
 
@@ -477,7 +481,7 @@ namespace Abc.Zebus.Tests.Transport
             var receivedMessageCount = 0;
             var senderTransport = CreateAndStartZmqTransport();
             var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: _ => receivedMessageCount++);
-            var receiver = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+            var receiver = receiverTransport.GetPeer();
             var invalidPeer = new Peer(new PeerId("Abc.Testing.Invalid"), "tcp://unknown-bastard:123456");
 
             for (var i = 0; i < 1000; i++)
@@ -495,9 +499,9 @@ namespace Abc.Zebus.Tests.Transport
             var senderTransport = CreateAndStartZmqTransport();
             senderTransport.SocketOptions.SendHighWaterMark = 3;
 
-            var receviedMessages = new List<TransportMessage>();
-            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receviedMessages.Add);
-            var receiver = new Peer(receiverTransport.PeerId, receiverTransport.InboundEndPoint);
+            var receivedMessages = new List<TransportMessage>();
+            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receiver = receiverTransport.GetPeer();
 
             var messageBytes = new byte[5000];
             new Random().NextBytes(messageBytes);
@@ -505,40 +509,39 @@ namespace Abc.Zebus.Tests.Transport
             var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(messageBytes), new PeerId("X"), senderTransport.InboundEndPoint);
             senderTransport.Send(bigMessage, new[] { receiver });
 
-            Wait.Until(() => receviedMessages.Count == 1, 2.Seconds());
+            Wait.Until(() => receivedMessages.Count == 1, 2.Seconds());
 
-            receviedMessages[0].ShouldHaveSamePropertiesAs(bigMessage, "Environment", "WasPersisted");
+            receivedMessages[0].ShouldHaveSamePropertiesAs(bigMessage, "Environment", "WasPersisted");
 
             var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), TestDataBuilder.CreateStream(new byte[1]), new PeerId("X"), senderTransport.InboundEndPoint);
             senderTransport.Send(smallMessage, new[] { receiver });
 
-            Wait.Until(() => receviedMessages.Count == 2, 2.Seconds());
+            Wait.Until(() => receivedMessages.Count == 2, 2.Seconds());
 
-            receviedMessages[1].ShouldHaveSamePropertiesAs(smallMessage, "Environment", "WasPersisted");
+            receivedMessages[1].ShouldHaveSamePropertiesAs(smallMessage, "Environment", "WasPersisted");
         }
 
         [Test]
         public void should_send_message_to_self()
         {
-            var receviedMessages = new List<TransportMessage>();
-            var transport = CreateAndStartZmqTransport(onMessageReceived: receviedMessages.Add);
-            var self = new Peer(transport.PeerId, transport.InboundEndPoint);
+            var receivedMessages = new List<TransportMessage>();
+            var transport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var self = transport.GetPeer();
 
             transport.Send(new FakeCommand(1).ToTransportMessage(), new[] { self });
 
-            Wait.Until(() => receviedMessages.Count == 1, 2.Seconds());
+            Wait.Until(() => receivedMessages.Count == 1, 2.Seconds());
         }
 
         [Test]
         public void should_not_forward_messages_to_upper_layer_when_stopping()
         {
             var receivedMessages = new List<TransportMessage>();
-
             var receivingTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receivingPeer = receivingTransport.GetPeer();
 
-            var receivingPeer = new Peer(receivingTransport.PeerId, receivingTransport.InboundEndPoint);
-            bool receivedWhileNotListening = false;
-            receivingTransport.MessageReceived += message => receivedWhileNotListening |= !receivingTransport.IsListening;
+            var receivedWhileNotListening = false;
+            receivingTransport.MessageReceived += _ => receivedWhileNotListening |= !receivingTransport.IsListening;
 
             var sendingTransport = CreateAndStartZmqTransport();
             var shouldSendMessages = true;
@@ -573,22 +576,24 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_process_all_messages_in_buffer_on_stop()
         {
-            var state = new should_process_all_messages_in_buffer_on_stop_state { ShouldSend = true };
+            var receivedMessageCount = 0;
+            var sentMessageCount = 0;
+            var shouldSend = new[] { true, };
 
-            var receivingTransport = CreateAndStartZmqTransport(onMessageReceived: x => state.ReceivedMessageCount++);
+            var receivingTransport = CreateAndStartZmqTransport(onMessageReceived: _ => receivedMessageCount++);
             var sendingTransport = CreateAndStartZmqTransport();
-            var receivingPeer = new Peer(sendingTransport.PeerId, receivingTransport.InboundEndPoint);
+            var receivingPeer = receivingTransport.GetPeer();
 
             var senderTask = new Thread(() =>
             {
                 Log($"Send loop started");
 
-                while (state.ShouldSend)
+                while (shouldSend[0])
                 {
-                    sendingTransport.Send(new FakeCommand(state.SentMessageCount++).ToTransportMessage(), new[] { receivingPeer });
+                    sendingTransport.Send(new FakeCommand(sentMessageCount++).ToTransportMessage(), new[] { receivingPeer });
                 }
 
-                Log($"Send loop terminated, Count: {state.SentMessageCount}");
+                Log($"Send loop terminated, Count: {sentMessageCount}");
 
                 sendingTransport.Stop();
 
@@ -596,10 +601,10 @@ namespace Abc.Zebus.Tests.Transport
             });
 
             senderTask.Start();
-            Wait.Until(() => state.ReceivedMessageCount != 0, 2.Seconds());
+            Wait.Until(() => receivedMessageCount != 0, 2.Seconds());
 
             Log($"Stopping the sender");
-            state.ShouldSend = false;
+            shouldSend[0] = false;
             senderTask.Join();
 
             Log($"Stopping the receiver");
@@ -607,29 +612,22 @@ namespace Abc.Zebus.Tests.Transport
             Log($"Receiver stopped");
 
             Thread.MemoryBarrier();
-            if (state.ReceivedMessageCount != state.SentMessageCount)
+            if (receivedMessageCount != sentMessageCount)
                 Thread.Sleep(1.Second());
 
-            state.ReceivedMessageCount.ShouldEqual(state.SentMessageCount);
+            receivedMessageCount.ShouldEqual(sentMessageCount);
 
-            void Log(string text) => Console.WriteLine(DateTime.Now.TimeOfDay + " " + text + Environment.NewLine + Environment.NewLine);
-        }
-
-        private class should_process_all_messages_in_buffer_on_stop_state
-        {
-            public volatile int ReceivedMessageCount;
-            public volatile int SentMessageCount;
-            public volatile bool ShouldSend;
+            static void Log(string text) => Console.WriteLine(DateTime.Now.TimeOfDay + " " + text + Environment.NewLine + Environment.NewLine);
         }
 
         [Test]
         public void should_disconnect_peer_socket_of_a_stopped_peer_after_some_time()
         {
             var transport1 = CreateAndStartZmqTransport();
-            var peer1 = new Peer(transport1.PeerId, transport1.InboundEndPoint);
+            var peer1 = transport1.GetPeer();
 
             var transport2 = CreateAndStartZmqTransport();
-            var peer2 = new Peer(transport2.PeerId, transport2.InboundEndPoint);
+            var peer2 = transport2.GetPeer();
 
             transport1.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer2 });
             transport2.Send(new FakeCommand(0).ToTransportMessage(), new[] { peer1 });
@@ -641,14 +639,11 @@ namespace Abc.Zebus.Tests.Transport
             Wait.Until(() => transport1.OutboundSocketCount == 0, 10.Seconds());
         }
 
-        private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment)
+        private ZmqTransport CreateZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment)
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
             configurationMock.SetupGet(x => x.InboundEndPoint).Returns(endPoint);
             configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(1.Second());
-
-            if (peerId == null)
-                peerId = $"Abc.Testing.{Guid.NewGuid():N}";
 
             var transport = new ZmqTransport(configurationMock.Object, _zmqSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
             transport.SetLogId(_transports.Count);
@@ -656,12 +651,23 @@ namespace Abc.Zebus.Tests.Transport
             transport.SocketOptions.SendTimeout = 500.Milliseconds();
             _transports.Add(transport);
 
-            transport.Configure(new PeerId(peerId), environment);
+            transport.Configure(new PeerId(peerId ?? $"Abc.Testing.{Guid.NewGuid():N}"), environment);
 
             if (onMessageReceived != null)
                 transport.MessageReceived += onMessageReceived;
 
+            return transport;
+        }
+
+        private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment)
+        {
+            return StartZmqTransport(CreateZmqTransport(endPoint, onMessageReceived, peerId, environment));
+        }
+
+        private static ZmqTransport StartZmqTransport(ZmqTransport transport)
+        {
             transport.Start();
+
             return transport;
         }
     }
