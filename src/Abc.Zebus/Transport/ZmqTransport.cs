@@ -96,6 +96,9 @@ namespace Abc.Zebus.Transport
             _pendingDisconnects = new BlockingCollection<PendingDisconnect>();
             _context = new ZmqContext();
 
+            if (SocketOptions.MaximumSocketCount != null)
+                _context.SetOption(ZmqContextOption.ZMQ_MAX_SOCKETS, SocketOptions.MaximumSocketCount.Value);
+
             var startSequenceState = new InboundProcStartSequenceState();
 
             _inboundThread = BackgroundThread.Start(InboundProc, startSequenceState);

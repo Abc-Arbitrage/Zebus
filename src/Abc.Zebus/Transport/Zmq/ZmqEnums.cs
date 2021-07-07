@@ -28,6 +28,12 @@ namespace Abc.Zebus.Transport.Zmq
     }
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]
+    internal enum ZmqContextOption
+    {
+        ZMQ_MAX_SOCKETS = 2,
+    }
+
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     internal enum ZmqSocketOption
     {
         AFFINITY = 4,

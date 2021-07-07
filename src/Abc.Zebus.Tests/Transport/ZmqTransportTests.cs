@@ -359,6 +359,28 @@ namespace Abc.Zebus.Tests.Transport
             }
         }
 
+        [Timeout(10 * 60 * 1000)]
+        [TestCase(10)]
+        [TestCase(50)]
+        // Cases with high peer counts are too slow to run automatically, but they are required to validate edge cases.
+        [TestCase(1000, Explicit = true)]
+        [TestCase(1100, Explicit = true)]
+        public void should_send_message_to_multiple_peers(int peerCount)
+        {
+            var senderTransport = CreateAndStartZmqTransport();
+
+            var receivedMessages = new List<TransportMessage>();
+            var receiverTransports = Enumerable.Range(0, peerCount)
+                                               .AsParallel()
+                                               .Select(_ => CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .ToList();
+
+            var message = new FakeCommand(999).ToTransportMessage();
+            senderTransport.Send(message, receiverTransports.Select(x => new Peer(x.PeerId, x.InboundEndPoint)));
+
+            Wait.Until(() => receivedMessages.Count == peerCount, 30.Second());
+        }
+
         [Test]
         public void should_not_block_when_hitting_high_water_mark()
         {

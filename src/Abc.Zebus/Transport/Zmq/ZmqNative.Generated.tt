@@ -10,6 +10,8 @@ var funcs = ParseFuncs(@"
     IntPtr ctx_new();
     int ctx_term(IntPtr context);
 
+    int ctx_set(IntPtr context, int option_name, int option_value);
+
     IntPtr socket(IntPtr context, int type);
     int close(IntPtr socket);
 

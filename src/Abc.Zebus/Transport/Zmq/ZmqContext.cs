@@ -43,5 +43,16 @@ namespace Abc.Zebus.Transport.Zmq
 
             Handle = IntPtr.Zero;
         }
+
+        public void SetOption(ZmqContextOption option, int value)
+        {
+            while (ZmqNative.ctx_set(Handle, (int)option, value) == -1)
+            {
+                if (ZmqUtil.WasInterrupted())
+                    continue;
+
+                ZmqUtil.ThrowLastError($"Unable to set ZMQ context option {option} to {value}");
+            }
+        }
     }
 }

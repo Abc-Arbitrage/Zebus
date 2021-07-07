@@ -17,6 +17,8 @@ namespace Abc.Zebus.Transport
             ReceiveHighWaterMark = 40000;
             ReceiveTimeout = 300.Milliseconds();
 
+            MaximumSocketCount = 2048;
+
             KeepAlive = KeepAliveOptions.On(30.Seconds(), 3.Seconds());
         }
 
@@ -26,7 +28,7 @@ namespace Abc.Zebus.Transport
             get => ReceiveTimeout;
             set => ReceiveTimeout = value;
         }
-        
+
         public int SendHighWaterMark { get; set; }
         public TimeSpan SendTimeout { get; set; }
         public int SendRetriesBeforeSwitchingToClosedState { get; set; }
@@ -36,6 +38,15 @@ namespace Abc.Zebus.Transport
 
         public int ReceiveHighWaterMark { get; set; }
         public TimeSpan ReceiveTimeout { get; set; }
+
+        /// <summary>
+        /// When specified, overrides ZMQ_MAX_SOCKETS (maximum number of ZMQ sockets).
+        /// When null, the default value from libzmq will be used (probably 1024).
+        /// </summary>
+        /// <remarks>
+        /// One ZMQ socket can generate multiple TCP sockets. This is not the maximum number of TCP sockets.
+        /// </remarks>
+        public int? MaximumSocketCount { get; set; }
 
         public KeepAliveOptions KeepAlive { get; set; }
 
