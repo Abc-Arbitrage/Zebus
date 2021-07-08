@@ -26,7 +26,7 @@ namespace Abc.Zebus.Transport
         private Thread? _outboundThread;
         private Thread? _disconnectThread;
         private volatile bool _isListening;
-        private ZmqEndPoint? _realInboundEndPoint;
+        private ZmqEndPoint? _effectiveInboundEndPoint;
         private string _environment = string.Empty;
         private CountdownEvent? _outboundSocketsToStop;
         private bool _isRunning;
@@ -43,7 +43,11 @@ namespace Abc.Zebus.Transport
 
         public bool IsListening => _isListening;
 
-        public string InboundEndPoint => _realInboundEndPoint != null ? _realInboundEndPoint.Value : _configuredInboundEndPoint.Value;
+        /// <remarks>
+        /// The configured endpoint has probably a random port (e.g.: tcp://192.168.0.1:* or tcp://*:*).
+        /// The effective inbound endpoint can only known after <see cref="ZmqInboundSocket.Bind"/>.
+        /// </remarks>
+        public string InboundEndPoint => (_effectiveInboundEndPoint ?? _configuredInboundEndPoint).ToString();
 
         public int PendingSendCount => _outboundSocketActions?.Count ?? 0;
 
@@ -213,8 +217,8 @@ namespace Abc.Zebus.Transport
             ZmqInboundSocket? inboundSocket = null;
             try
             {
-                inboundSocket = new ZmqInboundSocket(_context!, PeerId, _configuredInboundEndPoint, SocketOptions, _environment);
-                _realInboundEndPoint = inboundSocket.Bind();
+                inboundSocket = new ZmqInboundSocket(_context!, PeerId, _configuredInboundEndPoint, SocketOptions);
+                _effectiveInboundEndPoint = inboundSocket.Bind();
                 return inboundSocket;
             }
             catch (Exception ex)

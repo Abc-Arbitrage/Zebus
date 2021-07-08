@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace Abc.Zebus.Util
+namespace Abc.Zebus.Tests.Transport
 {
     internal static class TcpUtil
     {

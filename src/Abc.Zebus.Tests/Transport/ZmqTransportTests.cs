@@ -288,23 +288,6 @@ namespace Abc.Zebus.Tests.Transport
             Wait.Until(() => receivedMessages.Count == 2, 2.Seconds(), "unable to receive message");
         }
 
-        [Test, Repeat(10)]
-        public void should_not_reuse_a_port_used_in_another_envionment()
-        {
-            const string peerId = "Abc.Peer.0";
-
-            var doNotUsePortFilePath = PathUtil.InBaseDirectory(peerId + ".inboundport.secondenv");
-            var expectedPort = TcpUtil.GetRandomUnusedPort() + 5; // scientifical method to determine what port will be used by the transport :P
-
-            File.WriteAllText(doNotUsePortFilePath, expectedPort.ToString());
-
-            var transport = CreateAndStartZmqTransport(peerId: peerId);
-            var endpoint = new ZmqEndPoint(transport.InboundEndPoint);
-
-            endpoint.GetPort().ShouldNotEqual(expectedPort);
-            Console.WriteLine("{0} => {1}", endpoint.GetPort(), expectedPort);
-        }
-
         [Test, Repeat(5)]
         public void should_terminate_zmq_connection_of_a_forgotten_peer_after_some_time()
         {

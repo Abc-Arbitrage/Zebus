@@ -12,37 +12,30 @@ namespace Abc.Zebus.Transport
 
         private readonly ZmqContext _context;
         private readonly PeerId _peerId;
-        private readonly ZmqEndPoint _originalEndpoint;
+        private readonly ZmqEndPoint _configuredEndPoint;
         private readonly ZmqSocketOptions _options;
-        private readonly string _environment;
         private byte[] _readBuffer = new byte[0];
         private ZmqSocket? _socket;
-        private ZmqEndPoint? _socketEndPoint;
         private TimeSpan _lastReceiveTimeout;
 
-        public ZmqInboundSocket(ZmqContext context, PeerId peerId, ZmqEndPoint originalEndpoint, ZmqSocketOptions options, string environment)
+        public ZmqInboundSocket(ZmqContext context, PeerId peerId, ZmqEndPoint configuredEndPoint, ZmqSocketOptions options)
         {
             _context = context;
             _peerId = peerId;
-            _originalEndpoint = originalEndpoint;
+            _configuredEndPoint = configuredEndPoint;
             _options = options;
-            _environment = environment;
         }
 
         public ZmqEndPoint Bind()
         {
             _socket = CreateSocket();
 
-            var endPoint = new ZmqEndPoint(_originalEndpoint.Value);
-            if (endPoint.HasRandomPort)
-                endPoint.SelectRandomPort(_environment);
+            _socket.Bind(_configuredEndPoint.ToString());
 
-            _socket.Bind(endPoint.Value);
+            var socketEndPoint = new ZmqEndPoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+            _logger.InfoFormat("Socket bound, Inbound EndPoint: {0}", socketEndPoint);
 
-            _socketEndPoint = new ZmqEndPoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
-            _logger.InfoFormat("Socket bound, Inbound EndPoint: {0}", _socketEndPoint.Value);
-
-            return _socketEndPoint;
+            return socketEndPoint;
         }
 
         public void Dispose()
