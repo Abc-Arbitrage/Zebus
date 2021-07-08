@@ -34,7 +34,14 @@ namespace Abc.Zebus.Tests.Transport
         [TearDown]
         public void Teardown()
         {
-            foreach (var transport in _transports)
+            foreach (var transport in _transports.Take(3))
+            {
+                StopZmqTransport(transport);
+            }
+
+            Parallel.ForEach(_transports.Skip(3), StopZmqTransport);
+
+            static void StopZmqTransport(ZmqTransport transport)
             {
                 try
                 {
@@ -371,9 +378,9 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
 
-            var receivedMessages = new List<TransportMessage>();
+            var receivedMessagesCount = 0;
             var receiverTransports = Enumerable.Range(0, peerCount)
-                                               .Select(_ => CreateZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .Select(_ => CreateZmqTransport(onMessageReceived: _ => Interlocked.Increment(ref receivedMessagesCount)))
                                                .ToList()
                                                .AsParallel()
                                                .Select(StartZmqTransport)
@@ -382,7 +389,7 @@ namespace Abc.Zebus.Tests.Transport
             var message = new FakeCommand(999).ToTransportMessage();
             senderTransport.Send(message, receiverTransports.Select(x => x.GetPeer()));
 
-            Wait.Until(() => receivedMessages.Count == peerCount, 30.Second());
+            Wait.Until(() => Volatile.Read(ref receivedMessagesCount) == peerCount, 30.Second());
         }
 
         [Test]
