@@ -21,7 +21,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 base.Setup();
 
-                _configuration.SetupGet(x => x.IsErrorPublicationEnabled).Returns(true);
+                _configuration.IsErrorPublicationEnabled = true;
             }
 
             [Test]
@@ -99,7 +99,7 @@ namespace Abc.Zebus.Tests.Core
             [Test]
             public void should_not_send_a_MessageProcessingFailed_when_error_publication_is_not_enabled()
             {
-                _configuration.SetupGet(x => x.IsErrorPublicationEnabled).Returns(false);
+                _configuration.IsErrorPublicationEnabled = false;
 
                 SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
 

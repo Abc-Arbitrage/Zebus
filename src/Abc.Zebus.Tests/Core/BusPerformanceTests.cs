@@ -161,7 +161,7 @@ namespace Abc.Zebus.Tests.Core
         {
             return new BusFactory()
                 .WithPeerId("Abc.Zebus.Perf.Sender.*")
-                .WithConfiguration(new BusConfiguration(false, _directoryEndPoint), "Dev")
+                .WithConfiguration(CreateBusConfiguration(false, _directoryEndPoint), "Dev")
                 .ConfigureContainer(x => x.For<ZmqSocketOptions>().Use(new ZmqSocketOptions { SendHighWaterMark = 100000, SendTimeout = 10.Second() }))
                 .CreateAndStartBus();
         }
@@ -170,28 +170,22 @@ namespace Abc.Zebus.Tests.Core
         {
             return new BusFactory()
                 .WithPeerId("Abc.Zebus.Perf.Receiver.*")
-                .WithConfiguration(new BusConfiguration(isPersistent, _directoryEndPoint), "Dev")
+                .WithConfiguration(CreateBusConfiguration(isPersistent, _directoryEndPoint), "Dev")
                 .WithHandlers(typeof(PerfHandler))
                 .ConfigureContainer(x => x.For<ZmqSocketOptions>().Use(new ZmqSocketOptions { ReceiveHighWaterMark = 100000 }))
                 .CreateAndStartBus();
         }
 
-        private class BusConfiguration : IBusConfiguration
+        private static IBusConfiguration CreateBusConfiguration(bool isPersistent, string directoryServiceEndPoint)
         {
-            public BusConfiguration(bool isPersistent, string directoryServiceEndPoint)
+            return new BusConfiguration(directoryServiceEndPoint)
             {
-                DirectoryServiceEndPoints = new[] { directoryServiceEndPoint };
-                RegistrationTimeout = 10.Second();
-                IsPersistent = isPersistent;
-            }
-
-            public string[] DirectoryServiceEndPoints { get; }
-            public TimeSpan RegistrationTimeout { get; }
-            public TimeSpan StartReplayTimeout => 30.Seconds();
-            public bool IsPersistent { get; }
-            public bool IsDirectoryPickedRandomly => false;
-            public bool IsErrorPublicationEnabled => false;
-            public int MessagesBatchSize => 200;
+                IsPersistent = isPersistent,
+                RegistrationTimeout = 10.Seconds(),
+                StartReplayTimeout = 30.Seconds(),
+                IsDirectoryPickedRandomly = false,
+                IsErrorPublicationEnabled = false,
+            };
         }
 
         [ProtoContract]

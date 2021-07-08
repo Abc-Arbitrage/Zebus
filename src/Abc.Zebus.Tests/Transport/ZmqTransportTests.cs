@@ -54,9 +54,8 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_not_crash_when_stopping_if_it_was_not_started()
         {
-            var configurationMock = new Mock<IZmqTransportConfiguration>();
-            configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(100.Milliseconds());
-            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
+            var configuration = new ZmqTransportConfiguration { WaitForEndOfStreamAckTimeout = 100.Milliseconds() };
+            var transport = new ZmqTransport(configuration, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
 
             Assert.That(transport.Stop, Throws.Nothing);
         }
@@ -634,16 +633,17 @@ namespace Abc.Zebus.Tests.Transport
             Wait.Until(() => transport1.OutboundSocketCount == 0, 10.Seconds());
         }
 
-        private ZmqTransport CreateZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment, ZmqSocketOptions socketOptions = null)
+        private ZmqTransport CreateZmqTransport(string endPoint = "tcp://*:*", Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment, ZmqSocketOptions socketOptions = null)
         {
-            var configurationMock = new Mock<IZmqTransportConfiguration>();
-            configurationMock.SetupGet(x => x.InboundEndPoint).Returns(endPoint);
-            configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(1.Second());
+            var configuration = new ZmqTransportConfiguration(endPoint)
+            {
+                WaitForEndOfStreamAckTimeout = 1.Second(),
+            };
 
             // Previous code used a specific SendTimeout of 500 ms for unknown reasons.
             var effectiveSocketOptions = socketOptions ?? new ZmqSocketOptions();
 
-            var transport = new ZmqTransport(configurationMock.Object, effectiveSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
+            var transport = new ZmqTransport(configuration, effectiveSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
             transport.SetLogId(_transports.Count);
 
             _transports.Add(transport);
@@ -657,7 +657,7 @@ namespace Abc.Zebus.Tests.Transport
             return transport;
         }
 
-        private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment, ZmqSocketOptions socketOptions = null)
+        private ZmqTransport CreateAndStartZmqTransport(string endPoint = "tcp://*:*", Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment, ZmqSocketOptions socketOptions = null)
         {
             return StartZmqTransport(CreateZmqTransport(endPoint, onMessageReceived, peerId, environment, socketOptions));
         }

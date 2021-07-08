@@ -39,7 +39,7 @@ namespace Abc.Zebus.Core
         public BusFactory WithConfiguration(string directoryEndPoints, string environment)
         {
             var endpoints = directoryEndPoints.Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-            return WithConfiguration(new BusConfiguration(endpoints), environment);
+            return WithConfiguration(CreateBusConfiguration(endpoints), environment);
         }
 
         public BusFactory WithConfiguration(IBusConfiguration configuration, string environment)
@@ -128,33 +128,16 @@ namespace Abc.Zebus.Core
             return bus;
         }
 
-        private class BusConfiguration : IBusConfiguration
+        private static IBusConfiguration CreateBusConfiguration(string[] directoryServiceEndPoints)
         {
-            public BusConfiguration(params string[] directoryServiceEndPoints)
+            return new BusConfiguration(directoryServiceEndPoints)
             {
-                DirectoryServiceEndPoints = directoryServiceEndPoints;
-                RegistrationTimeout = 10.Second();
-            }
-
-            public string[] DirectoryServiceEndPoints { get; }
-            public TimeSpan RegistrationTimeout { get; }
-            public TimeSpan StartReplayTimeout => 30.Seconds();
-            public bool IsPersistent => false;
-            public bool IsDirectoryPickedRandomly => false;
-            public bool IsErrorPublicationEnabled => false;
-            public int MessagesBatchSize => 200;
-        }
-
-        private class ZmqTransportConfiguration : IZmqTransportConfiguration
-        {
-            public ZmqTransportConfiguration(string inboundEndPoint = "tcp://*:*")
-            {
-                InboundEndPoint = inboundEndPoint;
-                WaitForEndOfStreamAckTimeout = 5.Seconds();
-            }
-
-            public string InboundEndPoint { get; set; }
-            public TimeSpan WaitForEndOfStreamAckTimeout { get; set; }
+                IsPersistent = false,
+                RegistrationTimeout = 10.Seconds(),
+                StartReplayTimeout = 30.Seconds(),
+                IsDirectoryPickedRandomly = false,
+                IsErrorPublicationEnabled = false,
+            };
         }
 
         public BusFactory WithEndpoint(string endpoint)

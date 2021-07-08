@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
-using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Transport;
@@ -23,7 +22,7 @@ namespace Abc.Zebus.Tests.Core
         private readonly Peer _peerDown = new Peer(new PeerId("Abc.Testing.Down"), "tcp://abctest:999", false);
 
         private Bus _bus;
-        private Mock<IBusConfiguration> _configuration;
+        private BusConfiguration _configuration;
         private TestTransport _transport;
         private Mock<IPeerDirectory> _directoryMock;
         private Mock<IMessageDispatcher> _messageDispatcherMock;
@@ -33,13 +32,13 @@ namespace Abc.Zebus.Tests.Core
         [SetUp]
         public virtual void Setup()
         {
-            _configuration = new Mock<IBusConfiguration>();
+            _configuration = new BusConfiguration("tcp://zebus-directory:123");
             _transport = new TestTransport(_self.EndPoint);
             _directoryMock = new Mock<IPeerDirectory>();
             _messageDispatcherMock = new Mock<IMessageDispatcher>();
             _messageSerializer = new TestMessageSerializer();
 
-            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), _configuration.Object);
+            _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), _configuration);
             _bus.Configure(_self.Id, _environment);
 
             _invokers = new List<IMessageHandlerInvoker>();

@@ -60,10 +60,10 @@ namespace Abc.Zebus.Tests.Transport
 
         private ZmqTransport CreateAndStartZmqTransport(string peerId, Action<TransportMessage> onMessageReceived = null)
         {
-            var configurationMock = new Mock<IZmqTransportConfiguration>();
+            var configuration = new ZmqTransportConfiguration();
             var zmqSocketOptions = new ZmqSocketOptions { SendTimeout = 5.Seconds() };
 
-            var transport = new ZmqTransport(configurationMock.Object, zmqSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
+            var transport = new ZmqTransport(configuration, zmqSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
             transport.Configure(new PeerId(peerId), "test");
 
             if (onMessageReceived != null)

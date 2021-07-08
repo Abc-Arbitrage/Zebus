@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
@@ -22,7 +23,7 @@ namespace Abc.Zebus.Tests.Directory
     public partial class PeerDirectoryClientTests
     {
         private PeerDirectoryClient _directory;
-        private Mock<IBusConfiguration> _configurationMock;
+        private BusConfiguration _configuration;
         private TestBus _bus;
         private Peer _self;
         private Peer _otherPeer;
@@ -30,12 +31,13 @@ namespace Abc.Zebus.Tests.Directory
         [SetUp]
         public void Setup()
         {
-            _configurationMock = new Mock<IBusConfiguration>();
-            _configurationMock.SetupGet(x => x.DirectoryServiceEndPoints).Returns(new[] { "tcp://main-directory:777", "tcp://backup-directory:777" });
-            _configurationMock.SetupGet(x => x.RegistrationTimeout).Returns(500.Milliseconds());
-            _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(false);
+            _configuration = new BusConfiguration(new[] { "tcp://main-directory:777", "tcp://backup-directory:777" })
+            {
+                RegistrationTimeout = 500.Milliseconds(),
+                IsDirectoryPickedRandomly = false,
+            };
 
-            _directory = new PeerDirectoryClient(_configurationMock.Object);
+            _directory = new PeerDirectoryClient(_configuration);
             _bus = new TestBus();
             _self = new Peer(new PeerId("Abc.Testing.0"), "tcp://abctest:123");
             _otherPeer = new Peer(new PeerId("Abc.Testing.1"), "tcp://abctest:789");
@@ -47,7 +49,7 @@ namespace Abc.Zebus.Tests.Directory
         public async Task should_register_peer([Values(true, false)] bool isPersistent)
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
-            _configurationMock.SetupGet(x => x.IsPersistent).Returns(isPersistent);
+            _configuration.IsPersistent = isPersistent;
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
             using (SystemDateTime.PauseTime())
@@ -99,7 +101,7 @@ namespace Abc.Zebus.Tests.Directory
         public void should_not_register_existing_peer()
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
-            _configurationMock.SetupGet(x => x.IsPersistent).Returns(true);
+            _configuration.IsPersistent = true;
             _bus.AddHandler<RegisterPeerCommand>(_ => throw new MessageProcessingException("Peer already exists") { ErrorCode = DirectoryErrorCodes.PeerAlreadyExists });
 
             using (SystemDateTime.PauseTime())
@@ -493,7 +495,7 @@ namespace Abc.Zebus.Tests.Directory
         [Test]
         public void should_order_directory_peers_randomly()
         {
-            _configurationMock.SetupGet(x => x.IsDirectoryPickedRandomly).Returns(true);
+            _configuration.IsDirectoryPickedRandomly = true;
 
             for (var i = 0; i < 100; i++)
             {

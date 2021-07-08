@@ -11,6 +11,7 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
+using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 
@@ -39,9 +40,11 @@ namespace Abc.Zebus.Tests.Persistence
         {
             InnerTransport = new TestTransport(Self.EndPoint);
 
-            var configuration = new Mock<IBusConfiguration>();
-            configuration.Setup(x => x.IsPersistent).Returns(IsPersistent);
-            configuration.Setup(x => x.StartReplayTimeout).Returns(TimeSpan.FromMinutes(60));
+            var configuration = new BusConfiguration("tcp://zebus-directory:123")
+            {
+                IsPersistent = IsPersistent,
+                StartReplayTimeout = 60.Minutes(),
+            };
 
             PeerDirectory = new Mock<IPeerDirectory>();
             PeerDirectory.Setup(dir => dir.GetPeersHandlingMessage(MessageBinding.Default<PersistMessageCommand>())).Returns(new[] { PersistencePeer });
@@ -51,7 +54,7 @@ namespace Abc.Zebus.Tests.Persistence
             PeerDirectory.Setup(dir => dir.IsPersistent(AnotherPersistentPeer.Id)).Returns(true);
             PeerDirectory.Setup(dir => dir.IsPersistent(AnotherNonPersistentPeer.Id)).Returns(false);
 
-            Transport = new PersistentTransport(configuration.Object, InnerTransport, PeerDirectory.Object, new DefaultMessageSendingStrategy());
+            Transport = new PersistentTransport(configuration, InnerTransport, PeerDirectory.Object, new DefaultMessageSendingStrategy());
             Transport.Configure(Self.Id, "test");
 
             MessagesForwardedToBus = new ConcurrentQueue<TransportMessage>();
