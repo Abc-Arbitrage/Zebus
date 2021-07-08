@@ -333,17 +333,6 @@ namespace Abc.Zebus.Transport
             SafeAdd(_pendingDisconnects!, new PendingDisconnect(closingPeer.Id, SystemDateTime.UtcNow.Add(_configuration.WaitForEndOfStreamAckTimeout)));
         }
 
-        private bool IsFromCurrentEnvironment(TransportMessage transportMessage)
-        {
-            if (transportMessage.Environment != _environment)
-            {
-                _logger.ErrorFormat("Receiving messages from wrong environment: {0} from {1}, discarding message type {2}", transportMessage.Environment, transportMessage.Originator.SenderEndPoint, transportMessage.MessageTypeId);
-                return false;
-            }
-
-            return true;
-        }
-
         private void OutboundProc()
         {
             Thread.CurrentThread.Name = "ZmqTransport.OutboundProc";
