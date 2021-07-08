@@ -22,13 +22,11 @@ namespace Abc.Zebus.Tests.Transport
     {
         private const string _environment = "Test";
         private List<ZmqTransport> _transports;
-        private ZmqSocketOptions _zmqSocketOptions;
 
         [SetUp]
         public void Setup()
         {
             _transports = new List<ZmqTransport>();
-            _zmqSocketOptions = new ZmqSocketOptions();
         }
 
         [TearDown]
@@ -58,7 +56,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
             configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(100.Milliseconds());
-            var transport = new ZmqTransport(configurationMock.Object, _zmqSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
+            var transport = new ZmqTransport(configurationMock.Object, new ZmqSocketOptions(), new DefaultZmqOutboundSocketErrorHandler());
 
             Assert.That(transport.Stop, Throws.Nothing);
         }
@@ -380,9 +378,10 @@ namespace Abc.Zebus.Tests.Transport
         {
             const int maximumSocketCount = 4;
 
-            _zmqSocketOptions.MaximumSocketCount = maximumSocketCount;
-
-            var senderTransport = CreateAndStartZmqTransport();
+            var senderTransport = CreateAndStartZmqTransport(socketOptions: new ZmqSocketOptions
+            {
+                MaximumSocketCount = maximumSocketCount,
+            });
 
             var receivedMessages = new List<TransportMessage>();
             var receiverTransports = Enumerable.Range(0, maximumSocketCount + 2)
@@ -405,10 +404,12 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_not_block_when_hitting_high_water_mark()
         {
-            var senderTransport = CreateAndStartZmqTransport();
-            senderTransport.SocketOptions.SendHighWaterMark = 3;
-            senderTransport.SocketOptions.SendTimeout = 50.Milliseconds();
-            senderTransport.SocketOptions.SendRetriesBeforeSwitchingToClosedState = 2;
+            var senderTransport = CreateAndStartZmqTransport(socketOptions: new ZmqSocketOptions
+            {
+                SendHighWaterMark = 3,
+                SendTimeout = 50.Milliseconds(),
+                SendRetriesBeforeSwitchingToClosedState = 2,
+            });
 
             var receivedMessages = new List<TransportMessage>();
             var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
@@ -432,10 +433,12 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_not_wait_blocked_peers_on_every_send()
         {
-            var senderTransport = CreateAndStartZmqTransport();
-            senderTransport.SocketOptions.SendHighWaterMark = 3;
-            senderTransport.SocketOptions.SendTimeout = 100.Milliseconds();
-            senderTransport.SocketOptions.SendRetriesBeforeSwitchingToClosedState = 0;
+            var senderTransport = CreateAndStartZmqTransport(socketOptions: new ZmqSocketOptions
+            {
+                SendHighWaterMark = 3,
+                SendTimeout = 100.Milliseconds(),
+                SendRetriesBeforeSwitchingToClosedState = 0,
+            });
 
             var receivedMessages = new List<TransportMessage>();
             var upReceiverTransport = CreateAndStartZmqTransport( onMessageReceived: receivedMessages.Add);
@@ -486,8 +489,10 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_send_various_sized_messages()
         {
-            var senderTransport = CreateAndStartZmqTransport();
-            senderTransport.SocketOptions.SendHighWaterMark = 3;
+            var senderTransport = CreateAndStartZmqTransport(socketOptions: new ZmqSocketOptions
+            {
+                SendHighWaterMark = 3,
+            });
 
             var receivedMessages = new List<TransportMessage>();
             var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
@@ -629,19 +634,22 @@ namespace Abc.Zebus.Tests.Transport
             Wait.Until(() => transport1.OutboundSocketCount == 0, 10.Seconds());
         }
 
-        private ZmqTransport CreateZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment)
+        private ZmqTransport CreateZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment, ZmqSocketOptions socketOptions = null)
         {
             var configurationMock = new Mock<IZmqTransportConfiguration>();
             configurationMock.SetupGet(x => x.InboundEndPoint).Returns(endPoint);
             configurationMock.SetupGet(x => x.WaitForEndOfStreamAckTimeout).Returns(1.Second());
 
-            var transport = new ZmqTransport(configurationMock.Object, _zmqSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
+            // Previous code used a specific SendTimeout of 500 ms for unknown reasons.
+            var effectiveSocketOptions = socketOptions ?? new ZmqSocketOptions();
+
+            var transport = new ZmqTransport(configurationMock.Object, effectiveSocketOptions, new DefaultZmqOutboundSocketErrorHandler());
             transport.SetLogId(_transports.Count);
 
-            transport.SocketOptions.SendTimeout = 500.Milliseconds();
             _transports.Add(transport);
 
-            transport.Configure(new PeerId(peerId ?? $"Abc.Testing.{Guid.NewGuid():N}"), environment);
+            var effectivePeerId = new PeerId(peerId ?? $"Abc.Testing.{Guid.NewGuid():N}");
+            transport.Configure(effectivePeerId, environment);
 
             if (onMessageReceived != null)
                 transport.MessageReceived += onMessageReceived;
@@ -649,9 +657,9 @@ namespace Abc.Zebus.Tests.Transport
             return transport;
         }
 
-        private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment)
+        private ZmqTransport CreateAndStartZmqTransport(string endPoint = null, Action<TransportMessage> onMessageReceived = null, string peerId = null, string environment = _environment, ZmqSocketOptions socketOptions = null)
         {
-            return StartZmqTransport(CreateZmqTransport(endPoint, onMessageReceived, peerId, environment));
+            return StartZmqTransport(CreateZmqTransport(endPoint, onMessageReceived, peerId, environment, socketOptions));
         }
 
         private static ZmqTransport StartZmqTransport(ZmqTransport transport)

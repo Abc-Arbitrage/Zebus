@@ -15,6 +15,7 @@ namespace Abc.Zebus.Transport
     public class ZmqTransport : ITransport
     {
         private readonly IZmqTransportConfiguration _configuration;
+        private readonly ZmqSocketOptions _socketOptions;
         private readonly IZmqOutboundSocketErrorHandler _errorHandler;
         private readonly ZmqEndPoint _configuredInboundEndPoint;
         private ILog _logger = LogManager.GetLogger(typeof(ZmqTransport));
@@ -34,9 +35,9 @@ namespace Abc.Zebus.Transport
         public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
         {
             _configuration = configuration;
+            _socketOptions = socketOptions;
             _errorHandler = errorHandler;
             _configuredInboundEndPoint = new ZmqEndPoint(configuration.InboundEndPoint);
-            SocketOptions = socketOptions;
         }
 
         public event Action<TransportMessage>? MessageReceived;
@@ -50,8 +51,6 @@ namespace Abc.Zebus.Transport
         public string InboundEndPoint => (_effectiveInboundEndPoint ?? _configuredInboundEndPoint).ToString();
 
         public int PendingSendCount => _outboundSocketActions?.Count ?? 0;
-
-        public ZmqSocketOptions SocketOptions { get; }
 
         public int OutboundSocketCount => _outboundSockets.Count;
 
@@ -100,8 +99,8 @@ namespace Abc.Zebus.Transport
             _pendingDisconnects = new BlockingCollection<PendingDisconnect>();
             _context = new ZmqContext();
 
-            if (SocketOptions.MaximumSocketCount != null)
-                _context.SetOption(ZmqContextOption.MAX_SOCKETS, SocketOptions.MaximumSocketCount.Value);
+            if (_socketOptions.MaximumSocketCount != null)
+                _context.SetOption(ZmqContextOption.MAX_SOCKETS, _socketOptions.MaximumSocketCount.Value);
 
             var startSequenceState = new InboundProcStartSequenceState();
 
@@ -217,7 +216,7 @@ namespace Abc.Zebus.Transport
             ZmqInboundSocket? inboundSocket = null;
             try
             {
-                inboundSocket = new ZmqInboundSocket(_context!, PeerId, _configuredInboundEndPoint, SocketOptions);
+                inboundSocket = new ZmqInboundSocket(_context!, PeerId, _configuredInboundEndPoint, _socketOptions);
                 _effectiveInboundEndPoint = inboundSocket.Bind();
                 return inboundSocket;
             }
@@ -421,7 +420,7 @@ namespace Abc.Zebus.Transport
         {
             if (!_outboundSockets.TryGetValue(peer.Id, out var outboundSocket))
             {
-                outboundSocket = new ZmqOutboundSocket(_context!, peer.Id, peer.EndPoint, SocketOptions, _errorHandler);
+                outboundSocket = new ZmqOutboundSocket(_context!, peer.Id, peer.EndPoint, _socketOptions, _errorHandler);
                 outboundSocket.ConnectFor(transportMessage);
 
                 _outboundSockets.TryAdd(peer.Id, outboundSocket);
