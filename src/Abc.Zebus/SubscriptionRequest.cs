@@ -15,7 +15,8 @@ namespace Abc.Zebus
         internal SubscriptionRequestBatch? Batch { get; private set; }
 
         internal bool IsSubmitted { get; private set; }
-        internal int? SubmissionSubscriptionsVersion { get; set; }
+        internal int? SubmissionSubscriptionsVersion { get; private set; }
+        internal bool IsStartupRequest { get; private set; }
 
         public SubscriptionRequest(Subscription subscription)
         {
@@ -38,10 +39,15 @@ namespace Abc.Zebus
             Batch = batch;
         }
 
-        internal void MarkAsSubmitted()
+        internal void MarkAsSubmitted(int subscriptionsVersion, bool isRunning)
         {
             EnsureNotSubmitted();
             IsSubmitted = true;
+            SubmissionSubscriptionsVersion = subscriptionsVersion;
+            IsStartupRequest = !isRunning;
+
+            if (IsStartupRequest && Batch != null)
+                throw new InvalidOperationException("Startup subscriptions should not be batched");
         }
 
         private void EnsureNotSubmitted()

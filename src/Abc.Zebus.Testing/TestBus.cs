@@ -140,7 +140,7 @@ namespace Abc.Zebus.Testing
 
         public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
         {
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(0, IsRunning);
 
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
@@ -152,7 +152,7 @@ namespace Abc.Zebus.Testing
 
         public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
         {
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(0, IsRunning);
 
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
