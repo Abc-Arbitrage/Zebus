@@ -46,13 +46,17 @@ namespace Abc.Zebus.Transport.Zmq
 
         public void SetOption(ZmqContextOption option, int value)
         {
-            while (ZmqNative.ctx_set(Handle, (int)option, value) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
+            if (ZmqNative.ctx_set(Handle, (int)option, value) == -1)
                 ZmqUtil.ThrowLastError($"Unable to set ZMQ context option {option} to {value}");
-            }
+        }
+
+        public int GetOptionInt32(ZmqContextOption option)
+        {
+            var result = ZmqNative.ctx_get(Handle, (int)option);
+            if (result == -1)
+                ZmqUtil.ThrowLastError($"Unable to get ZMQ context option {option}");
+
+            return result;
         }
     }
 }

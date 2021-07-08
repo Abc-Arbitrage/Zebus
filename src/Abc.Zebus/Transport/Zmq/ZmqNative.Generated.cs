@@ -25,6 +25,9 @@ namespace Abc.Zebus.Transport.Zmq
         public static int ctx_set(IntPtr context, int option_name, int option_value)
             => _impl.ctx_set(context, option_name, option_value);
 
+        public static int ctx_get(IntPtr context, int option_name)
+            => _impl.ctx_get(context, option_name);
+
         public static IntPtr socket(IntPtr context, int type)
             => _impl.socket(context, type);
 
@@ -82,6 +85,7 @@ namespace Abc.Zebus.Transport.Zmq
             public abstract IntPtr ctx_new();
             public abstract int ctx_term(IntPtr context);
             public abstract int ctx_set(IntPtr context, int option_name, int option_value);
+            public abstract int ctx_get(IntPtr context, int option_name);
             public abstract IntPtr socket(IntPtr context, int type);
             public abstract int close(IntPtr socket);
             public abstract int getsockopt(IntPtr socket, int option_name, void* option_value, IntPtr* option_len);
@@ -121,6 +125,12 @@ namespace Abc.Zebus.Transport.Zmq
 
             [DllImport("Abc.Zebus.libzmq.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern int zmq_ctx_set(IntPtr context, int option_name, int option_value);
+
+            public override int ctx_get(IntPtr context, int option_name)
+                => zmq_ctx_get(context, option_name);
+
+            [DllImport("Abc.Zebus.libzmq.dll", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_ctx_get(IntPtr context, int option_name);
 
             public override IntPtr socket(IntPtr context, int type)
                 => zmq_socket(context, type);
@@ -247,6 +257,12 @@ namespace Abc.Zebus.Transport.Zmq
             [DllImport("Abc.Zebus.libzmq.x86.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern int zmq_ctx_set(IntPtr context, int option_name, int option_value);
 
+            public override int ctx_get(IntPtr context, int option_name)
+                => zmq_ctx_get(context, option_name);
+
+            [DllImport("Abc.Zebus.libzmq.x86.dll", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_ctx_get(IntPtr context, int option_name);
+
             public override IntPtr socket(IntPtr context, int type)
                 => zmq_socket(context, type);
 
@@ -372,6 +388,12 @@ namespace Abc.Zebus.Transport.Zmq
             [DllImport("Abc.Zebus.libzmq.x64.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern int zmq_ctx_set(IntPtr context, int option_name, int option_value);
 
+            public override int ctx_get(IntPtr context, int option_name)
+                => zmq_ctx_get(context, option_name);
+
+            [DllImport("Abc.Zebus.libzmq.x64.dll", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_ctx_get(IntPtr context, int option_name);
+
             public override IntPtr socket(IntPtr context, int type)
                 => zmq_socket(context, type);
 
@@ -496,6 +518,12 @@ namespace Abc.Zebus.Transport.Zmq
 
             [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
             private static extern int zmq_ctx_set(IntPtr context, int option_name, int option_value);
+
+            public override int ctx_get(IntPtr context, int option_name)
+                => zmq_ctx_get(context, option_name);
+
+            [DllImport("Abc.Zebus.libzmq.so", CallingConvention = CallingConvention.Cdecl)]
+            private static extern int zmq_ctx_get(IntPtr context, int option_name);
 
             public override IntPtr socket(IntPtr context, int type)
                 => zmq_socket(context, type);
