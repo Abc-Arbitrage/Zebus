@@ -14,7 +14,7 @@ using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Abc.Zebus.Core
@@ -22,7 +22,7 @@ namespace Abc.Zebus.Core
     public class Bus : IInternalBus, IMessageDispatchFactory
     {
         private static readonly BusMessageLogger _messageLogger = new(typeof(Bus));
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(Bus));
 
         private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new();
         private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new();
@@ -105,25 +105,25 @@ namespace Abc.Zebus.Core
             var registered = false;
             try
             {
-                _logger.DebugFormat("Loading invokers...");
+                _logger.LogDebug("Loading invokers...");
                 _messageDispatcher.LoadMessageHandlerInvokers();
 
-                _logger.DebugFormat("Performing startup subscribe...");
+                _logger.LogDebug("Performing startup subscribe...");
                 PerformStartupSubscribe();
 
-                _logger.DebugFormat("Starting transport...");
+                _logger.LogDebug("Starting transport...");
                 _transport.Start();
 
                 Status = BusStatus.Started;
 
-                _logger.DebugFormat("Registering on directory...");
+                _logger.LogDebug("Registering on directory...");
                 var self = new Peer(PeerId, EndPoint);
                 _directory.RegisterAsync(this, self, GetSubscriptions()).Wait();
                 registered = true;
 
                 _transport.OnRegistered();
 
-                _logger.DebugFormat("Starting message dispatcher...");
+                _logger.LogDebug("Starting message dispatcher...");
                 _messageDispatcher.Start();
             }
             catch
@@ -215,7 +215,7 @@ namespace Abc.Zebus.Core
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex);
+                    _logger.LogError(ex, "Error during stop");
                 }
             }
 
@@ -510,7 +510,7 @@ namespace Abc.Zebus.Core
             }
             catch (Exception ex)
             {
-                _logger.Error(ex);
+                _logger.LogError(ex, "Error waiting for pending unsubscription");
             }
         }
 
@@ -591,7 +591,7 @@ namespace Abc.Zebus.Core
             }
             catch (Exception ex)
             {
-                _logger.Error(ex);
+                _logger.LogError(ex, "Error processing pending unsubscription");
 
                 lock (_subscriptions)
                 {
@@ -669,7 +669,7 @@ namespace Abc.Zebus.Core
             var dispatch = CreateMessageDispatch(transportMessage, synchronous);
             if (dispatch == null)
             {
-                _logger.WarnFormat("Received a remote message that could not be deserialized: {0} from {1}", transportMessage.MessageTypeId.FullName, transportMessage.Originator.SenderId);
+                _logger.LogWarning($"Received a remote message that could not be deserialized: {transportMessage.MessageTypeId.FullName} from {transportMessage.Originator.SenderId}");
                 _transport.AckMessage(transportMessage);
                 return;
             }
@@ -733,7 +733,7 @@ namespace Abc.Zebus.Core
         private void HandleDispatchErrorsForUnserializableMessage(IMessage message, Exception serializationException, string dispatchErrorMessage)
         {
             var messageTypeName = message.GetType().FullName;
-            _logger.Error($"Unable to serialize message {messageTypeName}. Error: {serializationException}");
+            _logger.LogError(serializationException, $"Unable to serialize message {messageTypeName}");
 
             if (!_configuration.IsErrorPublicationEnabled || !IsRunning)
                 return;
@@ -844,7 +844,7 @@ namespace Abc.Zebus.Core
         {
             var dumpLocation = DumpMessageOnDisk(messageTypeId, messageStream);
             var errorMessage = $"Unable to deserialize message {messageTypeId.FullName}. Originator: {originator.SenderId}. Message dumped at: {dumpLocation}\r\n{exception}";
-            _logger.Error(errorMessage);
+            _logger.LogError(errorMessage);
 
             if (!_configuration.IsErrorPublicationEnabled || !IsRunning)
                 return;

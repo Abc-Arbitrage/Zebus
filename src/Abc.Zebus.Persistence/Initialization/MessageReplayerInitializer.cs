@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Threading;
 using Abc.Zebus.Hosting;
 using Abc.Zebus.Util;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.Initialization
 {
     public class MessageReplayerInitializer : HostInitializer
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(MessageReplayerInitializer));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(MessageReplayerInitializer));
         private readonly IMessageReplayerRepository _messageReplayerRepository;
         private readonly TimeSpan _waitTimeout;
 
@@ -30,7 +30,7 @@ namespace Abc.Zebus.Persistence.Initialization
                 Thread.Sleep(200);
 
             if (_messageReplayerRepository.HasActiveMessageReplayers())
-                _logger.WarnFormat("Stopping with active message replayers");
+                _logger.LogWarning("Stopping with active message replayers");
         }
     }
 }

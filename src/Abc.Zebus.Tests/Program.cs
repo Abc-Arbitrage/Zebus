@@ -16,8 +16,6 @@ namespace Abc.Zebus.Tests
     {
         public static void MainLol(string[] args)
         {
-            new Log4netConfigurator().Setup();
-
             if (args.FirstOrDefault() == "/receive")
             {
                 RunReceiver();

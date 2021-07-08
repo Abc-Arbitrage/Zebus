@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Directory
 {
@@ -22,7 +22,7 @@ namespace Abc.Zebus.Directory
                                                IMessageHandler<PeerNotResponding>,
                                                IMessageHandler<PeerResponding>
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(PeerDirectoryClient));
 
         private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionsIndex = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
@@ -111,7 +111,7 @@ namespace Abc.Zebus.Directory
                 }
                 catch (Exception ex)
                 {
-                    _logger.WarnFormat("Unable to process message {0} {{{1}}}, Exception: {2}", message.GetType(), message, ex);
+                    _logger.LogWarning(ex, $"Unable to process message {message.GetType()} {{{message}}}");
                 }
             }
         }
@@ -137,13 +137,13 @@ namespace Abc.Zebus.Directory
                 }
                 catch (TimeoutException ex)
                 {
-                    _logger.Error(ex);
+                    _logger.LogError(ex, "Timeout while registering on directory");
                 }
             }
 
             var directoryPeersText = string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"));
             var message = $"Unable to register peer on directory (tried: {directoryPeersText}) after {_configuration.RegistrationTimeout}";
-            _logger.Error(message);
+            _logger.LogError(message);
             throw new TimeoutException(message);
         }
 
@@ -159,7 +159,7 @@ namespace Abc.Zebus.Directory
 
                 if (registration.ErrorCode == DirectoryErrorCodes.PeerAlreadyExists)
                 {
-                    _logger.InfoFormat("Register rejected for {0}, the peer already exists in the directory", new RegisterPeerCommand(self).Peer.PeerId);
+                    _logger.LogInformation($"Register rejected for {self.PeerId}, the peer already exists in the directory");
                     return false;
                 }
 
@@ -169,7 +169,7 @@ namespace Abc.Zebus.Directory
             }
             catch (TimeoutException ex)
             {
-                _logger.Error(ex);
+                _logger.LogError(ex, "Timeout while registering on directory");
                 return false;
             }
         }
@@ -191,7 +191,7 @@ namespace Abc.Zebus.Directory
                 }
                 catch (TimeoutException ex)
                 {
-                    _logger.Error(ex);
+                    _logger.LogError(ex, "Timeout while updating subscriptions on directory");
                 }
             }
 
@@ -213,7 +213,7 @@ namespace Abc.Zebus.Directory
                 }
                 catch (TimeoutException ex)
                 {
-                    _logger.Error(ex);
+                    _logger.LogError(ex, "Timeout while unregistering on directory");
                 }
             }
 
@@ -440,7 +440,7 @@ namespace Abc.Zebus.Directory
         private static void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
         {
             if (peer.FailureReason == PeerEntryResult.FailureReasonType.PeerNotPresent)
-                _logger.WarnFormat("Received message but no peer existed: {0}", peerId);
+                _logger.LogWarning($"Received message but no peer existed: {peerId}");
         }
 
         public void Handle(PeerNotResponding message)
@@ -472,7 +472,7 @@ namespace Abc.Zebus.Directory
 
             if (peer.TimestampUtc > timestampUtc)
             {
-                _logger.InfoFormat("Outdated message ignored");
+                _logger.LogInformation("Outdated message ignored");
                 return new PeerEntryResult(PeerEntryResult.FailureReasonType.OutdatedMessage);
             }
 

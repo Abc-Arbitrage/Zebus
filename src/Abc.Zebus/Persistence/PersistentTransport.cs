@@ -9,13 +9,13 @@ using Abc.Zebus.Directory;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence
 {
     public partial class PersistentTransport : IPersistentTransport
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(PersistentTransport));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(PersistentTransport));
         private static readonly List<MessageTypeId> _replayMessageTypeIds = new List<MessageTypeId> { MessageReplayed.TypeId, ReplayPhaseEnded.TypeId, SafetyPhaseEnded.TypeId };
         private static readonly MessageBinding _bindingForPersistence = MessageBinding.Default<PersistMessageCommand>();
         private static readonly List<Peer> _emptyPeerList = new List<Peer>();
@@ -90,7 +90,7 @@ namespace Abc.Zebus.Persistence
         {
             var persistencePeers = GetPersistencePeers();
 
-            _logger.InfoFormat("Sending {0} enqueued messages to the persistence", _messagesWaitingForPersistence.Count);
+            _logger.LogInformation($"Sending {_messagesWaitingForPersistence.Count} enqueued messages to the persistence");
 
             while (_messagesWaitingForPersistence.TryTake(out var messageToSend))
             {
@@ -117,7 +117,7 @@ namespace Abc.Zebus.Persistence
 
         private void Enqueue(TransportMessage transportMessage)
         {
-            _logger.InfoFormat("Enqueing in temp persistence buffer: {0}", transportMessage.Id);
+            _logger.LogInformation($"Enqueueing in temp persistence buffer: {transportMessage.Id}");
             _messagesWaitingForPersistence.Add(transportMessage);
 
             if (!_persistenceIsDown)
@@ -148,14 +148,14 @@ namespace Abc.Zebus.Persistence
 
             if (_messagesWaitingForPersistence.Any())
             {
-                _logger.WarnFormat("Stopping PersistenceTransport with messages waiting for persistence to come back online!");
+                _logger.LogWarning("Stopping PersistenceTransport with messages waiting for persistence to come back online!");
             }
 
             _innerTransport.Stop();
 
             _pendingReceives.CompleteAdding();
             if (_receptionThread != null && !_receptionThread.Join(30.Second()))
-                _logger.WarnFormat("Unable to stop reception thread");
+                _logger.LogWarning("Unable to stop reception thread");
 
             SetInitialPhase();
         }
@@ -219,15 +219,15 @@ namespace Abc.Zebus.Persistence
         private void SetPhase(Phase phase)
         {
             var phaseType = phase.GetType();
-            if (_phase == null)
+            if (_phase == null!)
             {
-                _logger.InfoFormat("Initial phase: {0}", phaseType.Name);
+                _logger.LogInformation($"Initial phase: {phaseType.Name}");
             }
             else
             {
-                var curentPhaseType = _phase.GetType();
-                if (curentPhaseType != phaseType)
-                    _logger.InfoFormat("Switching phase: {0} -> {1}", curentPhaseType.Name, phaseType.Name);
+                var currentPhaseType = _phase.GetType();
+                if (currentPhaseType != phaseType)
+                    _logger.LogInformation($"Switching phase: {currentPhaseType.Name} -> {phaseType.Name}");
             }
 
             _phase = phase;
@@ -255,7 +255,7 @@ namespace Abc.Zebus.Persistence
 
                 var ackMessage = new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), _innerTransport.PeerId, _innerTransport.InboundEndPoint);
 
-                _logger.InfoFormat("Sending PersistenceStoppingAck to {0}", transportMessage.Originator.SenderId);
+                _logger.LogInformation($"Sending PersistenceStoppingAck to {transportMessage.Originator.SenderId}");
                 _innerTransport.Send(ackMessage, new[] { new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint) }, new SendContext());
 
                 return;
@@ -271,7 +271,7 @@ namespace Abc.Zebus.Persistence
         {
             Thread.CurrentThread.Name = "PersistentTransport.PendingReceivesDispatcher";
 
-            _logger.InfoFormat("Starting reception pump");
+            _logger.LogInformation("Starting reception pump");
 
             foreach (var transportMessage in _pendingReceives.GetConsumingEnumerable())
             {
@@ -282,7 +282,7 @@ namespace Abc.Zebus.Persistence
                 catch (Exception exception)
                 {
                     var errorMessage = $"Unable to process message {transportMessage.MessageTypeId.FullName}. Originator: {transportMessage.Originator.SenderId}";
-                    _logger.Error(errorMessage, exception);
+                    _logger.LogError(exception, errorMessage);
                 }
             }
 
@@ -298,7 +298,8 @@ namespace Abc.Zebus.Persistence
         {
             if (transportMessage.WasPersisted == true || transportMessage.WasPersisted == null && _isPersistent && _messageSendingStrategy.IsMessagePersistent(transportMessage))
             {
-                _logger.DebugFormat("PERSIST ACK: {0} {1}", transportMessage.MessageTypeId, transportMessage.Id);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"PERSIST ACK: {transportMessage.MessageTypeId} {transportMessage.Id}");
 
                 EnqueueOrSendToPersistenceService(new MessageHandled(transportMessage.Id));
             }

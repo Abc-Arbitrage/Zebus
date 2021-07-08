@@ -2,13 +2,13 @@
 using System.Diagnostics;
 using System.Text;
 using Abc.Zebus.Transport.Zmq;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Transport
 {
     internal class ZmqOutboundSocket
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(ZmqOutboundSocket));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(ZmqOutboundSocket));
 
         private readonly Stopwatch _closedStateStopwatch = new Stopwatch();
         private readonly ZmqContext _context;
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Transport
 
                 IsConnected = true;
 
-                _logger.InfoFormat("Socket connected, Peer: {0}, EndPoint: {1}", PeerId, EndPoint);
+                _logger.LogInformation($"Socket connected, Peer: {PeerId}, EndPoint: {EndPoint}");
             }
             catch (Exception ex)
             {
@@ -52,7 +52,7 @@ namespace Abc.Zebus.Transport
                 _socket = null;
                 IsConnected = false;
 
-                _logger.ErrorFormat("Unable to connect socket, Peer: {0}, EndPoint: {1}, Exception: {2}", PeerId, EndPoint, ex);
+                _logger.LogError(ex, $"Unable to connect socket, Peer: {PeerId}, EndPoint: {EndPoint}");
                 _errorHandler.OnConnectException(PeerId, EndPoint, ex);
 
                 SwitchToClosedState(_options.ClosedStateDurationAfterConnectFailure);
@@ -99,11 +99,11 @@ namespace Abc.Zebus.Transport
                 _socket!.SetOption(ZmqSocketOption.LINGER, 0);
                 _socket!.Dispose();
 
-                _logger.InfoFormat("Socket disconnected, Peer: {0}", PeerId);
+                _logger.LogInformation($"Socket disconnected, Peer: {PeerId}");
             }
             catch (Exception ex)
             {
-                _logger.ErrorFormat("Unable to disconnect socket, Peer: {0}, Exception: {1}", PeerId, ex);
+                _logger.LogError(ex, $"Unable to disconnect socket, Peer: {PeerId}");
                 _errorHandler.OnDisconnectException(PeerId, EndPoint, ex);
             }
 
@@ -122,9 +122,9 @@ namespace Abc.Zebus.Transport
             }
 
             var hasReachedHighWaterMark = error == ZmqErrorCode.EAGAIN;
-            var errorMesage = hasReachedHighWaterMark ? "High water mark reached" : error.ToErrorMessage();
+            var errorMessage = hasReachedHighWaterMark ? "High water mark reached" : error.ToErrorMessage();
 
-            _logger.ErrorFormat("Unable to send message, destination peer: {0}, MessageTypeId: {1}, MessageId: {2}, Error: {3}", PeerId, message.MessageTypeId, message.Id, errorMesage);
+            _logger.LogError($"Unable to send message, destination peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}, Error: {errorMessage}");
             _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
 
             if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)
@@ -139,7 +139,7 @@ namespace Abc.Zebus.Transport
             {
                 if (_closedStateStopwatch.Elapsed < _closedStateDuration)
                 {
-                    _logger.WarnFormat("Send or connect ignored in closed state, Peer: {0}, MessageTypeId: {1}, MessageId: {2}", PeerId, message.MessageTypeId, message.Id);
+                    _logger.LogWarning($"Send or connect ignored in closed state, Peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}");
                     return false;
                 }
 
@@ -151,7 +151,7 @@ namespace Abc.Zebus.Transport
 
         private void SwitchToClosedState(TimeSpan duration)
         {
-            _logger.ErrorFormat("Switching to closed state, Peer: {0}, Duration: {1}", PeerId, duration);
+            _logger.LogError($"Switching to closed state, Peer: {PeerId}, Duration: {duration}");
 
             _closedStateStopwatch.Start();
             _closedStateDuration = duration;
@@ -160,7 +160,7 @@ namespace Abc.Zebus.Transport
 
         private void SwitchToOpenState()
         {
-            _logger.InfoFormat("Switching back to open state, Peer: {0}", PeerId);
+            _logger.LogInformation($"Switching back to open state, Peer: {PeerId}");
 
             _isInClosedState = false;
             _closedStateStopwatch.Reset();

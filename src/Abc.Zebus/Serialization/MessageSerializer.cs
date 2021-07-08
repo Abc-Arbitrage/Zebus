@@ -1,11 +1,11 @@
 ﻿using System.IO;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Serialization
 {
     public class MessageSerializer : IMessageSerializer
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(MessageSerializer));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(MessageSerializer));
 
         public IMessage? Deserialize(MessageTypeId messageTypeId, Stream stream)
         {
@@ -13,7 +13,7 @@ namespace Abc.Zebus.Serialization
             if (messageType != null)
                 return (IMessage)Serializer.Deserialize(messageType, stream);
 
-            _log.WarnFormat("Could not find message type: {0}", messageTypeId.FullName);
+            _log.LogWarning($"Could not find message type: {messageTypeId.FullName}");
             return null;
         }
 

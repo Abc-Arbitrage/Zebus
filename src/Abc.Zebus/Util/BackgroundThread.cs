@@ -1,12 +1,12 @@
 using System;
 using System.Threading;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Util
 {
     internal static class BackgroundThread
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(BackgroundThread));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(BackgroundThread));
 
         public static Thread Start(ThreadStart startAction, Action? abortAction = null)
         {
@@ -38,7 +38,7 @@ namespace Abc.Zebus.Util
             }
             catch (Exception ex)
             {
-                _logger.Error(ex);
+                _logger.LogError(ex, "Error running action");
             }
         }
 
@@ -59,7 +59,7 @@ namespace Abc.Zebus.Util
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex);
+                    _logger.LogError(ex, "Error running action");
                 }
             };
         }
@@ -81,7 +81,7 @@ namespace Abc.Zebus.Util
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex);
+                    _logger.LogError(ex, "Error running action");
                 }
             };
         }

@@ -11,13 +11,13 @@ using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence
 {
     public class MessageReplayer : IMessageReplayer
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(MessageReplayer));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(MessageReplayer));
         private readonly BlockingCollection<TransportMessage> _liveMessages = new BlockingCollection<TransportMessage>();
         private readonly ConcurrentSet<MessageId> _unackedIds = new ConcurrentSet<MessageId>();
         private readonly IPersistenceConfiguration _persistenceConfiguration;
@@ -86,7 +86,7 @@ namespace Abc.Zebus.Persistence
             if (WaitForCompletion(5.Seconds()))
                 return true;
 
-            _logger.WarnFormat("Unable to cancel replayer, PeerId: {0}", _peer.Id);
+            _logger.LogWarning($"Unable to cancel replayer, PeerId: {_peer.Id}");
             return false;
         }
 
@@ -97,28 +97,28 @@ namespace Abc.Zebus.Persistence
 
         private void RunProc(ManualResetEvent signal)
         {
-            _logger.InfoFormat("Replay started, PeerId: {0}", _peer.Id);
+            _logger.LogInformation($"Replay started, PeerId: {_peer.Id}");
 
             signal.WaitOne();
             signal.Dispose();
 
-            _logger.InfoFormat("BatchPersister flushed, PeerId: {0}", _peer.Id);
+            _logger.LogInformation($"BatchPersister flushed, PeerId: {_peer.Id}");
 
             _stopwatch.Start();
             try
             {
                 Run(_cancellationTokenSource!.Token);
                 if (_cancellationTokenSource!.IsCancellationRequested)
-                    _logger.WarnFormat("Replay cancelled, PeerId: {0}", _peer.Id);
+                    _logger.LogWarning("Replay cancelled, PeerId: {_peer.Id}");
             }
             catch (Exception ex)
             {
-                _logger.ErrorFormat("Replay failed, PeerId: {0}, Exception: {1}", _peer.Id, ex);
+                _logger.LogError(ex, $"Replay failed, PeerId: {_peer.Id}");
             }
 
             _stopwatch.Stop();
 
-            _logger.InfoFormat("Replay stopped, PeerId: {0}. It ran for {1}", _peer.Id, _stopwatch.Elapsed);
+            _logger.LogInformation($"Replay stopped, PeerId: {_peer.Id}. It ran for {_stopwatch.Elapsed}");
 
             Stopped?.Invoke();
         }
@@ -129,7 +129,7 @@ namespace Abc.Zebus.Persistence
 
             var replayDuration = MeasureDuration();
             var totalReplayedCount = ReplayUnackedMessages(cancellationToken);
-            _logger.Info($"Replay phase ended for {_peer.Id}. {totalReplayedCount} messages replayed in {replayDuration.Value} ({totalReplayedCount / replayDuration.Value.TotalSeconds} msg/s)");
+            _logger.LogInformation($"Replay phase ended for {_peer.Id}. {totalReplayedCount} messages replayed in {replayDuration.Value} ({totalReplayedCount / replayDuration.Value.TotalSeconds} msg/s)");
 
             if (cancellationToken.IsCancellationRequested)
                 return;
@@ -138,7 +138,7 @@ namespace Abc.Zebus.Persistence
 
             var safetyDuration = MeasureDuration();
             ForwardLiveMessages(cancellationToken);
-            _logger.Info($"Safety phase ended for {_peer.Id} ({safetyDuration.Value})");
+            _logger.LogInformation($"Safety phase ended for {_peer.Id} ({safetyDuration.Value})");
             if (cancellationToken.IsCancellationRequested)
                 return;
 
@@ -168,13 +168,13 @@ namespace Abc.Zebus.Persistence
 
                     totalMessageCount += messageSentCount;
 
-                    _logger.Info($"Read and send for last batch of {messageSentCount} msgs for {_peer.Id} took {readAndSendDuration.Value}. ({messageSentCount / readAndSendDuration.Value.TotalSeconds} msg/s)");
+                    _logger.LogInformation($"Read and send for last batch of {messageSentCount} msgs for {_peer.Id} took {readAndSendDuration.Value}. ({messageSentCount / readAndSendDuration.Value.TotalSeconds} msg/s)");
                     WaitForAcks(cancellationToken);
-                    _logger.Info($"Last batch for {_peer.Id} took {batchDuration.Value} to be totally replayed ({messageSentCount / batchDuration.Value.TotalSeconds} msg/s)");
+                    _logger.LogInformation($"Last batch for {_peer.Id} took {batchDuration.Value} to be totally replayed ({messageSentCount / batchDuration.Value.TotalSeconds} msg/s)");
                     _reporter.AddReplaySpeedReport(messageSentCount, readAndSendDuration.Value.TotalSeconds, batchDuration.Value.TotalSeconds);
                 }
 
-                _logger.Info($"Replay finished for peer {_peer.Id}. Disposing the reader");
+                _logger.LogInformation($"Replay finished for peer {_peer.Id}. Disposing the reader");
                 return totalMessageCount;
             }
         }
@@ -187,7 +187,7 @@ namespace Abc.Zebus.Persistence
                 return;
 
             var expectedAckCount = Math.Max(0, _unackedIds.Count - UnackedMessageCountThatReleasesNextBatch);
-            _logger.Info($"Waiting for {expectedAckCount} ack(s) before proceeding to next batch for {_peer.Id}");
+            _logger.LogInformation($"Waiting for {expectedAckCount} ack(s) before proceeding to next batch for {_peer.Id}");
 
             var waitDuration = MeasureDuration();
             while (_unackedIds.Count > UnackedMessageCountThatReleasesNextBatch)
@@ -198,8 +198,8 @@ namespace Abc.Zebus.Persistence
                 Thread.Sleep(100);
             }
 
-            _logger.Info($"Batch acked in {waitDuration.Value} for peer {_peer.Id} ({expectedAckCount / waitDuration.Value.TotalSeconds} msg/s)");
-            _logger.Info($"Proceeding with next batch for {_peer.Id}");
+            _logger.LogInformation($"Batch acked in {waitDuration.Value} for peer {_peer.Id} ({expectedAckCount / waitDuration.Value.TotalSeconds} msg/s)");
+            _logger.LogInformation($"Proceeding with next batch for {_peer.Id}");
         }
 
         private void ReplayMessage(TransportMessage unackedMessage)
