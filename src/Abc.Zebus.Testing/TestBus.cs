@@ -231,7 +231,7 @@ namespace Abc.Zebus.Testing
             LastReplyResponse = response;
         }
 
-        public void Configure(PeerId peerId, string environment = "test")
+        public void Configure(PeerId peerId, string environment = "Test")
         {
             PeerId = peerId;
             Environment = environment;
