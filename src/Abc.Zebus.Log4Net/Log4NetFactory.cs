@@ -2,7 +2,7 @@ using System;
 using log4net;
 using Microsoft.Extensions.Logging;
 
-namespace Abc.Zebus.Directory.Runner
+namespace Abc.Zebus.Log4Net
 {
     public sealed class Log4NetFactory : ILoggerFactory
     {

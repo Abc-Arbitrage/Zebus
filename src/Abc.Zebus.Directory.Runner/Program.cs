@@ -11,6 +11,7 @@ using Abc.Zebus.Directory.Initialization;
 using Abc.Zebus.Directory.RocksDb.Storage;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Log4Net;
 using Abc.Zebus.Util;
 using log4net;
 using log4net.Config;

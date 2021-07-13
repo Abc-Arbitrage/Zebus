@@ -8,6 +8,7 @@
   <Import Project="..\Abc.Zebus.Tests.props" />
 
   <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Log4Net\Abc.Zebus.Log4Net.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
     <ProjectReference Include="..\Abc.Zebus\Abc.Zebus.csproj" />
   </ItemGroup>

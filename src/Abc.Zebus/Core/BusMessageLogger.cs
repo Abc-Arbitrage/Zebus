@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Core
 {
-    public class BusMessageLogger
+    internal class BusMessageLogger
     {
         private static readonly ConcurrentDictionary<Type, MessageTypeLogHelper> _logHelpers = new ConcurrentDictionary<Type, MessageTypeLogHelper>();
         private readonly ILogger _logger;

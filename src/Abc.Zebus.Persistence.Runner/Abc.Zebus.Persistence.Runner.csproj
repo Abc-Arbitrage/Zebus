@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Log4Net\Abc.Zebus.Log4Net.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Persistence.CQL\Abc.Zebus.Persistence.CQL.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Persistence.RocksDb\Abc.Zebus.Persistence.RocksDb.csproj" />
   </ItemGroup>
@@ -23,7 +24,6 @@
     <None Update="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Compile Include="..\Abc.Zebus.Directory.Runner\Log4NetFactory.cs" />
   </ItemGroup>
 
 </Project>
