@@ -8,14 +8,14 @@ using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Directory.DeadPeerDetection
 {
     public class DeadPeerDetector : IDeadPeerDetector
     {
         private static readonly TimeSpan _commandTimeout = 5.Seconds();
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(DeadPeerDetector));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(DeadPeerDetector));
         private readonly Dictionary<PeerId, DeadPeerDetectorEntry> _peers = new Dictionary<PeerId, DeadPeerDetectorEntry>();
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
@@ -145,7 +145,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             _isRunning = false;
             if (_detectionThread != null && !_detectionThread.Join(2000))
-                _logger.Warn("Unable to terminate MainLoop");
+                _logger.LogWarning("Unable to terminate MainLoop");
         }
 
         void IDisposable.Dispose()
@@ -156,7 +156,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         private void MainLoop()
         {
-            _logger.InfoFormat("MainLoop started");
+            _logger.LogInformation("MainLoop started");
 
             var next = DateTime.UtcNow + _detectionPeriod;
             while (_isRunning)
@@ -180,12 +180,12 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 }
             }
 
-            _logger.Info("MainLoop stopped");
+            _logger.LogInformation("MainLoop stopped");
         }
 
         private void OnError(Exception ex)
         {
-            _logger.ErrorFormat("MainLoop error: {0}", ex);
+            _logger.LogError(ex, "MainLoop error");
 
             try
             {
@@ -193,7 +193,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
             catch (Exception errorException)
             {
-                _logger.Error(errorException);
+                _logger.LogError(errorException, "Error in event handler");
             }
         }
     }

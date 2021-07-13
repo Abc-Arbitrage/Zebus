@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Log4Net\Abc.Zebus.Log4Net.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
   </ItemGroup>
 

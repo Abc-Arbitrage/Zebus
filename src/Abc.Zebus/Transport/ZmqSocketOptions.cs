@@ -75,7 +75,7 @@ namespace Abc.Zebus.Transport
         /// <summary>
         /// Configures ZMQ keepalive options (ZMQ_TCP_KEEPALIVE, ZMQ_TCP_KEEPALIVE_IDLE and ZMQ_TCP_KEEPALIVE_INTVL).
         /// </summary>
-        public KeepAliveOptions KeepAlive { get; set; }
+        public KeepAliveOptions? KeepAlive { get; set; }
 
         public class KeepAliveOptions
         {

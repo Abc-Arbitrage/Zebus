@@ -8,13 +8,13 @@ using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Util;
 using Cassandra;
 using Cassandra.Data.Linq;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.CQL.Storage
 {
     public class PeerStateRepository
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(PeerStateRepository));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(PeerStateRepository));
 
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly ConcurrentDictionary<PeerId, PeerState> _statesByPeerId = new ConcurrentDictionary<PeerId, PeerState>();
@@ -26,7 +26,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public void Initialize()
         {
-            _log.Info("Initializing PeerStateRepository");
+            _log.LogInformation("Initializing PeerStateRepository");
 
             foreach (var cassandraPeerState in _dataContext.PeerStates.Execute())
             {
@@ -34,7 +34,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                 _statesByPeerId[peerState.PeerId] = peerState;
             }
 
-            _log.Info($"PeerStateRepository initialized with {_statesByPeerId.Count} states.");
+            _log.LogInformation($"PeerStateRepository initialized with {_statesByPeerId.Count} states.");
         }
 
         public PeerState? GetPeerStateFor(PeerId peerId)
@@ -47,7 +47,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             var peerState = _statesByPeerId.AddOrUpdate(peerId,
                                                           p =>
                                                           {
-                                                              _log.Info($"Created new state for peer {p}");
+                                                              _log.LogInformation($"Created new state for peer {p}");
                                                               return new PeerState(p, delta);
                                                           },
                                                           (id, state) => state.WithNonAckedMessageCountDelta(delta));
@@ -57,18 +57,18 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public Task RemovePeer(PeerId peerId)
         {
-            _log.Info($"Purge queue for peer {peerId} requested");
+            _log.LogInformation($"Purge queue for peer {peerId} requested");
 
             if (!_statesByPeerId.TryRemove(peerId, out var state))
             {
-                _log.Info($"Peer to purge not found ({peerId})");
+                _log.LogInformation($"Peer to purge not found ({peerId})");
                 return Task.CompletedTask;
             }
 
             state.MarkAsRemoved();
 
             var removeTask = Task.WhenAll(DeletePeerState(peerId), RemovePersistentMessages(peerId));
-            removeTask.ContinueWith(t => _log.Info($"Queue for peer {peerId} purged"));
+            removeTask.ContinueWith(t => _log.LogInformation($"Queue for peer {peerId} purged"));
 
             return removeTask;
         }

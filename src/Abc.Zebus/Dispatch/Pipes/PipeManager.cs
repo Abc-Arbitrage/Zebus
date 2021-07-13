@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Util.Collections;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Dispatch.Pipes
 {
     internal class PipeManager : IPipeManager
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(PipeManager));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(PipeManager));
 
         private readonly ConcurrentDictionary<Type, PipeList> _pipesByMessageType = new ConcurrentDictionary<Type, PipeList>();
         private readonly ConcurrentSet<string> _enabledPipeNames = new ConcurrentSet<string>();
@@ -25,7 +25,7 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         public void EnablePipe(string pipeName)
         {
-            _logger.InfoFormat("Enabling pipe [{0}]", pipeName);
+            _logger.LogInformation($"Enabling pipe [{pipeName}]");
 
             _enabledPipeNames.Add(pipeName);
             _disabledPipeNames.Remove(pipeName);
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Dispatch.Pipes
 
         public void DisablePipe(string pipeName)
         {
-            _logger.InfoFormat("Disabling pipe [{0}]", pipeName);
+            _logger.LogInformation($"Disabling pipe [{pipeName}]");
 
             _enabledPipeNames.Remove(pipeName);
             _disabledPipeNames.Add(pipeName);

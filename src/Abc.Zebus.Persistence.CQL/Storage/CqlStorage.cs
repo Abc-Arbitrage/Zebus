@@ -13,14 +13,14 @@ using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Util;
 using Cassandra;
 using Cassandra.Data.Linq;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.CQL.Storage
 {
     public class CqlStorage : ICqlStorage, IDisposable
     {
         private const int _maxParallelInsertTasks = 64;
-        private static readonly ILog _log = LogManager.GetLogger(typeof(CqlStorage));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(CqlStorage));
         private static readonly DateTime _unixOrigin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
 
         private readonly PersistenceCqlDataContext _dataContext;
@@ -70,13 +70,13 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             {
                 var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
                 if (shouldInvestigatePeer)
-                    _log.Info($"Storage requested for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}");
+                    _log.LogInformation($"Storage requested for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}");
 
                 var countDelta = matcherEntry.IsAck ? -1 : 1;
                 countByPeer[matcherEntry.PeerId] = countDelta + countByPeer.GetValueOrDefault(matcherEntry.PeerId);
 
                 if (shouldInvestigatePeer)
-                    _log.Info($"Count delta computed for peer {matcherEntry.PeerId}, will increment: {countDelta}");
+                    _log.LogInformation($"Count delta computed for peer {matcherEntry.PeerId}, will increment: {countDelta}");
             }
 
             var insertTasks = new List<Task>();
@@ -85,7 +85,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
             {
                 var gotSlot = remaining.Wait(TimeSpan.FromSeconds(10));
                 if (!gotSlot)
-                    _log.Warn("Could not get slot to insert in cassandra after 10 second.");
+                    _log.LogWarning("Could not get slot to insert in cassandra after 10 second.");
 
                 var messageDateTime = matcherEntry.MessageId.GetDateTimeForV2OrV3();
                 var rowTimestamp = matcherEntry.IsAck ? messageDateTime.AddTicks(10) : messageDateTime;
@@ -104,10 +104,10 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                 {
                     var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
                     if (shouldInvestigatePeer)
-                        _log.Info($"Storage done for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}");
+                        _log.LogInformation($"Storage done for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}");
 
                     if (t.IsFaulted)
-                        _log.Error(t.Exception);
+                        _log.LogError(t.Exception, "Error while inserting to Cassandra");
 
                     remaining.Release();
                 }, TaskContinuationOptions.ExecuteSynchronously);
@@ -129,16 +129,16 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public IMessageReader? CreateMessageReader(PeerId peerId)
         {
-            _log.Info($"Creating message reader for peer {peerId}");
+            _log.LogInformation($"Creating message reader for peer {peerId}");
             var peerState = _peerStateRepository.GetPeerStateFor(peerId);
             if (peerState == null)
             {
-                _log.Info($"PeerState for peer {peerId} does not exist, no reader can be created");
+                _log.LogInformation($"PeerState for peer {peerId} does not exist, no reader can be created");
                 return null;
             }
 
             var reader = new CqlMessageReader(_dataContext, peerState);
-            _log.Info("CqlMessageReader created");
+            _log.LogInformation("CqlMessageReader created");
 
             return reader;
         }
@@ -155,7 +155,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
             if (newOldestUnackedTimestampMinusSafetyOffset < peer.OldestNonAckedMessageTimestampInTicks)
             {
-                _log.Warn($"OldestNonAckedMessageTimestampInTicks moved backward for {peer.PeerId}, Value: {new DateTime(newOldestUnackedTimestampMinusSafetyOffset)}");
+                _log.LogWarning($"OldestNonAckedMessageTimestampInTicks moved backward for {peer.PeerId}, Value: {new DateTime(newOldestUnackedTimestampMinusSafetyOffset)}");
             }
             else
             {

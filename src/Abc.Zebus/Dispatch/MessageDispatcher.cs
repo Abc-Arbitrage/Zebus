@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Util.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Dispatch
 {
     public class MessageDispatcher : IMessageDispatcher, IProvideQueueLength
     {
         private static readonly List<IMessageHandlerInvoker> _emptyInvokers = new List<IMessageHandlerInvoker>();
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(MessageDispatcher));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(MessageDispatcher));
 
         private readonly ConcurrentDictionary<string, DispatchQueue> _dispatchQueues = new ConcurrentDictionary<string, DispatchQueue>(StringComparer.OrdinalIgnoreCase);
         private readonly object _lock = new object();
@@ -170,9 +170,9 @@ namespace Abc.Zebus.Dispatch
             {
                 Stopping?.Invoke();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _logger.Error("Stopping event handler error", e);
+                _logger.LogError(ex, "Stopping event handler error");
             }
         }
 
@@ -203,9 +203,9 @@ namespace Abc.Zebus.Dispatch
             {
                 Starting?.Invoke();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _logger.Error("Starting event handler error", e);
+                _logger.LogError(ex, "Starting event handler error");
             }
         }
 
