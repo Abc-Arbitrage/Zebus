@@ -1,9 +1,5 @@
 <Project>
 
-  <PropertyGroup>
-    <DefineConstants Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">$(DefineConstants);NETFWK</DefineConstants>
-  </PropertyGroup>
-
   <!-- Reference Assembly Annotator -->
   <PropertyGroup>
     <GenerateNullableAttributes>false</GenerateNullableAttributes>
