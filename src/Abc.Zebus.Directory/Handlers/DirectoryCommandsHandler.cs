@@ -7,7 +7,7 @@ using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Directory.Handlers
 {
@@ -20,7 +20,7 @@ namespace Abc.Zebus.Directory.Handlers
                                             IMessageHandler<MarkPeerAsNotRespondingCommand>,
                                             IMessageContextAware
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(DirectoryCommandsHandler));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(DirectoryCommandsHandler));
         private readonly HashSet<string> _blacklistedMachines;
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
@@ -153,7 +153,7 @@ namespace Abc.Zebus.Directory.Handlers
         {
             if (_peerRepository.Get(message.PeerId) == null)
             {
-                _log.Warn("MarkPeerAsNotRespondingCommand ignored because the peer cannot be found");
+                _log.LogWarning("MarkPeerAsNotRespondingCommand ignored because the peer cannot be found");
                 return;
             }
             _peerRepository.SetPeerResponding(message.PeerId, false);

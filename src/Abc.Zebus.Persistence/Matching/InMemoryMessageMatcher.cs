@@ -8,13 +8,13 @@ using Abc.Zebus.Monitoring;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Util;
 using Abc.Zebus.Util;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.Matching
 {
     public class InMemoryMessageMatcher : IInMemoryMessageMatcher, IProvideQueueLength
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(InMemoryMessageMatcher));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(InMemoryMessageMatcher));
         private readonly BlockingCollection<MatcherEntry> _persistenceQueue = new BlockingCollection<MatcherEntry>();
         private readonly ConcurrentSet<MessageKey> _ackMessageKeys = new ConcurrentSet<MessageKey>();
         private readonly IPersistenceConfiguration _persistenceConfiguration;
@@ -40,7 +40,7 @@ namespace Abc.Zebus.Persistence.Matching
                 _workerThread.Start(signal);
                 signal.Wait();
             }
-            _logger.Info("InMemoryMessageMatcher started");
+            _logger.LogInformation("InMemoryMessageMatcher started");
         }
 
         private void ThreadProc(object? state)
@@ -108,7 +108,7 @@ namespace Abc.Zebus.Persistence.Matching
             }
             catch (Exception ex)
             {
-                _logger.Error("Unexpected error happened", ex);
+                _logger.LogError(ex, "Unexpected error happened");
                 _bus.Publish(new CustomProcessingFailed(GetType().FullName!, ex.ToString(), SystemDateTime.UtcNow));
             }
             finally
@@ -144,7 +144,7 @@ namespace Abc.Zebus.Persistence.Matching
             if (entriesToInsert.Any())
             {
                 if (!_storage.Write(entriesToInsert).Wait(30.Seconds()))
-                    _logger.WarnFormat("Unable to Write {0} entries in 30s", entriesToInsert.Count);
+                    _logger.LogWarning($"Unable to Write {entriesToInsert.Count} entries in 30s");
             }
 
             foreach (var entry in batch.Where(x => x.IsEventWaitHandle))
@@ -159,14 +159,14 @@ namespace Abc.Zebus.Persistence.Matching
         {
             if (_persistenceQueue.IsAddingCompleted)
             {
-                _logger.InfoFormat("InMemoryMessageMatcher already stopped");
+                _logger.LogInformation("InMemoryMessageMatcher already stopped");
                 return;
             }
 
-            _logger.InfoFormat("Stopping InMemoryMessageMatcher, {0} messages on queue to persist", _persistenceQueue.Count);
+            _logger.LogInformation($"Stopping InMemoryMessageMatcher, {_persistenceQueue.Count} messages on queue to persist");
             _persistenceQueue.CompleteAdding();
             _workerThread.Join();
-            _logger.Info("InMemoryMessageMatcher stopped");
+            _logger.LogInformation("InMemoryMessageMatcher stopped");
         }
 
         public void EnqueueMessage(PeerId peerId, MessageId messageId, MessageTypeId messageTypeId, byte[] bytes)

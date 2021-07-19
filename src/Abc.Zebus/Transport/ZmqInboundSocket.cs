@@ -2,19 +2,19 @@
 using System.Text;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Transport
 {
     internal class ZmqInboundSocket : IDisposable
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(ZmqInboundSocket));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(ZmqInboundSocket));
 
         private readonly ZmqContext _context;
         private readonly PeerId _peerId;
         private readonly ZmqEndPoint _configuredEndPoint;
         private readonly ZmqSocketOptions _options;
-        private byte[] _readBuffer = new byte[0];
+        private byte[] _readBuffer = Array.Empty<byte>();
         private ZmqSocket? _socket;
         private TimeSpan _lastReceiveTimeout;
 
@@ -33,7 +33,7 @@ namespace Abc.Zebus.Transport
             _socket.Bind(_configuredEndPoint.ToString());
 
             var socketEndPoint = new ZmqEndPoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
-            _logger.InfoFormat("Socket bound, Inbound EndPoint: {0}", socketEndPoint);
+            _logger.LogInformation($"Socket bound, Inbound EndPoint: {socketEndPoint}");
 
             return socketEndPoint;
         }
@@ -81,9 +81,9 @@ namespace Abc.Zebus.Transport
             if (endpoint == null)
                 return;
 
-            _logger.InfoFormat("Unbinding socket, Inbound Endpoint: {0}", endpoint);
+            _logger.LogInformation($"Unbinding socket, Inbound Endpoint: {endpoint}");
             if (!_socket!.TryUnbind(endpoint))
-                _logger.WarnFormat("Socket error, Inbound Endpoint: {0}, Error: {1}", endpoint, ZmqUtil.GetLastErrorMessage());
+                _logger.LogWarning($"Socket error, Inbound Endpoint: {endpoint}, Error: {ZmqUtil.GetLastErrorMessage()}");
         }
     }
 }

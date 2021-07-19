@@ -6,13 +6,13 @@ using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Storage;
 using Cassandra;
 using Cassandra.Data.Linq;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.CQL.Storage
 {
     public class CqlMessageReader : IMessageReader
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(CqlMessageReader));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(CqlMessageReader));
 
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly PeerState _peerState;
@@ -33,7 +33,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
         public IEnumerable<byte[]> GetUnackedMessages()
         {
             var oldestNonAckedMessageTimestampInTicks = _peerState.OldestNonAckedMessageTimestampInTicks;
-            _log.Info($"Reading messages for peer {_peerState.PeerId} from {oldestNonAckedMessageTimestampInTicks} ({new DateTime(oldestNonAckedMessageTimestampInTicks).ToLongTimeString()})");
+            _log.LogInformation($"Reading messages for peer {_peerState.PeerId} from {oldestNonAckedMessageTimestampInTicks} ({new DateTime(oldestNonAckedMessageTimestampInTicks).ToLongTimeString()})");
 
             var nonAckedMessagesInBuckets = BucketIdHelper.GetBucketsCollection(oldestNonAckedMessageTimestampInTicks)
                                                           .Select(b => GetNonAckedMessagesInBucket(oldestNonAckedMessageTimestampInTicks, b));
@@ -48,7 +48,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
                 }
             }
 
-            _log.Info($"{nonAckedMessageRead} non acked messages replayed for peer {_peerState.PeerId}");
+            _log.LogInformation($"{nonAckedMessageRead} non acked messages replayed for peer {_peerState.PeerId}");
         }
 
         private IEnumerable<byte[]> GetNonAckedMessagesInBucket(long oldestNonAckedMessageTimestampInTicks, long bucketId)
@@ -61,7 +61,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
         public void Dispose()
         {
-            _log.Info($"Reader for peer {_peerState.PeerId} disposed");
+            _log.LogInformation($"Reader for peer {_peerState.PeerId} disposed");
         }
     }
 }

@@ -11,9 +11,11 @@ using Abc.Zebus.Directory.Initialization;
 using Abc.Zebus.Directory.RocksDb.Storage;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Log4Net;
 using Abc.Zebus.Util;
 using log4net;
 using log4net.Config;
+using Microsoft.Extensions.Logging;
 using StructureMap;
 
 namespace Abc.Zebus.Directory.Runner
@@ -29,10 +31,12 @@ namespace Abc.Zebus.Directory.Runner
 
         private static readonly ManualResetEvent _cancelKeySignal = new ManualResetEvent(false);
 
-        private static readonly ILog _log = LogManager.GetLogger(typeof(Program));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(Program));
 
         public static void Main()
         {
+            ZebusLogManager.LoggerFactory = new Log4NetFactory();
+
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 eventArgs.Cancel = true;
@@ -41,7 +45,7 @@ namespace Abc.Zebus.Directory.Runner
 
             XmlConfigurator.ConfigureAndWatch(LogManager.GetRepository(typeof(Program).Assembly), new FileInfo(PathUtil.InBaseDirectory("log4net.config")));
             var storageType = ConfigurationManager.AppSettings["Storage"]!;
-            _log.Info($"Starting in directory with storage type '{storageType}'");
+            _log.LogInformation($"Starting in directory with storage type '{storageType}'");
 
             var busFactory = new BusFactory();
             InjectDirectoryServiceSpecificConfiguration(busFactory, Enum.Parse<StorageType>(storageType));
@@ -54,15 +58,15 @@ namespace Abc.Zebus.Directory.Runner
 
             using (busFactory.CreateAndStartBus())
             {
-                _log.Info("Directory started");
+                _log.LogInformation("Directory started");
 
-                _log.Info("Starting dead peer detector");
+                _log.LogInformation("Starting dead peer detector");
                 var deadPeerDetector = busFactory.Container.GetInstance<IDeadPeerDetector>();
                 deadPeerDetector.Start();
 
                 _cancelKeySignal.WaitOne();
 
-                _log.Info("Stopping dead peer detector");
+                _log.LogInformation("Stopping dead peer detector");
                 deadPeerDetector.Stop();
             }
         }
