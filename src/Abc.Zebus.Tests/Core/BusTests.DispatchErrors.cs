@@ -21,7 +21,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 base.Setup();
 
-                _configuration.SetupGet(x => x.IsErrorPublicationEnabled).Returns(true);
+                _configuration.IsErrorPublicationEnabled = true;
             }
 
             [Test]
@@ -99,7 +99,7 @@ namespace Abc.Zebus.Tests.Core
             [Test]
             public void should_not_send_a_MessageProcessingFailed_when_error_publication_is_not_enabled()
             {
-                _configuration.SetupGet(x => x.IsErrorPublicationEnabled).Returns(false);
+                _configuration.IsErrorPublicationEnabled = false;
 
                 SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
 
@@ -168,7 +168,7 @@ namespace Abc.Zebus.Tests.Core
             }
 
             [Test]
-            public void should_not_send_a_MessageProcessingFailed_on_domain_exception_with_local_processing()
+            public void should_not_send_a_MessageProcessingFailed_on_MessageProcessingException_with_local_processing()
             {
                 SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
 
@@ -178,12 +178,35 @@ namespace Abc.Zebus.Tests.Core
                 using (MessageId.PauseIdGeneration())
                 {
                     var command = new FakeCommand(123);
-                    SetupDispatch(command, error: new DomainException(123, "Exception message"));
+                    SetupDispatch(command, error: new MessageProcessingException("Exception message") { ErrorCode = 123 });
                     SetupPeersHandlingMessage<FakeCommand>(_self);
 
                     _bus.Send(command);
 
                     _transport.ExpectNothing();
+                }
+            }
+
+            [Test]
+            public void should_send_a_MessageProcessingFailed_on_MessageProcessingException_with_error_publication_with_local_processing()
+            {
+                SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
+
+                _bus.Start();
+
+                using (SystemDateTime.PauseTime())
+                using (MessageId.PauseIdGeneration())
+                {
+                    var command = new FakeCommand(123);
+                    var exception = new MessageProcessingException("Exception message") { ErrorCode = 123, ShouldPublishError = true };
+                    SetupDispatch(command, error: exception);
+                    SetupPeersHandlingMessage<FakeCommand>(_self);
+
+                    _bus.Send(command);
+
+                    var commandJson = JsonConvert.SerializeObject(command);
+                    var expectedTransportMessage = new MessageProcessingFailed(command.ToTransportMessage(_self), commandJson, exception.ToString(), SystemDateTime.UtcNow, new[] { typeof(FakeMessageHandler).FullName }).ToTransportMessage(_self);
+                    _transport.Expect(new TransportMessageSent(expectedTransportMessage, _peerUp));
                 }
             }
         }

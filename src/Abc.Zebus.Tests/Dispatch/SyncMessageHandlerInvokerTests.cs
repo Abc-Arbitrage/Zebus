@@ -58,12 +58,12 @@ namespace Abc.Zebus.Tests.Dispatch
         public void should_proxy_bus_with_message_context_aware_bus()
         {
             var busMock = new Mock<IBus>();
-            var configurationMock = new Mock<IBusConfiguration>();
+            var configuration = new BusConfiguration("tcp://zebus-directory:123");
             var equalityComparer = StringComparer.OrdinalIgnoreCase;
             var container = new Container(x =>
             {
                 x.ForSingletonOf<IBus>().Use(busMock.Object);
-                x.ForSingletonOf<IBusConfiguration>().Use(configurationMock.Object);
+                x.ForSingletonOf<IBusConfiguration>().Use(configuration);
                 x.For<IEqualityComparer<string>>().Use(equalityComparer);
             });
 
@@ -72,7 +72,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var handler = (CommandHandlerWithThreeConstructorArguments)invoker.CreateHandler(messageContext);
             handler.Bus.ShouldNotEqual(busMock.Object);
-            handler.Configuration.ShouldEqual(configurationMock.Object);
+            handler.Configuration.ShouldEqual(configuration);
             handler.EqualityComparerFunc().ShouldEqual(equalityComparer);
 
             var bus = handler.Bus.ShouldBe<MessageContextAwareBus>();
@@ -120,12 +120,12 @@ namespace Abc.Zebus.Tests.Dispatch
         public void MeasureHandlerCreationPerformances()
         {
             var busMock = new Mock<IBus>();
-            var configurationMock = new Mock<IBusConfiguration>();
+            var configuration = new BusConfiguration("tcp://zebus-directory:123");
             var equalityComparer = StringComparer.OrdinalIgnoreCase;
             var container = new Container(x =>
             {
                 x.ForSingletonOf<IBus>().Use(busMock.Object);
-                x.ForSingletonOf<IBusConfiguration>().Use(configurationMock.Object);
+                x.ForSingletonOf<IBusConfiguration>().Use(configuration);
                 x.For<IEqualityComparer<string>>().Use(equalityComparer);
             });
 

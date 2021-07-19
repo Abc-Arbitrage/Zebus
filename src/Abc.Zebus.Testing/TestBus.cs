@@ -140,7 +140,7 @@ namespace Abc.Zebus.Testing
 
         public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
         {
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(0, IsRunning);
 
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
@@ -152,7 +152,7 @@ namespace Abc.Zebus.Testing
 
         public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
         {
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(0, IsRunning);
 
             if (request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
@@ -231,7 +231,7 @@ namespace Abc.Zebus.Testing
             LastReplyResponse = response;
         }
 
-        public void Configure(PeerId peerId, string environment = "test")
+        public void Configure(PeerId peerId, string environment = "Test")
         {
             PeerId = peerId;
             Environment = environment;
@@ -294,13 +294,19 @@ namespace Abc.Zebus.Testing
         public void AddHandlerThatThrowsDomainException<TMessage>(DomainException ex)
             where TMessage : IMessage
         {
-            _handlers[new HandlerKey(typeof(TMessage), default)] = x => { throw ex; };
+            _handlers[new HandlerKey(typeof(TMessage), default)] = _ => throw ex;
+        }
+
+        public void AddHandlerThatThrowsMessageProcessingException<TMessage>(MessageProcessingException ex)
+            where TMessage : IMessage
+        {
+            _handlers[new HandlerKey(typeof(TMessage), default)] = _ => throw ex;
         }
 
         public void AddHandlerThatThrows<TMessage>(Exception? ex = null)
             where TMessage : IMessage
         {
-            _handlers[new HandlerKey(typeof(TMessage), default)] = x => { throw ex ?? new Exception(); };
+            _handlers[new HandlerKey(typeof(TMessage), default)] = _ => throw (ex ?? new Exception());
         }
 
         public void Expect(IEnumerable<IMessage> expectedMessages)
@@ -352,7 +358,7 @@ namespace Abc.Zebus.Testing
                     var result = handler?.Invoke(command);
                     taskCompletionSource.SetResult(new CommandResult(0, null, result));
                 }
-                catch (DomainException ex)
+                catch (MessageProcessingException ex)
                 {
                     taskCompletionSource.SetResult(new CommandResult(ex.ErrorCode, ex.Message, null));
                 }
@@ -380,7 +386,7 @@ namespace Abc.Zebus.Testing
                         var response = handler?.Invoke(command);
                         return new CommandResult(0, null, response);
                     }
-                    catch (DomainException ex)
+                    catch (MessageProcessingException ex)
                     {
                         return new CommandResult(ex.ErrorCode, ex.Message, null);
                     }

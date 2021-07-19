@@ -63,7 +63,10 @@ namespace Abc.Zebus.Directory.Handlers
 
             var existingPeer = _peerRepository.Get(peerDescriptor.PeerId);
             if (IsPeerInConflict(existingPeer, peerDescriptor))
-                throw new DomainException(DirectoryErrorCodes.PeerAlreadyExists, string.Format("Peer {0} already exists (running on {1})", peerDescriptor.PeerId, existingPeer.Peer.EndPoint));
+                throw new MessageProcessingException($"Peer {peerDescriptor.PeerId} already exists (running on {existingPeer.Peer.EndPoint})")
+                {
+                    ErrorCode = DirectoryErrorCodes.PeerAlreadyExists
+                };
 
             _peerRepository.RemoveAllDynamicSubscriptionsForPeer(peerDescriptor.PeerId, DateTime.SpecifyKind(peerDescriptor.TimestampUtc!.Value, DateTimeKind.Utc));
             _peerRepository.AddOrUpdatePeer(peerDescriptor);

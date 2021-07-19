@@ -73,7 +73,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         {
             var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
-            
+
             _handler.Handle(registerCommand);
 
             _repositoryMock.Verify(x => x.AddOrUpdatePeer(registerCommand.Peer));
@@ -161,7 +161,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             var newPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://newpeer:123", typeof(FakeCommand));
             var command = new RegisterPeerCommand(newPeer);
 
-            var exception = (DomainException)typeof(DomainException).ShouldBeThrownBy(() => _handler.Handle(command));
+            var exception = (MessageProcessingException)typeof(MessageProcessingException).ShouldBeThrownBy(() => _handler.Handle(command));
             exception.ErrorCode.ShouldEqual(DirectoryErrorCodes.PeerAlreadyExists);
         }
 
@@ -245,7 +245,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         public void should_publish_peer_decommissioned()
         {
             var peerId = new PeerId("Abc.Testing.0");
-         
+
             _handler.Handle(new DecommissionPeerCommand(peerId));
 
             _bus.ExpectExactly(new PeerDecommissioned(peerId));
@@ -255,7 +255,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         public void should_remove_peer_from_repository()
         {
             var peerId = new PeerId("Abc.Testing.0");
-         
+
             _handler.Handle(new DecommissionPeerCommand(peerId));
 
             _repositoryMock.Verify(x => x.RemovePeer(peerId));
@@ -290,7 +290,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
                 new SubscriptionsForType(MessageUtil.GetTypeId(typeof(double)), new BindingKey("bla"))
             };
             var now = DateTime.UtcNow;
-            
+
             _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, now, subscriptionsForTypes));
 
             _repositoryMock.Verify(repo => repo.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, now, subscriptionsForTypes));
@@ -313,7 +313,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty) };
             var unspecifiedNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            
+
             _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, unspecifiedNow, subscriptionsForTypes));
 
             _repositoryMock.Verify(repo => repo.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), subscriptionsForTypes));
@@ -325,7 +325,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), new BindingKey[0]) };
             var unspecifiedNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            
+
             _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, unspecifiedNow, subscriptionsForTypes));
 
             _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, It.Is<DateTime>(date => date.Kind == DateTimeKind.Utc), new[] { MessageUtil.GetTypeId(typeof(int)) }));
@@ -337,7 +337,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), null) };
             var now = DateTime.UtcNow;
-            
+
             _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, now, subscriptionsForTypes));
 
             _repositoryMock.Verify(repo => repo.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, now, new[] { MessageUtil.GetTypeId(typeof(int)) }));
@@ -371,7 +371,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
                 new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int))),
                 new SubscriptionsForType(MessageUtil.GetTypeId(typeof(double)), BindingKey.Empty)
             };
-            
+
             _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, now, subscriptionsForTypes));
 
             var addedSubscription = addedSubscriptions.ExpectedSingle();

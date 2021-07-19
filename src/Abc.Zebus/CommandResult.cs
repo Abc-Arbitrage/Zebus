@@ -38,11 +38,9 @@ namespace Abc.Zebus
 
         internal static ErrorStatus GetErrorStatus(IEnumerable<Exception> exceptions)
         {
-            var domainException = exceptions.FirstOrDefault() as DomainException;
-            if (domainException == null)
-                return ErrorStatus.UnknownError;
-
-            return new ErrorStatus(domainException.ErrorCode != 0 ? domainException.ErrorCode : ErrorStatus.UnknownError.Code, domainException.Message);
+            return exceptions.FirstOrDefault() is MessageProcessingException ex
+                ? new ErrorStatus(ex.ErrorCode, ex.Message)
+                : ErrorStatus.UnknownError;
         }
     }
 }

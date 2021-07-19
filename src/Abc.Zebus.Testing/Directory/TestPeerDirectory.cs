@@ -11,21 +11,32 @@ namespace Abc.Zebus.Testing.Directory
 {
     public class TestPeerDirectory : IPeerDirectory
     {
-        public readonly ConcurrentDictionary<PeerId, PeerDescriptor> Peers = new ConcurrentDictionary<PeerId, PeerDescriptor>();
-        public Peer Self = default!;
-        private readonly Peer _remote = new Peer(new PeerId("remote"), "endpoint");
-        private HashSet<Type> _typesToObserve = new HashSet<Type>();
+        private Subscription[] _initialSubscriptions = Array.Empty<Subscription>();
+        private readonly Dictionary<MessageTypeId, SubscriptionsForType> _dynamicSubscriptions = new Dictionary<MessageTypeId, SubscriptionsForType>();
+
+        public TestPeerDirectory()
+        {
+        }
 
         public event Action Registered = delegate { };
         public event Action<PeerId, PeerUpdateAction> PeerUpdated = delegate { };
         public event Action<PeerId, IReadOnlyList<Subscription>> PeerSubscriptionsUpdated = delegate { };
 
+        public ConcurrentDictionary<PeerId, PeerDescriptor> Peers { get; } = new ConcurrentDictionary<PeerId, PeerDescriptor>();
+        public Peer? Self { get; private set; }
+
         public TimeSpan TimeSinceLastPing => TimeSpan.Zero;
 
         public Task RegisterAsync(IBus bus, Peer self, IEnumerable<Subscription> subscriptions)
         {
+            var subscriptionArray = subscriptions.ToArray();
+
             Self = self;
-            Peers[self.Id] = self.ToPeerDescriptor(true, subscriptions);
+            Self.IsResponding = true;
+            Self.IsUp = true;
+            Peers[self.Id] = self.ToPeerDescriptor(true, subscriptionArray);
+
+            _initialSubscriptions = subscriptionArray;
 
             Registered();
             return Task.CompletedTask;
@@ -33,21 +44,31 @@ namespace Abc.Zebus.Testing.Directory
 
         public Task UpdateSubscriptionsAsync(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
         {
-            var newSubscriptions = SubscriptionsForType.CreateDictionary(Peers[Self.Id].Subscriptions);
             foreach (var subscriptionsForType in subscriptionsForTypes)
-                newSubscriptions[subscriptionsForType.MessageTypeId] = subscriptionsForType;
+            {
+                _dynamicSubscriptions[subscriptionsForType.MessageTypeId] = subscriptionsForType;
+            }
 
-            Peers[Self.Id] = Self.ToPeerDescriptor(true, newSubscriptions.Values.SelectMany(subForType => subForType.ToSubscriptions()));
+            var newSubscriptions = _initialSubscriptions.Concat(_dynamicSubscriptions.SelectMany(x => x.Value.ToSubscriptions()));
+
+            Peers[Self!.Id] = Self.ToPeerDescriptor(true, newSubscriptions);
             PeerUpdated(Self.Id, PeerUpdateAction.Updated);
             return Task.CompletedTask;
         }
 
         public Task UnregisterAsync(IBus bus)
         {
-            PeerUpdated(Self.Id, PeerUpdateAction.Stopped);
+            _initialSubscriptions = Array.Empty<Subscription>();
+            _dynamicSubscriptions.Clear();
+
+            Peers[Self!.Id] = Self.ToPeerDescriptor(true);
+            PeerUpdated(Self!.Id, PeerUpdateAction.Stopped);
             return Task.CompletedTask;
         }
 
+        private readonly Peer _remote = new Peer(new PeerId("remote"), "endpoint");
+
+        [Obsolete("Use SetupPeer(new PeerId(\"Abc.Remote.0\"), Subscription.Any<TMessage>()) instead")]
         public void RegisterRemoteListener<TMessage>()
             where TMessage : IMessage
         {
@@ -82,7 +103,6 @@ namespace Abc.Zebus.Testing.Directory
 
         public void EnableSubscriptionsUpdatedFor(IEnumerable<Type> types)
         {
-            _typesToObserve = new HashSet<Type>(types);
         }
 
         public PeerDescriptor? GetPeerDescriptor(PeerId peerId)
@@ -95,6 +115,30 @@ namespace Abc.Zebus.Testing.Directory
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()
         {
             return Peers.Values;
+        }
+
+        public IEnumerable<Subscription> GetSelfSubscriptions()
+        {
+            return Self != null && GetPeerDescriptor(Self.Id) is { } descriptor
+                ? descriptor.Subscriptions
+                : Array.Empty<Subscription>();
+        }
+
+        public void SetupPeer(PeerId peerId, params Subscription[] subscriptions)
+        {
+            var peerNumber = Peers.Count;
+            var randomPort = 10000 + Peers.Count;
+            SetupPeer(new Peer(peerId, $"tcp://testing-peer-{peerNumber}:{randomPort}"), subscriptions);
+        }
+
+        public void SetupPeer(Peer peer, params Subscription[] subscriptions)
+        {
+            var descriptor = Peers.GetOrAdd(peer.Id, _ => peer.ToPeerDescriptor(true));
+            descriptor.Peer.IsResponding = peer.IsResponding;
+            descriptor.Peer.IsUp = peer.IsUp;
+            descriptor.Peer.EndPoint = peer.EndPoint;
+            descriptor.TimestampUtc = DateTime.UtcNow;
+            descriptor.Subscriptions = subscriptions;
         }
     }
 }

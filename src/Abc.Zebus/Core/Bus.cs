@@ -9,7 +9,6 @@ using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
 using Abc.Zebus.Persistence;
-using Abc.Zebus.Routing;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Subscriptions;
 using Abc.Zebus.Transport;
@@ -22,13 +21,14 @@ namespace Abc.Zebus.Core
 {
     public class Bus : IInternalBus, IMessageDispatchFactory
     {
-        private static readonly BusMessageLogger _messageLogger = new BusMessageLogger(typeof(Bus));
+        private static readonly BusMessageLogger _messageLogger = new(typeof(Bus));
         private static readonly ILog _logger = LogManager.GetLogger(typeof(Bus));
 
-        private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>>();
-        private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new UniqueTimestampProvider();
-        private readonly Dictionary<Subscription, int> _subscriptions = new Dictionary<Subscription, int>();
-        private readonly HashSet<MessageTypeId> _pendingUnsubscriptions = new HashSet<MessageTypeId>();
+        private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new();
+        private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new();
+        private readonly Dictionary<Subscription, SubscriptionStatus> _subscriptions = new();
+        private readonly List<IMessageHandlerInvoker> _startupInvokers = new();
+        private readonly HashSet<MessageTypeId> _pendingUnsubscriptions = new();
         private readonly ITransport _transport;
         private readonly IPeerDirectory _directory;
         private readonly IMessageSerializer _serializer;
@@ -108,7 +108,8 @@ namespace Abc.Zebus.Core
                 _logger.DebugFormat("Loading invokers...");
                 _messageDispatcher.LoadMessageHandlerInvokers();
 
-                PerformAutoSubscribe();
+                _logger.DebugFormat("Performing startup subscribe...");
+                PerformStartupSubscribe();
 
                 _logger.DebugFormat("Starting transport...");
                 _transport.Start();
@@ -135,18 +136,28 @@ namespace Abc.Zebus.Core
             Started?.Invoke();
         }
 
-        private void PerformAutoSubscribe()
+        private void PerformStartupSubscribe()
         {
-            _logger.DebugFormat("Performing auto subscribe...");
-
-            var autoSubscribeInvokers = _messageDispatcher.GetMessageHandlerInvokers().Where(x => x.ShouldBeSubscribedOnStartup).ToList();
+            var autoSubscribeInvokers = _messageDispatcher.GetMessageHandlerInvokers()
+                                                          .Where(x => x.ShouldBeSubscribedOnStartup)
+                                                          .ToList();
 
             lock (_subscriptions)
             {
                 foreach (var invoker in autoSubscribeInvokers)
                 {
-                    var subscription = new Subscription(invoker.MessageTypeId);
-                    _subscriptions[subscription] = 1 + _subscriptions.GetValueOrDefault(subscription);
+                    var status = GetOrAddSubscriptionStatus(new Subscription(invoker.MessageTypeId));
+                    status.CurrentSubscriptionCount++;
+                }
+
+                foreach (var status in _subscriptions.Values)
+                {
+                    status.CurrentSubscriptionCount += status.StartupSubscriptionCount;
+                }
+
+                foreach (var invoker in _startupInvokers)
+                {
+                    _messageDispatcher.AddInvoker(invoker);
                 }
             }
         }
@@ -155,8 +166,21 @@ namespace Abc.Zebus.Core
         {
             lock (_subscriptions)
             {
-                return _subscriptions.Keys.ToList();
+                return _subscriptions.Where(i => i.Value.CurrentSubscriptionCount > 0)
+                                     .Select(i => i.Key)
+                                     .ToList();
             }
+        }
+
+        private SubscriptionStatus GetOrAddSubscriptionStatus(Subscription subscription)
+        {
+            if (!_subscriptions.TryGetValue(subscription, out var status))
+            {
+                status = new SubscriptionStatus();
+                _subscriptions.Add(subscription, status);
+            }
+
+            return status;
         }
 
         public virtual void Stop()
@@ -197,7 +221,14 @@ namespace Abc.Zebus.Core
 
             lock (_subscriptions)
             {
-                _subscriptions.Clear();
+                foreach (var (subscription, status) in _subscriptions.ToList())
+                {
+                    status.CurrentSubscriptionCount = 0;
+
+                    if (status.IsEmpty)
+                        _subscriptions.Remove(subscription);
+                }
+
                 _pendingUnsubscriptions.Clear();
                 _processPendingUnsubscriptionsTask = null;
 
@@ -311,14 +342,15 @@ namespace Abc.Zebus.Core
 
         public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request)
         {
-            ValidateSubscriptionRequest(request);
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
 
-            if (!request.ThereIsNoHandlerButIKnowWhatIAmDoing)
+            if (IsRunning && !request.ThereIsNoHandlerButIKnowWhatIAmDoing)
                 EnsureMessageHandlerInvokerExists(request.Subscriptions);
 
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(_subscriptionsVersion, IsRunning);
 
-            if (request.Batch != null)
+            if (!request.IsStartupRequest && request.Batch != null)
                 await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
 
             await AddSubscriptionsAsync(request).ConfigureAwait(false);
@@ -328,12 +360,13 @@ namespace Abc.Zebus.Core
 
         public async Task<IDisposable> SubscribeAsync(SubscriptionRequest request, Action<IMessage> handler)
         {
-            ValidateSubscriptionRequest(request);
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
 
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
 
-            request.MarkAsSubmitted();
+            request.MarkAsSubmitted(_subscriptionsVersion, IsRunning);
 
             var eventHandlerInvokers = request.Subscriptions
                                               .GroupBy(x => x.MessageTypeId)
@@ -344,30 +377,39 @@ namespace Abc.Zebus.Core
                                                       ))
                                               .ToList();
 
-            if (request.Batch != null)
-                await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
+            if (request.IsStartupRequest)
+            {
+                lock (_subscriptions)
+                {
+                    _startupInvokers.AddRange(eventHandlerInvokers);
+                }
+            }
+            else
+            {
+                if (request.Batch != null)
+                    await request.Batch.WhenSubmittedAsync().ConfigureAwait(false);
 
-            foreach (var eventHandlerInvoker in eventHandlerInvokers)
-                _messageDispatcher.AddInvoker(eventHandlerInvoker);
+                foreach (var eventHandlerInvoker in eventHandlerInvokers)
+                    _messageDispatcher.AddInvoker(eventHandlerInvoker);
+            }
 
             await AddSubscriptionsAsync(request).ConfigureAwait(false);
 
             return new DisposableAction(() =>
             {
+                if (request.IsStartupRequest)
+                {
+                    lock (_subscriptions)
+                    {
+                        _startupInvokers.RemoveRange(eventHandlerInvokers);
+                    }
+                }
+
                 foreach (var eventHandlerInvoker in eventHandlerInvokers)
                     _messageDispatcher.RemoveInvoker(eventHandlerInvoker);
 
                 RemoveSubscriptions(request);
             });
-        }
-
-        private void ValidateSubscriptionRequest(SubscriptionRequest request)
-        {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-
-            if (!IsRunning)
-                throw new InvalidOperationException("Cannot perform a subscription, the bus is not running");
         }
 
         private void EnsureMessageHandlerInvokerExists(IEnumerable<Subscription> subscriptions)
@@ -381,7 +423,20 @@ namespace Abc.Zebus.Core
 
         private async Task AddSubscriptionsAsync(SubscriptionRequest request)
         {
-            request.SubmissionSubscriptionsVersion = _subscriptionsVersion;
+            if (request.IsStartupRequest)
+            {
+                lock (_subscriptions)
+                {
+                    foreach (var subscription in request.Subscriptions)
+                    {
+                        var status = GetOrAddSubscriptionStatus(subscription);
+                        status.StartupSubscriptionCount++;
+                    }
+
+                    if (!IsRunning)
+                        return;
+                }
+            }
 
             if (request.Batch != null)
             {
@@ -411,8 +466,8 @@ namespace Abc.Zebus.Core
 
             async Task SendSubscriptionsAsync(IEnumerable<Subscription> subscriptions)
             {
-                if (!IsRunning)
-                    throw new InvalidOperationException("Cannot perform a subscription, the bus is not running");
+                if (request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                    throw new InvalidOperationException("The bus has been stopped before the subscriptions have been sent");
 
                 var updatedTypes = new HashSet<MessageTypeId>();
 
@@ -420,10 +475,10 @@ namespace Abc.Zebus.Core
                 {
                     foreach (var subscription in subscriptions)
                     {
-                        var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
-                        _subscriptions[subscription] = subscriptionCount + 1;
+                        var status = GetOrAddSubscriptionStatus(subscription);
+                        status.CurrentSubscriptionCount++;
 
-                        if (subscriptionCount <= 0)
+                        if (status.CurrentSubscriptionCount <= 1)
                             updatedTypes.Add(subscription.MessageTypeId);
                     }
                 }
@@ -461,25 +516,43 @@ namespace Abc.Zebus.Core
 
         private void RemoveSubscriptions(SubscriptionRequest request)
         {
-            if (!IsRunning)
-                return;
-
             lock (_subscriptions)
             {
-                if (request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
-                    return;
+                if (request.IsStartupRequest)
+                {
+                    foreach (var subscription in request.Subscriptions)
+                    {
+                        if (!_subscriptions.TryGetValue(subscription, out var status))
+                            continue;
+
+                        status.StartupSubscriptionCount--;
+
+                        if (status.IsEmpty)
+                            _subscriptions.Remove(subscription);
+                    }
+
+                    if (!IsRunning)
+                        return;
+                }
+                else
+                {
+                    if (!IsRunning || request.SubmissionSubscriptionsVersion != _subscriptionsVersion)
+                        return;
+                }
 
                 foreach (var subscription in request.Subscriptions)
                 {
-                    var subscriptionCount = _subscriptions.GetValueOrDefault(subscription);
-                    if (subscriptionCount <= 1)
+                    if (!_subscriptions.TryGetValue(subscription, out var status))
+                        continue;
+
+                    status.CurrentSubscriptionCount--;
+
+                    if (status.CurrentSubscriptionCount <= 0)
                     {
-                        _subscriptions.Remove(subscription);
+                        if (status.IsEmpty)
+                            _subscriptions.Remove(subscription);
+
                         _pendingUnsubscriptions.Add(subscription.MessageTypeId);
-                    }
-                    else
-                    {
-                        _subscriptions[subscription] = subscriptionCount - 1;
                     }
                 }
 
@@ -627,7 +700,7 @@ namespace Abc.Zebus.Core
 
         private void HandleDispatchErrors(MessageDispatch dispatch, DispatchResult dispatchResult, TransportMessage? failingTransportMessage = null)
         {
-            if (!_configuration.IsErrorPublicationEnabled || !IsRunning || dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is DomainException))
+            if (!_configuration.IsErrorPublicationEnabled || !IsRunning || dispatchResult.Errors.Count == 0 || dispatchResult.Errors.All(error => error is MessageProcessingException { ShouldPublishError: false }))
                 return;
 
             var errorMessages = dispatchResult.Errors.Select(error => error.ToString());
@@ -635,8 +708,7 @@ namespace Abc.Zebus.Core
 
             try
             {
-                if (failingTransportMessage == null)
-                    failingTransportMessage = ToTransportMessage(dispatch.Message);
+                failingTransportMessage ??= ToTransportMessage(dispatch.Message);
             }
             catch (Exception ex)
             {
@@ -842,6 +914,14 @@ namespace Abc.Zebus.Core
             Stopping,
             Starting,
             Started
+        }
+
+        private class SubscriptionStatus
+        {
+            public int CurrentSubscriptionCount;
+            public int StartupSubscriptionCount;
+
+            public bool IsEmpty => CurrentSubscriptionCount <= 0 && StartupSubscriptionCount <= 0;
         }
     }
 }

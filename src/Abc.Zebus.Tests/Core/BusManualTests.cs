@@ -82,16 +82,15 @@ namespace Abc.Zebus.Tests.Core
         [Test]
         public void should_generate_unacked_messages()
         {
-            var targetConfig = new Mock<IBusConfiguration>();
-            targetConfig.SetupGet(x => x.DirectoryServiceEndPoints).Returns(new[] { _directoryEndPoint });
-            targetConfig.SetupGet(x => x.IsPersistent).Returns(true);
-            targetConfig.SetupGet(x => x.RegistrationTimeout).Returns(30.Seconds());
-            targetConfig.SetupGet(x => x.StartReplayTimeout).Returns(30.Seconds());
+            var targetConfig = new BusConfiguration(_directoryEndPoint)
+            {
+                IsPersistent = true,
+            };
 
             var target = CreateBusFactory().WithHandlers(typeof(ManualEventHandler))
-                                                  .WithConfiguration(targetConfig.Object, "Demo")
-                                                  .WithPeerId("Some.Random.Persistent.Peer.0")
-                                                  .CreateAndStartBus();
+                                           .WithConfiguration(targetConfig, "Demo")
+                                           .WithPeerId("Some.Random.Persistent.Peer.0")
+                                           .CreateAndStartBus();
             using (var source = CreateBusFactory().CreateAndStartBus())
             {
                 source.Publish(new ManualEvent(42));

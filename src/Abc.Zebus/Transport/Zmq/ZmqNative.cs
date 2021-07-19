@@ -25,7 +25,7 @@ namespace Abc.Zebus.Transport.Zmq
             {
                 // Used in the .NET Framework, and in .NET Core unit tests
                 return Environment.Is64BitProcess
-                    ? (LibImpl)new Win64Impl()
+                    ? new Win64Impl()
                     : new Win32Impl();
             }
         }

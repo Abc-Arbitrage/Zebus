@@ -21,7 +21,7 @@ namespace Abc.Zebus.Tests.Core
                 base.Setup();
 
                 _bus.DeserializationFailureDumpDirectoryPath = PathUtil.InBaseDirectory(Guid.NewGuid().ToString().Substring(0, 4));
-                _configuration.SetupGet(x => x.IsErrorPublicationEnabled).Returns(true);
+                _configuration.IsErrorPublicationEnabled = true;
             }
 
             [Test]
@@ -58,7 +58,7 @@ namespace Abc.Zebus.Tests.Core
             [Test]
             public void should_send_MessageProcessingFailed_when_error_publication_os_not_enabled()
             {
-                _configuration.SetupGet(x => x.IsErrorPublicationEnabled).Returns(false);
+                _configuration.IsErrorPublicationEnabled = false;
 
                 SetupPeersHandlingMessage<MessageProcessingFailed>(_peerUp);
 

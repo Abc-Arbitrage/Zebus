@@ -42,11 +42,11 @@ namespace Abc.Zebus.Tests.Testing
         }
 
         [Test]
-        public async Task should_handle_domain_exception_with_async_executor()
+        public async Task should_handle_message_processing_exception_with_async_executor()
         {
             // Arrange
             var bus = new TestBus { HandlerExecutor = new TestBus.AsyncHandlerExecutor() };
-            var exception = new DomainException(999, "Expected");
+            var exception = new MessageProcessingException("Expected") { ErrorCode = 999 };
             bus.AddHandlerThatThrows<FakeCommand>(exception);
 
             // Act

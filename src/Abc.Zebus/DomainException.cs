@@ -9,10 +9,8 @@ using Abc.Zebus.Util.Extensions;
 namespace Abc.Zebus
 {
     [Serializable]
-    public class DomainException : Exception
+    public class DomainException : MessageProcessingException
     {
-        public int ErrorCode { get; private set; }
-
         public DomainException(Exception? innerException, int errorCode, string message)
             : base(message, innerException)
         {

@@ -1,6 +1,6 @@
-﻿using Abc.Zebus.Initialization;
+﻿using Abc.Zebus.Core;
+using Abc.Zebus.Initialization;
 using Abc.Zebus.Transport;
-using Moq;
 using NUnit.Framework;
 using StructureMap;
 
@@ -12,16 +12,13 @@ namespace Abc.Zebus.Tests.Initialization
         [Test]
         public void should_have_valid_configuration()
         {
-            var busConfigurationMock = new Mock<IBusConfiguration>();
-            busConfigurationMock.SetupAllProperties();
-
-            var transportConfigurationMock = new Mock<IZmqTransportConfiguration>();
-            transportConfigurationMock.SetupAllProperties();
+            var busConfiguration = new BusConfiguration(new[] { "tcp://zebus-directory:123" });
+            var transportConfiguration = new ZmqTransportConfiguration();
 
             var container = new Container(cfg =>
             {
-                cfg.For<IBusConfiguration>().Use(busConfigurationMock.Object);
-                cfg.For<IZmqTransportConfiguration>().Use(transportConfigurationMock.Object);
+                cfg.For<IBusConfiguration>().Use(busConfiguration);
+                cfg.For<IZmqTransportConfiguration>().Use(transportConfiguration);
                 cfg.AddRegistry<ZebusRegistry>();
             });
 
