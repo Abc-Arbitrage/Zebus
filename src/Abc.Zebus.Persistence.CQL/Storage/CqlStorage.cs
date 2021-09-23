@@ -21,7 +21,7 @@ namespace Abc.Zebus.Persistence.CQL.Storage
     {
         private const int _maxParallelInsertTasks = 64;
         private static readonly ILog _log = LogManager.GetLogger(typeof(CqlStorage));
-        private static readonly DateTime _unixOrigin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+        private static readonly DateTime _unixOrigin = new(1970, 1, 1, 0, 0, 0, 0);
 
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly PeerStateRepository _peerStateRepository;
@@ -89,14 +89,16 @@ namespace Abc.Zebus.Persistence.CQL.Storage
 
                 var messageDateTime = matcherEntry.MessageId.GetDateTimeForV2OrV3();
                 var rowTimestamp = matcherEntry.IsAck ? messageDateTime.AddTicks(10) : messageDateTime;
-                var boundStatement = _preparedStatement.Bind(matcherEntry.PeerId.ToString(),
-                                                             BucketIdHelper.GetBucketId(messageDateTime),
-                                                             messageDateTime.Ticks,
-                                                             matcherEntry.MessageId.Value,
-                                                             matcherEntry.IsAck,
-                                                             matcherEntry.MessageBytes,
-                                                             (int)PeerState.MessagesTimeToLive.TotalSeconds,
-                                                             ToUnixMicroSeconds(rowTimestamp));
+                var boundStatement = _preparedStatement.Bind(
+                    BucketIdHelper.GetBucketId(messageDateTime),
+                    matcherEntry.IsAck,
+                    matcherEntry.MessageId.Value,
+                    matcherEntry.PeerId.ToString(),
+                    matcherEntry.MessageBytes,
+                    messageDateTime.Ticks,
+                    (int)PeerState.MessagesTimeToLive.TotalSeconds,
+                    ToUnixMicroSeconds(rowTimestamp)
+                );
 
                 var insertTask = _dataContext.Session.ExecuteAsync(boundStatement);
                 insertTasks.Add(insertTask);
