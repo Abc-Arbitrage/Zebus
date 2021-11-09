@@ -68,7 +68,6 @@ namespace Abc.Zebus.Transport
             var socket = new ZmqSocket(_context, ZmqSocketType.PULL);
             socket.SetOption(ZmqSocketOption.RCVHWM, _options.ReceiveHighWaterMark);
             socket.SetOption(ZmqSocketOption.RCVTIMEO, (int)_options.ReceiveTimeout.TotalMilliseconds);
-            socket.SetOption(ZmqSocketOption.ROUTING_ID, Encoding.ASCII.GetBytes(_peerId.ToString()));
 
             _lastReceiveTimeout = _options.ReceiveTimeout;
 
