@@ -2,17 +2,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Abc.Zebus.Directory.Cassandra.Storage;
 using Abc.Zebus.Routing;
 using ProtoBuf;
 
-namespace Abc.Zebus.Directory.Cassandra.Storage
+namespace Abc.Zebus.Directory.Cassandra.Data
 {
-    public static class StorageConversionExtensions
+    public static class CassandraExtensions
     {
-        public static StoragePeer ToStoragePeer(this PeerDescriptor peerDescriptor)
+        public static CassandraPeer ToCassandra(this PeerDescriptor peerDescriptor)
         {
             var timestamp = peerDescriptor.TimestampUtc.HasValue ? new DateTime(peerDescriptor.TimestampUtc.Value.Ticks, DateTimeKind.Utc) : DateTime.UtcNow;
-            return new StoragePeer
+            return new CassandraPeer
             {
                 PeerId = peerDescriptor.PeerId.ToString(),
                 EndPoint = peerDescriptor.Peer.EndPoint,
@@ -25,9 +26,9 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             };
         }
 
-        public static StorageSubscription ToStorageSubscription(this SubscriptionsForType subscriptionFortype, PeerId peerId)
+        public static CassandraSubscription ToCassandra(this SubscriptionsForType subscriptionFortype, PeerId peerId)
         {
-            return new StorageSubscription
+            return new CassandraSubscription
             {
                 PeerId = peerId.ToString(),
                 MessageTypeId = subscriptionFortype.MessageTypeId.FullName!,
@@ -35,40 +36,43 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
             };
         }
 
-        public static SubscriptionsForType ToSubscriptionsForType(this StorageSubscription storageSubscription)
+        public static SubscriptionsForType ToSubscriptionsForType(this CassandraSubscription subscription)
         {
-            return new SubscriptionsForType(new MessageTypeId(storageSubscription.MessageTypeId), DeserializeBindingKeys(storageSubscription.SubscriptionBindings));
+            return new SubscriptionsForType(
+                new MessageTypeId(subscription.MessageTypeId),
+                DeserializeBindingKeys(subscription.SubscriptionBindings)
+            );
         }
 
-        public static PeerDescriptor? ToPeerDescriptor(this StoragePeer? storagePeer, IEnumerable<Subscription> peerDynamicSubscriptions)
+        public static PeerDescriptor? ToPeerDescriptor(this CassandraPeer? peer, IEnumerable<Subscription> peerDynamicSubscriptions)
         {
-            if (storagePeer?.StaticSubscriptionsBytes == null)
+            if (peer?.StaticSubscriptionsBytes == null)
                 return null;
 
-            var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
+            var staticSubscriptions = DeserializeSubscriptions(peer.StaticSubscriptionsBytes);
             var allSubscriptions = staticSubscriptions.Concat(peerDynamicSubscriptions).Distinct().ToArray();
-            return new PeerDescriptor(new PeerId(storagePeer.PeerId),
-                                      storagePeer.EndPoint,
-                                      storagePeer.IsPersistent,
-                                      storagePeer.IsUp,
-                                      storagePeer.IsResponding,
-                                      new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc),
-                                      allSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+            return new PeerDescriptor(new PeerId(peer.PeerId),
+                                      peer.EndPoint,
+                                      peer.IsPersistent,
+                                      peer.IsUp,
+                                      peer.IsResponding,
+                                      new DateTime(peer.TimestampUtc.Ticks, DateTimeKind.Utc),
+                                      allSubscriptions) { HasDebuggerAttached = peer.HasDebuggerAttached };
         }
 
-        public static PeerDescriptor? ToPeerDescriptor(this StoragePeer? storagePeer)
+        public static PeerDescriptor? ToPeerDescriptor(this CassandraPeer? peer)
         {
-            if (storagePeer == null)
+            if (peer == null)
                 return null;
 
-            var staticSubscriptions = DeserializeSubscriptions(storagePeer.StaticSubscriptionsBytes);
-            return new PeerDescriptor(new PeerId(storagePeer.PeerId),
-                                      storagePeer.EndPoint,
-                                      storagePeer.IsPersistent,
-                                      storagePeer.IsUp,
-                                      storagePeer.IsResponding,
-                                      new DateTime(storagePeer.TimestampUtc.Ticks, DateTimeKind.Utc),
-                                      staticSubscriptions) { HasDebuggerAttached = storagePeer.HasDebuggerAttached };
+            var staticSubscriptions = DeserializeSubscriptions(peer.StaticSubscriptionsBytes);
+            return new PeerDescriptor(new PeerId(peer.PeerId),
+                                      peer.EndPoint,
+                                      peer.IsPersistent,
+                                      peer.IsUp,
+                                      peer.IsResponding,
+                                      new DateTime(peer.TimestampUtc.Ticks, DateTimeKind.Utc),
+                                      staticSubscriptions) { HasDebuggerAttached = peer.HasDebuggerAttached };
         }
 
         private static byte[] SerializeSubscriptions(Subscription[] subscriptions)

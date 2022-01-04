@@ -1,4 +1,5 @@
 ﻿using Abc.Zebus.Directory.Cassandra.Cql;
+using Abc.Zebus.Directory.Cassandra.Data;
 using Cassandra.Data.Linq;
 
 namespace Abc.Zebus.Directory.Cassandra.Storage
@@ -10,7 +11,7 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
         {
         }
 
-        public Table<StorageSubscription> DynamicSubscriptions => new Table<StorageSubscription>(Session);
-        public Table<StoragePeer> StoragePeers => new Table<StoragePeer>(Session);
+        public Table<CassandraSubscription> DynamicSubscriptions => new(Session);
+        public Table<CassandraPeer> Peers => new (Session);
     }
 }

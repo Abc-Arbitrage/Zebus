@@ -1,6 +1,9 @@
-﻿using Abc.Zebus.Directory.Cassandra.Cql;
+﻿using System;
+using System.Linq;
+using System.Threading;
+using Abc.Zebus.Directory.Cassandra.Cql;
+using Abc.Zebus.Directory.Cassandra.Data;
 using Abc.Zebus.Directory.Cassandra.Storage;
-using Abc.Zebus.Directory.Cassandra.Tests.Cql;
 using Abc.Zebus.Directory.Tests;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
@@ -8,11 +11,8 @@ using Abc.Zebus.Util;
 using Cassandra;
 using Cassandra.Data.Linq;
 using NUnit.Framework;
-using System;
-using System.Linq;
-using System.Threading;
 
-namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
+namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
 {
     [TestFixture]
     public partial class CqlPeerRepositoryTests : CqlTestFixture<DirectoryDataContext, ICassandraConfiguration>
@@ -159,11 +159,6 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             fetched.ShouldNotBeNull();
         }
 
-        private static DateTime GetUnspecifiedKindUtcNow()
-        {
-            return new DateTime(SystemDateTime.UtcNow.RoundToMillisecond().Ticks, DateTimeKind.Unspecified);
-        }
-
         [Test]
         public void should_insert_a_peer_with_no_timestamp_that_was_previously_deleted()
         {
@@ -206,16 +201,21 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             descriptor.TimestampUtc = DateTime.UtcNow;
             _repository.AddOrUpdatePeer(descriptor);
 
-            DataContext.StoragePeers
+            DataContext.Peers
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                        .Where(peer => peer.UselessKey == false && peer.PeerId == "Abc.DecommissionnedPeer.0")
-                        .Select(peer => new StoragePeer { StaticSubscriptionsBytes  = null, IsResponding = false, IsPersistent = false, HasDebuggerAttached = false, IsUp = false })
+                        .Where(peer => peer.PeerId == "Abc.DecommissionedPeer.0")
+                        .Select(peer => new CassandraPeer { StaticSubscriptionsBytes  = null, IsResponding = false, IsPersistent = false, HasDebuggerAttached = false, IsUp = false })
                         .Update()
                         .SetTimestamp(DateTime.UtcNow)
                         .Execute();
 
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().PeerId.ShouldEqual(_peer1.Id);
+        }
+
+        private static DateTime GetUnspecifiedKindUtcNow()
+        {
+            return new DateTime(SystemDateTime.UtcNow.RoundToMillisecond().Ticks, DateTimeKind.Unspecified);
         }
     }
 }

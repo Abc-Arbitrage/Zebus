@@ -4,14 +4,13 @@ using System.Diagnostics;
 using System.Linq;
 using Abc.Zebus.Directory.Cassandra.Cql;
 using Abc.Zebus.Directory.Cassandra.Storage;
-using Abc.Zebus.Directory.Cassandra.Tests.Cql;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Measurements;
 using Cassandra;
 using NUnit.Framework;
 
-namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
+namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
 {
     [TestFixture]
     [Ignore("Performance tests")]
@@ -27,7 +26,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             const int numberOfPeersToInsert = 30;
             var repo = new CqlPeerRepository(DataContext);
             var subscriptionForTypes = Get10MessageTypesWith800BindingKeysEach();
-            
+
             for (var i = 0; i < numberOfPeersToInsert; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
@@ -50,7 +49,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
             Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
             var repo = new CqlPeerRepository(DataContext);
             var subscriptionForTypes = Get1MessageTypesWith100000BindingKeys();
-            
+
 
             var stopwatch = Stopwatch.StartNew();
             repo.AddOrUpdatePeer(new PeerDescriptor(new PeerId("Abc.Peer.0"), "tcp://toto:123", true, true, true, DateTime.UtcNow));

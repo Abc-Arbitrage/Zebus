@@ -1,16 +1,12 @@
 ﻿using System;
 using Cassandra.Mapping.Attributes;
 
-namespace Abc.Zebus.Directory.Cassandra.Storage
+namespace Abc.Zebus.Directory.Cassandra.Data
 {
-    [Table("Peers", CaseSensitive = true)]
-    public class StoragePeer
+    [Table("Peers_2", CaseSensitive = true)]
+    public class CassandraPeer
     {
-        [PartitionKey]
-        public bool UselessKey { get; set; }
-
-        [ClusteringKey(0)]
-        [Column("PeerId")]
+        [PartitionKey, Column("PeerId")]
         public string PeerId { get; set; } = default!;
 
         [Column("EndPoint")]
@@ -33,5 +29,6 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         [Column("StaticSubscriptions")]
         public byte[] StaticSubscriptionsBytes { get; set; } = default!;
+
     }
 }

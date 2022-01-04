@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Abc.Zebus.Directory.Tests;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
@@ -7,9 +8,8 @@ using Abc.Zebus.Util;
 using Cassandra;
 using Cassandra.Data.Linq;
 using NUnit.Framework;
-using System;
 
-namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
+namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
 {
     public partial class CqlPeerRepositoryTests
     {
@@ -40,22 +40,6 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
         }
 
         [Test]
-        public void should_not_crash_when_passing_null_subscriptions_array_to_AddDynamicSubscriptions()
-        {
-            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
-
-            Assert.DoesNotThrow(() => _repository.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
-        }
-
-        [Test]
-        public void should_not_crash_when_passing_null_subscriptions_array_to_RemoveDynamicSubscriptions()
-        {
-            var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
-
-            Assert.DoesNotThrow(() => _repository.RemoveDynamicSubscriptionsForTypes(peerDescriptor.PeerId, peerDescriptor.TimestampUtc.Value, null));
-        }
-
-        [Test]
         public void should_remove_dynamic_subscriptions()
         {
             var peerDescriptor = _peer1.ToPeerDescriptorWithRoundedTime(true, typeof(FakeCommand));
@@ -78,9 +62,10 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Storage
 			_repository.RemovePeer(peerDescriptor.PeerId);
 
             _repository.Get(peerDescriptor.PeerId).ShouldBeNull();
+
             var retrievedSubscriptions = DataContext.DynamicSubscriptions
                                                     .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
-                                                    .Where(sub => sub.UselessKey == false && sub.PeerId == peerDescriptor.PeerId.ToString())
+                                                    .Where(s => s.PeerId == peerDescriptor.PeerId.ToString())
                                                     .Execute();
 			retrievedSubscriptions.ShouldBeEmpty();
         }
