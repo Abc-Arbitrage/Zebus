@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Abc.Zebus.Persistence.CQL\Abc.Zebus.Persistence.CQL.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Cassandra\Abc.Zebus.Persistence.Cassandra.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Persistence.RocksDb\Abc.Zebus.Persistence.RocksDb.csproj" />
   </ItemGroup>
 
