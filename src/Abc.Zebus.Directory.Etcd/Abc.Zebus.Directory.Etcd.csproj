@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Abc.Zebus.Directory\Abc.Zebus.Directory.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="dotnet-etcd" Version="5.1.0" />
+    </ItemGroup>
+
+</Project>

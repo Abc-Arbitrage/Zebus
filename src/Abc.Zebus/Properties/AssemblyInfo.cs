@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Cassandra")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Cassandra.Tests")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Directory.Etcd")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.RocksDb")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.RocksDb.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Directory.Runner")]
