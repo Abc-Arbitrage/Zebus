@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net48;net5.0</TargetFrameworks>
+    <Version>$(ZebusPersistenceVersion)</Version>
+    <RootNamespace>Abc.Zebus.Persistence.Cassandra.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <Import Project="..\Abc.Zebus.Tests.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Cassandra.Testing\Abc.Zebus.Persistence.Cassandra.Testing.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Abc.Zebus.Testing\Abc.Zebus.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

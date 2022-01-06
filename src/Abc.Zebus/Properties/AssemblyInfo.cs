@@ -21,8 +21,8 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Abc.Zebus.DirectoryService.Tests")]
 
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence")]
-[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL")]
-[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.CQL.Tests")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.Cassandra")]
+[assembly: InternalsVisibleTo("Abc.Zebus.Persistence.Cassandra.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.RocksDb")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.RocksDb.Tests")]
 [assembly: InternalsVisibleTo("Abc.Zebus.Persistence.Tests")]

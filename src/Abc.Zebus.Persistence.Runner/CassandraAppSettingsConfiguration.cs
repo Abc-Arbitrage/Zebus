@@ -1,5 +1,5 @@
 ﻿using System;
-using Abc.Zebus.Persistence.CQL;
+using Abc.Zebus.Persistence.Cassandra;
 using FluentDate;
 
 namespace Abc.Zebus.Persistence.Runner
