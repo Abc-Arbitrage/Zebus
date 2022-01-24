@@ -35,8 +35,9 @@ namespace Abc.Zebus.Transport
 
         public string GetSenderMachineNameFromEndPoint()
         {
-            var uri = new Uri(SenderEndPoint);
-            return uri.Host;
+            var host = new Uri(SenderEndPoint).Host;
+            var separatorIndex = host.IndexOf('.');
+            return separatorIndex >= 0 ? host.Substring(0, separatorIndex) : host;
         }
     }
 }
