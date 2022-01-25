@@ -90,6 +90,11 @@ namespace Abc.Zebus.Persistence
             return false;
         }
 
+        public void OnMessageAcked(MessageId messageId)
+        {
+            _unackedIds.Remove(messageId);
+        }
+
         public bool WaitForCompletion(TimeSpan timeout)
         {
             return _runThread?.Join(timeout) ?? true;
@@ -227,11 +232,6 @@ namespace Abc.Zebus.Persistence
         private TransportMessage ToTransportMessage(IMessage message, bool wasPersisted = false)
         {
             return new TransportMessage(message.TypeId(), _messageSerializer.Serialize(message), _self) { WasPersisted = wasPersisted };
-        }
-
-        public void Handle(MessageHandled messageHandled)
-        {
-            _unackedIds.Remove(messageHandled.MessageId);
         }
 
         private Lazy<TimeSpan> MeasureDuration()

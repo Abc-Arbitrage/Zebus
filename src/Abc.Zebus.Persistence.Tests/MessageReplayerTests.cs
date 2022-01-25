@@ -234,7 +234,7 @@ namespace Abc.Zebus.Persistence.Tests
                 {
                     while (_transport.Messages.Count > messageIndex && messageIndex < unackedTransportMessages.Count)
                     {
-                        _replayer.Handle(new MessageHandled(unackedTransportMessages[messageIndex].Id));
+                        _replayer.OnMessageAcked(unackedTransportMessages[messageIndex].Id);
                         messageIndex++;
                     }
 
