@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages;
 using Abc.Zebus.Tests.Messages;
+using Abc.Zebus.Util;
+using Abc.Zebus.Util.Extensions;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Dispatch.Pipes
@@ -94,7 +97,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             _message.Callback = x => order.Add(3);
 
             _invocation.Run();
-            
+
             order.Count.ShouldEqual(5);
             order.ShouldBeOrdered();
         }
@@ -109,10 +112,7 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
                 AfterCallback = x => exception = x.Exception
             });
 
-            _message.Callback = x =>
-            {
-                throw new ArgumentException("Foo");
-            };
+            _message.Callback = _ => throw new ArgumentException("Foo");
 
             Assert.Throws<ArgumentException>(() =>
             {
@@ -123,6 +123,40 @@ namespace Abc.Zebus.Tests.Dispatch.Pipes
             });
 
             exception.ShouldNotBeNull();
+        }
+
+        [Test]
+        public async Task should_get_exception_on_cancellation()
+        {
+            var invoker = new TestAsyncMessageHandlerInvoker<AsyncExecutableEvent>();
+            var message = new AsyncExecutableEvent
+            {
+                Callback = async _ =>
+                {
+                    await Task.Yield();
+                    throw new OperationCanceledException();
+                }
+            };
+
+            _invocation = new PipeInvocation(invoker, new List<IMessage> { message }, _messageContext, _pipes);
+            _handlerInvocation = _invocation;
+
+            var afterInvokeArgsTask = new TaskCompletionSource<AfterInvokeArgs>();
+
+            _pipes.Add(new TestPipe
+            {
+                AfterCallback = args => afterInvokeArgsTask.SetResult(args)
+            });
+
+            using (_handlerInvocation.SetupForInvocation())
+            {
+                Assert.ThrowsAsync<OperationCanceledException>(async () => await _invocation.RunAsync().WithTimeoutAsync(5.Seconds()));
+            }
+
+            var result = await afterInvokeArgsTask.Task.WithTimeoutAsync(5.Seconds());
+
+            result.IsFaulted.ShouldBeTrue();
+            result.Exception.ShouldBeNull(); // Not great, buts lets detect a cancellation
         }
 
         public class Handler : IMessageHandler<FakeCommand>, IMessageContextAware

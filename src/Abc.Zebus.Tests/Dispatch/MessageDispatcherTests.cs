@@ -254,8 +254,6 @@ namespace Abc.Zebus.Tests.Dispatch
             error.ShouldEqual(command.Exception);
         }
 
-
-
         [Test]
         public void should_catch_async_exceptions_thrown_synchronously()
         {
@@ -270,6 +268,34 @@ namespace Abc.Zebus.Tests.Dispatch
 
             var error = result.Errors.ExpectedSingle();
             error.ShouldEqual(command.Exception);
+        }
+
+        [Test]
+        public void should_catch_async_cancellations()
+        {
+            LoadAndStartDispatcher();
+
+            var command = new AsyncFailingCommand(new OperationCanceledException(":'("));
+            var result = DispatchAndWaitForCompletion(command);
+
+            var error = result.Errors.ExpectedSingle();
+            error.ShouldBe<OperationCanceledException>();
+        }
+
+        [Test]
+        public void should_catch_async_cancellations_thrown_synchronously()
+        {
+            LoadAndStartDispatcher();
+
+            var command = new AsyncFailingCommand(new OperationCanceledException(":'("))
+            {
+                ThrowSynchronously = true
+            };
+
+            var result = DispatchAndWaitForCompletion(command);
+
+            var error = result.Errors.ExpectedSingle();
+            error.ShouldBe<OperationCanceledException>();
         }
 
         [Test]
