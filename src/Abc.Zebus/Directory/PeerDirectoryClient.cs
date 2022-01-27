@@ -3,9 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Abc.Zebus.Routing;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using log4net;
@@ -29,14 +27,15 @@ namespace Abc.Zebus.Directory
         private readonly UniqueTimestampProvider _timestampProvider = new UniqueTimestampProvider(10);
         private readonly IBusConfiguration _configuration;
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
+        private readonly DirectoryPeerSelector _directorySelector;
         private BlockingCollection<IEvent> _messagesReceivedDuringRegister;
-        private IEnumerable<Peer> _directoryPeers = Enumerable.Empty<Peer>();
         private Peer _self = default!;
         private volatile HashSet<Type> _observedSubscriptionMessageTypes = new HashSet<Type>();
 
         public PeerDirectoryClient(IBusConfiguration configuration)
         {
             _configuration = configuration;
+            _directorySelector = new DirectoryPeerSelector(configuration);
 
             _messagesReceivedDuringRegister = new BlockingCollection<IEvent>();
             _messagesReceivedDuringRegister.CompleteAdding();
@@ -126,7 +125,7 @@ namespace Abc.Zebus.Directory
 
         private async Task TryRegisterOnDirectoryAsync(IBus bus, PeerDescriptor selfDescriptor)
         {
-            var directoryPeers = GetDirectoryPeers().ToList();
+            var directoryPeers = _directorySelector.GetPeers().ToList();
 
             foreach (var directoryPeer in directoryPeers)
             {
@@ -182,7 +181,7 @@ namespace Abc.Zebus.Directory
 
             var command = new UpdatePeerSubscriptionsForTypesCommand(_self.Id, _timestampProvider.NextUtcTimestamp(), subscriptions);
 
-            foreach (var directoryPeer in GetDirectoryPeers())
+            foreach (var directoryPeer in _directorySelector.GetPeers())
             {
                 try
                 {
@@ -203,7 +202,7 @@ namespace Abc.Zebus.Directory
             var command = new UnregisterPeerCommand(_self, _timestampProvider.NextUtcTimestamp());
 
             // Using a cache of the directory peers in case of the underlying configuration proxy values changed before stopping
-            foreach (var directoryPeer in _directoryPeers)
+            foreach (var directoryPeer in _directorySelector.GetPeersFromCache())
             {
                 try
                 {
@@ -253,19 +252,6 @@ namespace Abc.Zebus.Directory
 
         public IEnumerable<PeerDescriptor> GetPeerDescriptors()
             => _peers.Values.Select(x => x.ToPeerDescriptor()).ToList();
-
-        // Only internal for testing purposes
-        internal IEnumerable<Peer> GetDirectoryPeers()
-        {
-            _directoryPeers = _configuration.DirectoryServiceEndPoints.Select(CreateDirectoryPeer);
-            return _configuration.IsDirectoryPickedRandomly ? _directoryPeers.Shuffle() : _directoryPeers;
-        }
-
-        private static Peer CreateDirectoryPeer(string endPoint, int index)
-        {
-            var peerId = new PeerId("Abc.Zebus.DirectoryService." + index);
-            return new Peer(peerId, endPoint);
-        }
 
         private void AddOrUpdatePeerEntry(PeerDescriptor peerDescriptor, bool shouldRaisePeerUpdated)
         {

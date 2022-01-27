@@ -98,6 +98,26 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
+        public async Task should_re_register_peer_using_random_directory_endpoint()
+        {
+            _configuration.IsDirectoryPickedRandomly = true;
+            
+            for (var i = 0; i < 25; i++)
+            {
+                await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
+                await _directory.UnregisterAsync(_bus);
+            }
+
+            var commands = _bus.Commands.OfType<RegisterPeerCommand>().ToList();
+            commands.ShouldHaveSize(25);
+
+            var first = commands.ExpectedFirst();
+            var firstRecipient = _bus.GetRecipientPeer(first)!;
+
+            commands.Any(x => _bus.GetRecipientPeer(x)!.Id != firstRecipient.Id).ShouldBeTrue();
+        }
+
+        [Test]
         public void should_not_register_existing_peer()
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
@@ -490,22 +510,6 @@ namespace Abc.Zebus.Tests.Directory
             contactedPeers.Count.ShouldEqual(2);
             contactedPeers.ShouldContain(new PeerId("Abc.Zebus.DirectoryService.0"));
             contactedPeers.ShouldContain(new PeerId("Abc.Zebus.DirectoryService.1"));
-        }
-
-        [Test]
-        public void should_order_directory_peers_randomly()
-        {
-            _configuration.IsDirectoryPickedRandomly = true;
-
-            for (var i = 0; i < 100; i++)
-            {
-                var directoryPeers = _directory.GetDirectoryPeers();
-                if (directoryPeers.First().EndPoint == "tcp://backup-directory:777")
-                    return;
-                Thread.Sleep(1); // Ensures that the underlying Random changes seed between tries
-            }
-
-            Assert.Fail("100 tries didn't succeed in returning a shuffled version of the directory peers");
         }
 
         [Test]
