@@ -138,6 +138,8 @@ namespace Abc.Zebus.Directory
                 {
                     _logger.Error(ex);
                 }
+
+                _directorySelector.SetFaultedDirectory(directoryPeer);
             }
 
             var directoryPeersText = string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"));
@@ -185,13 +187,16 @@ namespace Abc.Zebus.Directory
             {
                 try
                 {
-                    await bus.Send(command, directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
-                    return;
+                    var response = await bus.Send(command, directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
+                    if (response.IsSuccess)
+                        return;
                 }
                 catch (TimeoutException ex)
                 {
                     _logger.Error(ex);
                 }
+
+                _directorySelector.SetFaultedDirectory(directoryPeer);
             }
 
             throw new TimeoutException("Unable to update peer subscriptions on directory");
@@ -206,14 +211,19 @@ namespace Abc.Zebus.Directory
             {
                 try
                 {
-                    await bus.Send(command, directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
-                    _pingStopwatch.Stop();
-                    return;
+                    var response = await bus.Send(command, directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
+                    if (response.IsSuccess)
+                    {
+                        _pingStopwatch.Stop();
+                        return;
+                    }
                 }
                 catch (TimeoutException ex)
                 {
                     _logger.Error(ex);
                 }
+
+                _directorySelector.SetFaultedDirectory(directoryPeer);
             }
 
             throw new TimeoutException("Unable to unregister peer on directory");

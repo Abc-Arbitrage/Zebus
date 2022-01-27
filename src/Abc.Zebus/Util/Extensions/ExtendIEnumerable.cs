@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 
 namespace Abc.Zebus.Util.Extensions
@@ -22,20 +23,6 @@ namespace Abc.Zebus.Util.Extensions
         [Pure]
         public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T>? collection)
             => collection ?? Enumerable.Empty<T>();
-
-        [Pure]
-        public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)
-        {
-            var random = new Random();
-            var buffer = source.ToList();
-            for (var i = 0; i < buffer.Count; i++)
-            {
-                var randomIndex = random.Next(i, buffer.Count);
-                yield return buffer[randomIndex];
-
-                buffer[randomIndex] = buffer[i];
-            }
-        }
 
         [Pure]
         public static IList<T> AsList<T>([InstantHandle] this IEnumerable<T> collection)
