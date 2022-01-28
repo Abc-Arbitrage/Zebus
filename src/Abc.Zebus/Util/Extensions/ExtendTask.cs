@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,11 @@ namespace Abc.Zebus.Util.Extensions
 {
     internal static class ExtendTask
     {
+        public static Task<Exception?> CaptureException(this Task task)
+        {
+            return task.ContinueWith(x => x.Exception != null && x.Exception.InnerExceptions.Count == 1 ? x.Exception.InnerExceptions.First() : x.Exception);
+        }
+
         public static async Task WithTimeoutAsync(this Task task, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (task.Status == TaskStatus.RanToCompletion)

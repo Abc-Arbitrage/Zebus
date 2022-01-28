@@ -118,17 +118,15 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_not_register_existing_peer()
+        public async Task should_not_register_existing_peer()
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
             _configuration.IsPersistent = true;
             _bus.AddHandler<RegisterPeerCommand>(_ => throw new MessageProcessingException("Peer already exists") { ErrorCode = DirectoryErrorCodes.PeerAlreadyExists });
 
-            using (SystemDateTime.PauseTime())
-            {
-                Assert.Throws<AggregateException>(() => _directory.RegisterAsync(_bus, _self, subscriptions).Wait(20.Seconds()))
-                      .InnerException.ShouldBe<TimeoutException>();
-            }
+            var exception = await _directory.RegisterAsync(_bus, _self, subscriptions).CaptureException();
+
+            exception.ShouldBe<InvalidOperationException>();
         }
 
         [Test]
@@ -175,7 +173,7 @@ namespace Abc.Zebus.Tests.Directory
                 if (failureMode == DirectoryFailureMode.Error)
                     throw new Exception("Bad directory!");
 
-                Thread.Sleep(1000.Milliseconds());
+                Thread.Sleep(2.Seconds());
                 return new RegisterPeerResponse(Array.Empty<PeerDescriptor>());
             }
         }
@@ -211,7 +209,7 @@ namespace Abc.Zebus.Tests.Directory
             _bus.Commands.OfType<RegisterPeerCommand>().ShouldHaveSize(3);
 
             // Act 2: after delay
-            using (SystemDateTime.Set(utcNow: baseTimestamp.AddSeconds(30)))
+            using (SystemDateTime.Set(utcNow: baseTimestamp.AddSeconds(31))) // Retry delay + timeout
             {
                 await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
                 await _directory.UnregisterAsync(_bus);
@@ -224,7 +222,7 @@ namespace Abc.Zebus.Tests.Directory
                 if (failureMode == DirectoryFailureMode.Error)
                     throw new Exception("Bad directory!");
 
-                Thread.Sleep(1000.Milliseconds());
+                Thread.Sleep(2.Seconds());
                 return new RegisterPeerResponse(Array.Empty<PeerDescriptor>());
             }
         }
@@ -244,7 +242,7 @@ namespace Abc.Zebus.Tests.Directory
             await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
 
             // Act
-            for (int i = 0; i < 25; i++)
+            for (var i = 0; i < 25; i++)
             {
                 await _directory.UpdateSubscriptionsAsync(_bus, new[] { new SubscriptionsForType(MessageUtil.TypeId<FakeEvent>()) });
             }
@@ -260,7 +258,7 @@ namespace Abc.Zebus.Tests.Directory
                 if (failureMode == DirectoryFailureMode.Error)
                     throw new Exception("Bad directory!");
 
-                Thread.Sleep(1000.Milliseconds());
+                Thread.Sleep(2.Seconds());
             }
         }
 

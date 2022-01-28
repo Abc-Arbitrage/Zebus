@@ -123,7 +123,7 @@ namespace Abc.Zebus.Directory
             };
         }
 
-        private async Task TryRegisterOnDirectoryAsync(IBus bus, PeerDescriptor selfDescriptor)
+        private async Task TryRegisterOnDirectoryAsync(IBus bus, PeerDescriptor self)
         {
             var directoryPeers = _directorySelector.GetPeers().ToList();
 
@@ -131,48 +131,32 @@ namespace Abc.Zebus.Directory
             {
                 try
                 {
-                    if (await TryRegisterOnDirectoryAsync(bus, selfDescriptor, directoryPeer).ConfigureAwait(false))
+                    var result = await bus.Send(new RegisterPeerCommand(self), directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
+                    if (result.ErrorCode == DirectoryErrorCodes.PeerAlreadyExists)
+                    {
+                        _logger.Warn($"Register rejected for {self.PeerId}, the peer already exists in the directory");
+                        throw new InvalidOperationException($"Unable to register peer on directory, {self.PeerId} already exists");
+                    }
+
+                    if (result.IsSuccess && result.Response is RegisterPeerResponse response)
+                    {
+                        response.PeerDescriptors?.ForEach(peer => AddOrUpdatePeerEntry(peer, shouldRaisePeerUpdated: false));
                         return;
+                    }
+
+                    _logger.Warn($"Register failed on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
-                catch (TimeoutException ex)
+                catch (TimeoutException)
                 {
-                    _logger.Error(ex);
+                    _logger.Warn($"Register timeout on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
 
                 _directorySelector.SetFaultedDirectory(directoryPeer);
             }
 
-            var directoryPeersText = string.Join(", ", directoryPeers.Select(peer => "{" + peer + "}"));
+            var directoryPeersText = string.Join(", ", directoryPeers.Select(peer => $"[{peer.EndPoint}]"));
             var message = $"Unable to register peer on directory (tried: {directoryPeersText}) after {_configuration.RegistrationTimeout}";
-            _logger.Error(message);
             throw new TimeoutException(message);
-        }
-
-        private async Task<bool> TryRegisterOnDirectoryAsync(IBus bus, PeerDescriptor self, Peer directoryPeer)
-        {
-            try
-            {
-                var registration = await bus.Send(new RegisterPeerCommand(self), directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
-
-                var response = (RegisterPeerResponse?)registration.Response;
-                if (response?.PeerDescriptors == null)
-                    return false;
-
-                if (registration.ErrorCode == DirectoryErrorCodes.PeerAlreadyExists)
-                {
-                    _logger.InfoFormat("Register rejected for {0}, the peer already exists in the directory", new RegisterPeerCommand(self).Peer.PeerId);
-                    return false;
-                }
-
-                response.PeerDescriptors?.ForEach(peer => AddOrUpdatePeerEntry(peer, shouldRaisePeerUpdated: false));
-
-                return true;
-            }
-            catch (TimeoutException ex)
-            {
-                _logger.Error(ex);
-                return false;
-            }
         }
 
         public async Task UpdateSubscriptionsAsync(IBus bus, IEnumerable<SubscriptionsForType> subscriptionsForTypes)
@@ -190,10 +174,12 @@ namespace Abc.Zebus.Directory
                     var response = await bus.Send(command, directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
                     if (response.IsSuccess)
                         return;
+
+                    _logger.Warn($"Subscription update failed on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
-                catch (TimeoutException ex)
+                catch (TimeoutException)
                 {
-                    _logger.Error(ex);
+                    _logger.Warn($"Subscription update timeout on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
 
                 _directorySelector.SetFaultedDirectory(directoryPeer);
@@ -217,10 +203,12 @@ namespace Abc.Zebus.Directory
                         _pingStopwatch.Stop();
                         return;
                     }
+
+                    _logger.Warn($"Unregister failed on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
-                catch (TimeoutException ex)
+                catch (TimeoutException)
                 {
-                    _logger.Error(ex);
+                    _logger.Warn($"Unregister timeout on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
 
                 _directorySelector.SetFaultedDirectory(directoryPeer);
