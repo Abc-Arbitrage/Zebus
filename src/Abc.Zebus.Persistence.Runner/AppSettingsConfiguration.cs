@@ -9,6 +9,7 @@ namespace Abc.Zebus.Persistence.Runner
         {
             DirectoryServiceEndPoints = AppSettings.GetArray("Bus.Directory.EndPoints");
             RegistrationTimeout = AppSettings.Get("Bus.Directory.RegistrationTimeout", 30.Seconds());
+            FaultedDirectoryRetryDelay = AppSettings.Get("Bus.Directory.FaultedDirectoryRetryDelay", 5.Minutes());
             StartReplayTimeout = AppSettings.Get("Bus.Persistence.StartReplayTimeout", 30.Seconds());
             IsDirectoryPickedRandomly = AppSettings.Get("Bus.Directory.PickRandom", true);
             MessagesBatchSize = AppSettings.Get("Bus.Persistence.MessagesBatchSize", 200);
@@ -25,6 +26,7 @@ namespace Abc.Zebus.Persistence.Runner
         public string[] DirectoryServiceEndPoints { get; }
         public bool IsPersistent => false;
         public TimeSpan RegistrationTimeout { get; }
+        public TimeSpan FaultedDirectoryRetryDelay { get; }
         public TimeSpan StartReplayTimeout { get; }
         public bool IsDirectoryPickedRandomly { get; }
         public bool IsErrorPublicationEnabled => false;

@@ -34,6 +34,7 @@ namespace Abc.Zebus.Tests.Directory
             _configuration = new BusConfiguration(new[] { "tcp://main-directory:777", "tcp://backup-directory:777" })
             {
                 RegistrationTimeout = 500.Milliseconds(),
+                FaultedDirectoryRetryDelay = 30.Seconds(),
                 IsDirectoryPickedRandomly = false,
             };
 

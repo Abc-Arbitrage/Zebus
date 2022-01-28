@@ -8,8 +8,6 @@ namespace Abc.Zebus.Directory
 {
     internal class DirectoryPeerSelector
     {
-        private static readonly TimeSpan _faultedDirectoryRetryDelay = 30.Seconds();
-
         private readonly Dictionary<string, EndPointState> _endPointStates = new(StringComparer.OrdinalIgnoreCase);
         private readonly Random _random = new();
         private readonly object _lock = new();
@@ -44,16 +42,18 @@ namespace Abc.Zebus.Directory
 
         private List<PeerState> GetPeerStates(string[] endPoints)
         {
+            var isDirectoryPickedRandomly = _configuration.IsDirectoryPickedRandomly;
+            var faultedDirectoryRetryDelay = _configuration.FaultedDirectoryRetryDelay;
+
             var now = SystemDateTime.UtcNow;
             var peerStates = new List<PeerState>();
-            var isDirectoryPickedRandomly = _configuration.IsDirectoryPickedRandomly;
 
             lock (_lock)
             {
                 foreach (var(endPoint, index) in endPoints.Select((x, index) => (x, index)))
                 {
                     var endPointState = _endPointStates.GetValueOrAdd(endPoint, () => new EndPointState());
-                    var isFaulty = now < endPointState.ErrorTimestampUtc + _faultedDirectoryRetryDelay;
+                    var isFaulty = now < endPointState.ErrorTimestampUtc + faultedDirectoryRetryDelay;
                     var priority = isDirectoryPickedRandomly ? _random.Next() : index;
 
                     peerStates.Add(new PeerState(index, endPoint, isFaulty, priority));

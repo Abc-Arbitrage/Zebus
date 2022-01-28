@@ -17,6 +17,7 @@ namespace Abc.Zebus.Core
 
         public string[] DirectoryServiceEndPoints { get; set; }
         public TimeSpan RegistrationTimeout { get; set; } = 30.Seconds();
+        public TimeSpan FaultedDirectoryRetryDelay { get; set; } = 5.Minutes();
         public TimeSpan StartReplayTimeout { get; set; } = 30.Seconds();
         public bool IsPersistent { get; set; } = false;
         public bool IsDirectoryPickedRandomly { get; set; } = true;

@@ -13,6 +13,7 @@ namespace Abc.Zebus.Directory.Configuration
         internal AppSettingsBusConfiguration(AppSettings appSettings)
         {
             RegistrationTimeout = appSettings.Get("Bus.Directory.RegistrationTimeout", 30.Seconds());
+            FaultedDirectoryRetryDelay = appSettings.Get("Bus.Directory.FaultedDirectoryRetryDelay", 5.Minutes());
             StartReplayTimeout = appSettings.Get("Bus.Persistence.StartReplayTimeout", 30.Seconds());
             IsDirectoryPickedRandomly = appSettings.Get("Bus.Directory.PickRandom", true);
             IsErrorPublicationEnabled = appSettings.Get("Bus.IsErrorPublicationEnabled", true);
@@ -23,6 +24,7 @@ namespace Abc.Zebus.Directory.Configuration
         public bool IsPersistent => false;
 
         public TimeSpan RegistrationTimeout { get; }
+        public TimeSpan FaultedDirectoryRetryDelay { get; }
         public TimeSpan StartReplayTimeout { get; }
         public bool IsDirectoryPickedRandomly { get; }
         public bool IsErrorPublicationEnabled { get; }
