@@ -151,7 +151,7 @@ namespace Abc.Zebus.Tests.Directory
             var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
 
             _configuration.IsDirectoryPickedRandomly = true;
-            _configuration.RegistrationTimeout = 200.Milliseconds();
+            _configuration.RegistrationTimeout = 500.Milliseconds();
 
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<RegisterPeerCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
@@ -185,7 +185,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
 
-            _configuration.RegistrationTimeout = 200.Milliseconds();
+            _configuration.RegistrationTimeout = 500.Milliseconds();
 
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<RegisterPeerCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
@@ -235,7 +235,7 @@ namespace Abc.Zebus.Tests.Directory
             var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
 
             _configuration.IsDirectoryPickedRandomly = true;
-            _configuration.RegistrationTimeout = 200.Milliseconds();
+            _configuration.RegistrationTimeout = 500.Milliseconds();
 
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<UpdatePeerSubscriptionsForTypesCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
