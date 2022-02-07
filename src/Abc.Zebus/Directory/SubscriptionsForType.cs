@@ -28,6 +28,9 @@ namespace Abc.Zebus.Directory
             BindingKeys = Array.Empty<BindingKey>();
         }
 
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+        public bool HasSubscriptions => BindingKeys != null && BindingKeys.Length != 0;
+
         public static SubscriptionsForType Create<TMessage>(params BindingKey[] bindingKeys)
             where TMessage : IMessage
             => new SubscriptionsForType(MessageUtil.TypeId<TMessage>(), bindingKeys);
