@@ -8,6 +8,7 @@ using Abc.Zebus.Persistence.Cassandra.Tests.Cql;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Reporter;
+using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
@@ -16,6 +17,7 @@ using Cassandra.Data.Linq;
 using Moq;
 using NUnit.Framework;
 using ProtoBuf;
+#pragma warning disable CS0618
 
 namespace Abc.Zebus.Persistence.Cassandra.Tests
 {
@@ -69,29 +71,31 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         [Test]
         public async Task should_write_message_entry_fields_to_cassandra()
         {
-            using (SystemDateTime.PauseTime())
-            {
-                var messageBytes = new byte[512];
-                new Random().NextBytes(messageBytes);
-                var messageId = MessageId.NextId();
-                var peerId = "Abc.Peer.0";
+            var now = DateTime.UtcNow;
+            _storage.DateTimeSource = () => now;
 
-                await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
+            using var _ = MessageId.PauseIdGenerationAtDate(now);
 
-                var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
-                retrievedMessage.TransportMessage.ShouldBeEquivalentTo(messageBytes, true);
-                retrievedMessage.BucketId.ShouldEqual(GetBucketIdFromMessageId(messageId));
-                retrievedMessage.IsAcked.ShouldBeFalse();
-                retrievedMessage.PeerId.ShouldEqual(peerId);
-                retrievedMessage.UniqueTimestampInTicks.ShouldEqual(messageId.GetDateTime().Ticks);
-                var writeTimeRow = DataContext.Session.Execute("SELECT WRITETIME(\"IsAcked\") FROM \"PersistentMessage\";").ExpectedSingle();
-                writeTimeRow.GetValue<long>(0).ShouldEqual(ToUnixMicroSeconds(messageId.GetDateTime()));
+            var messageBytes = new byte[512];
+            new Random().NextBytes(messageBytes);
+            var messageId = MessageId.NextId();
+            var peerId = "Abc.Peer.0";
 
-                var peerState = DataContext.PeerStates.Execute().ExpectedSingle();
-                peerState.NonAckedMessageCount.ShouldEqual(1);
-                peerState.PeerId.ShouldEqual(peerId);
-                peerState.OldestNonAckedMessageTimestamp.ShouldEqual(messageId.GetDateTime().Ticks - PeerState.MessagesTimeToLive.Ticks);
-            }
+            await _storage.Write(new List<MatcherEntry> { MatcherEntry.Message(new PeerId(peerId), messageId, MessageTypeId.PersistenceStopping, messageBytes) });
+
+            var retrievedMessage = DataContext.PersistentMessages.Execute().ExpectedSingle();
+            retrievedMessage.TransportMessage.ShouldBeEquivalentTo(messageBytes, true);
+            retrievedMessage.BucketId.ShouldEqual(GetBucketIdFromMessageId(messageId));
+            retrievedMessage.IsAcked.ShouldBeFalse();
+            retrievedMessage.PeerId.ShouldEqual(peerId);
+            retrievedMessage.UniqueTimestampInTicks.ShouldEqual(messageId.GetDateTime().Ticks);
+            var writeTimeRow = DataContext.Session.Execute("SELECT WRITETIME(\"IsAcked\") FROM \"PersistentMessage\";").ExpectedSingle();
+            writeTimeRow.GetValue<long>(0).ShouldEqual(ToUnixMicroSeconds(messageId.GetDateTime()));
+
+            var peerState = DataContext.PeerStates.Execute().ExpectedSingle();
+            peerState.NonAckedMessageCount.ShouldEqual(1);
+            peerState.PeerId.ShouldEqual(peerId);
+            peerState.OldestNonAckedMessageTimestamp.ShouldEqual(messageId.GetDateTime().Ticks - PeerState.MessagesTimeToLive.Ticks);
         }
 
         [Test]
@@ -257,7 +261,8 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
             MessageId.ResetLastTimestamp();
 
             var firstTime = DateTime.Now;
-            using (SystemDateTime.Set(firstTime))
+            _storage.DateTimeSource = () => firstTime;
+
             using (MessageId.PauseIdGenerationAtDate(firstTime))
             {
                 var peerId = new PeerId("Abc.Testing.Target");
@@ -266,7 +271,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
                 await _storage.Write(new[] { MatcherEntry.Message(peerId, firstMessageId, new MessageTypeId("Abc.Message"), new byte[] { 0x01, 0x02, 0x03 }) });
 
                 var secondTime = firstTime.AddHours(1);
-                SystemDateTime.Set(secondTime);
+                _storage.DateTimeSource = () => secondTime;
                 MessageId.PauseIdGenerationAtDate(secondTime);
 
                 var secondMessageId = MessageId.NextId();
@@ -323,13 +328,15 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
             var firstPeer = new PeerId("Abc.Testing.Target");
             var secondPeer = new PeerId("Abc.Testing.OtherTarget");
 
+            var now = DateTime.UtcNow;
+            _storage.DateTimeSource = () => now;
+
             using (MessageId.PauseIdGeneration())
-            using (SystemDateTime.PauseTime())
             {
                 var transportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
                 var messages = transportMessages.SelectMany(x =>
                                                         {
-                                                            var transportMessageBytes = Serialization.Serializer.Serialize(x).ToArray();
+                                                            var transportMessageBytes = TransportMessageConvert.Serialize(x);
                                                             return new[]
                                                             {
                                                                 MatcherEntry.Message(firstPeer, x.Id, x.MessageTypeId, transportMessageBytes),
@@ -345,7 +352,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
                 nonAckedMessageCountsForUpdatedPeers[secondPeer].ShouldEqual(100);
 
                 var readerForFirstPeer = (CqlMessageReader)_storage.CreateMessageReader(firstPeer);
-                var expectedTransportMessages = transportMessages.Select(Serialization.Serializer.Serialize).Select(x => x.ToArray()).ToList();
+                var expectedTransportMessages = transportMessages.Select(TransportMessageConvert.Serialize).ToList();
                 readerForFirstPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
 
                 var readerForSecondPeer = (CqlMessageReader)_storage.CreateMessageReader(secondPeer);
@@ -370,29 +377,28 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         [Test]
         public async Task should_update_oldest_non_acked_message_timestamp()
         {
-            using (SystemDateTime.PauseTime())
-            {
-                var peerId = new PeerId("PeerId");
-                var now = SystemDateTime.UtcNow;
-                InsertPersistentMessage(peerId, now.AddMilliseconds(1));
-                InsertPersistentMessage(peerId, now.AddMilliseconds(2), AckState.Unacked);
-                InsertPersistentMessage(peerId, now.AddMilliseconds(3), AckState.Unacked);
-                InsertPersistentMessage(peerId, now.AddMilliseconds(4));
-                InsertPersistentMessage(peerId, now.AddMilliseconds(5), AckState.Unacked);
-                var peerState = new PeerState(peerId, 0, now.AddMinutes(-30).Ticks);
-                InsertPeerState(peerState);
+            var now = DateTime.UtcNow;
+            _storage.DateTimeSource = () => now;
 
-                await _storage.UpdateNewOldestMessageTimestamp(peerState);
+            var peerId = new PeerId("PeerId");
+            InsertPersistentMessage(peerId, now.AddMilliseconds(1));
+            InsertPersistentMessage(peerId, now.AddMilliseconds(2), AckState.Unacked);
+            InsertPersistentMessage(peerId, now.AddMilliseconds(3), AckState.Unacked);
+            InsertPersistentMessage(peerId, now.AddMilliseconds(4));
+            InsertPersistentMessage(peerId, now.AddMilliseconds(5), AckState.Unacked);
+            var peerState = new PeerState(peerId, 0, now.AddMinutes(-30).Ticks);
+            InsertPeerState(peerState);
 
-                GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.AddMilliseconds(2).Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
-            }
+            await _storage.UpdateNewOldestMessageTimestamp(peerState);
+
+            GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.AddMilliseconds(2).Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
         }
 
         [Test]
         public async Task should_not_update_oldest_non_acked_message_timestamp_if_it_did_not_change()
         {
             var peerId = new PeerId("PeerId");
-            var now = SystemDateTime.UtcNow;
+            var now = DateTime.UtcNow;
             InsertPersistentMessage(peerId, now.AddMilliseconds(1));
             InsertPersistentMessage(peerId, now.AddMilliseconds(2), AckState.Unacked);
             InsertPersistentMessage(peerId, now.AddMilliseconds(3), AckState.Unacked);
@@ -409,40 +415,38 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         [Test]
         public async Task should_take_utc_now_timestamp_minus_safety_offset_as_oldest_non_acked_message_when_all_messages_are_acked()
         {
-            using (SystemDateTime.PauseTime())
-            {
-                var peerId = new PeerId("PeerId");
-                var now = SystemDateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            _storage.DateTimeSource = () => now;
 
-                InsertPersistentMessage(peerId, now.AddMilliseconds(-5));
-                InsertPersistentMessage(peerId, now.AddMilliseconds(-4));
-                InsertPersistentMessage(peerId, now.AddMilliseconds(-3));
-                InsertPersistentMessage(peerId, now.AddMilliseconds(-2));
-                InsertPersistentMessage(peerId, now.AddMilliseconds(-1));
+            var peerId = new PeerId("PeerId");
 
-                var peerState = new PeerState(peerId, 0, now.AddHours(-1).Ticks);
-                InsertPeerState(peerState);
+            InsertPersistentMessage(peerId, now.AddMilliseconds(-5));
+            InsertPersistentMessage(peerId, now.AddMilliseconds(-4));
+            InsertPersistentMessage(peerId, now.AddMilliseconds(-3));
+            InsertPersistentMessage(peerId, now.AddMilliseconds(-2));
+            InsertPersistentMessage(peerId, now.AddMilliseconds(-1));
 
-                await _storage.UpdateNewOldestMessageTimestamp(peerState);
+            var peerState = new PeerState(peerId, 0, now.AddHours(-1).Ticks);
+            InsertPeerState(peerState);
 
-                GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
-            }
+            await _storage.UpdateNewOldestMessageTimestamp(peerState);
+
+            GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
         }
 
         [Test]
         public async Task should_take_utc_now_timestamp_as_oldest_non_acked_message_when_no_messages_are_acked()
         {
-            using (SystemDateTime.PauseTime())
-            {
-                var peerId = new PeerId("PeerId");
-                var now = SystemDateTime.UtcNow;
-                var peerState = new PeerState(peerId, 0, now.AddDays(-2).Ticks);
-                InsertPeerState(peerState);
+            var now = DateTime.UtcNow;
+            _storage.DateTimeSource = () => now;
 
-                await _storage.UpdateNewOldestMessageTimestamp(peerState);
+            var peerId = new PeerId("PeerId");
+            var peerState = new PeerState(peerId, 0, now.AddDays(-2).Ticks);
+            InsertPeerState(peerState);
 
-                GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
-            }
+            await _storage.UpdateNewOldestMessageTimestamp(peerState);
+
+            GetPeerState(peerId).OldestNonAckedMessageTimestampInTicks.ShouldEqual(now.Ticks - _expectedOldestNonAckedMessageTimestampSafetyOffset);
         }
 
         [Test]
@@ -545,9 +549,9 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
             return new PeerState(new PeerId(state.PeerId), state.NonAckedMessageCount, state.OldestNonAckedMessageTimestamp);
         }
 
-        private static TransportMessage CreateTestTransportMessage(int i)
+        private TransportMessage CreateTestTransportMessage(int i)
         {
-            MessageId.PauseIdGenerationAtDate(SystemDateTime.UtcNow.Date.AddSeconds(i * 10));
+            MessageId.PauseIdGenerationAtDate(_storage.DateTimeSource.Invoke().Date.AddSeconds(i * 10));
             return new Message1(i).ToTransportMessage();
         }
 

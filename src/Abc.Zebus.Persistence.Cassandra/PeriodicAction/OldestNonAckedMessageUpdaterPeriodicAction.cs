@@ -1,11 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Hosting;
 using Abc.Zebus.Persistence.Cassandra.Cql;
 using Abc.Zebus.Persistence.Storage;
-using Abc.Zebus.Util;
-using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Persistence.Cassandra.PeriodicAction
 {
@@ -26,20 +25,20 @@ namespace Abc.Zebus.Persistence.Cassandra.PeriodicAction
         public override void DoPeriodicAction()
         {
             var isGlobalCheck = ShouldPerformGlobalCheck();
-            var peers = _cqlStorage.GetAllKnownPeers().AsList();
+            var peers = _cqlStorage.GetAllKnownPeers().ToList();
             var updatedNonAckedCounts = _nonAckedCountCache.Update(peers.Select(x => new NonAckedCount(x.PeerId, x.NonAckedMessageCount)));
-            var updatedPeerIds = updatedNonAckedCounts.Select(x => x.PeerId).ToHashSet();
+            var updatedPeerIds = new HashSet<PeerId>(updatedNonAckedCounts.Select(x => x.PeerId));
             var peersToCheck = isGlobalCheck ? peers : peers.Where(x => updatedPeerIds.Contains(x.PeerId));
 
             if (isGlobalCheck)
-                _lastGlobalCheck = SystemDateTime.UtcNow;
+                _lastGlobalCheck = DateTime.UtcNow;
 
             Parallel.ForEach(peersToCheck, new ParallelOptions { MaxDegreeOfParallelism = 10 }, UpdateOldestNonAckedMessage);
         }
 
         private bool ShouldPerformGlobalCheck()
         {
-            return SystemDateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
+            return DateTime.UtcNow >= _lastGlobalCheck.Add(_configuration.OldestMessagePerPeerGlobalCheckPeriod);
         }
 
         private void UpdateOldestNonAckedMessage(PeerState peer)

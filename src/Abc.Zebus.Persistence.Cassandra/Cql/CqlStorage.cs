@@ -41,6 +41,12 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
 
         public Task CleanBucketTask { get; private set; } = Task.CompletedTask;
 
+        public Func<DateTime> DateTimeSource
+        {
+            get => _peerStateRepository.DateTimeSource;
+            set => _peerStateRepository.DateTimeSource = value;
+        }
+
         public Dictionary<PeerId, int> GetNonAckedMessageCounts()
         {
             return _peerStateRepository.GetAllKnownPeers()
@@ -196,7 +202,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
                                                         .Select(x => (long?)x.uniqueTimestampInTicks)
                                                         .FirstOrDefault();
 
-            return firstUnackedMessageTimestamp ?? SystemDateTime.UtcNow.Ticks;
+            return firstUnackedMessageTimestamp ?? DateTimeSource.Invoke().Ticks;
 
             IEnumerable<(bool isAcked, long uniqueTimestampInTicks)> ReadMessages(long bucketId)
             {

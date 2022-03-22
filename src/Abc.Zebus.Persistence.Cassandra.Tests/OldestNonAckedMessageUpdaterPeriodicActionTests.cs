@@ -8,7 +8,6 @@ using Abc.Zebus.Persistence.Cassandra.PeriodicAction;
 using Abc.Zebus.Persistence.Cassandra.Tests.Cql;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
-using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 
@@ -38,8 +37,8 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         {
             _testBus = new TestBus();
             var configurationMock = new Mock<ICqlPersistenceConfiguration>();
-            configurationMock.SetupGet(x => x.OldestMessagePerPeerCheckPeriod).Returns(30.Seconds());
-            configurationMock.SetupGet(x => x.OldestMessagePerPeerGlobalCheckPeriod).Returns(30.Seconds());
+            configurationMock.SetupGet(x => x.OldestMessagePerPeerCheckPeriod).Returns(TimeSpan.FromSeconds(30));
+            configurationMock.SetupGet(x => x.OldestMessagePerPeerGlobalCheckPeriod).Returns(TimeSpan.FromSeconds(30));
             _cqlStorage = new Mock<ICqlStorage>();
             _oldestMessageUpdater = new OldestNonAckedMessageUpdaterPeriodicAction(_testBus, configurationMock.Object, _cqlStorage.Object);
         }

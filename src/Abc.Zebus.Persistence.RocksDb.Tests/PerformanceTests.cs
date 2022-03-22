@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
+using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 using ProtoBuf;
+#pragma warning disable CS0618
 
 namespace Abc.Zebus.Persistence.RocksDb.Tests
 {
@@ -37,7 +40,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             var messageBytes = MessageBytes();
 
             var startTime = DateTime.UtcNow;
-            var testDuration = 30.Seconds();
+            var testDuration = TimeSpan.FromSeconds(30);
             // Thread 1 - write messages
             var writeTask = Task.Run(async () =>
             {
@@ -86,16 +89,16 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             var peerId = new PeerId("Peer");
             for (int i = 0; i < 10_000; i++)
             {
-                MessageId.PauseIdGenerationAtDate(SystemDateTime.UtcNow.Date.AddSeconds(i * 10));
+                MessageId.PauseIdGenerationAtDate(DateTime.UtcNow.Date.AddSeconds(i * 10));
                 entriesToPersist.Add(MatcherEntry.Message(peerId, MessageId.NextId(), new MessageTypeId("SomeEvent"), messageBytes));
             }
 
             _storage.Write(entriesToPersist);
 
-            // Read all unacked messages 
+            // Read all unacked messages
             var messageReader = _storage.CreateMessageReader(peerId);
             var startTime = DateTime.UtcNow;
-            var testDuration = 30.Seconds();
+            var testDuration = TimeSpan.FromSeconds(30);
             var count = 0;
             while (DateTime.UtcNow - startTime < testDuration)
             {
@@ -117,7 +120,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             var entriesToPersist = new List<MatcherEntry>();
             for (int i = 0; i < count; i++)
             {
-                MessageId.PauseIdGenerationAtDate(SystemDateTime.UtcNow.Date.AddSeconds(i * 10));
+                MessageId.PauseIdGenerationAtDate(DateTime.UtcNow.Date.AddSeconds(i * 10));
                 entriesToPersist.Add(MatcherEntry.Message(new PeerId("Peer" + (i + offset)), MessageId.NextId(), new MessageTypeId("SomeEvent"), messageBytes));
             }
             return entriesToPersist;
@@ -126,13 +129,13 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         private static byte[] MessageBytes()
         {
             var message = CreateTestTransportMessage(1);
-            var messageBytes = Serialization.Serializer.Serialize(message).ToArray();
-            return messageBytes;
+
+            return TransportMessageConvert.Serialize(message);
         }
 
         private static TransportMessage CreateTestTransportMessage(int i)
         {
-            MessageId.PauseIdGenerationAtDate(SystemDateTime.UtcNow.Date.AddSeconds(i * 10));
+            MessageId.PauseIdGenerationAtDate(DateTime.UtcNow.Date.AddSeconds(i * 10));
             return new Message1(i).ToTransportMessage();
         }
 
