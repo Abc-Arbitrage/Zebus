@@ -184,9 +184,7 @@ namespace Abc.Zebus.Persistence
             }
         }
 
-#pragma warning disable CS0618
-        private static TransportMessage DeserializeTransportMessage(byte[] row) => TransportMessageConvert.Deserialize(row);
-#pragma warning restore CS0618
+        private static TransportMessage DeserializeTransportMessage(byte[] row) => TransportMessage.Deserialize(row);
 
         private void WaitForAcks(CancellationToken cancellationToken)
         {

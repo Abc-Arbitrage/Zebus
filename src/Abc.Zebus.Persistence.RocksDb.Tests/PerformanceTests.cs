@@ -12,7 +12,6 @@ using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 using ProtoBuf;
-#pragma warning disable CS0618
 
 namespace Abc.Zebus.Persistence.RocksDb.Tests
 {
@@ -130,7 +129,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         {
             var message = CreateTestTransportMessage(1);
 
-            return TransportMessageConvert.Serialize(message);
+            return TransportMessage.Serialize(message);
         }
 
         private static TransportMessage CreateTestTransportMessage(int i)

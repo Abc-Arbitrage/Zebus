@@ -17,7 +17,6 @@ using Cassandra.Data.Linq;
 using Moq;
 using NUnit.Framework;
 using ProtoBuf;
-#pragma warning disable CS0618
 
 namespace Abc.Zebus.Persistence.Cassandra.Tests
 {
@@ -336,7 +335,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
                 var transportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
                 var messages = transportMessages.SelectMany(x =>
                                                         {
-                                                            var transportMessageBytes = TransportMessageConvert.Serialize(x);
+                                                            var transportMessageBytes = TransportMessage.Serialize(x);
                                                             return new[]
                                                             {
                                                                 MatcherEntry.Message(firstPeer, x.Id, x.MessageTypeId, transportMessageBytes),
@@ -352,7 +351,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
                 nonAckedMessageCountsForUpdatedPeers[secondPeer].ShouldEqual(100);
 
                 var readerForFirstPeer = (CqlMessageReader)_storage.CreateMessageReader(firstPeer);
-                var expectedTransportMessages = transportMessages.Select(TransportMessageConvert.Serialize).ToList();
+                var expectedTransportMessages = transportMessages.Select(TransportMessage.Serialize).ToList();
                 readerForFirstPeer.GetUnackedMessages().ToList().ShouldEqualDeeply(expectedTransportMessages);
 
                 var readerForSecondPeer = (CqlMessageReader)_storage.CreateMessageReader(secondPeer);
