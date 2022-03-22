@@ -1,11 +1,11 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Cassandra.Data;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Util;
-using Abc.Zebus.Util;
 using Cassandra;
 using Cassandra.Data.Linq;
 using log4net;
@@ -23,6 +23,8 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
         {
             _dataContext = dataContext;
         }
+
+        public Func<DateTime> DateTimeSource { get; set; } = () => DateTime.UtcNow;
 
         public void Initialize()
         {
@@ -48,7 +50,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
                                                           p =>
                                                           {
                                                               _log.Info($"Created new state for peer {p}");
-                                                              return new PeerState(p, delta);
+                                                              return new PeerState(p, delta, MinimumOldestNonAckedMessageTimestamp);
                                                           },
                                                           (id, state) => state.WithNonAckedMessageCountDelta(delta));
 
@@ -94,7 +96,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
 
         private Task RemovePersistentMessages(PeerId peerId)
         {
-            var allPossibleBuckets = BucketIdHelper.GetBucketsCollection(SystemDateTime.UtcNow.Ticks - PeerState.MessagesTimeToLive.Ticks).ToArray();
+            var allPossibleBuckets = BucketIdHelper.GetBucketsCollection(MinimumOldestNonAckedMessageTimestamp, DateTimeSource.Invoke()).ToArray();
 
             return _dataContext.PersistentMessages
                                .Where(x => x.PeerId == peerId.ToString() && allPossibleBuckets.Contains(x.BucketId))
@@ -106,5 +108,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
         {
             return _dataContext.PeerStates.Insert(new CassandraPeerState(p)).ExecuteAsync();
         }
+
+        private long MinimumOldestNonAckedMessageTimestamp => DateTimeSource.Invoke().Ticks - PeerState.MessagesTimeToLive.Ticks;
     }
 }

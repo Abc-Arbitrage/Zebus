@@ -11,6 +11,7 @@ using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using NUnit.Framework;
+#pragma warning disable CS0618
 
 namespace Abc.Zebus.Persistence.Cassandra.Tests
 {
@@ -60,7 +61,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
             nonAckedMessages.Count.ShouldEqual(3);
             for (var i = 0; i < nonAckedMessages.Count; i++)
             {
-                var transportMessage = TransportMessageDeserializer.Deserialize(nonAckedMessages[i]);
+                var transportMessage = TransportMessageConvert.Deserialize(nonAckedMessages[i]);
                 transportMessage.DeepCompare(transportMessages[i]).ShouldBeTrue();
             }
         }
@@ -70,7 +71,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
             return x =>
             {
                 x.IsAcked = false;
-                x.TransportMessage = Serializer.Serialize(transportMessage).ToArray();
+                x.TransportMessage = TransportMessageConvert.Serialize(transportMessage);
             };
         }
 

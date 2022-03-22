@@ -5,14 +5,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
-using Abc.Zebus.Serialization.Protobuf;
+using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
-using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
 using ProtoBuf;
+#pragma warning disable CS0618
 
 namespace Abc.Zebus.Persistence.RocksDb.Tests
 {
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         public async Task should_write_message_entry_fields_to_cassandra()
         {
             var inputMessage = CreateTestTransportMessage(1);
-            var messageBytes = Serialization.Serializer.Serialize(inputMessage).ToArray();
+            var messageBytes = TransportMessageConvert.Serialize(inputMessage);
             var messageId = MessageId.NextId();
 
             var peerId = new PeerId("Abc.Peer.0");
@@ -58,7 +58,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         [Test]
         public async Task should_not_overwrite_messages_with_same_time_component_and_different_message_id()
         {
-            var messageBytes = Serialization.Serializer.Serialize(CreateTestTransportMessage(1)).ToArray();
+            var messageBytes = TransportMessageConvert.Serialize(CreateTestTransportMessage(1));
             var messageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9706-ae1ea5dcf365"));      // Time component @2016-01-01 00:00:00Z
             var otherMessageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9806-f1ef55aac8e9")); // Time component @2016-01-01 00:00:00Z
 
@@ -77,7 +77,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         public async Task should_support_out_of_order_acks_and_messages()
         {
             var inputMessage = CreateTestTransportMessage(1);
-            var messageBytes = Serialization.Serializer.Serialize(inputMessage).ToArray();
+            var messageBytes = TransportMessageConvert.Serialize(inputMessage);
             var messageId = MessageId.NextId();
 
             var peerId = new PeerId("Abc.Peer.0");
@@ -101,7 +101,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         public async Task should_remove_peer()
         {
             var inputMessage = CreateTestTransportMessage(1);
-            var messageBytes = Serialization.Serializer.Serialize(inputMessage).ToArray();
+            var messageBytes = TransportMessageConvert.Serialize(inputMessage);
             var messageId = MessageId.NextId();
 
             var peerId = new PeerId("Abc.Peer.0");
@@ -141,12 +141,11 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             var secondPeer = new PeerId("Abc.Testing.OtherTarget");
 
             using (MessageId.PauseIdGeneration())
-            using (SystemDateTime.PauseTime())
             {
                 var inputMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
                 var messages = inputMessages.SelectMany(x =>
                                                         {
-                                                            var transportMessageBytes = Serialization.Serializer.Serialize(x).ToArray();
+                                                            var transportMessageBytes = TransportMessageConvert.Serialize(x);
                                                             return new[]
                                                             {
                                                                 MatcherEntry.Message(firstPeer, x.Id, x.MessageTypeId, transportMessageBytes),
@@ -157,7 +156,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
 
                 await _storage.Write(messages);
 
-                var expectedTransportMessages = inputMessages.Select(Serialization.Serializer.Serialize).Select(x => x.ToArray()).ToList();
+                var expectedTransportMessages = inputMessages.Select(TransportMessageConvert.Serialize).ToList();
                 using (var readerForFirstPeer = _storage.CreateMessageReader(firstPeer))
                 {
                     var transportMessages = readerForFirstPeer.GetUnackedMessages().ToList();
@@ -189,17 +188,17 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             using (var reader = _storage.CreateMessageReader(peer))
             {
                 reader.GetUnackedMessages()
-                      .Select(TransportMessageDeserializer.Deserialize)
+                      .Select(TransportMessageConvert.Deserialize)
                       .Select(x => x.Id)
                       .ToList()
                       .ShouldBeEquivalentTo(message1.MessageId);
             }
         }
 
-        private static MatcherEntry GetMatcherEntryWithValidTransportMessage(PeerId peer, int i)
+        private MatcherEntry GetMatcherEntryWithValidTransportMessage(PeerId peer, int i)
         {
             var inputMessage = CreateTestTransportMessage(i);
-            var messageBytes = Serialization.Serializer.Serialize(inputMessage).ToArray();
+            var messageBytes = TransportMessageConvert.Serialize(inputMessage);
             var message1 = MatcherEntry.Message(peer, inputMessage.Id, MessageUtil.TypeId<Message1>(), messageBytes);
             return message1;
         }
@@ -241,9 +240,9 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             _reporterMock.Verify(r => r.AddStorageReport(2, 7, 4, "Abc.Message.Fat"));
         }
 
-        private static TransportMessage CreateTestTransportMessage(int i)
+        private TransportMessage CreateTestTransportMessage(int i)
         {
-            MessageId.PauseIdGenerationAtDate(SystemDateTime.UtcNow.Date.AddSeconds(i * 10));
+            MessageId.PauseIdGenerationAtDate(DateTime.UtcNow.Date.AddSeconds(i * 10));
             return new Message1(i).ToTransportMessage();
         }
 
@@ -256,16 +255,6 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             public Message1(int id)
             {
                 Id = id;
-            }
-        }
-
-        private static class TransportMessageDeserializer
-        {
-            public static TransportMessage Deserialize(byte[] bytes)
-            {
-                var bufferReader = new ProtoBufferReader(bytes, bytes.Length);
-                var readTransportMessage = bufferReader.ReadTransportMessage();
-                return readTransportMessage;
             }
         }
     }

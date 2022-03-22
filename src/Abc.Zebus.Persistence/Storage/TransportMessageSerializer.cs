@@ -7,7 +7,7 @@ namespace Abc.Zebus.Persistence.Storage
     /// <summary>
     /// Stateful, non thread-safe serializer.
     /// </summary>
-    internal class TransportMessageSerializer
+    public class TransportMessageSerializer
     {
         private readonly int _maximumCapacity;
         private ProtoBufferWriter _bufferWriter;
@@ -23,8 +23,7 @@ namespace Abc.Zebus.Persistence.Storage
             _bufferWriter.Reset();
             _bufferWriter.WriteTransportMessage(transportMessage);
 
-            var bytes = new byte[_bufferWriter.Position];
-            Buffer.BlockCopy(_bufferWriter.Buffer, 0, bytes, 0, _bufferWriter.Position);
+            var bytes = _bufferWriter.Buffer.AsSpan(0, _bufferWriter.Position).ToArray();
 
             // prevent service from leaking after fat transport message serializations
             if (_bufferWriter.Position > _maximumCapacity)
@@ -32,5 +31,7 @@ namespace Abc.Zebus.Persistence.Storage
 
             return bytes;
         }
+
+
     }
 }
