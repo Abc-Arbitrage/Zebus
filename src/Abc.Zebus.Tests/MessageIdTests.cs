@@ -14,7 +14,7 @@ namespace Abc.Zebus.Tests
     [TestFixture]
     public class MessageIdTests
     {
-#if NETFWK
+#if NETFRAMEWORK
         [Test]
         public void should_not_generate_identical_MessageIds_when_multiple_buses_are_started_in_different_app_domains_simultaneously()
         {

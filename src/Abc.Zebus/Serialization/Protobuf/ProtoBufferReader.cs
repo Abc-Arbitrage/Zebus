@@ -112,9 +112,9 @@ namespace Abc.Zebus.Serialization.Protobuf
                 return false;
 
             // Skip tag
-            ByteUtil.Copy(_buffer, _position + 1, _guidBuffer, 0, 8);
+            _buffer.AsSpan(_position + 1, 8).CopyTo(_guidBuffer.AsSpan(0));
             // Skip tag
-            ByteUtil.Copy(_buffer, _position + 10, _guidBuffer, 8, 8);
+            _buffer.AsSpan(_position + 10, 8).CopyTo(_guidBuffer.AsSpan(8));
 
             _position += ProtoBufferWriter.GuidSize;
 
@@ -219,8 +219,7 @@ namespace Abc.Zebus.Serialization.Protobuf
                 return false;
             }
 
-            value = new byte[size];
-            ByteUtil.Copy(_buffer, _position, value, 0, size);
+            value = _buffer.AsSpan(_position, size).ToArray();
             _position += size;
             return true;
         }

@@ -35,9 +35,7 @@ namespace Abc.Zebus.Serialization.Protobuf
 
         public byte[] ToArray()
         {
-            var buffer = new byte[_position];
-            ByteUtil.Copy(Buffer, 0, buffer, 0, _position);
-            return buffer;
+            return Buffer.AsSpan(0, _position).ToArray();
         }
 
         public void SavePosition()
@@ -158,7 +156,7 @@ namespace Abc.Zebus.Serialization.Protobuf
         {
             EnsureCapacity(length);
 
-            ByteUtil.Copy(value, offset, _buffer, _position, length);
+            value.AsSpan(offset, length).CopyTo(_buffer.AsSpan(_position));
             _position += length;
         }
 
@@ -196,7 +194,8 @@ namespace Abc.Zebus.Serialization.Protobuf
 
             var newBufferLength = Math.Max(_position + length, _buffer.Length * 2);
             var newBuffer = new byte[newBufferLength];
-            ByteUtil.Copy(_buffer, 0, newBuffer, 0, _buffer.Length);
+            _buffer.AsSpan().CopyTo(newBuffer);
+
             _buffer = newBuffer;
         }
 

@@ -12,10 +12,18 @@ namespace Abc.Zebus
         string[] DirectoryServiceEndPoints { get; }
 
         /// <summary>
-        /// The time to for when registering to a Directory, once this time is over,
-        /// the next directory in the list will be used.
+        /// The timeout of the registration, un-registration, and subscription update commands.
+        /// Once the timeout is elapsed, the bus will try to send the commands to another directory.
         /// </summary>
         TimeSpan RegistrationTimeout { get; }
+
+        /// <summary>
+        /// When a directory command fails on a specific directory endpoint, the bus will mark the endpoint as
+        /// faulty. Faulty directory endpoint are no longer used, unless all other endpoints are faulty.
+        ///
+        /// After <see cref="FaultedDirectoryRetryDelay"/> the endpoint is no longer identified as faulty.
+        /// </summary>
+        TimeSpan FaultedDirectoryRetryDelay { get; }
 
         /// <summary>
         /// The time to wait for when trying to replay messages from the persistence on startup.

@@ -33,7 +33,12 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         [OneTimeSetUp]
         public virtual void CreateSchema()
         {
+#if DEBUG
+            Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Verbose;
+            Trace.Listeners.Add(new ConsoleTraceListener());
+#else
             Diagnostics.CassandraTraceSwitch.Level = TraceLevel.Info;
+#endif
             Diagnostics.CassandraStackTraceIncluded = true;
 
             ConfigurationMock = CreateConfigurationMock();

@@ -77,8 +77,6 @@ namespace Abc.Zebus.Transport
                     socket.SetOption(ZmqSocketOption.TCP_KEEPALIVE_INTVL, (int)_options.KeepAlive.KeepAliveInterval.Value.TotalSeconds);
             }
 
-            socket.SetOption(ZmqSocketOption.ROUTING_ID, Encoding.ASCII.GetBytes(PeerId.ToString()));
-
             return socket;
         }
 

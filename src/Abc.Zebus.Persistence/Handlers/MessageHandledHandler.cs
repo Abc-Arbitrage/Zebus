@@ -1,10 +1,11 @@
 ﻿using System.Linq;
 using Abc.Zebus.Persistence.Matching;
+using Abc.Zebus.Persistence.Messages;
 using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.Handlers
 {
-    public class MessageHandledHandler : IMessageHandler<MessageHandled>, IMessageContextAware
+    public class MessageHandledHandler : IMessageHandler<MessageHandled>, IMessageHandler<RemoveMessageFromQueueCommand>, IMessageContextAware
     {
         private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(MessageHandledHandler));
 
@@ -23,13 +24,23 @@ namespace Abc.Zebus.Persistence.Handlers
 
         public void Handle(MessageHandled message)
         {
-            if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(Context!.SenderId.ToString()))
-                _log.LogInformation($"Ack received from peer {Context.SenderId}. MessageId: {message.MessageId}");
+            AckMessage(Context!.SenderId, message.MessageId);
+        }
 
-            _inMemoryMessageMatcher.EnqueueAck(Context!.SenderId, message.MessageId);
+        public void Handle(RemoveMessageFromQueueCommand message)
+        {
+            AckMessage(message.PeerId, message.MessageId);
+        }
 
-            var activeMessageReplayer = _messageReplayerRepository.GetActiveMessageReplayer(Context.SenderId);
-            activeMessageReplayer?.Handle(message);
+        private void AckMessage(PeerId peerId, MessageId messageId)
+        {
+            if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(peerId.ToString()))
+                _log.LogInformation($"Ack received from peer {peerId}. MessageId: {messageId}");
+
+            _inMemoryMessageMatcher.EnqueueAck(peerId, messageId);
+
+            var activeMessageReplayer = _messageReplayerRepository.GetActiveMessageReplayer(peerId);
+            activeMessageReplayer?.OnMessageAcked(messageId);
         }
     }
 }

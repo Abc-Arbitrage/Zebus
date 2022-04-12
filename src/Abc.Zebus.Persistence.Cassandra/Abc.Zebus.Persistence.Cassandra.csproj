@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Zebus.Persistence.Cassandra</PackageId>
+    <Version>$(ZebusPersistenceVersion)</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Persistence\Abc.Zebus.Persistence.csproj" />
+    <ProjectReference Include="..\Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CassandraCSharpDriver" Version="3.16.3" />
+  </ItemGroup>
+
+</Project>

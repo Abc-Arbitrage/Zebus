@@ -10,6 +10,6 @@ namespace Abc.Zebus.Persistence
         void AddLiveMessage(TransportMessage message);
         void Start();
         bool Cancel();
-        void Handle(MessageHandled messageHandled);
+        void OnMessageAcked(MessageId messageId);
     }
 }

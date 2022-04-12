@@ -34,6 +34,7 @@ namespace Abc.Zebus.Tests.Directory
             _configuration = new BusConfiguration(new[] { "tcp://main-directory:777", "tcp://backup-directory:777" })
             {
                 RegistrationTimeout = 500.Milliseconds(),
+                FaultedDirectoryRetryDelay = 30.Seconds(),
                 IsDirectoryPickedRandomly = false,
             };
 
@@ -98,17 +99,35 @@ namespace Abc.Zebus.Tests.Directory
         }
 
         [Test]
-        public void should_not_register_existing_peer()
+        public async Task should_re_register_peer_using_random_directory_endpoint()
+        {
+            _configuration.IsDirectoryPickedRandomly = true;
+
+            for (var i = 0; i < 25; i++)
+            {
+                await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
+                await _directory.UnregisterAsync(_bus);
+            }
+
+            var commands = _bus.Commands.OfType<RegisterPeerCommand>().ToList();
+            commands.ShouldHaveSize(25);
+
+            var first = commands.ExpectedFirst();
+            var firstRecipient = _bus.GetRecipientPeer(first)!;
+
+            commands.Any(x => _bus.GetRecipientPeer(x)!.Id != firstRecipient.Id).ShouldBeTrue();
+        }
+
+        [Test]
+        public async Task should_not_register_existing_peer()
         {
             var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
             _configuration.IsPersistent = true;
             _bus.AddHandler<RegisterPeerCommand>(_ => throw new MessageProcessingException("Peer already exists") { ErrorCode = DirectoryErrorCodes.PeerAlreadyExists });
 
-            using (SystemDateTime.PauseTime())
-            {
-                Assert.Throws<AggregateException>(() => _directory.RegisterAsync(_bus, _self, subscriptions).Wait(20.Seconds()))
-                      .InnerException.ShouldBe<TimeoutException>();
-            }
+            var exception = await _directory.RegisterAsync(_bus, _self, subscriptions).CaptureException();
+
+            exception.ShouldBe<InvalidOperationException>();
         }
 
         [Test]
@@ -123,6 +142,125 @@ namespace Abc.Zebus.Tests.Directory
             var command = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ExpectedSingle();
             command.PeerId.ShouldEqual(_self.Id);
             command.SubscriptionsForTypes.ShouldEqual(expectedSubscriptions);
+        }
+
+        [Test]
+        public async Task should_not_use_failing_directory_peer_twice_for_register([Values] DirectoryFailureMode failureMode)
+        {
+            // Arrange
+            var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
+
+            _configuration.IsDirectoryPickedRandomly = true;
+            _configuration.RegistrationTimeout = 500.Milliseconds();
+
+            _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
+
+            // Act
+            for (int i = 0; i < 25; i++)
+            {
+                await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
+                await _directory.UnregisterAsync(_bus);
+            }
+
+            // Assert
+            var commands = _bus.Commands.OfType<RegisterPeerCommand>().ToList();
+
+            commands.Where(x => _bus.GetRecipientPeer(x)!.Id == failingDirectoryId).ShouldHaveSize(1);
+            commands.Where(x => _bus.GetRecipientPeer(x)!.Id != failingDirectoryId).ShouldHaveSize(25);
+
+            RegisterPeerResponse HandleCommandOnFailingDirectory()
+            {
+                if (failureMode == DirectoryFailureMode.Error)
+                    throw new Exception("Bad directory!");
+
+                Thread.Sleep(2.Seconds());
+                return new RegisterPeerResponse(Array.Empty<PeerDescriptor>());
+            }
+        }
+
+        [Test]
+        public async Task should_reuse_failing_directory_peer_after_delay_for_register([Values] DirectoryFailureMode failureMode)
+        {
+            // Arrange
+            var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
+
+            _configuration.RegistrationTimeout = 500.Milliseconds();
+
+            _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
+
+            var baseTimestamp = DateTime.UtcNow;
+
+            using (SystemDateTime.Set(utcNow: baseTimestamp))
+            {
+                await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
+                await _directory.UnregisterAsync(_bus);
+            }
+
+            _bus.Commands.OfType<RegisterPeerCommand>().ShouldHaveSize(2);
+
+            // Act 1: before delay
+            using (SystemDateTime.Set(utcNow: baseTimestamp.AddSeconds(29)))
+            {
+                await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
+                await _directory.UnregisterAsync(_bus);
+            }
+
+            _bus.Commands.OfType<RegisterPeerCommand>().ShouldHaveSize(3);
+
+            // Act 2: after delay
+            using (SystemDateTime.Set(utcNow: baseTimestamp.AddSeconds(31))) // Retry delay + timeout
+            {
+                await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
+                await _directory.UnregisterAsync(_bus);
+            }
+
+            _bus.Commands.OfType<RegisterPeerCommand>().ShouldHaveSize(5);
+
+            RegisterPeerResponse HandleCommandOnFailingDirectory()
+            {
+                if (failureMode == DirectoryFailureMode.Error)
+                    throw new Exception("Bad directory!");
+
+                Thread.Sleep(2.Seconds());
+                return new RegisterPeerResponse(Array.Empty<PeerDescriptor>());
+            }
+        }
+
+        [Test]
+        public async Task should_not_use_failing_directory_peer_twice_for_subscriptions([Values] DirectoryFailureMode failureMode)
+        {
+            // Arrange
+            var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
+
+            _configuration.IsDirectoryPickedRandomly = true;
+            _configuration.RegistrationTimeout = 500.Milliseconds();
+
+            _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
+            _bus.AddHandlerForPeer<UpdatePeerSubscriptionsForTypesCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
+
+            await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
+
+            // Act
+            for (var i = 0; i < 25; i++)
+            {
+                await _directory.UpdateSubscriptionsAsync(_bus, new[] { new SubscriptionsForType(MessageUtil.TypeId<FakeEvent>()) });
+            }
+
+            // Assert
+            var commands = _bus.Commands.OfType<UpdatePeerSubscriptionsForTypesCommand>().ToList();
+
+            commands.Where(x => _bus.GetRecipientPeer(x)!.Id == failingDirectoryId).ShouldHaveSize(1);
+            commands.Where(x => _bus.GetRecipientPeer(x)!.Id != failingDirectoryId).ShouldHaveSize(25);
+
+            void HandleCommandOnFailingDirectory()
+            {
+                if (failureMode == DirectoryFailureMode.Error)
+                    throw new Exception("Bad directory!");
+
+                Thread.Sleep(2.Seconds());
+            }
         }
 
         [Test]
@@ -490,22 +628,6 @@ namespace Abc.Zebus.Tests.Directory
             contactedPeers.Count.ShouldEqual(2);
             contactedPeers.ShouldContain(new PeerId("Abc.Zebus.DirectoryService.0"));
             contactedPeers.ShouldContain(new PeerId("Abc.Zebus.DirectoryService.1"));
-        }
-
-        [Test]
-        public void should_order_directory_peers_randomly()
-        {
-            _configuration.IsDirectoryPickedRandomly = true;
-
-            for (var i = 0; i < 100; i++)
-            {
-                var directoryPeers = _directory.GetDirectoryPeers();
-                if (directoryPeers.First().EndPoint == "tcp://backup-directory:777")
-                    return;
-                Thread.Sleep(1); // Ensures that the underlying Random changes seed between tries
-            }
-
-            Assert.Fail("100 tries didn't succeed in returning a shuffled version of the directory peers");
         }
 
         [Test]
@@ -1086,6 +1208,12 @@ namespace Abc.Zebus.Tests.Directory
             {
                 Id = id;
             }
+        }
+
+        public enum DirectoryFailureMode
+        {
+            Error,
+            Timeout,
         }
     }
 }

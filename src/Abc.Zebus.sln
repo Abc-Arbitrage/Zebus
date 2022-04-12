@@ -33,11 +33,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Directory.Cassand
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Directory.Tests", "Abc.Zebus.Directory.Tests\Abc.Zebus.Directory.Tests.csproj", "{7C004E59-3B24-4359-8E45-1CD93F03FD80}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Persistence.CQL", "Abc.Zebus.Persistence.CQL\Abc.Zebus.Persistence.CQL.csproj", "{C59CFDDA-987B-4948-B016-95982BBE2CFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Persistence.Cassandra", "Abc.Zebus.Persistence.Cassandra\Abc.Zebus.Persistence.Cassandra.csproj", "{C59CFDDA-987B-4948-B016-95982BBE2CFA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Persistence.CQL.Testing", "Abc.Zebus.Persistence.CQL.Testing\Abc.Zebus.Persistence.CQL.Testing.csproj", "{1059B7D5-1C8F-4702-A6DA-58986FB042F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Persistence.Cassandra.Testing", "Abc.Zebus.Persistence.Cassandra.Testing\Abc.Zebus.Persistence.Cassandra.Testing.csproj", "{1059B7D5-1C8F-4702-A6DA-58986FB042F6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Persistence.CQL.Tests", "Abc.Zebus.Persistence.CQL.Tests\Abc.Zebus.Persistence.CQL.Tests.csproj", "{A9B86B14-A1D5-46F8-9F2D-777C204D7C0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Persistence.Cassandra.Tests", "Abc.Zebus.Persistence.Cassandra.Tests\Abc.Zebus.Persistence.Cassandra.Tests.csproj", "{A9B86B14-A1D5-46F8-9F2D-777C204D7C0B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Persistence.Messages", "Abc.Zebus.Persistence.Messages\Abc.Zebus.Persistence.Messages.csproj", "{8FC5C46E-9C7F-4905-B8A8-89E154F576CF}"
 EndProject

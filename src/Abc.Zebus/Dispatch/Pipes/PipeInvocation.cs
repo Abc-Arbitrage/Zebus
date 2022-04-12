@@ -92,7 +92,7 @@ namespace Abc.Zebus.Dispatch.Pipes
                 runTask = Task.FromException(exception);
             }
 
-            runTask.ContinueWith(task => AfterInvoke(pipeStates, task.IsFaulted, task.Exception), TaskContinuationOptions.ExecuteSynchronously);
+            runTask.ContinueWith(task => AfterInvoke(pipeStates, task.IsFaulted || task.IsCanceled, task.Exception), TaskContinuationOptions.ExecuteSynchronously);
 
             return runTask;
         }

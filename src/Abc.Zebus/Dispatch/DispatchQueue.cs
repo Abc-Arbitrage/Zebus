@@ -210,10 +210,10 @@ namespace Abc.Zebus.Dispatch
             try
             {
                 var exception = task.IsFaulted
-                    ? task.Exception != null
-                        ? task.Exception.InnerException
-                        : new Exception("Task failed")
-                    : null;
+                    ? task.Exception?.InnerException ?? new Exception("Task failed")
+                    : task.IsCanceled
+                        ? task.Exception?.InnerException ?? new TaskCanceledException()
+                        : null;
 
                 if (exception != null)
                     _logger.LogError(exception, "Error running async batch");

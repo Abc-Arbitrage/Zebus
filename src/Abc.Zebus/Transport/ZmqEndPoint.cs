@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 
 namespace Abc.Zebus.Transport
 {
@@ -8,7 +9,15 @@ namespace Abc.Zebus.Transport
 
         public ZmqEndPoint(string? value)
         {
-            _value = value?.Replace("0.0.0.0", Environment.MachineName).ToLower();
+            if (value?.StartsWith("tcp://0.0.0.0:", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                var fqdn = Dns.GetHostEntry(string.Empty).HostName;
+                _value = value.Replace("0.0.0.0", fqdn);
+            }
+            else
+            {
+                _value = value;
+            }
         }
 
         public override string ToString()

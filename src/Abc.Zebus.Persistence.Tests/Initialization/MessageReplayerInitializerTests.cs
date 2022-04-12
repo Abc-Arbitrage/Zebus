@@ -41,7 +41,7 @@ namespace Abc.Zebus.Persistence.Tests.Initialization
             task.Wait(300.Milliseconds()).ShouldBeFalse();
 
             hasActiveMessageReplayers = false;
-            task.Wait(300.Milliseconds()).ShouldBeTrue();
+            task.Wait(2.Seconds()).ShouldBeTrue();
         }
     }
 }
