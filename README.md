@@ -12,7 +12,7 @@ Zebus is **peer to peer**, so it does not depend on a broker to dispatch message
 
 It is **resilient** thanks to the absence of a broker and an optional persistence feature that ensures that messages are not lost if a peer is down or disconnected.
 
-It is **stable**, since we have been using it on a production environment at [Abc Arbitrage](http://www.abc-arbitrage.com/) for more than six years, handling hundreds of millions of messages per day.
+It is **stable**, since we have been using it on a production environment at [ABC Arbitrage](http://www.abc-arbitrage.com/) since 2013, handling hundreds of millions of messages per day.
 
 ## Key concepts
 
@@ -74,10 +74,6 @@ public class MyEvent : IEvent
 
 And you're set ! This is all the code you need to send an event from one machine to the other. If you want to read more about how the magic happens, have a look at the [wiki](https://github.com/Abc-Arbitrage/Zebus/wiki). Or if you want a more detailed walkthrough (what to reference, how to start the Bus...) visit the [Quick start](https://github.com/Abc-Arbitrage/Zebus/wiki/Quick-start) page.
 
-# Requirements
-
-On Windows, you will need to have [Microsoft Visual C++ 2017 Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) installed in order to load the x86 or the x64 version of `libzmq` embedded in the project.
-
 # Release notes
 
 We try to stick to the [semantic versioning](http://semver.org/) principles and keep the [release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES.md) and [directory release notes](https://github.com/Abc-Arbitrage/Zebus/blob/master/RELEASE_NOTES_DIRECTORY.md) up to date.
@@ -90,7 +86,7 @@ We try to stick to the [semantic versioning](http://semver.org/) principles and 
 
 # Copyright
 
-Copyright © 2019 Abc Arbitrage Asset Management
+Copyright © ABC Arbitrage Asset Management
 
 # License
 
