@@ -2,13 +2,13 @@
 using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Util;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Directory.DeadPeerDetection
 {
     public class DeadPeerDetectorEntry
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(DeadPeerDetectorEntry));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(DeadPeerDetectorEntry));
         private readonly IDirectoryConfiguration _configuration;
         private readonly IBus _bus;
         private readonly TaskScheduler _taskScheduler;
@@ -86,7 +86,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
             var descriptor = Descriptor;
 
-            _logger.WarnFormat("Peer timeout, PeerId: {0}", descriptor.PeerId);
+            _logger.LogWarning($"Peer timeout, PeerId: {descriptor.PeerId}");
 
             PeerTimeoutDetected?.Invoke(this, timeoutTimestampUtc);
         }
@@ -105,7 +105,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
 
             if (wasDown)
-                _logger.InfoFormat("Peer reset, PeerId: {0}", Descriptor.PeerId);
+                _logger.LogInformation($"Peer reset, PeerId: {Descriptor.PeerId}");
         }
 
         public bool HasReachedTimeout()
@@ -136,13 +136,13 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         {
             if (pingTask.IsFaulted)
             {
-                _logger.DebugFormat("Ping failed, PeerId: {0}, Exception: {1}", Descriptor.PeerId, pingTask.Exception);
+                _logger.LogDebug(pingTask.Exception, $"Ping failed, PeerId: {Descriptor.PeerId}");
                 return;
             }
 
             if (!pingTask.Result.IsSuccess)
             {
-                _logger.DebugFormat("Ping failed, PeerId: {0}", Descriptor.PeerId);
+                _logger.LogDebug($"Ping failed, PeerId: {Descriptor.PeerId}");
                 return;
             }
 

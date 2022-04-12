@@ -5,6 +5,7 @@ using System.Threading;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Log4Net;
 using Abc.Zebus.Monitoring;
 using Abc.Zebus.Persistence.Cassandra;
 using Abc.Zebus.Persistence.Cassandra.Cql;
@@ -19,7 +20,9 @@ using Abc.Zebus.Transport;
 using log4net;
 using log4net.Config;
 using log4net.Core;
+using Microsoft.Extensions.Logging;
 using StructureMap;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 #nullable enable
 
@@ -28,10 +31,12 @@ namespace Abc.Zebus.Persistence.Runner
     internal class Program
     {
         private static readonly ManualResetEvent _cancelKeySignal = new ManualResetEvent(false);
-        private static readonly ILog _log = LogManager.GetLogger(typeof(Program));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(Program));
 
         public static void Main()
         {
+            ZebusLogManager.LoggerFactory = new Log4NetFactory();
+
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 eventArgs.Cancel = true;
@@ -39,7 +44,7 @@ namespace Abc.Zebus.Persistence.Runner
             };
 
             XmlConfigurator.ConfigureAndWatch(LoggerManager.GetRepository(typeof(Program).Assembly), new FileInfo(InBaseDirectory("log4net.config")));
-            _log.Info("Starting persistence");
+            _log.LogInformation("Starting persistence");
 
             var appSettingsConfiguration = new AppSettingsConfiguration();
             var useCassandraStorage = ConfigurationManager.AppSettings["PersistenceStorage"] == "Cassandra";
@@ -52,7 +57,7 @@ namespace Abc.Zebus.Persistence.Runner
 
             using (busFactory.CreateAndStartBus())
             {
-                _log.Info("Starting initialisers");
+                _log.LogInformation("Starting initialisers");
                 var inMemoryMessageMatcherInitializer = busFactory.Container.GetInstance<InMemoryMessageMatcherInitializer>();
                 inMemoryMessageMatcherInitializer.BeforeStart();
 
@@ -63,11 +68,11 @@ namespace Abc.Zebus.Persistence.Runner
                     oldestNonAckedMessageUpdaterPeriodicAction.AfterStart();
                 }
 
-                _log.Info("Persistence started");
+                _log.LogInformation("Persistence started");
 
                 _cancelKeySignal.WaitOne();
 
-                _log.Info("Stopping initialisers");
+                _log.LogInformation("Stopping initialisers");
                 oldestNonAckedMessageUpdaterPeriodicAction?.BeforeStop();
 
                 var messageReplayerInitializer = busFactory.Container.GetInstance<MessageReplayerInitializer>();
@@ -75,7 +80,7 @@ namespace Abc.Zebus.Persistence.Runner
 
                 inMemoryMessageMatcherInitializer.AfterStop();
 
-                _log.Info("Persistence stopped");
+                _log.LogInformation("Persistence stopped");
             }
         }
 
@@ -92,12 +97,12 @@ namespace Abc.Zebus.Persistence.Runner
 
                 if (useCassandraStorage)
                 {
-                    _log.Info("Using Cassandra storage implementation");
+                    _log.LogInformation("Using Cassandra storage implementation");
                     c.ForSingletonOf<IStorage>().Use<CqlStorage>();
                 }
                 else
                 {
-                    _log.Info("Using RocksDB storage implementation");
+                    _log.LogInformation("Using RocksDB storage implementation");
                     c.ForSingletonOf<IStorage>().Use<RocksDbStorage>();
                 }
 

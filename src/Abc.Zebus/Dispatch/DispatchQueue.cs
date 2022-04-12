@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Collections;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Dispatch
 {
@@ -14,7 +14,7 @@ namespace Abc.Zebus.Dispatch
         [ThreadStatic]
         private static string? _currentDispatchQueueName;
 
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(DispatchQueue));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(DispatchQueue));
 
         private readonly IPipeManager _pipeManager;
         private readonly int _batchSize;
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Dispatch
             };
 
             _thread.Start();
-            _logger.InfoFormat("{0} started", Name);
+            _logger.LogInformation($"{Name} started");
         }
 
         public void Stop()
@@ -90,7 +90,7 @@ namespace Abc.Zebus.Dispatch
             _thread = null;
 
             _queue = new FlushableBlockingCollection<Entry>();
-            _logger.InfoFormat("{0} stopped", Name);
+            _logger.LogInformation($"{Name} stopped");
         }
 
         private void ThreadProc()
@@ -98,7 +98,7 @@ namespace Abc.Zebus.Dispatch
             _currentDispatchQueueName = Name;
             try
             {
-                _logger.InfoFormat("{0} processing started", Name);
+                _logger.LogInformation($"{Name} processing started");
                 var batch = new Batch(_batchSize);
 
                 foreach (var entries in _queue.GetConsumingEnumerable(_batchSize))
@@ -106,7 +106,7 @@ namespace Abc.Zebus.Dispatch
                     ProcessEntries(entries, batch);
                 }
 
-                _logger.InfoFormat("{0} processing stopped", Name);
+                _logger.LogInformation($"{Name} processing stopped");
             }
             finally
             {
@@ -139,7 +139,7 @@ namespace Abc.Zebus.Dispatch
             }
             catch (Exception ex)
             {
-                _logger.Error(ex);
+                _logger.LogError(ex, "Error running action");
             }
             finally
             {
@@ -195,7 +195,7 @@ namespace Abc.Zebus.Dispatch
             }
             catch (Exception ex)
             {
-                _logger.Error(ex);
+                _logger.LogError(ex, "Error running batch");
                 batch.SetHandled(ex);
             }
             finally
@@ -216,7 +216,7 @@ namespace Abc.Zebus.Dispatch
                         : null;
 
                 if (exception != null)
-                    _logger.Error(exception);
+                    _logger.LogError(exception, "Error running async batch");
 
                 asyncBatch.SetHandled(exception);
             }
@@ -347,7 +347,7 @@ namespace Abc.Zebus.Dispatch
                     }
                     catch (Exception ex)
                     {
-                        _logger.Error($"Unable to run dispatch continuation, MessageType: {entry.Invoker!.MessageType.Name}, HandlerType: {entry.Invoker!.MessageHandlerType.Name}, HandlerError: {error}, ContinuationError: {ex}");
+                        _logger.LogError(ex, $"Unable to run dispatch continuation, MessageType: {entry.Invoker!.MessageType.Name}, HandlerType: {entry.Invoker!.MessageHandlerType.Name}, HandlerError: {error}");
                     }
                 }
             }

@@ -1,13 +1,13 @@
 ﻿using System.Linq;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Messages;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.Handlers
 {
     public class MessageHandledHandler : IMessageHandler<MessageHandled>, IMessageHandler<RemoveMessageFromQueueCommand>, IMessageContextAware
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(MessageHandledHandler));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(MessageHandledHandler));
 
         private readonly IMessageReplayerRepository _messageReplayerRepository;
         private readonly IInMemoryMessageMatcher _inMemoryMessageMatcher;
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Persistence.Handlers
         private void AckMessage(PeerId peerId, MessageId messageId)
         {
             if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(peerId.ToString()))
-                _log.Info($"Ack received from peer {peerId}. MessageId: {messageId}");
+                _log.LogInformation($"Ack received from peer {peerId}. MessageId: {messageId}");
 
             _inMemoryMessageMatcher.EnqueueAck(peerId, messageId);
 

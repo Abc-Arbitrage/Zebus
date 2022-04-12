@@ -6,14 +6,14 @@ using System.Reflection;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Core
 {
-    public class BusMessageLogger
+    internal class BusMessageLogger
     {
         private static readonly ConcurrentDictionary<Type, MessageTypeLogHelper> _logHelpers = new ConcurrentDictionary<Type, MessageTypeLogHelper>();
-        private readonly ILog _logger;
+        private readonly ILogger _logger;
         private bool _logDebugEnabled;
         private bool _logInfoEnabled;
 
@@ -24,23 +24,22 @@ namespace Abc.Zebus.Core
 
         public BusMessageLogger(string loggerFullName)
         {
-            _logger = LogManager.GetLogger(typeof(BusMessageLogger).Assembly, loggerFullName);
+            _logger = ZebusLogManager.GetLogger(loggerFullName);
 
-            // Instances of BusMessageLogger are static, no need to unsubscribe from these events
-            _logger.Logger.Repository.ConfigurationChanged += (sender, args) => UpdateLogConfig();
-            _logger.Logger.Repository.ConfigurationReset += (sender, args) => UpdateLogConfig();
+            // Instances of BusMessageLogger are static, no need to unsubscribe from this event
+            ZebusLogManager.LoggerFactoryChanged += UpdateLogConfig;
 
             UpdateLogConfig();
 
             void UpdateLogConfig()
             {
-                _logDebugEnabled = _logger.IsDebugEnabled;
-                _logInfoEnabled = _logger.IsInfoEnabled;
+                _logDebugEnabled = _logger.IsEnabled(LogLevel.Debug);
+                _logInfoEnabled = _logger.IsEnabled(LogLevel.Information);
             }
         }
 
         public bool IsInfoEnabled(IMessage message)
-            => _logInfoEnabled && GetLogHelper(message).Logger.IsInfoEnabled;
+            => _logInfoEnabled && GetLogHelper(message).Logger.IsEnabled(LogLevel.Information);
 
         public void LogHandleMessage(IList<IMessage> messages, string? dispatchQueueName, MessageId? messageId)
         {
@@ -53,7 +52,7 @@ namespace Abc.Zebus.Core
             var dispatchQueueNameText = HasCustomDispatchQueue() ? $" [{dispatchQueueName}]" : "";
             var batchText = messages.Count > 1 ? $" Count: {messages.Count}" : "";
 
-            _logger.Info($"HANDLE{dispatchQueueNameText}: {messageText}{batchText} [{messageId}]");
+            _logger.LogInformation($"HANDLE{dispatchQueueNameText}: {messageText}{batchText} [{messageId}]");
 
             bool HasCustomDispatchQueue() => !string.IsNullOrEmpty(dispatchQueueName) && dispatchQueueName != DispatchQueueNameScanner.DefaultQueueName;
         }
@@ -63,7 +62,7 @@ namespace Abc.Zebus.Core
             if (!TryGetLogHelperForDebug(messageAck, out _))
                 return;
 
-            _logger.Debug($"RECV ACK {{{messageAck}}}");
+            _logger.LogDebug($"RECV ACK {{{messageAck}}}");
         }
 
         public void LogReceiveMessageLocal(IMessage message)
@@ -72,7 +71,7 @@ namespace Abc.Zebus.Core
                 return;
 
             var messageText = logHelper.GetMessageText(message);
-            _logger.Debug($"RECV local: {messageText}");
+            _logger.LogDebug($"RECV local: {messageText}");
         }
 
         public void LogReceiveMessageRemote(IMessage message, TransportMessage transportMessage)
@@ -81,7 +80,7 @@ namespace Abc.Zebus.Core
                 return;
 
             var messageText = logHelper.GetMessageText(message);
-            _logger.Debug($"RECV remote: {messageText} from {transportMessage.SenderId} ({transportMessage.Content?.Length} bytes). [{transportMessage.Id}]");
+            _logger.LogDebug($"RECV remote: {messageText} from {transportMessage.SenderId} ({transportMessage.Content?.Length} bytes). [{transportMessage.Id}]");
         }
 
         public void LogSendMessage(IMessage message, IList<Peer> peers)
@@ -92,7 +91,7 @@ namespace Abc.Zebus.Core
             var messageText = logHelper.GetMessageText(message);
             var targetPeersText = GetTargetPeersText(peers);
 
-            _logger.Info($"SEND: {messageText} to {targetPeersText}");
+            _logger.LogInformation($"SEND: {messageText} to {targetPeersText}");
         }
 
         public void LogSendMessage(IMessage message, IList<Peer> peers, TransportMessage transportMessage)
@@ -103,7 +102,7 @@ namespace Abc.Zebus.Core
             var messageText = logHelper.GetMessageText(message);
             var targetPeersText = GetTargetPeersText(peers);
 
-            _logger.Info($"SEND: {messageText} to {targetPeersText} ({transportMessage.Content?.Length} bytes) [{transportMessage.Id}]");
+            _logger.LogInformation($"SEND: {messageText} to {targetPeersText} ({transportMessage.Content?.Length} bytes) [{transportMessage.Id}]");
         }
 
         private static string GetTargetPeersText(IList<Peer> peers)
@@ -133,7 +132,7 @@ namespace Abc.Zebus.Core
 
         private static MessageTypeLogHelper CreateLogger(Type messageType)
         {
-            var logger = LogManager.GetLogger(messageType);
+            var logger = ZebusLogManager.GetLogger(messageType);
             var hasToStringOverride = HasToStringOverride(messageType);
 
             return new MessageTypeLogHelper(logger, hasToStringOverride, messageType.GetPrettyName());
@@ -148,7 +147,7 @@ namespace Abc.Zebus.Core
             }
 
             logHelper = GetLogHelper(message);
-            return logHelper.Logger.IsInfoEnabled;
+            return logHelper.Logger.IsEnabled(LogLevel.Information);
         }
 
         private bool TryGetLogHelperForDebug(IMessage message, [NotNullWhen(true)] out MessageTypeLogHelper? logHelper)
@@ -160,7 +159,7 @@ namespace Abc.Zebus.Core
             }
 
             logHelper = GetLogHelper(message);
-            return logHelper.Logger.IsDebugEnabled;
+            return logHelper.Logger.IsEnabled(LogLevel.Debug);
         }
 
         private static bool HasToStringOverride(Type messageType)
@@ -171,11 +170,11 @@ namespace Abc.Zebus.Core
 
         private class MessageTypeLogHelper
         {
-            public readonly ILog Logger;
+            public readonly ILogger Logger;
             private readonly bool _hasToStringOverride;
             private readonly string _messageTypeName;
 
-            public MessageTypeLogHelper(ILog logger, bool hasToStringOverride, string messageTypeName)
+            public MessageTypeLogHelper(ILogger logger, bool hasToStringOverride, string messageTypeName)
             {
                 Logger = logger;
                 _hasToStringOverride = hasToStringOverride;

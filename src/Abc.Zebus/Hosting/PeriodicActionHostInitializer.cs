@@ -3,14 +3,14 @@ using System.Threading;
 using Abc.Zebus.Lotus;
 using Abc.Zebus.Util;
 using JetBrains.Annotations;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Hosting
 {
     [UsedImplicitly]
     public abstract class PeriodicActionHostInitializer : HostInitializer
     {
-        protected readonly ILog _logger;
+        protected readonly ILogger _logger;
         private readonly IBus _bus;
         private readonly Func<DateTime>? _dueTimeUtcFunc;
         private Timer? _timer;
@@ -20,7 +20,7 @@ namespace Abc.Zebus.Hosting
 
         protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime>? dueTimeUtcFunc = null)
         {
-            _logger = LogManager.GetLogger(GetType());
+            _logger = ZebusLogManager.GetLogger(GetType());
             _bus = bus;
             _dueTimeUtcFunc = dueTimeUtcFunc;
 
@@ -45,7 +45,7 @@ namespace Abc.Zebus.Hosting
 
             if (Period <= TimeSpan.Zero || Period == TimeSpan.MaxValue)
             {
-                _logger.InfoFormat("Periodic action disabled");
+                _logger.LogInformation("Periodic action disabled");
                 return;
             }
 
@@ -89,7 +89,7 @@ namespace Abc.Zebus.Hosting
 
             var timerStopWaitHandle = new ManualResetEvent(false);
             if (!timer.Dispose(timerStopWaitHandle) || !timerStopWaitHandle.WaitOne(2.Seconds()))
-                _logger.Warn("Unable to terminate periodic action");
+                _logger.LogWarning("Unable to terminate periodic action");
         }
 
         private void OnTimer()
@@ -123,7 +123,7 @@ namespace Abc.Zebus.Hosting
             }
             catch (Exception ex)
             {
-                _logger.Error(ex);
+                _logger.LogError(ex, "Error in periodic action");
 
                 if (ShouldPublishError(ex))
                     PublishError(ex);
@@ -131,7 +131,7 @@ namespace Abc.Zebus.Hosting
                 _exceptionCount++;
                 if (_exceptionCount >= ErrorCountBeforePause)
                 {
-                    _logger.WarnFormat("Too many exceptions, periodic action paused ({0})", ErrorPauseDuration);
+                    _logger.LogWarning($"Too many exceptions, periodic action paused ({ErrorPauseDuration})");
                     _pauseEndTimeUtc = DateTime.UtcNow.Add(ErrorPauseDuration);
                 }
             }
@@ -145,7 +145,7 @@ namespace Abc.Zebus.Hosting
             }
             catch (Exception ex)
             {
-                _logger.ErrorFormat("Unable to send CustomProcessingFailed, Exception: {0}", ex);
+                _logger.LogError(ex, "Unable to send CustomProcessingFailed");
             }
         }
 

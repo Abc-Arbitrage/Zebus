@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Transport;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence
 {
@@ -62,7 +63,7 @@ namespace Abc.Zebus.Persistence
 
             public virtual void ProcessPendingReceive(TransportMessage transportMessage)
             {
-                _logger.ErrorFormat("DISCARDING MESSAGE {0} {1}", transportMessage.MessageTypeId, transportMessage.Id);
+                _logger.LogError($"DISCARDING MESSAGE {transportMessage.MessageTypeId} {transportMessage.Id}");
             }
 
             protected virtual void OnMessageReplayed(MessageReplayed messageReplayed)
@@ -93,7 +94,7 @@ namespace Abc.Zebus.Persistence
                     _replayEventReceivedSignal.Set();
 
                 if (replayEvent is ReplayPhaseEnded)
-                    _logger.InfoFormat("Replayed {0} messages", _replayCount);
+                    _logger.LogInformation($"Replayed {_replayCount} messages");
 
                 base.OnReplayEvent(replayEvent);
             }
@@ -121,14 +122,15 @@ namespace Abc.Zebus.Persistence
 
             protected override void OnMessageReplayed(MessageReplayed messageReplayed)
             {
-                _logger.DebugFormat("REPLAY: {0} {1}", messageReplayed.Message.MessageTypeId, messageReplayed.Message.Id);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"REPLAY: {messageReplayed.Message.MessageTypeId} {messageReplayed.Message.Id}");
 
                 Transport.TriggerMessageReceived(messageReplayed.Message);
                 Transport._receivedMessagesIds.TryAdd(messageReplayed.Message.Id, true);
 
                 _replayCount++;
                 if (_replayCount % 100 == 0)
-                    _logger.InfoFormat("Replayed {0} messages...", _replayCount);
+                    _logger.LogInformation($"Replayed {_replayCount} messages...");
             }
 
             public override void OnRealTimeMessage(TransportMessage transportMessage)
@@ -156,7 +158,7 @@ namespace Abc.Zebus.Persistence
                 catch (Exception exception)
                 {
                     var errorMessage = $"Unable to handle message {transportMessage.MessageTypeId.FullName} during SafetyPhase.";
-                    _logger.Error(errorMessage, exception);
+                    _logger.LogError(exception, errorMessage);
                 }
 
                 Transport._receivedMessagesIds.TryAdd(transportMessage.Id, true);
@@ -164,7 +166,8 @@ namespace Abc.Zebus.Persistence
 
             protected override void OnMessageReplayed(MessageReplayed messageReplayed)
             {
-                _logger.DebugFormat("FORWARD: {0} {1}", messageReplayed.Message.MessageTypeId, messageReplayed.Message.Id);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"FORWARD: {messageReplayed.Message.MessageTypeId} {messageReplayed.Message.Id}");
 
                 Transport._pendingReceives.Add(messageReplayed.Message);
             }

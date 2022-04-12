@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Directory
 {
@@ -20,7 +20,7 @@ namespace Abc.Zebus.Directory
                                                IMessageHandler<PeerNotResponding>,
                                                IMessageHandler<PeerResponding>
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(PeerDirectoryClient));
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(PeerDirectoryClient));
 
         private readonly ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree> _globalSubscriptionsIndex = new ConcurrentDictionary<MessageTypeId, PeerSubscriptionTree>();
         private readonly ConcurrentDictionary<PeerId, PeerEntry> _peers = new ConcurrentDictionary<PeerId, PeerEntry>();
@@ -110,7 +110,7 @@ namespace Abc.Zebus.Directory
                 }
                 catch (Exception ex)
                 {
-                    _logger.WarnFormat("Unable to process message {0} {{{1}}}, Exception: {2}", message.GetType(), message, ex);
+                    _logger.LogWarning(ex, $"Unable to process message {message.GetType()} {{{message}}}");
                 }
             }
         }
@@ -134,7 +134,7 @@ namespace Abc.Zebus.Directory
                     var result = await bus.Send(new RegisterPeerCommand(self), directoryPeer).WithTimeoutAsync(_configuration.RegistrationTimeout).ConfigureAwait(false);
                     if (result.ErrorCode == DirectoryErrorCodes.PeerAlreadyExists)
                     {
-                        _logger.Warn($"Register rejected for {self.PeerId}, the peer already exists in the directory");
+                        _logger.LogWarning($"Register rejected for {self.PeerId}, the peer already exists in the directory");
                         throw new InvalidOperationException($"Unable to register peer on directory, {self.PeerId} already exists");
                     }
 
@@ -144,11 +144,11 @@ namespace Abc.Zebus.Directory
                         return;
                     }
 
-                    _logger.Warn($"Register failed on [{directoryPeer.EndPoint}], trying next directory peer");
+                    _logger.LogWarning($"Register failed on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
                 catch (TimeoutException)
                 {
-                    _logger.Warn($"Register timeout on [{directoryPeer.EndPoint}], trying next directory peer");
+                    _logger.LogWarning($"Register timeout on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
 
                 _directorySelector.SetFaultedDirectory(directoryPeer);
@@ -175,11 +175,11 @@ namespace Abc.Zebus.Directory
                     if (response.IsSuccess)
                         return;
 
-                    _logger.Warn($"Subscription update failed on [{directoryPeer.EndPoint}], trying next directory peer");
+                    _logger.LogWarning($"Subscription update failed on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
                 catch (TimeoutException)
                 {
-                    _logger.Warn($"Subscription update timeout on [{directoryPeer.EndPoint}], trying next directory peer");
+                    _logger.LogWarning($"Subscription update timeout on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
 
                 _directorySelector.SetFaultedDirectory(directoryPeer);
@@ -204,11 +204,11 @@ namespace Abc.Zebus.Directory
                         return;
                     }
 
-                    _logger.Warn($"Unregister failed on [{directoryPeer.EndPoint}], trying next directory peer");
+                    _logger.LogWarning($"Unregister failed on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
                 catch (TimeoutException)
                 {
-                    _logger.Warn($"Unregister timeout on [{directoryPeer.EndPoint}], trying next directory peer");
+                    _logger.LogWarning($"Unregister timeout on [{directoryPeer.EndPoint}], trying next directory peer");
                 }
 
                 _directorySelector.SetFaultedDirectory(directoryPeer);
@@ -424,7 +424,7 @@ namespace Abc.Zebus.Directory
         private static void WarnWhenPeerDoesNotExist(PeerEntryResult peer, PeerId peerId)
         {
             if (peer.FailureReason == PeerEntryResult.FailureReasonType.PeerNotPresent)
-                _logger.WarnFormat("Received message but no peer existed: {0}", peerId);
+                _logger.LogWarning($"Received message but no peer existed: {peerId}");
         }
 
         public void Handle(PeerNotResponding message)
@@ -456,7 +456,7 @@ namespace Abc.Zebus.Directory
 
             if (peer.TimestampUtc > timestampUtc)
             {
-                _logger.InfoFormat("Outdated message ignored");
+                _logger.LogInformation("Outdated message ignored");
                 return new PeerEntryResult(PeerEntryResult.FailureReasonType.OutdatedMessage);
             }
 

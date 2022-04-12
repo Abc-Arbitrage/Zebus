@@ -8,11 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Abc.Zebus.Log4Net\Abc.Zebus.Log4Net.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Persistence.Cassandra\Abc.Zebus.Persistence.Cassandra.csproj" />
     <ProjectReference Include="..\Abc.Zebus.Persistence.RocksDb\Abc.Zebus.Persistence.RocksDb.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="FluentDateTime" Version="2.0.0" />
     <PackageReference Include="RocksDbNative" Version="6.2.2" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />

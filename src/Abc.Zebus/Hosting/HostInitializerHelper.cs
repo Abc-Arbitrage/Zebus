@@ -2,14 +2,14 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using log4net;
+using Microsoft.Extensions.Logging;
 using StructureMap;
 
 namespace Abc.Zebus.Hosting
 {
     public static class HostInitializerHelper
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(HostInitializerHelper));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(HostInitializerHelper));
 
         public static void CallActionOnInitializers(this Container container, Expression<Action<HostInitializer>> actionToCall, bool invertPriority = false)
         {
@@ -25,11 +25,11 @@ namespace Abc.Zebus.Hosting
                 if (hostMethodInfo == null || hostMethodInfo.DeclaringType == typeof(HostInitializer))
                     continue;
 
-                _log.Info("Calling " + methodInfo.Name + " on initializer: " + hostInitializer.GetType().Name);
+                _log.LogInformation("Calling " + methodInfo.Name + " on initializer: " + hostInitializer.GetType().Name);
                 actionToCall.Compile()(hostInitializer);
             }
 
-            _log.Info(methodInfo.Name + " on initializers executed");
+            _log.LogInformation(methodInfo.Name + " on initializers executed");
         }
 
         private static MethodInfo GetMethodInfo<T>(Expression<Action<T>> expression)

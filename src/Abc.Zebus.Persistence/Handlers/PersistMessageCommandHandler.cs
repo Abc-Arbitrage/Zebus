@@ -2,13 +2,13 @@
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Transport;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.Handlers
 {
     public class PersistMessageCommandHandler : IMessageHandler<PersistMessageCommand>
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(PersistMessageCommandHandler));
+        private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(PersistMessageCommandHandler));
 
         private readonly TransportMessageSerializer _serializer = new TransportMessageSerializer(50 * 1024);
         private readonly IMessageReplayerRepository _messageReplayerRepository;
@@ -30,7 +30,7 @@ namespace Abc.Zebus.Persistence.Handlers
             var transportMessage = message.TransportMessage;
             if (string.IsNullOrEmpty(transportMessage.MessageTypeId.FullName))
             {
-                _log.Error($"Message received with empty TypeId, MessageId: {transportMessage.Id}, SenderId: {transportMessage.Originator.SenderId}");
+                _log.LogError($"Message received with empty TypeId, MessageId: {transportMessage.Id}, SenderId: {transportMessage.Originator.SenderId}");
                 return;
             }
 
@@ -39,12 +39,12 @@ namespace Abc.Zebus.Persistence.Handlers
             {
                 if (string.IsNullOrEmpty(target.ToString()))
                 {
-                    _log.Error($"Message received with empty target, MessageId: {transportMessage.Id}, SenderId: {transportMessage.Originator.SenderId}");
+                    _log.LogError($"Message received with empty target, MessageId: {transportMessage.Id}, SenderId: {transportMessage.Originator.SenderId}");
                     continue;
                 }
 
                 if (_configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(target.ToString()))
-                    _log.Info($"Message received for peer {target}, MessageId: {transportMessage.Id}, MessageType: {transportMessage.MessageTypeId}");
+                    _log.LogInformation($"Message received for peer {target}, MessageId: {transportMessage.Id}, MessageType: {transportMessage.MessageTypeId}");
 
                 _messageReplayerRepository.GetActiveMessageReplayer(target)?.AddLiveMessage(transportMessage);
                 _inMemoryMessageMatcher.EnqueueMessage(target, transportMessage.Id, transportMessage.MessageTypeId, transportMessageBytes);
