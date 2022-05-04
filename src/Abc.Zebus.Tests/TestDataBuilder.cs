@@ -7,6 +7,11 @@ namespace Abc.Zebus.Tests
 {
     public static class TestDataBuilder
     {
+        public static Peer Peer()
+        {
+            return new Peer(new PeerId($"Abc.Testing.{Guid.NewGuid()}"), "tcp://testingendpoint:123");
+        }
+
          public static Subscription[] CreateSubscriptions<TMessage>() where TMessage : IMessage
          {
              return new[] { CreateSubscription<TMessage>() };

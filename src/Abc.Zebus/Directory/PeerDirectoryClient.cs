@@ -226,7 +226,7 @@ namespace Abc.Zebus.Directory
             if (subscriptionList == null)
                 return Array.Empty<Peer>();
 
-            return subscriptionList.GetPeers(messageBinding.RoutingKey);
+            return subscriptionList.GetPeers(messageBinding.RoutingContent);
         }
 
         public bool IsPersistent(PeerId peerId)
