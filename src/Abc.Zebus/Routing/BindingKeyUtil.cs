@@ -24,8 +24,8 @@ namespace Abc.Zebus.Routing
                     continue;
 
                 var part = bindingKey.GetPartToken(index);
-                var memberToStringExpression = routingMembers[index].ToStringExpression;
-                subPredicates.Add(Expression.MakeBinary(ExpressionType.Equal, memberToStringExpression, Expression.Constant(part)));
+
+                subPredicates.Add(routingMembers[index].CreateMatchExpression(part));
             }
 
             if (!subPredicates.Any())
@@ -33,6 +33,7 @@ namespace Abc.Zebus.Routing
 
             var empty = Expression.Empty();
             var finalExpression = subPredicates.Aggregate<Expression, Expression>(empty, (final, exp) => final == empty ? exp : Expression.AndAlso(final, exp));
+
             return (Func<IMessage, bool>)Expression.Lambda(finalExpression, MessageTypeDescriptor.RoutingMember.ParameterExpression).Compile();
         }
 

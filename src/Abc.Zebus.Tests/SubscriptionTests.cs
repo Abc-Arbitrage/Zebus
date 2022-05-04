@@ -27,7 +27,29 @@ namespace Abc.Zebus.Tests
         public void single_star_should_always_match(string routingKey)
         {
             var subscription = CreateSubscription("*");
-            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
+            subscription.Matches(CreateMessageBinding(routingKey)).ShouldBeTrue();
+        }
+
+        [TestCase("*.A", true)]
+        [TestCase("*.B", true)]
+        [TestCase("*.C", true)]
+        [TestCase("*.X", false)]
+        [TestCase("X.A", false)]
+        [TestCase("1.B", true)]
+        public void should_match_collection_item(string bindingKey, bool isMatchExpected)
+        {
+            var subscription = CreateSubscription(bindingKey);
+
+            var routingContent = new RoutingContent(
+                new RoutingContentValue("1"),
+                new RoutingContentValue(new[] { "A", "B", "C" })
+                );
+
+            var messageBinding = new MessageBinding(subscription.MessageTypeId, routingContent);
+
+            var matches = subscription.Matches(messageBinding);
+
+            matches.ShouldEqual(isMatchExpected);
         }
 
         [TestCase("whatever")]
@@ -36,7 +58,7 @@ namespace Abc.Zebus.Tests
         public void single_dash_should_always_match(string routingKey)
         {
             var subscription = CreateSubscription("#");
-            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
+            subscription.Matches(CreateMessageBinding(routingKey)).ShouldBeTrue();
         }
 
         [TestCase("whatever")]
@@ -45,7 +67,7 @@ namespace Abc.Zebus.Tests
         public void empty_bindingKey_should_always_match(string routingKey)
         {
             var subscription = new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKey.Empty);
-            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
+            subscription.Matches(CreateMessageBinding(routingKey)).ShouldBeTrue();
         }
 
         [TestCase("a.b.c")]
@@ -53,7 +75,7 @@ namespace Abc.Zebus.Tests
         public void stars_should_always_match_if_same_number_of_parts(string routingKey)
         {
             var subscription = CreateSubscription("*.*.*");
-            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeTrue();
+            subscription.Matches(CreateMessageBinding(routingKey)).ShouldBeTrue();
         }
 
         [TestCase("a.b.*")]
@@ -63,7 +85,7 @@ namespace Abc.Zebus.Tests
         public void binding_key_with_star_should_match_routing_key(string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            subscription.Matches(BindingKeyHelper.CreateFromString("a.b.c", '.')).ShouldBeTrue();
+            subscription.Matches(CreateMessageBinding("a.b.c")).ShouldBeTrue();
         }
 
         [TestCase("a.b.#")]
@@ -71,7 +93,7 @@ namespace Abc.Zebus.Tests
         public void binding_key_with_dash_should_match_routing_key(string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            subscription.Matches(BindingKeyHelper.CreateFromString("a.b.c", '.')).ShouldBeTrue();
+            subscription.Matches(CreateMessageBinding("a.b.c")).ShouldBeTrue();
         }
 
         [TestCase("a.b", "a.b.c.d")]
@@ -80,14 +102,14 @@ namespace Abc.Zebus.Tests
         public void should_not_match_binding_key(string routingKey, string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            subscription.Matches(BindingKeyHelper.CreateFromString(routingKey, '.')).ShouldBeFalse();
+            subscription.Matches(CreateMessageBinding(routingKey)).ShouldBeFalse();
         }
 
         [Test]
         public void exact_same_routing_key_should_match_binding_key()
         {
             var subscription = CreateSubscription("a.b.c");
-            subscription.Matches(BindingKeyHelper.CreateFromString("a.b.c", '.')).ShouldBeTrue();
+            subscription.Matches(CreateMessageBinding("a.b.c")).ShouldBeTrue();
         }
 
         [Test]
@@ -198,6 +220,44 @@ namespace Abc.Zebus.Tests
         }
 
         [Test]
+        public void should_create_subscription_from_array_1()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithCollection>(x => x.IdArray.Contains(ExpectedId()));
+
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithCollection)));
+            subscription.BindingKey.ShouldEqual(new BindingKey("*", "42", "*"));
+        }
+
+        [Test]
+        public void should_create_subscription_from_array_2()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithCollection>(x => x.Name == "X" && x.IdArray.Contains(1));
+
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithCollection)));
+            subscription.BindingKey.ShouldEqual(new BindingKey("X", "1", "*"));
+        }
+
+        [Test]
+        public void should_create_subscription_from_array_3()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithCollection>(x => x.IdArray.Contains(1) && x.Name == "X");
+
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithCollection)));
+            subscription.BindingKey.ShouldEqual(new BindingKey("X", "1", "*"));
+        }
+
+        [Test]
+        public void should_create_subscription_from_list()
+        {
+            var subscription = Subscription.Matching<FakeRoutableCommandWithCollection>(x => x.ValueList.Contains(999));
+
+            subscription.MessageTypeId.ShouldEqual(new MessageTypeId(typeof(FakeRoutableCommandWithCollection)));
+            subscription.BindingKey.ShouldEqual(new BindingKey("*", "*", "999"));
+        }
+
+        private static int ExpectedId() => 42;
+
+        [Test]
         public void should_be_equatable()
         {
             var otherId = Guid.NewGuid();
@@ -277,13 +337,13 @@ namespace Abc.Zebus.Tests
         public void MeasurePerformance(string routingKey, string bindingKey)
         {
             var subscription = CreateSubscription(bindingKey);
-            var key = BindingKeyHelper.CreateFromString(routingKey, '.');
+            var messageBinding = CreateMessageBinding(routingKey);
 
             Measure.Execution(x =>
             {
                 x.Iteration = 1000000;
                 x.WarmUpIteration = 1000;
-                x.Action = _ => subscription.Matches(key);
+                x.Action = _ => subscription.Matches(messageBinding);
             });
         }
 
@@ -295,6 +355,11 @@ namespace Abc.Zebus.Tests
         private Subscription CreateSubscription(string bindingKey)
         {
             return new Subscription(new MessageTypeId(typeof(FakeCommand)), BindingKeyHelper.CreateFromString(bindingKey, '.'));
+        }
+
+        private MessageBinding CreateMessageBinding(string routingKeys)
+        {
+            return new MessageBinding(new MessageTypeId(typeof(FakeCommand)), RoutingContent.FromValues(routingKeys.Split('.')));
         }
 
         private int GetFieldValue()

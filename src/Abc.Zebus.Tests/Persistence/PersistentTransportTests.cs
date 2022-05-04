@@ -429,7 +429,7 @@ namespace Abc.Zebus.Tests.Persistence
             {
                 Transport.Start();
 
-                PeerDirectory.Setup(directory => directory.GetPeersHandlingMessage(new MessageBinding(MessageTypeId.PersistenceStoppingAck, BindingKey.Empty)))
+                PeerDirectory.Setup(directory => directory.GetPeersHandlingMessage(new MessageBinding(MessageTypeId.PersistenceStoppingAck, RoutingContent.Empty)))
                              .Returns(new List<Peer> { PersistencePeer });
 
                 // Stopping persistence
