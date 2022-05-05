@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Routing;
@@ -26,7 +27,7 @@ namespace Abc.Zebus.Tests.Routing
         [TestCase("A.3.999", false)]
         [TestCase("A.9.102", false)]
         [TestCase("9.3.102", false)]
-        public void should_matching_routable_message(string bindingKeyText, bool isMatchExpected)
+        public void should_match_routable_message(string bindingKeyText, bool isMatchExpected)
         {
             var message = new FakeRoutableCommandWithCollection
             {
