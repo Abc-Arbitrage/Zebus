@@ -272,8 +272,6 @@ namespace Abc.Zebus.Tests.Directory
             matchingPeers.ShouldBeEmpty();
         }
 
-        // TODO: investigate this test case
-        // [TestCase("*", true)]
         [TestCase("#", true)]
         [TestCase("1.*", true)]
         [TestCase("2.*", false)]

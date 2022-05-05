@@ -125,38 +125,28 @@ namespace Abc.Zebus
                 where TMember : IConvertible
                 => new RoutingContentValue(value?.ToString(CultureInfo.InvariantCulture));
 
-            private static RoutingContentValue GetMemberValues<TMember>(ICollection<TMember>? values)
-                => new RoutingContentValue(values != null ? values.Select(x => x!.ToString()).ToArray() : Array.Empty<string>());
+            private static RoutingContentValue GetMemberValues<TMember>(ICollection<TMember?>? values)
+                => new RoutingContentValue(values != null ? values.Select(x => x?.ToString()).ToArray() : Array.Empty<string>());
 
-            private static RoutingContentValue GetMemberValuesConvertible<TMember>(ICollection<TMember>? values)
+            private static RoutingContentValue GetMemberValuesConvertible<TMember>(ICollection<TMember?>? values)
                 where TMember : IConvertible
-                => new RoutingContentValue(values != null ? values.Select(x => x.ToString(CultureInfo.InvariantCulture)).ToArray() : Array.Empty<string>());
+                => new RoutingContentValue(values != null ? values.Select(x => x?.ToString(CultureInfo.InvariantCulture)).ToArray() : Array.Empty<string>());
 
             private static MethodCallExpression BuildValueExpression(MemberInfo member)
             {
-                var memberExpression = GetMemberExpression();
-                var getValueMethod = GetValueMethodInfo(memberExpression.type);
+                var castExpression = Expression.Convert(ParameterExpression, member.DeclaringType!);
+                var memberExpression = Expression.MakeMemberAccess(castExpression, member);
+                var getValueMethod = GetValueMethodInfo(memberExpression.Type);
 
-                return Expression.Call(null, getValueMethod, memberExpression.value);
-
-                (Expression value, Type type) GetMemberExpression()
-                {
-                    var castExpression = Expression.Convert(ParameterExpression, member.DeclaringType!);
-
-                    return member switch
-                    {
-                        PropertyInfo propertyInfo => (Expression.Property(castExpression, propertyInfo), propertyInfo.PropertyType),
-                        FieldInfo fieldInfo       => (Expression.Field(castExpression, fieldInfo), fieldInfo.FieldType),
-                        _                         => throw new InvalidOperationException("Cannot define routing position on a member other than a field or property"),
-                    };
-                }
+                return Expression.Call(null, getValueMethod, memberExpression);
 
                 MethodInfo GetValueMethodInfo(Type memberType)
                 {
                     var collectionType = memberType.GetInterfaces().FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>));
-
                     if (collectionType != null)
                     {
+                        // The type could theoretically implement ICollection<> twice but picking randomly one implementation for this edge case should be ok.
+
                         var itemType = collectionType.GetGenericArguments()[0];
                         return typeof(IConvertible).IsAssignableFrom(itemType) ? _getValuesConvertibleMethod.MakeGenericMethod(itemType) : _getValuesMethod.MakeGenericMethod(itemType);
                     }
