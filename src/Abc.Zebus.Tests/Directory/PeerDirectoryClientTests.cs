@@ -616,12 +616,14 @@ namespace Abc.Zebus.Tests.Directory
             _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.0"),
                                                         x =>
                                                         {
-                                                            Thread.Sleep(1000.Milliseconds());
-                                                            return new RegisterPeerResponse(new PeerDescriptor[0]);
+                                                            Thread.Sleep(5.Seconds());
+                                                            return new RegisterPeerResponse(Array.Empty<PeerDescriptor>());
                                                         });
-            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
-            var subscriptions = new[] { Subscription.Any<FakeCommand>() };
+            _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x => new RegisterPeerResponse(Array.Empty<PeerDescriptor>()));
+
+            var subscriptions = Array.Empty<Subscription>();
+
             await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
             var contactedPeers = _bus.GetContactedPeerIds().ToList();
