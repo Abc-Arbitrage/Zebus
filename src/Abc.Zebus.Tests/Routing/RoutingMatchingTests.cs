@@ -53,7 +53,7 @@ namespace Abc.Zebus.Tests.Routing
             predicate.Invoke(message).ShouldEqual(isMatchExpected, "Predicate should match");
 
             var subscriptionTree = new PeerSubscriptionTree();
-            subscriptionTree.Add(TestDataBuilder.Peer(), bindingKey);
+            subscriptionTree.Add(TestData.Peer(), bindingKey);
 
             var peers = subscriptionTree.GetPeers(messageBinding.RoutingContent);
             peers.Any().ShouldEqual(isMatchExpected, "PeerSubscriptionTree should match");

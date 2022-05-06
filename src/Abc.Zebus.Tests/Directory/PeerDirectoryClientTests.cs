@@ -49,7 +49,7 @@ namespace Abc.Zebus.Tests.Directory
         [Test]
         public async Task should_register_peer([Values(true, false)] bool isPersistent)
         {
-            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
+            var subscriptions = new[] { Subscription.Any<FakeCommand>() };
             _configuration.IsPersistent = isPersistent;
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
@@ -121,7 +121,7 @@ namespace Abc.Zebus.Tests.Directory
         [Test]
         public async Task should_not_register_existing_peer()
         {
-            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
+            var subscriptions = new[] { Subscription.Any<FakeCommand>() };
             _configuration.IsPersistent = true;
             _bus.AddHandler<RegisterPeerCommand>(_ => throw new MessageProcessingException("Peer already exists") { ErrorCode = DirectoryErrorCodes.PeerAlreadyExists });
 
@@ -415,7 +415,7 @@ namespace Abc.Zebus.Tests.Directory
         {
             _bus.AddHandler<RegisterPeerCommand>(x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
-            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
+            var subscriptions = new[] { Subscription.Any<FakeCommand>() };
             await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
             var peerHandlingMessage = _directory.GetPeersHandlingMessage(new FakeCommand(0)).Single();
@@ -621,7 +621,7 @@ namespace Abc.Zebus.Tests.Directory
                                                         });
             _bus.AddHandlerForPeer<RegisterPeerCommand>(new PeerId("Abc.Zebus.DirectoryService.1"), x => new RegisterPeerResponse(new PeerDescriptor[0]));
 
-            var subscriptions = TestDataBuilder.CreateSubscriptions<FakeCommand>();
+            var subscriptions = new[] { Subscription.Any<FakeCommand>() };
             await _directory.RegisterAsync(_bus, _self, subscriptions).ConfigureAwait(true);
 
             var contactedPeers = _bus.GetContactedPeerIds().ToList();

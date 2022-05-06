@@ -14,7 +14,7 @@ namespace Abc.Zebus.Tests.Transport
         public void should_serialize_transport_message()
         {
             // Arrange
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeEvent>();
+            var transportMessage = TestData.TransportMessage<FakeEvent>();
 
             // Act
             var bytes = TransportMessage.Serialize(transportMessage);
@@ -31,7 +31,7 @@ namespace Abc.Zebus.Tests.Transport
         public void should_deserialize_transport_message()
         {
             // Arrange
-            var expectedTransportMessage = TestDataBuilder.CreateTransportMessage<FakeEvent>();
+            var expectedTransportMessage = TestData.TransportMessage<FakeEvent>();
 
             var stream = new MemoryStream();
             Serializer.Serialize(stream, expectedTransportMessage);

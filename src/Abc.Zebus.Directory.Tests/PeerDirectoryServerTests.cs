@@ -97,8 +97,8 @@ namespace Abc.Zebus.Directory.Tests
             _repositoryMock.Setup(repo => repo.GetPeers(It.Is<bool>(loadDynamicSubs => loadDynamicSubs != disableDynamicSubscriptions)))
                            .Returns(new[]
                            {
-                               TestDataBuilder.CreatePersistentPeerDescriptor("tcp://goodapple:123", typeof(FakeCommand)),
-                               TestDataBuilder.CreatePersistentPeerDescriptor("tcp://badapple:123", typeof(string))
+                               TestData.PersistentPeerDescriptor("tcp://goodapple:123", typeof(FakeCommand)),
+                               TestData.PersistentPeerDescriptor("tcp://badapple:123", typeof(string))
                            });
 
             var peersHandlingFakeCommand = _peerDirectory.GetPeersHandlingMessage(new FakeCommand()).ToList();
@@ -112,7 +112,7 @@ namespace Abc.Zebus.Directory.Tests
         {
             var command = new FakeRoutableCommand(10, "u.name");
 
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://goodapple:123", new Subscription(command.TypeId(), new BindingKey("10", "#")));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://goodapple:123", new Subscription(command.TypeId(), new BindingKey("10", "#")));
             _repositoryMock.Setup(x => x.GetPeers(It.IsAny<bool>())).Returns(new[] { peerDescriptor });
 
             var peer = _peerDirectory.GetPeersHandlingMessage(command).Single();
@@ -124,7 +124,7 @@ namespace Abc.Zebus.Directory.Tests
         {
             var command = new FakeRoutableCommand(10, "u.name");
 
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://goodapple:123", new Subscription(command.TypeId(), new BindingKey("12", "#")));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://goodapple:123", new Subscription(command.TypeId(), new BindingKey("12", "#")));
             _repositoryMock.Setup(x => x.GetPeers(It.IsAny<bool>())).Returns(new[] { peerDescriptor });
 
             _peerDirectory.GetPeersHandlingMessage(command).ShouldBeEmpty();
@@ -133,7 +133,7 @@ namespace Abc.Zebus.Directory.Tests
         [Test]
         public void should_get_peer_by_id()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://badapple:123", typeof(string));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://badapple:123", typeof(string));
             _repositoryMock.Setup(repo => repo.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
 
             var fetchedPeerDescriptor = _peerDirectory.GetPeerDescriptor(peerDescriptor.PeerId);
@@ -146,7 +146,7 @@ namespace Abc.Zebus.Directory.Tests
         [Test]
         public void should_get_all_peers()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://badapple:123", typeof(string));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://badapple:123", typeof(string));
             _repositoryMock.Setup(repo => repo.GetPeers(It.IsAny<bool>())).Returns(new[] { peerDescriptor });
 
             var fetchedPeerDescriptor = _peerDirectory.GetPeerDescriptors();

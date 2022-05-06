@@ -66,7 +66,7 @@ namespace Abc.Zebus.Tests.Core
         {
             for (var i = 0; i < peerCount; i++)
             {
-                var peer = new Peer(new PeerId($"Abc.Testing.Other.{i}"), $"tcp://other-peer:{i + 1}");
+                var peer = TestData.Peer();
                 _peerDirectory.Peers[peer.Id] = peer.ToPeerDescriptor(false, typeof(Event));
             }
 
