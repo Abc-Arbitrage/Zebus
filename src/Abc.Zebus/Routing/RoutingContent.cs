@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Abc.Zebus.Routing
@@ -6,7 +8,7 @@ namespace Abc.Zebus.Routing
     /// <summary>
     /// Stores the routing members values of routable messages.
     /// </summary>
-    public readonly struct RoutingContent
+    public readonly struct RoutingContent : IEnumerable<RoutingContentValue>
     {
         public static readonly RoutingContent Empty = new RoutingContent();
 
@@ -17,16 +19,27 @@ namespace Abc.Zebus.Routing
             _members = members;
         }
 
-        public int PartCount
-            => _members?.Length ?? 0;
+        private RoutingContentValue[] MembersOrEmpty => _members ?? Array.Empty<RoutingContentValue>();
 
-        public bool IsEmpty
-            => _members == null || _members.Length == 0;
+        public int PartCount => MembersOrEmpty.Length;
 
-        public RoutingContentValue this[int index]
-            => _members != null ? _members[index] : throw new ArgumentOutOfRangeException();
+        public bool IsEmpty => MembersOrEmpty.Length == 0;
 
-        public static RoutingContent FromValues(params string[] values)
-            => new RoutingContent(values.Select(x => new RoutingContentValue(x)).ToArray());
+        public RoutingContentValue this[int index] => MembersOrEmpty[index];
+
+        public static RoutingContent FromValues(params string[] values) => new(values.Select(x => new RoutingContentValue(x)).ToArray());
+
+        public IEnumerator<RoutingContentValue> GetEnumerator()
+        {
+            foreach (var value in MembersOrEmpty)
+            {
+                yield return value;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 }
