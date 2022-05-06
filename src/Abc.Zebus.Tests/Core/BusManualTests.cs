@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
@@ -18,16 +21,17 @@ namespace Abc.Zebus.Tests.Core
     public class BusManualTests
     {
         // this must be a valid directory endpoint
-        private const string _directoryEndPoint = "tcp://localhost:129";
+        private static readonly string _directoryEndPoint = Environment.GetEnvironmentVariable("ZEBUS_TEST_DIRECTORY");
+        private static readonly string _environment = Environment.GetEnvironmentVariable("ZEBUS_TEST_ENVIRONMENT");
 
         [Test]
-        public void StartBusAndGetRidOfItLikeABadBoy()
+        public void StartBusWithoutStop()
         {
             CreateBusFactory().CreateAndStartBus();
         }
 
         [Test]
-        public void StartBusAndStopItLikeABoyScout()
+        public void StartAndStopBus()
         {
             var bus = CreateBusFactory().CreateAndStartBus();
 
@@ -65,6 +69,36 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
+        public void SubscribeToRoutableEventWithIds()
+        {
+            using var bus = CreateBusFactory().CreateAndStartBus();
+
+            var values = new List<string>();
+
+            var subscriptions = new[]
+            {
+                Subscription.Matching<RoutableEventWithIds>(x => x.Ids.Contains(42)),
+                Subscription.Matching<RoutableEventWithIds>(x => x.Ids.Contains(43)),
+            };
+
+            bus.Subscribe(subscriptions, x => values.Add(((RoutableEventWithIds)x).Value));
+
+            Thread.Sleep(1000);
+
+            using (LocalDispatch.Disable())
+            {
+                bus.Publish(new RoutableEventWithIds { Ids = new[] { 1, 2 }, Value = "1" });
+                bus.Publish(new RoutableEventWithIds { Ids = new[] { 1, 2, 42 }, Value = "2" });
+                bus.Publish(new RoutableEventWithIds { Ids = new[] { 1, 2, 42, 43 }, Value = "3" });
+                bus.Publish(new RoutableEventWithIds { Ids = new[] { 1, 2, 43 }, Value = "4" });
+            }
+
+            Thread.Sleep(1000);
+
+            values.ShouldEqualDeeply(new List<string> { "2", "3", "4" });
+        }
+
+        [Test]
         public void SendSleepCommands()
         {
             var tasks = new List<Task>();
@@ -88,7 +122,7 @@ namespace Abc.Zebus.Tests.Core
             };
 
             var target = CreateBusFactory().WithHandlers(typeof(ManualEventHandler))
-                                           .WithConfiguration(targetConfig, "Demo")
+                                           .WithConfiguration(targetConfig, "Dev")
                                            .WithPeerId("Some.Random.Persistent.Peer.0")
                                            .CreateAndStartBus();
             using (var source = CreateBusFactory().CreateAndStartBus())
@@ -107,7 +141,7 @@ namespace Abc.Zebus.Tests.Core
 
         private static BusFactory CreateBusFactory()
         {
-            return new BusFactory().WithConfiguration(_directoryEndPoint, "Demo");
+            return new BusFactory().WithConfiguration(_directoryEndPoint, _environment);
         }
 
         [ProtoContract]
@@ -166,6 +200,18 @@ namespace Abc.Zebus.Tests.Core
             {
                 Thread.Sleep(1000);
             }
+        }
+
+        [ProtoContract]
+        [Routable]
+        public class RoutableEventWithIds : IEvent
+        {
+            [ProtoMember(1)]
+            [RoutingPosition(1)]
+            public int[] Ids { get; set; }
+
+            [ProtoMember(2)]
+            public string Value { get; set; }
         }
     }
 }
