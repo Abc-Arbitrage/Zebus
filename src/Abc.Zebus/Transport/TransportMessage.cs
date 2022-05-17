@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Abc.Zebus.Serialization.Protobuf;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using ProtoBuf;
@@ -100,5 +101,19 @@ namespace Abc.Zebus.Transport
             WasPersisted = WasPersisted,
             PersistentPeerIds = peerIds,
         };
+
+        public static byte[] Serialize(TransportMessage transportMessage)
+        {
+            var writer = new ProtoBufferWriter();
+            writer.WriteTransportMessage(transportMessage);
+
+            return writer.ToArray();
+        }
+
+        public static TransportMessage Deserialize(byte[] bytes)
+        {
+            var reader = new ProtoBufferReader(bytes, bytes.Length);
+            return reader.ReadTransportMessage();
+        }
     }
 }

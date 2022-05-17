@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Storage;
+using Abc.Zebus.Transport;
 using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Persistence.Handlers
@@ -9,7 +10,7 @@ namespace Abc.Zebus.Persistence.Handlers
     {
         private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(PersistMessageCommandHandler));
 
-        private readonly TransportMessageSerializer _serializer = new TransportMessageSerializer();
+        private readonly TransportMessageSerializer _serializer = new TransportMessageSerializer(50 * 1024);
         private readonly IMessageReplayerRepository _messageReplayerRepository;
         private readonly IInMemoryMessageMatcher _inMemoryMessageMatcher;
         private readonly IPersistenceConfiguration _configuration;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
@@ -51,7 +52,7 @@ namespace Abc.Zebus
             return Load(TypeUtil.Resolve(fullName), fullName);
         }
 
-        internal static MessageTypeDescriptor Load(Type? messageType, string? fullName)
+        public static MessageTypeDescriptor Load(Type? messageType, string? fullName)
         {
             if (fullName == null)
                 return Null;
@@ -68,43 +69,48 @@ namespace Abc.Zebus
 
         public class RoutingMember
         {
-            private static readonly MethodInfo _toStringMethod = typeof(object).GetMethod(nameof(ToString))!;
-            private static readonly MethodInfo _toStringWithFormatMethod = typeof(IConvertible).GetMethod(nameof(IConvertible.ToString))!;
+            private static readonly MethodInfo _getValueMethod = typeof(RoutingMember).GetMethod(nameof(GetMemberValue), BindingFlags.Static | BindingFlags.NonPublic)!;
+            private static readonly MethodInfo _getValueConvertibleMethod = typeof(RoutingMember).GetMethod(nameof(GetMemberValueConvertible), BindingFlags.Static | BindingFlags.NonPublic)!;
+            private static readonly MethodInfo _getValuesMethod = typeof(RoutingMember).GetMethod(nameof(GetMemberValues), BindingFlags.Static | BindingFlags.NonPublic)!;
+            private static readonly MethodInfo _getValuesConvertibleMethod = typeof(RoutingMember).GetMethod(nameof(GetMemberValuesConvertible), BindingFlags.Static | BindingFlags.NonPublic)!;
+            private static readonly MethodInfo _matchesMethod = typeof(RoutingContentValue).GetMethod(nameof(RoutingContentValue.Matches))!;
 
             public static ParameterExpression ParameterExpression { get; } = Expression.Parameter(typeof(IMessage), "m");
 
             public static RoutingMember[] GetAll(Type messageType)
             {
-                var castExpression = Expression.Convert(ParameterExpression, messageType);
-
                 return messageType.GetMembers(BindingFlags.Public | BindingFlags.Instance)
                                   .Select(x => (member: x, attribute: x.GetCustomAttribute<RoutingPositionAttribute>(true)))
                                   .Where(x => x.attribute != null)
                                   .OrderBy(x => x.attribute!.Position)
-                                  .Select((x, index) => new RoutingMember(index, x.attribute!.Position, x.member, BuildToStringExpression(castExpression, x.member)))
+                                  .Select((x, index) => new RoutingMember(index, x.attribute!.Position, x.member))
                                   .ToArray();
             }
 
-            private RoutingMember(int index, int position, MemberInfo member, MethodCallExpression toStringExpression)
+            private readonly MethodCallExpression _valueExpression;
+            private readonly Func<IMessage, RoutingContentValue> _valueFunc;
+
+            private RoutingMember(int index, int position, MemberInfo member)
             {
                 Index = index;
                 RoutingPosition = position;
                 Member = member;
-                ToStringExpression = toStringExpression;
-                ToStringDelegate = BuildToStringDelegate(toStringExpression);
+
+                var valueExpression = BuildValueExpression(member);
+
+                _valueExpression = valueExpression;
+                _valueFunc = BuildValueFunc(valueExpression);
             }
 
             public int Index { get; }
             public int RoutingPosition { get; }
             public MemberInfo Member { get; }
-            public MethodCallExpression ToStringExpression { get; }
-            private Func<IMessage, string> ToStringDelegate { get; }
 
-            public string GetValue(IMessage message)
+            public RoutingContentValue GetValue(IMessage message)
             {
                 try
                 {
-                    return ToStringDelegate(message);
+                    return _valueFunc(message);
                 }
                 catch (NullReferenceException)
                 {
@@ -112,37 +118,52 @@ namespace Abc.Zebus
                 }
             }
 
-            private static MethodCallExpression BuildToStringExpression(Expression castExpression, MemberInfo member)
+            private static RoutingContentValue GetMemberValue<TMember>(TMember? value)
+                => new RoutingContentValue(value?.ToString());
+
+            private static RoutingContentValue GetMemberValueConvertible<TMember>(TMember? value)
+                where TMember : IConvertible
+                => new RoutingContentValue(value?.ToString(CultureInfo.InvariantCulture));
+
+            private static RoutingContentValue GetMemberValues<TMember>(ICollection<TMember?>? values)
+                => new RoutingContentValue(values != null ? values.Select(x => x?.ToString()).ToArray() : Array.Empty<string>());
+
+            private static RoutingContentValue GetMemberValuesConvertible<TMember>(ICollection<TMember?>? values)
+                where TMember : IConvertible
+                => new RoutingContentValue(values != null ? values.Select(x => x?.ToString(CultureInfo.InvariantCulture)).ToArray() : Array.Empty<string>());
+
+            private static MethodCallExpression BuildValueExpression(MemberInfo member)
             {
-                Func<Expression, Expression> memberAccessor;
-                Type memberType;
+                var castExpression = Expression.Convert(ParameterExpression, member.DeclaringType!);
+                var memberExpression = Expression.MakeMemberAccess(castExpression, member);
+                var getValueMethod = GetValueMethodInfo(memberExpression.Type);
 
-                if (member.MemberType == MemberTypes.Property)
-                {
-                    var propertyInfo = (PropertyInfo)member;
-                    memberAccessor = m => Expression.Property(m, propertyInfo);
-                    memberType = propertyInfo.PropertyType;
-                }
-                else if (member.MemberType == MemberTypes.Field)
-                {
-                    var fieldInfo = (FieldInfo)member;
-                    memberAccessor = m => Expression.Field(m, fieldInfo);
-                    memberType = fieldInfo.FieldType;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Cannot define routing position on a member other than a field or property");
-                }
+                return Expression.Call(null, getValueMethod, memberExpression);
 
-                return typeof(IConvertible).IsAssignableFrom(memberType) && memberType != typeof(string)
-                    ? Expression.Call(memberAccessor(castExpression), _toStringWithFormatMethod, Expression.Constant(CultureInfo.InvariantCulture))
-                    : Expression.Call(memberAccessor(castExpression), _toStringMethod);
+                MethodInfo GetValueMethodInfo(Type memberType)
+                {
+                    var collectionType = memberType.GetInterfaces().FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>));
+                    if (collectionType != null)
+                    {
+                        // The type could theoretically implement ICollection<> twice but picking randomly one implementation for this edge case should be ok.
+
+                        var itemType = collectionType.GetGenericArguments()[0];
+                        return typeof(IConvertible).IsAssignableFrom(itemType) ? _getValuesConvertibleMethod.MakeGenericMethod(itemType) : _getValuesMethod.MakeGenericMethod(itemType);
+                    }
+
+                    return typeof(IConvertible).IsAssignableFrom(memberType) ? _getValueConvertibleMethod.MakeGenericMethod(memberType) : _getValueMethod.MakeGenericMethod(memberType);
+                }
             }
 
-            private static Func<IMessage, string> BuildToStringDelegate(Expression toStringExpression)
+            private static Func<IMessage, RoutingContentValue> BuildValueFunc(Expression valueExpression)
             {
-                var lambda = Expression.Lambda(typeof(Func<IMessage, string>), toStringExpression, ParameterExpression);
-                return (Func<IMessage, string>)lambda.Compile();
+                var lambda = Expression.Lambda(typeof(Func<IMessage, RoutingContentValue>), valueExpression, ParameterExpression);
+                return (Func<IMessage, RoutingContentValue>)lambda.Compile();
+            }
+
+            public Expression CreateMatchExpression(string? targetValue)
+            {
+                return Expression.Call(_valueExpression, _matchesMethod, Expression.Constant(targetValue));
             }
         }
     }

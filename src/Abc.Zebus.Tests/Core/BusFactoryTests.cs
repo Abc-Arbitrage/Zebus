@@ -42,7 +42,7 @@ namespace Abc.Zebus.Tests.Core
             var transport = new TestTransport();
             var bus = new BusFactory().CreateAndStartInMemoryBus(directory, transport);
 
-            var otherPeer = new Peer(new PeerId("Abc.Testing.Other.0"), "tcp://other-peer:1234");
+            var otherPeer = TestData.Peer();
             directory.Peers[otherPeer.Id] = otherPeer.ToPeerDescriptor(false, typeof(CommandWithRemoteHandler));
 
             bus.Send(new CommandWithRemoteHandler());

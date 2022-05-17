@@ -21,11 +21,11 @@ namespace Abc.Zebus.Directory
         public void Remove(Peer peer, BindingKey subscription)
             => UpdatePeerSubscription(peer, subscription, UpdateAction.Remove);
 
-        public IList<Peer> GetPeers(BindingKey routingKey)
+        public IList<Peer> GetPeers(RoutingContent routingContent)
         {
             var peerCollector = new PeerCollector(_peersMatchingAllMessages);
 
-            if (routingKey.IsEmpty)
+            if (routingContent.IsEmpty)
             {
                 // The message is not routable or has no routing member.
 
@@ -39,7 +39,7 @@ namespace Abc.Zebus.Directory
             }
             else
             {
-                _rootNode.Accept(peerCollector, routingKey);
+                _rootNode.Accept(peerCollector, routingContent);
             }
 
             return peerCollector.GetPeers();
@@ -134,23 +134,37 @@ namespace Abc.Zebus.Directory
                 }
             }
 
-            public void Accept(PeerCollector peerCollector, BindingKey routingKey)
+            public void Accept(PeerCollector peerCollector, RoutingContent routingContent)
             {
-                if (IsLeaf(routingKey))
+                if (IsLeaf(routingContent))
                 {
                     peerCollector.Offer(_peers);
                     return;
                 }
 
                 _sharpNode?.AddAllPeers(peerCollector);
-                _starNode?.Accept(peerCollector, routingKey);
+                _starNode?.Accept(peerCollector, routingContent);
 
-                var nextPart = routingKey.GetPartToken(_nextPartIndex);
-                if (nextPart == null || _childNodes == null)
+                if (_childNodes == null)
                     return;
 
-                if (_childNodes.TryGetValue(nextPart, out var childNode))
-                    childNode.Accept(peerCollector, routingKey);
+                var partValue = routingContent[_nextPartIndex];
+
+                if (partValue.IsSingle)
+                {
+                    // Almost all RoutingContentValue are expected to contain a single value.
+
+                    if (partValue.SingleValue != null && _childNodes.TryGetValue(partValue.SingleValue, out var childNode))
+                        childNode.Accept(peerCollector, routingContent);
+                }
+                else
+                {
+                    foreach (var token in partValue.GetValues())
+                    {
+                        if (token != null && _childNodes.TryGetValue(token, out var childNode))
+                            childNode.Accept(peerCollector, routingContent);
+                    }
+                }
             }
 
             public int Update(Peer peer, BindingKey subscription, UpdateAction action)
@@ -192,6 +206,14 @@ namespace Abc.Zebus.Directory
                     return false;
 
                 return _nextPartIndex == bindingKey.PartCount;
+            }
+
+            private bool IsLeaf(RoutingContent routingContent)
+            {
+                if (_nextPartIndex == 0)
+                    return false;
+
+                return _nextPartIndex == routingContent.PartCount;
             }
 
             private SubscriptionNode GetOrAddChildNode(string part)

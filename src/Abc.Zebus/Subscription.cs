@@ -44,25 +44,30 @@ namespace Abc.Zebus
 
         public bool Matches(MessageBinding messageBinding)
         {
-            return messageBinding.MessageTypeId == MessageTypeId && Matches(messageBinding.RoutingKey);
+            return Matches(messageBinding.MessageTypeId, messageBinding.RoutingContent);
         }
 
-        public bool Matches(BindingKey routingKey)
+        public bool Matches(MessageTypeId messageTypeId, RoutingContent routingContent)
+        {
+            return messageTypeId == MessageTypeId && Matches(routingContent);
+        }
+
+        private bool Matches(RoutingContent routingContent)
         {
             if (BindingKey.IsEmpty)
                 return true;
 
-            for (var i = 0; i < routingKey.PartCount; i++)
+            for (var i = 0; i < routingContent.PartCount; i++)
             {
                 var evaluatedPart = BindingKey.GetPartToken(i);
                 if (evaluatedPart == "#")
                     return true;
 
-                if (evaluatedPart != "*" && routingKey.GetPartToken(i) != evaluatedPart)
+                if (evaluatedPart != "*" && !routingContent[i].Matches(evaluatedPart))
                     return false;
             }
 
-            return routingKey.PartCount == BindingKey.PartCount;
+            return routingContent.PartCount == BindingKey.PartCount;
         }
 
         public BindingKeyPart GetBindingKeyPartForMember(string memberName)
@@ -166,25 +171,44 @@ namespace Abc.Zebus
 
         private static void AddFieldValue<TMessage>(Dictionary<string, string> fieldValues, Expression expression)
         {
-            if (expression is BinaryExpression binaryExpression)
+            switch (expression)
             {
-                AddFieldValueFromBinaryExpression<TMessage>(fieldValues, binaryExpression);
-                return;
-            }
+                case BinaryExpression binaryExpression:
+                    AddFieldValueFromBinaryExpression<TMessage>(fieldValues, binaryExpression);
+                    return;
 
-            if (expression is UnaryExpression unaryExpression)
-            {
-                AddFieldValueFromUnaryExpression<TMessage>(fieldValues, unaryExpression);
-                return;
-            }
+                case UnaryExpression unaryExpression:
+                    AddFieldValueFromUnaryExpression<TMessage>(fieldValues, unaryExpression);
+                    return;
 
-            if (expression is MemberExpression memberExpression)
-            {
-                AddFieldValueFromMemberExpression<TMessage>(fieldValues, memberExpression);
-                return;
+                case MemberExpression memberExpression:
+                    AddFieldValueFromMemberExpression<TMessage>(fieldValues, memberExpression);
+                    return;
+
+                case MethodCallExpression methodCallExpression when methodCallExpression.Method.Name == "Contains":
+                    if (methodCallExpression.Object != null && methodCallExpression.Arguments.Count == 1)
+                    {
+                        AddFieldValueFromContainsExpression<TMessage>(fieldValues, methodCallExpression, methodCallExpression.Object, methodCallExpression.Arguments[0]);
+                        return;
+                    }
+                    if (methodCallExpression.Object == null && methodCallExpression.Arguments.Count == 2)
+                    {
+                        AddFieldValueFromContainsExpression<TMessage>(fieldValues, methodCallExpression, methodCallExpression.Arguments[0], methodCallExpression.Arguments[1]);
+                        return;
+                    }
+                    break;
+
             }
 
             throw CreateArgumentException(expression);
+        }
+
+        private static void AddFieldValueFromContainsExpression<T>(Dictionary<string, string> fieldValues, Expression parentExpression, Expression collection, Expression item)
+        {
+            if (!TryGetMessageMemberExpression<T>(collection, out var memberExpression))
+                throw CreateArgumentException(parentExpression);
+
+            AddFieldValueFromExpressions(fieldValues, memberExpression, item);
         }
 
         private static void AddFieldValueFromUnaryExpression<T>(Dictionary<string, string> fieldValues, UnaryExpression unaryExpression)
@@ -237,13 +261,21 @@ namespace Abc.Zebus
                 throw CreateArgumentException(binaryExpression);
             }
 
+            AddFieldValueFromExpressions(fieldValues, memberExpression, memberValueExpression);
+        }
+
+        private static void AddFieldValueFromExpressions(Dictionary<string, string> fieldValues, MemberExpression memberExpression, Expression memberValueExpression)
+        {
             var memberName = memberExpression.Member.Name;
             var memberValue = Expression.Lambda(memberValueExpression).Compile().DynamicInvoke();
             if (memberValue == null)
                 return;
 
-            var valueAsText = memberExpression.Type.IsEnum ? Enum.GetName(memberExpression.Type, memberValue) : memberValue.ToString();
-            fieldValues.Add(memberName, valueAsText ?? string.Empty);
+            var stringValue = memberExpression.Type.IsEnum ? Enum.GetName(memberExpression.Type, memberValue) : memberValue.ToString();
+            if (stringValue == null)
+                return;
+
+            fieldValues.Add(memberName, stringValue);
         }
 
         private static bool TryGetMessageMemberExpression<TMessage>(Expression? expression, [NotNullWhen(true)] out MemberExpression? memberExpression)

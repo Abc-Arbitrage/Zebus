@@ -3,36 +3,42 @@ using Abc.Zebus.Routing;
 
 namespace Abc.Zebus.Directory
 {
-    public readonly struct MessageBinding : IEquatable<MessageBinding>
+    public readonly struct MessageBinding
     {
         public readonly MessageTypeId MessageTypeId;
-        public readonly BindingKey RoutingKey;
+        public readonly RoutingContent RoutingContent;
 
-        public MessageBinding(MessageTypeId messageTypeId, BindingKey routingKey)
+        public MessageBinding(MessageTypeId messageTypeId, RoutingContent routingContent)
         {
             MessageTypeId = messageTypeId;
-            RoutingKey = routingKey;
+            RoutingContent = routingContent;
         }
 
         public static MessageBinding FromMessage(IMessage message)
-            => new MessageBinding(message.TypeId(), BindingKey.Create(message));
+        {
+            var messageTypeId = message.TypeId();
+            var routingContent = GetRoutingContent(message, messageTypeId);
+
+            return new MessageBinding(messageTypeId, routingContent);
+        }
 
         public static MessageBinding Default<T>()
-            where T : IMessage
-            => new MessageBinding(MessageUtil.TypeId<T>(), BindingKey.Empty);
+            where T : IMessage => new(MessageUtil.TypeId<T>(), RoutingContent.Empty);
 
-        public bool Equals(MessageBinding other)
-            => MessageTypeId == other.MessageTypeId && RoutingKey.Equals(other.RoutingKey);
-
-        public override bool Equals(object? obj)
-            => obj is MessageBinding binding && Equals(binding);
-
-        public override int GetHashCode()
+        private static RoutingContent GetRoutingContent(IMessage message, MessageTypeId messageTypeId)
         {
-            unchecked
+            var members = messageTypeId.Descriptor.RoutingMembers;
+            if (members.Length == 0)
+                return RoutingContent.Empty;
+
+            var values = new RoutingContentValue[members.Length];
+
+            for (var tokenIndex = 0; tokenIndex < values.Length; ++tokenIndex)
             {
-                return (MessageTypeId.GetHashCode() * 397) ^ RoutingKey.GetHashCode();
+                values[tokenIndex] = members[tokenIndex].GetValue(message);
             }
+
+            return new RoutingContent(values);
         }
     }
 }

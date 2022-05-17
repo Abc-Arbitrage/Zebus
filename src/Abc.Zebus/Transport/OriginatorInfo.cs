@@ -33,10 +33,14 @@ namespace Abc.Zebus.Transport
             SenderEndPoint = default!;
         }
 
+        public string GetSenderHostNameFromEndPoint()
+            => new Uri(SenderEndPoint).Host;
+
         public string GetSenderMachineNameFromEndPoint()
         {
-            var uri = new Uri(SenderEndPoint);
-            return uri.Host;
+            var host = GetSenderHostNameFromEndPoint();
+            var separatorIndex = host.IndexOf('.');
+            return separatorIndex >= 0 ? host.Substring(0, separatorIndex) : host;
         }
     }
 }

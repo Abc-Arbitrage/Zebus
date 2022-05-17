@@ -46,7 +46,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_add_peer_to_repository()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
 
             _handler.Handle(registerCommand);
@@ -57,7 +57,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_set_registering_peer_up_and_responding()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             peerDescriptor.Peer.IsUp = false;
             peerDescriptor.Peer.IsResponding = false;
 
@@ -71,7 +71,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_remove_existing_dynamic_subscriptions_on_register()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
 
             _handler.Handle(registerCommand);
@@ -83,7 +83,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_specify_datetime_kind_when_removing_all_subscriptions_for_a_peer_during_register()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             peerDescriptor.TimestampUtc = new DateTime(DateTime.Now.Ticks, DateTimeKind.Unspecified);
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
 
@@ -96,9 +96,9 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_reply_with_registred_peers()
         {
-            var registredPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:456", typeof(FakeCommand));
+            var registredPeerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:456", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.GetPeers(It.Is<bool>(loadDynamicSubs => loadDynamicSubs))).Returns(new[] { registredPeerDescriptor });
-            var command = new RegisterPeerCommand(TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand)));
+            var command = new RegisterPeerCommand(TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand)));
 
             _handler.Handle(command);
 
@@ -109,7 +109,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_publish_started_event()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var command = new RegisterPeerCommand(peerDescriptor);
 
             _handler.Handle(command);
@@ -120,7 +120,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_throw_if_a_blacklisted_peer_tries_to_register()
         {
-            var blacklistedPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://blacklistedpeer:123", typeof(FakeCommand));
+            var blacklistedPeer = TestData.PersistentPeerDescriptor("tcp://blacklistedpeer:123", typeof(FakeCommand));
             var registerCommand = new RegisterPeerCommand(blacklistedPeer);
             _handler.Context = MessageContext.CreateTest(new OriginatorInfo(blacklistedPeer.Peer.Id, blacklistedPeer.Peer.EndPoint, "BLACKLISTEDMACHINE", "initiator"));
 
@@ -132,7 +132,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_not_throw_if_a_client_with_a_synchronised_clock_tries_to_register()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
             registerCommand.Peer.TimestampUtc = SystemDateTime.UtcNow + 14.Minutes();
             _configurationMock.SetupGet(x => x.MaxAllowedClockDifferenceWhenRegistering).Returns(15.Minutes());
@@ -143,7 +143,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_throw_if_a_client_with_a_more_recent_clock_tries_to_register()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
             registerCommand.Peer.TimestampUtc = SystemDateTime.UtcNow + 1.Hour();
             _configurationMock.SetupGet(x => x.MaxAllowedClockDifferenceWhenRegistering).Returns(15.Minutes());
@@ -156,9 +156,9 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_throw_if_an_existing_peer_tries_to_register()
         {
-            var existingPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
+            var existingPeer = TestData.PersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(existingPeer.PeerId)).Returns(existingPeer);
-            var newPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://newpeer:123", typeof(FakeCommand));
+            var newPeer = TestData.PersistentPeerDescriptor("tcp://newpeer:123", typeof(FakeCommand));
             var command = new RegisterPeerCommand(newPeer);
 
             var exception = (MessageProcessingException)typeof(MessageProcessingException).ShouldBeThrownBy(() => _handler.Handle(command));
@@ -168,10 +168,10 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_not_throw_if_a_not_responding_peer_already_exists()
         {
-            var existingPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
+            var existingPeer = TestData.PersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
             existingPeer.Peer.IsResponding = false;
             _repositoryMock.Setup(x => x.GetPeers(It.IsAny<bool>())).Returns(new[] { existingPeer });
-            var newPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://newpeer:123", typeof(FakeCommand));
+            var newPeer = TestData.PersistentPeerDescriptor("tcp://newpeer:123", typeof(FakeCommand));
             var command = new RegisterPeerCommand(newPeer);
 
             _handler.Handle(command);
@@ -182,10 +182,10 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_not_throw_if_an_existing_peer_is_on_the_same_host()
         {
-            var existingPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
+            var existingPeer = TestData.PersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
             existingPeer.Peer.IsResponding = false;
             _repositoryMock.Setup(x => x.GetPeers(It.IsAny<bool>())).Returns(new[] { existingPeer });
-            var newPeer = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
+            var newPeer = TestData.PersistentPeerDescriptor("tcp://existingpeer:123", typeof(FakeCommand));
             var command = new RegisterPeerCommand(newPeer);
 
             _handler.Handle(command);
@@ -196,7 +196,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_unregister_persistent_peer_when_unregistering()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             peerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddSeconds(-30);
             _repositoryMock.Setup(x => x.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
 
@@ -209,7 +209,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_remove_transient_peer_when_unregistering()
         {
-            var peerDescriptor = TestDataBuilder.CreateTransientPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.TransientPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
 
             _handler.Handle(new UnregisterPeerCommand(peerDescriptor.Peer));
@@ -220,7 +220,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_publish_stopped_event_when_unregistering_a_persistent_client()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             peerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddSeconds(-30);
             _repositoryMock.Setup(x => x.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
 
@@ -233,7 +233,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_publish_decommissioned_event_when_unregistering_a_transient_client()
         {
-            var peerDescriptor = TestDataBuilder.CreateTransientPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.TransientPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
 
             _handler.Handle(new UnregisterPeerCommand(peerDescriptor.Peer));
@@ -264,7 +264,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_update_peer_handled_message_and_publish_event()
         {
-            var originalPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var originalPeerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(originalPeerDescriptor.Peer.Id)).Returns(originalPeerDescriptor);
 
             PeerDescriptor updatedPeerDescriptor = null;
@@ -283,7 +283,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_update_peer_subscriptions_by_types_and_publish_event()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[]
             {
                 new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty),
@@ -300,7 +300,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_handle_null_timestamp_when_removing_all_subscriptions_for_a_peer()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             peerDescriptor.TimestampUtc = null;
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
 
@@ -310,7 +310,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_specify_datetime_kind_when_adding_subscriptions_for_a_type()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty) };
             var unspecifiedNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
@@ -322,7 +322,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_specify_datetime_kind_when_removing_subscriptions_for_a_type()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), new BindingKey[0]) };
             var unspecifiedNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
@@ -334,7 +334,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_handle_null_bindingkeys_array_when_removing_subscriptions()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[] { new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), null) };
             var now = DateTime.UtcNow;
 
@@ -346,7 +346,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_handle_null_subscriptionsByType_array()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var now = DateTime.UtcNow;
 
             Assert.That(() => _handler.Handle(new UpdatePeerSubscriptionsForTypesCommand(peerDescriptor.PeerId, now, null)),
@@ -359,7 +359,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         public void should_remove_peer_subscriptions_for_a_type_if_there_are_no_binding_keys()
         {
             var now = DateTime.UtcNow;
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             SubscriptionsForType[] addedSubscriptions = null;
             MessageTypeId[] removedMessageTypeIds = null;
             _repositoryMock.Setup(repo => repo.AddDynamicSubscriptionsForTypes(peerDescriptor.PeerId, now, It.IsAny<SubscriptionsForType[]>()))
@@ -391,7 +391,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_ignore_old_peer_updates()
         {
-            var originalPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var originalPeerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             originalPeerDescriptor.TimestampUtc = SystemDateTime.UtcNow.AddMinutes(1);
             _repositoryMock.Setup(x => x.Get(originalPeerDescriptor.Peer.Id)).Returns(originalPeerDescriptor);
 
@@ -405,7 +405,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_not_unregister_a_peer_that_started_after_timestamp()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns(peerDescriptor);
 
             var command = new UnregisterPeerCommand(peerDescriptor.Peer, peerDescriptor.TimestampUtc.Value.AddSeconds(-2));
@@ -418,7 +418,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_report_registration_speed()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var registerCommand = new RegisterPeerCommand(peerDescriptor);
 
             _handler.Handle(registerCommand);
@@ -429,7 +429,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_report_unregistration_speed()
         {
-            var peerDescriptor = TestDataBuilder.CreateTransientPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.TransientPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(peerDescriptor.Peer.Id)).Returns(peerDescriptor);
 
             _handler.Handle(new UnregisterPeerCommand(peerDescriptor.Peer));
@@ -440,7 +440,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_report_subscription_update_speed()
         {
-            var originalPeerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var originalPeerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(originalPeerDescriptor.Peer.Id)).Returns(originalPeerDescriptor);
             PeerDescriptor updatedPeerDescriptor = null;
             _repositoryMock.Setup(x => x.AddOrUpdatePeer(It.IsAny<PeerDescriptor>())).Callback<PeerDescriptor>(peer => updatedPeerDescriptor = peer);
@@ -454,7 +454,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_report_subscription_update_for_types_speed()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             var subscriptionsForTypes = new[]
             {
                 new SubscriptionsForType(MessageUtil.GetTypeId(typeof(int)), BindingKey.Empty),
@@ -470,7 +470,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_persist_not_responding_peer()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123");
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123");
 
             _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns(peerDescriptor);
 
@@ -485,7 +485,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_persist_responding_peer()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
 
             _handler.Handle(new MarkPeerAsRespondingCommand(peerDescriptor.PeerId, SystemDateTime.UtcNow));
 
@@ -498,7 +498,7 @@ namespace Abc.Zebus.Directory.Tests.Handlers
         [Test]
         public void should_not_revive_decommissionned_peer()
         {
-            var peerDescriptor = TestDataBuilder.CreatePersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
 
             _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns((PeerDescriptor)null);
 

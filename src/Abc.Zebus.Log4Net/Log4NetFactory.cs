@@ -28,7 +28,7 @@ namespace Abc.Zebus.Log4Net
                 _log = log;
             }
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             {
                 switch (logLevel)
                 {

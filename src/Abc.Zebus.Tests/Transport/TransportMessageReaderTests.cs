@@ -18,7 +18,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_read_message()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
 
             var bufferWriter = new ProtoBufferWriter();
             bufferWriter.WriteTransportMessage(transportMessage);
@@ -81,7 +81,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_read_message_with_persistent_peer_ids()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
             transportMessage.PersistentPeerIds = new List<PeerId>
             {
                 new PeerId("Abc.Testing.A"),
@@ -103,7 +103,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_read_message_from_protobuf()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
 
             var stream = new MemoryStream();
             Serializer.Serialize(stream, transportMessage);
@@ -122,7 +122,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test, Explicit("Manual test")]
         public void MeasureReadPerformance()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
 
             var bufferWriter = new ProtoBufferWriter();
             bufferWriter.WriteTransportMessage(transportMessage);

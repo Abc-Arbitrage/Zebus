@@ -18,7 +18,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_serialize_transport_message_and_read_from_protobuf()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
 
             var writer = new ProtoBufferWriter();
             writer.WriteTransportMessage(transportMessage);
@@ -36,7 +36,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_serialize_transport_message_and_read_from_protobuf_1_5_0()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
 
             var writer = new ProtoBufferWriter();
             writer.WriteTransportMessage(transportMessage);
@@ -56,7 +56,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_serialize_transport_message_with_persistent_peer_ids_and_read_from_protobuf()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
             transportMessage.PersistentPeerIds = new List<PeerId>
             {
                 new PeerId("Abc.Testing.A"),
@@ -76,7 +76,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_serialize_transport_message_with_empty_strings()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
             transportMessage.Environment = null;
             transportMessage.Originator = new OriginatorInfo(new PeerId(null), null, null, null);
 
@@ -98,7 +98,7 @@ namespace Abc.Zebus.Tests.Transport
         [TestCase(false, true)]
         public void should_serialize_transport_message_and_set_WasPersisted(bool? previousWasPersistedValue, bool newWasPersistedValue)
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
             transportMessage.WasPersisted = previousWasPersistedValue;
 
             var writer = new ProtoBufferWriter();
@@ -114,7 +114,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_serialize_transport_message_twice()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
 
             var writer = new ProtoBufferWriter();
             writer.WriteTransportMessage(transportMessage);
@@ -133,7 +133,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test, Explicit("Manual test")]
         public void MeasureWritePerformance()
         {
-            var transportMessage = TestDataBuilder.CreateTransportMessage<FakeCommand>();
+            var transportMessage = TestData.TransportMessage<FakeCommand>();
             var writer = new ProtoBufferWriter();
 
             writer.WriteTransportMessage(transportMessage);

@@ -24,25 +24,13 @@ namespace Abc.Zebus.Tests.Directory
             Console.WriteLine("{0} subscriptions", subscriptions.Count);
             Console.WriteLine();
 
-            var subscriptionList = new PeerSubscriptionList();
             var subscriptionTree = new PeerSubscriptionTree();
             foreach (var peerSubscription in subscriptions)
             {
-                subscriptionList.Add(peerSubscription.Item1, peerSubscription.Item2);
                 subscriptionTree.Add(peerSubscription.Item1, peerSubscription.Item2.BindingKey);
             }
 
-            var bindingKey = new BindingKey(routingKey.Split('.'));
-
-            Console.WriteLine("{0} test -------------", subscriptionList.GetType().Name);
-            Console.WriteLine();
-            Measure.Execution(x =>
-            {
-                x.Iteration = 10000;
-                x.WarmUpIteration = 1000;
-                x.Action = _ => subscriptionList.GetPeers(bindingKey);
-            });
-            Console.WriteLine();
+            var routingContent = RoutingContent.FromValues(routingKey.Split('.'));
 
             Console.WriteLine("{0} test -------------", subscriptionTree.GetType().Name);
             Console.WriteLine();
@@ -50,7 +38,7 @@ namespace Abc.Zebus.Tests.Directory
             {
                 x.Iteration = 10000;
                 x.WarmUpIteration = 1000;
-                x.Action = _ => subscriptionTree.GetPeers(bindingKey);
+                x.Action = _ => subscriptionTree.GetPeers(routingContent);
             });
         }
 
@@ -61,24 +49,12 @@ namespace Abc.Zebus.Tests.Directory
             Console.WriteLine("{0} peers", peers.Count);
             Console.WriteLine();
 
-            var subscriptionList = new PeerSubscriptionList();
             var subscriptionTree = new PeerSubscriptionTree();
 
             foreach (var peer in peers)
             {
-                subscriptionList.Add(peer, Subscription.Any<FakeEvent>());
                 subscriptionTree.Add(peer, BindingKey.Empty);
             }
-
-            Console.WriteLine("{0} test -------------", subscriptionList.GetType().Name);
-            Console.WriteLine();
-            Measure.Execution(x =>
-            {
-                x.Iteration = 100000;
-                x.WarmUpIteration = 1000;
-                x.Action = _ => subscriptionList.GetPeers(BindingKey.Empty);
-            });
-            Console.WriteLine();
 
             Console.WriteLine("{0} test -------------", subscriptionTree.GetType().Name);
             Console.WriteLine();
@@ -86,7 +62,7 @@ namespace Abc.Zebus.Tests.Directory
             {
                 x.Iteration = 100000;
                 x.WarmUpIteration = 1000;
-                x.Action = _ => subscriptionTree.GetPeers(BindingKey.Empty);
+                x.Action = _ => subscriptionTree.GetPeers(RoutingContent.Empty);
             });
         }
 

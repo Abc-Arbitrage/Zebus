@@ -92,7 +92,7 @@ namespace Abc.Zebus.Testing
             var result = comparer.Compare(message, messageCopy);
 
             if (!result.AreEqual)
-                Assert.Fail(result.DifferencesString);
+                Assert.Fail($"Messages are not equal after serialization{Environment.NewLine}Message type: {messageType.Name}{Environment.NewLine}{result.DifferencesString}");
         }
     }
 }

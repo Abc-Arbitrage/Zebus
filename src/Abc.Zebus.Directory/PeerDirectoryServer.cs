@@ -45,7 +45,7 @@ namespace Abc.Zebus.Directory
         public IList<Peer> GetPeersHandlingMessage(MessageBinding messageBinding)
         {
             return _peerRepository.GetPeers(!_configuration.DisableDynamicSubscriptionsForDirectoryOutgoingMessages)
-                                  .Where(peer => peer.Subscriptions != null && peer.Subscriptions.Any(x => x.MessageTypeId == messageBinding.MessageTypeId && x.Matches(messageBinding.RoutingKey)))
+                                  .Where(peer => peer.Subscriptions != null && peer.Subscriptions.Any(x => x.Matches(messageBinding)))
                                   .Select(peerDesc => peerDesc.Peer)
                                   .ToList();
         }

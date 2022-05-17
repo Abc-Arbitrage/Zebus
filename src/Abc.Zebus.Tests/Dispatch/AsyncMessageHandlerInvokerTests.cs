@@ -38,6 +38,40 @@ namespace Abc.Zebus.Tests.Dispatch
         }
 
         [Test]
+        public void should_return_a_faulted_task_if_a_handler_is_canceled_synchronously()
+        {
+            var container = new Container(x =>
+            {
+                x.For<IBus>().Use(new Mock<IBus>().Object);
+                x.ForSingletonOf<SyncCancelAsyncHandler>().Use(new SyncCancelAsyncHandler());
+            });
+            var handlerInvoker = new AsyncMessageHandlerInvoker(container, typeof(SyncCancelAsyncHandler), typeof(ScanCommand1));
+            var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
+            var invocation = new ScanCommand1().ToInvocation(messageContext);
+
+            var invocationTask = handlerInvoker.InvokeMessageHandlerAsync(invocation);
+
+            Wait.Until(() => invocationTask.Status == TaskStatus.Faulted, 1.Second());
+        }
+
+        [Test]
+        public void should_return_a_canceled_task_if_a_handler_is_canceled_asynchronously()
+        {
+            var container = new Container(x =>
+            {
+                x.For<IBus>().Use(new Mock<IBus>().Object);
+                x.ForSingletonOf<AsyncCancelAsyncHandler>().Use(new AsyncCancelAsyncHandler());
+            });
+            var handlerInvoker = new AsyncMessageHandlerInvoker(container, typeof(AsyncCancelAsyncHandler), typeof(ScanCommand1));
+            var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
+            var invocation = new ScanCommand1().ToInvocation(messageContext);
+
+            var invocationTask = handlerInvoker.InvokeMessageHandlerAsync(invocation);
+
+            Wait.Until(() => invocationTask.Status == TaskStatus.Canceled, 1.Second());
+        }
+
+        [Test]
         public void should_instanciate_new_message_context_aware_bus_for_every_handler_without_race_conditions()
         {
             var handlerData = new TestAsyncHandlerHelper();
@@ -102,6 +136,23 @@ namespace Abc.Zebus.Tests.Dispatch
             }
 
             public MessageContext Context { get; set; }
+        }
+
+        private class SyncCancelAsyncHandler : IAsyncMessageHandler<ScanCommand1>
+        {
+            public Task Handle(ScanCommand1 message)
+            {
+                throw new OperationCanceledException();
+            }
+        }
+
+        private class AsyncCancelAsyncHandler : IAsyncMessageHandler<ScanCommand1>
+        {
+            public async Task Handle(ScanCommand1 message)
+            {
+                await Task.Yield();
+                throw new OperationCanceledException();
+            }
         }
     }
 }

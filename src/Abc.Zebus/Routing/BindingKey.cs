@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using Abc.Zebus.Util.Extensions;
 using JetBrains.Annotations;
 using ProtoBuf;
 
 namespace Abc.Zebus.Routing
 {
+    /// <summary>
+    /// Routing key of a subscription.
+    /// </summary>
     [ProtoContract]
     public readonly struct BindingKey : IEquatable<BindingKey>
     {
@@ -97,22 +97,6 @@ namespace Abc.Zebus.Routing
                 return BindingKeyPart.SharpToken;
 
             return string.Join(".", _parts);
-        }
-
-        internal static BindingKey Create(IMessage message)
-        {
-            var routingMembers = message.TypeId().Descriptor.RoutingMembers;
-            if (routingMembers.Length == 0)
-                return Empty;
-
-            var parts = new string[routingMembers.Length];
-
-            for (var tokenIndex = 0; tokenIndex < parts.Length; ++tokenIndex)
-            {
-                parts[tokenIndex] = routingMembers[tokenIndex].GetValue(message);
-            }
-
-            return new BindingKey(parts);
         }
 
         internal static BindingKey Create(Type messageType, IDictionary<string, string> fieldValues)
