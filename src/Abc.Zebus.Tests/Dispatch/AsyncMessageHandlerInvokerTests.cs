@@ -40,12 +40,12 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_return_a_faulted_task_if_a_handler_is_canceled_synchronously()
         {
-            var container = new Container(x =>
+            var containerProvider = new StructureMapContainerProvider(new Container(x =>
             {
                 x.For<IBus>().Use(new Mock<IBus>().Object);
                 x.ForSingletonOf<SyncCancelAsyncHandler>().Use(new SyncCancelAsyncHandler());
-            });
-            var handlerInvoker = new AsyncMessageHandlerInvoker(container, typeof(SyncCancelAsyncHandler), typeof(ScanCommand1));
+            }));
+            var handlerInvoker = new AsyncMessageHandlerInvoker(containerProvider, typeof(SyncCancelAsyncHandler), typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             var invocation = new ScanCommand1().ToInvocation(messageContext);
 
@@ -57,12 +57,12 @@ namespace Abc.Zebus.Tests.Dispatch
         [Test]
         public void should_return_a_canceled_task_if_a_handler_is_canceled_asynchronously()
         {
-            var container = new Container(x =>
+            var containerProvider = new StructureMapContainerProvider(new Container(x =>
             {
                 x.For<IBus>().Use(new Mock<IBus>().Object);
                 x.ForSingletonOf<AsyncCancelAsyncHandler>().Use(new AsyncCancelAsyncHandler());
-            });
-            var handlerInvoker = new AsyncMessageHandlerInvoker(container, typeof(AsyncCancelAsyncHandler), typeof(ScanCommand1));
+            }));
+            var handlerInvoker = new AsyncMessageHandlerInvoker(containerProvider, typeof(AsyncCancelAsyncHandler), typeof(ScanCommand1));
             var messageContext = MessageContext.CreateOverride(new PeerId("Abc.Testing.0"), null);
             var invocation = new ScanCommand1().ToInvocation(messageContext);
 
