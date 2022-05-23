@@ -308,7 +308,6 @@ namespace Abc.Zebus.Transport
             return true;
         }
 
-
         private void OnEndOfStreamAck(TransportMessage transportMessage)
         {
             var senderId = transportMessage.Originator.SenderId;
@@ -425,7 +424,7 @@ namespace Abc.Zebus.Transport
 
                 _outboundSockets.TryAdd(peer.Id, outboundSocket);
             }
-            else if (outboundSocket.EndPoint != peer.EndPoint)
+            else if (!string.Equals(outboundSocket.EndPoint, peer.EndPoint, StringComparison.OrdinalIgnoreCase))
             {
                 outboundSocket.ReconnectFor(peer.EndPoint, transportMessage);
             }
