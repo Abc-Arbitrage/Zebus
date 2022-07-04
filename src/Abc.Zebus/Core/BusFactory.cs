@@ -7,13 +7,14 @@ using Abc.Zebus.Initialization;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
-using StructureMap;
+using Lamar;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Abc.Zebus.Core
 {
     public class BusFactory
     {
-        private readonly List<Action<ConfigurationExpression>> _configurationActions = new List<Action<ConfigurationExpression>>();
+        private readonly List<Action<IServiceCollection>> _configurationActions = new List<Action<IServiceCollection>>();
         private readonly ZmqTransportConfiguration _transportConfiguration = new ZmqTransportConfiguration();
         private readonly List<ScanTarget> _scanTargets = new List<ScanTarget>();
         private IBusConfiguration? _configuration;
@@ -21,7 +22,7 @@ namespace Abc.Zebus.Core
         public PeerId PeerId { get; set; }
 
         public BusFactory()
-            : this(new Container())
+            : this(new Container(new EmptyRegistry()))
         {
         }
 
@@ -81,7 +82,7 @@ namespace Abc.Zebus.Core
             return this;
         }
 
-        public BusFactory ConfigureContainer(Action<ConfigurationExpression> containerConfiguration)
+        public BusFactory ConfigureContainer(Action<IServiceCollection> containerConfiguration)
         {
             _configurationActions.Add(containerConfiguration);
             return this;
@@ -100,16 +101,17 @@ namespace Abc.Zebus.Core
             if (_configuration == null || _environment == null)
                 throw new InvalidOperationException("The CreateBus() method was called with no configuration (Call .WithConfiguration(...) first)");
 
-            Container.Configure(x => x.AddRegistry<ZebusRegistry>());
+            Container.Configure(new LamarZebusRegistry()); // ==> Container.Configure(x => x.AddRegistry<ZebusRegistry>());
+
             Container.Configure(x =>
             {
-                x.ForSingletonOf<IBusConfiguration>().Use(_configuration);
-                x.ForSingletonOf<IZmqTransportConfiguration>().Use(_transportConfiguration);
-                x.ForSingletonOf<IMessageDispatcher>().Use(
-                    "MessageDispatcher factory",
+                x.AddSingleton<IBusConfiguration>(_configuration); // x.ForSingletonOf<IBusConfiguration>().Use(_configuration);
+                x.AddSingleton<IZmqTransportConfiguration>(_transportConfiguration);
+                x.AddSingleton<IMessageDispatcher>(
                     ctx =>
                     {
-                        var dispatcher = new MessageDispatcher(ctx.GetAllInstances<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetInstance<IDispatchQueueFactory>());
+                        // var dispatcher = new MessageDispatcher(ctx.GetAllInstances<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetInstance<IDispatchQueueFactory>());
+                        var dispatcher = new MessageDispatcher(ctx.GetServices<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetService<IDispatchQueueFactory>());
                         dispatcher.ConfigureHandlerFilter(assembly => _scanTargets.Any(scanTarget => scanTarget.Matches(assembly)));
                         dispatcher.ConfigureAssemblyFilter(type => _scanTargets.Any(scanTarget => scanTarget.Matches(type)));
 
@@ -175,6 +177,10 @@ namespace Abc.Zebus.Core
 
                 return type.Assembly == _assembly && (_type == null || _type == type);
             }
+        }
+
+        private class EmptyRegistry : ServiceRegistry
+        {
         }
     }
 }
