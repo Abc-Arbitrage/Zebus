@@ -11,6 +11,7 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Abc.Zebus.Testing
@@ -85,8 +86,8 @@ namespace Abc.Zebus.Testing
             return busFactory.WithConfiguration("in-memory-bus", "Memory")
                              .ConfigureContainer(cfg =>
                              {
-                                 cfg.ForSingletonOf<IPeerDirectory>().Use(directory);
-                                 cfg.ForSingletonOf<ITransport>().Use(transport);
+                                 cfg.AddSingleton<IPeerDirectory>(directory);
+                                 cfg.AddSingleton<ITransport>(transport);
                              }).CreateAndStartBus();
         }
 

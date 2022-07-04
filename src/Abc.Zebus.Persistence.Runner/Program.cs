@@ -17,9 +17,11 @@ using Abc.Zebus.Persistence.RocksDb;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Transport;
 using Abc.Zebus.Transport;
+using Lamar;
 using log4net;
 using log4net.Config;
 using log4net.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StructureMap;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -91,48 +93,52 @@ namespace Abc.Zebus.Persistence.Runner
 
         private static void InjectPersistenceServiceSpecificConfiguration(BusFactory busFactory, AppSettingsConfiguration configuration, bool useCassandraStorage)
         {
-            busFactory.ConfigureContainer(c =>
+            busFactory.Container.Configure(new LolRegistry(useCassandraStorage, configuration));
+        }
+
+        class LolRegistry : ServiceRegistry
+        {
+            public LolRegistry(bool useCassandraStorage, IPersistenceConfiguration configuration)
             {
-                c.ForSingletonOf<IPersistenceConfiguration>().Use(configuration);
+                ForSingletonOf<IPersistenceConfiguration>().Use(configuration);
 
                 if (useCassandraStorage)
                 {
                     _log.LogInformation("Using Cassandra storage implementation");
-                    c.ForSingletonOf<IStorage>().Use<CqlStorage>();
+                    ForSingletonOf<IStorage>().Use<CqlStorage>();
                 }
                 else
                 {
                     _log.LogInformation("Using RocksDB storage implementation");
-                    c.ForSingletonOf<IStorage>().Use<RocksDbStorage>();
+                    ForSingletonOf<IStorage>().Use<RocksDbStorage>();
                 }
 
-                c.ForSingletonOf<IMessageReplayerRepository>().Use<MessageReplayerRepository>();
-                c.ForSingletonOf<IMessageReplayer>().Use<MessageReplayer>();
+                ForSingletonOf<IMessageReplayerRepository>().Use<MessageReplayerRepository>();
+                ForSingletonOf<IMessageReplayer>().Use<MessageReplayer>();
 
-                c.ForSingletonOf<IMessageDispatcher>().Use(typeof(Func<IContext, MessageDispatcher>).Name,
-                                                           ctx =>
-                                                           {
-                                                               var dispatcher = ctx.GetInstance<MessageDispatcher>();
-                                                               dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
+                ForSingletonOf<IMessageDispatcher>().Use(ctx =>
+                {
+                    var dispatcher = ctx.GetInstance<MessageDispatcher>();
+                    dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
 
-                                                               return dispatcher;
-                                                           });
+                    return dispatcher;
+                });
 
-                c.ForSingletonOf<ITransport>().Use<QueueingTransport>().Ctor<ITransport>().Is<ZmqTransport>();
-                c.ForSingletonOf<IInMemoryMessageMatcher>().Use<InMemoryMessageMatcher>();
-                c.Forward<IInMemoryMessageMatcher, IProvideQueueLength>();
-                c.ForSingletonOf<IStoppingStrategy>().Use<PersistenceStoppingStrategy>();
+                ForSingletonOf<ITransport>().Use<QueueingTransport>().Ctor<ITransport>().Is<ZmqTransport>();
+                ForSingletonOf<IInMemoryMessageMatcher>().Use<InMemoryMessageMatcher>();
+                ForSingletonOf<IProvideQueueLength>().Use(x => (IProvideQueueLength)x.GetInstance<IInMemoryMessageMatcher>());
+                ForSingletonOf<IStoppingStrategy>().Use<PersistenceStoppingStrategy>();
 
-                c.ForSingletonOf<IReporter>().Use<NoopReporter>();
+                ForSingletonOf<IReporter>().Use<NoopReporter>();
 
                 // Cassandra specific
                 if (useCassandraStorage)
                 {
-                    c.ForSingletonOf<ICqlStorage>().Use<CqlStorage>();
-                    c.ForSingletonOf<CassandraCqlSessionManager>().Use(() => CassandraCqlSessionManager.Create());
-                    c.ForSingletonOf<ICqlPersistenceConfiguration>().Use<CassandraAppSettingsConfiguration>();
+                    ForSingletonOf<ICqlStorage>().Use<CqlStorage>();
+                    ForSingletonOf<CassandraCqlSessionManager>().Use(_ => CassandraCqlSessionManager.Create());
+                    ForSingletonOf<ICqlPersistenceConfiguration>().Use<CassandraAppSettingsConfiguration>();
                 }
-            });
+            }
         }
     }
 }

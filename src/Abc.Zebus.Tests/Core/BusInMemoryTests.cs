@@ -10,7 +10,8 @@ using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 using ProtoBuf;
-using StructureMap;
+using Lamar;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Abc.Zebus.Tests.Core
 {
@@ -26,7 +27,7 @@ namespace Abc.Zebus.Tests.Core
         public void Setup()
         {
             _transport = new TestTransport();
-            _container = new Container();
+            _container = new Container(new ServiceRegistry());
             _peerDirectory = new TestPeerDirectory();
 
             _bus = new BusFactory(_container)
@@ -39,7 +40,7 @@ namespace Abc.Zebus.Tests.Core
         {
             var handler = new EventPublisherEventHandler(_bus);
 
-            _container.Configure(x => x.ForSingletonOf<EventPublisherEventHandler>().Use(handler));
+            _container.Configure(x => x.AddSingleton<EventPublisherEventHandler>(handler));
             _transport.RaiseMessageReceived(new EventPublisherEvent().ToTransportMessage());
 
             // make sure the handler is running

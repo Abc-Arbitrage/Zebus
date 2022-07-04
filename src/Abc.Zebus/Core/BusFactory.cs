@@ -111,7 +111,9 @@ namespace Abc.Zebus.Core
                     ctx =>
                     {
                         // var dispatcher = new MessageDispatcher(ctx.GetAllInstances<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetInstance<IDispatchQueueFactory>());
-                        var dispatcher = new MessageDispatcher(ctx.GetServices<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetService<IDispatchQueueFactory>());
+                        var messageHandlerInvokerLoaders = ctx.GetServices<IMessageHandlerInvokerLoader>();
+                        var dispatchQueueFactory = ctx.GetService<IDispatchQueueFactory>();
+                        var dispatcher = new MessageDispatcher(messageHandlerInvokerLoaders.ToArray(), dispatchQueueFactory);
                         dispatcher.ConfigureHandlerFilter(assembly => _scanTargets.Any(scanTarget => scanTarget.Matches(assembly)));
                         dispatcher.ConfigureAssemblyFilter(type => _scanTargets.Any(scanTarget => scanTarget.Matches(type)));
 

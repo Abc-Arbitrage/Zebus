@@ -15,6 +15,7 @@ using Abc.Zebus.Log4Net;
 using Abc.Zebus.Util;
 using log4net;
 using log4net.Config;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StructureMap;
 
@@ -73,41 +74,40 @@ namespace Abc.Zebus.Directory.Runner
 
         private static void InjectDirectoryServiceSpecificConfiguration(BusFactory busFactory, StorageType storageType)
         {
+            busFactory.Container.Configure(new LamarDirectoryRegistry());
             busFactory.ConfigureContainer(c =>
             {
-                c.AddRegistry<DirectoryRegistry>();
-                c.ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
+                c.AddSingleton<IDirectoryConfiguration, AppSettingsDirectoryConfiguration>();
 
-                c.For<IDeadPeerDetector>().Use<DeadPeerDetector>();
-                c.ForSingletonOf<IPeerRepository>().Use(ctx => GetPeerRepository(storageType, ctx));
-                c.ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
-                c.ForSingletonOf<IPeerDirectory>().Use(ctx => ctx.GetInstance<PeerDirectoryServer>());
+                c.AddTransient<IDeadPeerDetector, DeadPeerDetector>();
+                c.AddSingleton<IPeerRepository>(ctx => GetPeerRepository(storageType, ctx)!);
+                c.AddSingleton<PeerDirectoryServer>();
+                c.AddSingleton<IPeerDirectory>(ctx => ctx.GetService<PeerDirectoryServer>()!);
 
-                c.ForSingletonOf<IMessageDispatcher>().Use(typeof(Func<IContext, MessageDispatcher>).Name,
-                                                           ctx =>
-                                                           {
-                                                               var dispatcher = ctx.GetInstance<MessageDispatcher>();
-                                                               dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
+                c.AddSingleton<IMessageDispatcher>(ctx =>
+                {
+                    var dispatcher = ctx.GetService<MessageDispatcher>()!;
+                    dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
 
-                                                               return dispatcher;
-                                                           });
+                    return dispatcher;
+                });
 
                 // Cassandra specific
                 if (storageType == StorageType.Cassandra)
                 {
-                    c.ForSingletonOf<CassandraCqlSessionManager>().Use(() => new CassandraCqlSessionManager());
-                    c.ForSingletonOf<ICassandraConfiguration>().Use<CassandraAppSettingsConfiguration>();
+                    c.AddSingleton<CassandraCqlSessionManager>();
+                    c.AddSingleton<ICassandraConfiguration, CassandraAppSettingsConfiguration>();
                 }
             });
         }
 
-        private static IPeerRepository GetPeerRepository(StorageType storageType, IContext ctx)
+        private static IPeerRepository? GetPeerRepository(StorageType storageType, IServiceProvider ctx)
         {
             return storageType switch
             {
-                StorageType.Cassandra => ctx.GetInstance<CqlPeerRepository>(),
-                StorageType.InMemory  => ctx.GetInstance<MemoryPeerRepository>(),
-                StorageType.RocksDb   => ctx.GetInstance<RocksDbPeerRepository>(),
+                StorageType.Cassandra => ctx.GetService<CqlPeerRepository>(),
+                StorageType.InMemory  => ctx.GetService<MemoryPeerRepository>(),
+                StorageType.RocksDb   => ctx.GetService<RocksDbPeerRepository>(),
                 _                     => throw new ArgumentOutOfRangeException(nameof(storageType), storageType, null)
             };
         }

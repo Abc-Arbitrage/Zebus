@@ -9,6 +9,7 @@ using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Measurements;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using ProtoBuf;
 
@@ -162,7 +163,7 @@ namespace Abc.Zebus.Tests.Core
             return new BusFactory()
                 .WithPeerId("Abc.Zebus.Perf.Sender.*")
                 .WithConfiguration(CreateBusConfiguration(false, _directoryEndPoint), "Dev")
-                .ConfigureContainer(x => x.For<ZmqSocketOptions>().Use(new ZmqSocketOptions { SendHighWaterMark = 100000, SendTimeout = 10.Second() }))
+                .ConfigureContainer(x => x.AddTransient<ZmqSocketOptions>(x => new ZmqSocketOptions { SendHighWaterMark = 100000, SendTimeout = 10.Second() }))
                 .CreateAndStartBus();
         }
 
@@ -172,7 +173,7 @@ namespace Abc.Zebus.Tests.Core
                 .WithPeerId("Abc.Zebus.Perf.Receiver.*")
                 .WithConfiguration(CreateBusConfiguration(isPersistent, _directoryEndPoint), "Dev")
                 .WithHandlers(typeof(PerfHandler))
-                .ConfigureContainer(x => x.For<ZmqSocketOptions>().Use(new ZmqSocketOptions { ReceiveHighWaterMark = 100000 }))
+                .ConfigureContainer(x => x.AddTransient<ZmqSocketOptions>(x => new ZmqSocketOptions { ReceiveHighWaterMark = 100000 }))
                 .CreateAndStartBus();
         }
 
