@@ -14,9 +14,9 @@ namespace Abc.Zebus.Initialization
 {
     public class LamarZebusRegistry : ServiceRegistry
     {
-        public LamarZebusRegistry()
+        public LamarZebusRegistry(IContainer container)
         {
-            ForSingletonOf<IDependencyInjectionContainerProvider>().Use<LamarContainerProvider>();
+            ForSingletonOf<IDependencyInjectionContainerProvider>().Use(x => new LamarContainerProvider(container));
             ForSingletonOf<IMessageDispatcher>().Use<MessageDispatcher>();
             ForSingletonOf<IProvideQueueLength>().Use(x => (IProvideQueueLength)x.GetInstance<IMessageDispatcher>());
 

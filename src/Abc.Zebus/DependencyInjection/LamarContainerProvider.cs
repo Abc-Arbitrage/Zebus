@@ -4,16 +4,16 @@ namespace Abc.Zebus.DependencyInjection
 {
     public class LamarContainerProvider : IDependencyInjectionContainerProvider
     {
-        private readonly IContainer _lamarContainer;
+        private readonly LamarContainer _lamarContainer;
 
-        public LamarContainerProvider(IContainer lamarContainer)
+        public LamarContainerProvider(IContainer container)
         {
-            _lamarContainer = lamarContainer;
+            _lamarContainer = new LamarContainer(container);
         }
 
         public IDependencyInjectionContainer GetContainer()
         {
-            return new LamarContainer(_lamarContainer);
+            return _lamarContainer;
         }
     }
 }

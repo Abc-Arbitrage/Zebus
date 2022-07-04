@@ -101,7 +101,7 @@ namespace Abc.Zebus.Core
             if (_configuration == null || _environment == null)
                 throw new InvalidOperationException("The CreateBus() method was called with no configuration (Call .WithConfiguration(...) first)");
 
-            Container.Configure(new LamarZebusRegistry()); // ==> Container.Configure(x => x.AddRegistry<ZebusRegistry>());
+            Container.Configure(new LamarZebusRegistry(Container)); // ==> Container.Configure(x => x.AddRegistry<ZebusRegistry>());
 
             Container.Configure(x =>
             {
