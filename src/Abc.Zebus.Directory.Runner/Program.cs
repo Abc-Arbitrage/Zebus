@@ -13,6 +13,7 @@ using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Log4Net;
 using Abc.Zebus.Util;
+using Lamar;
 using log4net;
 using log4net.Config;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,31 +75,36 @@ namespace Abc.Zebus.Directory.Runner
 
         private static void InjectDirectoryServiceSpecificConfiguration(BusFactory busFactory, StorageType storageType)
         {
-            busFactory.Container.Configure(new LamarDirectoryRegistry());
-            busFactory.ConfigureContainer(c =>
+            busFactory.Container.Configure(new DirectoryRunnerRegistry(storageType));
+        }
+
+        private class DirectoryRunnerRegistry : ServiceRegistry
+        {
+            public DirectoryRunnerRegistry(StorageType storageType)
             {
-                c.AddSingleton<IDirectoryConfiguration, AppSettingsDirectoryConfiguration>();
+                IncludeRegistry<LamarDirectoryRegistry>();
+                ForSingletonOf<IDirectoryConfiguration>().Use<AppSettingsDirectoryConfiguration>();
 
-                c.AddTransient<IDeadPeerDetector, DeadPeerDetector>();
-                c.AddSingleton<IPeerRepository>(ctx => GetPeerRepository(storageType, ctx)!);
-                c.AddSingleton<PeerDirectoryServer>();
-                c.AddSingleton<IPeerDirectory>(ctx => ctx.GetService<PeerDirectoryServer>()!);
+                For<IDeadPeerDetector>().Use<DeadPeerDetector>();
+                ForSingletonOf<IPeerRepository>().Use(ctx => GetPeerRepository(storageType, ctx)!);
+                ForSingletonOf<PeerDirectoryServer>().Use<PeerDirectoryServer>();
+                ForSingletonOf<IPeerDirectory>().Use(ctx => ctx.GetInstance<PeerDirectoryServer>());
 
-                c.AddSingleton<IMessageDispatcher>(ctx =>
+                ForSingletonOf<IMessageDispatcher>().Use(ctx =>
                 {
-                    var dispatcher = ctx.GetService<MessageDispatcher>()!;
+                    var dispatcher = ctx.GetInstance<MessageDispatcher>();
                     dispatcher.ConfigureHandlerFilter(x => x != typeof(PeerDirectoryClient));
 
                     return dispatcher;
-                });
+                }).Named(typeof(Func<IContext, MessageDispatcher>).Name);
 
                 // Cassandra specific
                 if (storageType == StorageType.Cassandra)
                 {
-                    c.AddSingleton<CassandraCqlSessionManager>();
-                    c.AddSingleton<ICassandraConfiguration, CassandraAppSettingsConfiguration>();
+                    ForSingletonOf<CassandraCqlSessionManager>().Use(_ => new CassandraCqlSessionManager());
+                    ForSingletonOf<ICassandraConfiguration>().Use<CassandraAppSettingsConfiguration>();
                 }
-            });
+            }
         }
 
         private static IPeerRepository? GetPeerRepository(StorageType storageType, IServiceProvider ctx)
