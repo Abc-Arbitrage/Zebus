@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Abc.Zebus.Core;
 using Lamar;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,19 +8,27 @@ namespace Abc.Zebus.DependencyInjection
 {
     public class LamarContainer : IDependencyInjectionContainer
     {
+        private readonly bool _hasMessageContext;
         private readonly IContainer _lamarContainer;
 
-        public LamarContainer(IContainer lamarContainer)
+        public LamarContainer(IContainer lamarContainer, Type handlerType)
         {
             _lamarContainer = lamarContainer;
+            _hasMessageContext = handlerType.GetConstructors()
+                                            .Any(x => x.GetParameters().Any(y => y.ParameterType == typeof(MessageContext) || y.ParameterType == typeof(MessageContextAwareBus)));
         }
 
         public object GetMessageHandlerInstance(Type type, MessageContextAwareBus dispatchBus, MessageContext messageContext)
         {
-            var nested = _lamarContainer.GetNestedContainer();
-            nested.Inject(dispatchBus);
-            nested.Inject(messageContext);
-            return nested.GetInstance(type);
+            if (_hasMessageContext)
+            {
+                var nested = _lamarContainer.GetNestedContainer();
+                nested.Inject(dispatchBus);
+                nested.Inject(messageContext);
+                return nested.GetInstance(type);
+            }
+
+            return _lamarContainer.GetInstance(type);
         }
 
         public object GetInstance(Type type) => _lamarContainer.GetInstance(type);

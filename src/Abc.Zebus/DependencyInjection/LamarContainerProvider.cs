@@ -1,19 +1,20 @@
-﻿using Lamar;
+﻿using System;
+using Lamar;
 
 namespace Abc.Zebus.DependencyInjection
 {
     public class LamarContainerProvider : IDependencyInjectionContainerProvider
     {
-        private readonly LamarContainer _lamarContainer;
+        private readonly IContainer _lamarContainer;
 
         public LamarContainerProvider(IContainer container)
         {
-            _lamarContainer = new LamarContainer(container);
+            _lamarContainer = container;
         }
 
-        public IDependencyInjectionContainer GetContainer()
+        public IDependencyInjectionContainer GetContainer(Type handlerType)
         {
-            return _lamarContainer;
+            return new LamarContainer(_lamarContainer, handlerType);
         }
     }
 }

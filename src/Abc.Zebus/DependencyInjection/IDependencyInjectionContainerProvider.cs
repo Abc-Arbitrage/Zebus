@@ -1,7 +1,9 @@
-﻿namespace Abc.Zebus.DependencyInjection
+﻿using System;
+
+namespace Abc.Zebus.DependencyInjection
 {
     public interface IDependencyInjectionContainerProvider
     {
-        public IDependencyInjectionContainer GetContainer();
+        public IDependencyInjectionContainer GetContainer(Type handlerType);
     }
 }

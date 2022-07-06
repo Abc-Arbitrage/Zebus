@@ -19,7 +19,7 @@ namespace Abc.Zebus.Dispatch
         protected SyncMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup, Action<object, IMessage> handleAction)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = containerProvider.GetContainer();
+            _container = containerProvider.GetContainer(handlerType);
             _handleAction = handleAction;
         }
 

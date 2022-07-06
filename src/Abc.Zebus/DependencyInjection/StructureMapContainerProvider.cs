@@ -1,4 +1,5 @@
-﻿using StructureMap;
+﻿using System;
+using StructureMap;
 
 namespace Abc.Zebus.DependencyInjection
 {
@@ -11,7 +12,7 @@ namespace Abc.Zebus.DependencyInjection
             _structureMapContainer = structureMapContainer;
         }
 
-        public IDependencyInjectionContainer GetContainer()
+        public IDependencyInjectionContainer GetContainer(Type handlerType)
         {
             return new StructureMapContainer(_structureMapContainer);
         }
