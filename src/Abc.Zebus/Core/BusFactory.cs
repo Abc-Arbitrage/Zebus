@@ -101,16 +101,15 @@ namespace Abc.Zebus.Core
             if (_configuration == null || _environment == null)
                 throw new InvalidOperationException("The CreateBus() method was called with no configuration (Call .WithConfiguration(...) first)");
 
-            Container.Configure(new LamarZebusRegistry()); // ==> Container.Configure(x => x.AddRegistry<ZebusRegistry>());
+            Container.Configure(new LamarZebusRegistry());
 
             Container.Configure(x =>
             {
-                x.AddSingleton<IBusConfiguration>(_configuration); // x.ForSingletonOf<IBusConfiguration>().Use(_configuration);
+                x.AddSingleton<IBusConfiguration>(_configuration);
                 x.AddSingleton<IZmqTransportConfiguration>(_transportConfiguration);
                 x.AddSingleton<IMessageDispatcher>(
                     ctx =>
                     {
-                        // var dispatcher = new MessageDispatcher(ctx.GetAllInstances<IMessageHandlerInvokerLoader>().ToArray(), ctx.GetInstance<IDispatchQueueFactory>());
                         var messageHandlerInvokerLoaders = ctx.GetServices<IMessageHandlerInvokerLoader>();
                         var dispatchQueueFactory = ctx.GetService<IDispatchQueueFactory>();
                         var dispatcher = new MessageDispatcher(messageHandlerInvokerLoaders.ToArray(), dispatchQueueFactory);
