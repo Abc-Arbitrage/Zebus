@@ -1,11 +1,9 @@
 ﻿using Abc.Zebus.Core;
-using Abc.Zebus.Dispatch;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Directory;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Testing.Transport;
 using Abc.Zebus.Tests.Messages;
-using Lamar;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using ProtoBuf;
@@ -24,7 +22,6 @@ namespace Abc.Zebus.Tests.Core
                 .WithHandlers(typeof(Handler))
                 .ConfigureContainer(x =>
                 {
-                    x.AddSingleton<IContainer, Container>();
                     x.AddSingleton<Handler>(handler);
                 })
                 .CreateAndStartInMemoryBus();
