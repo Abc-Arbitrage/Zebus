@@ -1,4 +1,4 @@
-﻿using StructureMap;
+﻿using Abc.Zebus.DependencyInjection;
 
 namespace Abc.Zebus.Hosting
 {
@@ -14,7 +14,7 @@ namespace Abc.Zebus.Hosting
         /// </summary>
         public virtual int Priority => 0;
 
-        public virtual void ConfigureContainer(IContainer container)
+        public virtual void ConfigureContainer(IDependencyInjectionContainer container)
         {
         }
 

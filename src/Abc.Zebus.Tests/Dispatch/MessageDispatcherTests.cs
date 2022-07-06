@@ -18,7 +18,7 @@ using Abc.Zebus.Tests.Serialization;
 using Abc.Zebus.Util;
 using Moq;
 using NUnit.Framework;
-using StructureMap;
+using Lamar;
 
 namespace Abc.Zebus.Tests.Dispatch
 {
@@ -35,7 +35,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             _containerMock = new Mock<IContainer>();
             _containerMock.Setup(x => x.GetInstance(It.IsAny<Type>())).Returns<Type>(Activator.CreateInstance);
-            _pipeManager = new PipeManager(new IPipeSource[] { new PipeSource<TestPipe>(new Container()) });
+            _pipeManager = new PipeManager(new IPipeSource[] { new PipeSource<TestPipe>(new LamarContainer(new Container(new ServiceRegistry()))) });
 
             _dispatchQueueFactory = new DispatchQueueFactory(_pipeManager);
 
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
         private MessageDispatcher CreateDispatcher(IDispatchQueueFactory dispatchQueueFactory)
         {
-            var containerProvider = new StructureMapContainerProvider(_containerMock.Object);
+            var containerProvider = new LamarContainerProvider(_containerMock.Object);
             var invokerLoaders = new IMessageHandlerInvokerLoader[]
             {
                 new SyncMessageHandlerInvokerLoader(containerProvider),

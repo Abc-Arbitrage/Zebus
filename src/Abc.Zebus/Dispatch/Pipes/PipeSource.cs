@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using StructureMap;
+using Abc.Zebus.DependencyInjection; 
 
 namespace Abc.Zebus.Dispatch.Pipes
 {
-    public class PipeSource<TPipe> : IPipeSource where TPipe : class, IPipe 
+    public class PipeSource<TPipe> : IPipeSource where TPipe : class, IPipe
     {
-        private readonly IContainer _container;
+        private readonly IDependencyInjectionContainer _container;
 
-        public PipeSource(IContainer container)
+        public PipeSource(IDependencyInjectionContainer container)
         {
             _container = container;
         }

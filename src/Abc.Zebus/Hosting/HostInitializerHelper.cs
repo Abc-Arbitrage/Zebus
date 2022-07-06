@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Abc.Zebus.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using StructureMap;
 
 namespace Abc.Zebus.Hosting
 {
@@ -11,7 +11,7 @@ namespace Abc.Zebus.Hosting
     {
         private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(HostInitializerHelper));
 
-        public static void CallActionOnInitializers(this Container container, Expression<Action<HostInitializer>> actionToCall, bool invertPriority = false)
+        public static void CallActionOnInitializers(this IDependencyInjectionContainer container, Expression<Action<HostInitializer>> actionToCall, bool invertPriority = false)
         {
             var initializers = container.GetAllInstances<HostInitializer>();
             var orderedInitializers = invertPriority ? initializers.OrderBy(x => x.Priority)
