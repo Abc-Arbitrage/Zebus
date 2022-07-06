@@ -26,7 +26,11 @@ namespace Abc.Zebus.DependencyInjection
 
         public object GetInstance(Type type) => _structureMapContainer.GetInstance(type);
 
+        public object TryGetInstance(Type type) => _structureMapContainer.TryGetInstance(type);
+
         public T GetInstance<T>() => _structureMapContainer.GetInstance<T>();
+
+        public T TryGetInstance<T>() => _structureMapContainer.TryGetInstance<T>();
 
         public bool IsSingleton(Type type)
         {
@@ -34,14 +38,8 @@ namespace Abc.Zebus.DependencyInjection
             return model != null && model.Lifecycle == Lifecycles.Singleton;
         }
 
-        public IEnumerable<T> GetAllInstances<T>()
-        {
-            return _structureMapContainer.GetAllInstances<T>();
-        }
+        public IEnumerable<T> GetAllInstances<T>() => _structureMapContainer.GetAllInstances<T>();
 
-        public void Dispose()
-        {
-            _structureMapContainer.Dispose();
-        }
+        public void Dispose() => _structureMapContainer.Dispose();
     }
 }

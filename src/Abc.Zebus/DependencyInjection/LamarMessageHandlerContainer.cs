@@ -32,7 +32,11 @@ namespace Abc.Zebus.DependencyInjection
 
         public object GetInstance(Type type) => _lamarContainer.GetInstance(type);
 
+        public object TryGetInstance(Type type) => _lamarContainer.TryGetInstance(type);
+
         public T GetInstance<T>() => _lamarContainer.GetInstance<T>();
+
+        public T TryGetInstance<T>() => _lamarContainer.TryGetInstance<T>();
 
         public bool IsSingleton(Type type) => _lamarContainer.IsSingleton(type);
 

@@ -16,7 +16,11 @@ namespace Abc.Zebus.DependencyInjection
 
         public object GetInstance(Type type) => _lamarContainer.GetInstance(type);
 
+        public object TryGetInstance(Type type) => _lamarContainer.TryGetInstance(type);
+
         public T GetInstance<T>() => _lamarContainer.GetInstance<T>();
+
+        public T TryGetInstance<T>() => _lamarContainer.TryGetInstance<T>();
 
         public bool IsSingleton(Type type)
         {
@@ -24,19 +28,10 @@ namespace Abc.Zebus.DependencyInjection
             return model != null && model.Default.Lifetime == ServiceLifetime.Singleton;
         }
 
-        public IEnumerable<T> GetAllInstances<T>()
-        {
-            return _lamarContainer.GetAllInstances<T>();
-        }
+        public IEnumerable<T> GetAllInstances<T>() => _lamarContainer.GetAllInstances<T>();
 
-        public void Dispose()
-        {
-            _lamarContainer.Dispose();
-        }
+        public void Dispose() => _lamarContainer.Dispose();
 
-        internal INestedContainer GetNestedContainer()
-        {
-            return _lamarContainer.GetNestedContainer();
-        }
+        internal INestedContainer GetNestedContainer() => _lamarContainer.GetNestedContainer();
     }
 }
