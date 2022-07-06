@@ -8,19 +8,19 @@ namespace Abc.Zebus.DependencyInjection
 {
     public class LamarContainer : IDependencyInjectionContainer
     {
-        private readonly bool _hasMessageContext;
+        private readonly bool _handlerHasMessageContext;
         private readonly IContainer _lamarContainer;
 
         public LamarContainer(IContainer lamarContainer, Type handlerType)
         {
             _lamarContainer = lamarContainer;
-            _hasMessageContext = handlerType.GetConstructors()
-                                            .Any(x => x.GetParameters().Any(y => y.ParameterType == typeof(MessageContext) || y.ParameterType == typeof(MessageContextAwareBus)));
+            _handlerHasMessageContext = handlerType.GetConstructors()
+                                                   .Any(x => x.GetParameters().Any(y => y.ParameterType == typeof(MessageContext) || y.ParameterType == typeof(MessageContextAwareBus)));
         }
 
         public object GetMessageHandlerInstance(Type type, MessageContextAwareBus dispatchBus, MessageContext messageContext)
         {
-            if (_hasMessageContext)
+            if (_handlerHasMessageContext)
             {
                 var nested = _lamarContainer.GetNestedContainer();
                 nested.Inject(dispatchBus);

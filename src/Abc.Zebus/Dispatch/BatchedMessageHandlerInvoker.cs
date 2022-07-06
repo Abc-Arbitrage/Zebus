@@ -18,7 +18,7 @@ namespace Abc.Zebus.Dispatch
         public BatchedMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = containerProvider  != null ? containerProvider.GetContainer() : null!;
+            _container = containerProvider  != null ? containerProvider.GetContainer(handlerType) : null!;
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 
