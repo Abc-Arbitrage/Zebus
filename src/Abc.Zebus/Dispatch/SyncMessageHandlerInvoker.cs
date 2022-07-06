@@ -8,7 +8,7 @@ namespace Abc.Zebus.Dispatch
 {
     public class SyncMessageHandlerInvoker : MessageHandlerInvoker
     {
-        private readonly IDependencyInjectionContainer _container;
+        private readonly IMessageHandlerContainer _container;
         private readonly Action<object, IMessage> _handleAction;
 
         public SyncMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
@@ -19,7 +19,7 @@ namespace Abc.Zebus.Dispatch
         protected SyncMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup, Action<object, IMessage> handleAction)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = containerProvider.GetContainer(handlerType);
+            _container = containerProvider.GetMessageHandlerInstanceProvider(handlerType);
             _handleAction = handleAction;
         }
 

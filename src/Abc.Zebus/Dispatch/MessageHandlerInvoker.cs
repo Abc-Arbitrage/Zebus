@@ -74,7 +74,7 @@ namespace Abc.Zebus.Dispatch
             return null;
         }
 
-        protected object CreateHandler(IDependencyInjectionContainer container, MessageContext messageContext)
+        protected object CreateHandler(IMessageHandlerContainer container, MessageContext messageContext)
         {
             if (IsHandlerSingleton(container))
                 return container.GetInstance(MessageHandlerType);

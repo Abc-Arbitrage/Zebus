@@ -1,13 +1,13 @@
 ﻿using System;
-using Abc.Zebus.Core;
+using System.Collections.Generic;
 
 namespace Abc.Zebus.DependencyInjection
 {
-    public interface IDependencyInjectionContainer
+    public interface IDependencyInjectionContainer : IDisposable
     {
-        object GetMessageHandlerInstance(Type type, MessageContextAwareBus dispatchBus, MessageContext messageContext);
         object GetInstance(Type type);
         T GetInstance<T>();
         bool IsSingleton(Type type);
+        IEnumerable<T> GetAllInstances<T>();
     }
 }

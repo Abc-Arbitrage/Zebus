@@ -8,13 +8,13 @@ namespace Abc.Zebus.Dispatch
 {
     public class AsyncMessageHandlerInvoker : MessageHandlerInvoker
     {
-        private readonly IDependencyInjectionContainer _container;
+        private readonly IMessageHandlerContainer _container;
         private readonly Func<object, IMessage, Task> _handleAction;
 
         public AsyncMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = containerProvider.GetContainer(handlerType);
+            _container = containerProvider.GetMessageHandlerInstanceProvider(handlerType);
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 

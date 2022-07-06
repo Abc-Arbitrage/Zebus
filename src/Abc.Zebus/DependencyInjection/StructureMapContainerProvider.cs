@@ -12,7 +12,12 @@ namespace Abc.Zebus.DependencyInjection
             _structureMapContainer = structureMapContainer;
         }
 
-        public IDependencyInjectionContainer GetContainer(Type handlerType)
+        public IDependencyInjectionContainer GetContainer()
+        {
+            return new StructureMapContainer(_structureMapContainer);
+        }
+
+        public IMessageHandlerContainer GetMessageHandlerInstanceProvider(Type handlerType)
         {
             return new StructureMapContainer(_structureMapContainer);
         }

@@ -1,6 +1,5 @@
-﻿using System;
-using System.Linq;
-using Abc.Zebus.Core;
+using System;
+using System.Collections.Generic;
 using Lamar;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,27 +7,11 @@ namespace Abc.Zebus.DependencyInjection
 {
     public class LamarContainer : IDependencyInjectionContainer
     {
-        private readonly bool _handlerHasMessageContext;
         private readonly IContainer _lamarContainer;
 
-        public LamarContainer(IContainer lamarContainer, Type handlerType)
+        public LamarContainer(IContainer lamarContainer)
         {
             _lamarContainer = lamarContainer;
-            _handlerHasMessageContext = handlerType.GetConstructors()
-                                                   .Any(x => x.GetParameters().Any(y => y.ParameterType == typeof(MessageContext) || y.ParameterType == typeof(MessageContextAwareBus)));
-        }
-
-        public object GetMessageHandlerInstance(Type type, MessageContextAwareBus dispatchBus, MessageContext messageContext)
-        {
-            if (_handlerHasMessageContext)
-            {
-                var nested = _lamarContainer.GetNestedContainer();
-                nested.Inject(dispatchBus);
-                nested.Inject(messageContext);
-                return nested.GetInstance(type);
-            }
-
-            return _lamarContainer.GetInstance(type);
         }
 
         public object GetInstance(Type type) => _lamarContainer.GetInstance(type);
@@ -39,6 +22,21 @@ namespace Abc.Zebus.DependencyInjection
         {
             var model = _lamarContainer.Model?.For(type);
             return model != null && model.Default.Lifetime == ServiceLifetime.Singleton;
+        }
+
+        public IEnumerable<T> GetAllInstances<T>()
+        {
+            return _lamarContainer.GetAllInstances<T>();
+        }
+
+        public void Dispose()
+        {
+            _lamarContainer.Dispose();
+        }
+
+        internal INestedContainer GetNestedContainer()
+        {
+            return _lamarContainer.GetNestedContainer();
         }
     }
 }

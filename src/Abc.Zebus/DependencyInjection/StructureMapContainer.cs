@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using Abc.Zebus.Core;
 using StructureMap;
 using StructureMap.Pipeline;
 
 namespace Abc.Zebus.DependencyInjection
 {
-    public class StructureMapContainer : IDependencyInjectionContainer
+    public class StructureMapContainer : IMessageHandlerContainer
     {
         private readonly IContainer _structureMapContainer;
 
@@ -31,6 +32,16 @@ namespace Abc.Zebus.DependencyInjection
         {
             var model = _structureMapContainer.Model?.For(type);
             return model != null && model.Lifecycle == Lifecycles.Singleton;
+        }
+
+        public IEnumerable<T> GetAllInstances<T>()
+        {
+            return _structureMapContainer.GetAllInstances<T>();
+        }
+
+        public void Dispose()
+        {
+            _structureMapContainer.Dispose();
         }
     }
 }

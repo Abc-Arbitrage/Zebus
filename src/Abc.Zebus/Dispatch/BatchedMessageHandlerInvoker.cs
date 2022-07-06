@@ -11,14 +11,14 @@ namespace Abc.Zebus.Dispatch
     {
         private static readonly MethodInfo _castMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast))!;
 
-        private readonly IDependencyInjectionContainer _container;
+        private readonly IMessageHandlerContainer _container;
         private readonly Action<object, IList<IMessage>> _handleAction;
         private static readonly MethodInfo _toListMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!;
 
         public BatchedMessageHandlerInvoker(IDependencyInjectionContainerProvider containerProvider, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
             : base(handlerType, messageType, shouldBeSubscribedOnStartup)
         {
-            _container = containerProvider  != null ? containerProvider.GetContainer(handlerType) : null!;
+            _container = containerProvider  != null ? containerProvider.GetMessageHandlerInstanceProvider(handlerType) : null!;
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 

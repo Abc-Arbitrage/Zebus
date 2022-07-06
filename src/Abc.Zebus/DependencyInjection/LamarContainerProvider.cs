@@ -1,8 +1,10 @@
 ﻿using System;
+using JetBrains.Annotations;
 using Lamar;
 
 namespace Abc.Zebus.DependencyInjection
 {
+    [UsedImplicitly]
     public class LamarContainerProvider : IDependencyInjectionContainerProvider
     {
         private readonly IContainer _lamarContainer;
@@ -12,9 +14,14 @@ namespace Abc.Zebus.DependencyInjection
             _lamarContainer = container;
         }
 
-        public IDependencyInjectionContainer GetContainer(Type handlerType)
+        public IDependencyInjectionContainer GetContainer()
         {
-            return new LamarContainer(_lamarContainer, handlerType);
+            return new LamarContainer(_lamarContainer);
+        }
+
+        public IMessageHandlerContainer GetMessageHandlerInstanceProvider(Type handlerType)
+        {
+            return new LamarMessageHandlerContainer(new LamarContainer(_lamarContainer), handlerType);
         }
     }
 }
