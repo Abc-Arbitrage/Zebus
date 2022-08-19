@@ -20,17 +20,20 @@ namespace Abc.Zebus
                     return;
 
                 _loggerFactory = value;
-                LoggerFactoryChanged?.Invoke();
+                RefreshConfiguration();
             }
         }
 
-        public static event Action? LoggerFactoryChanged;
+        public static event Action? ConfigurationUpdated;
 
         public static ILogger GetLogger(string name)
             => new ForwardingLogger(name);
 
         public static ILogger GetLogger(Type type)
             => GetLogger(type.FullName!);
+
+        public static void RefreshConfiguration()
+            => ConfigurationUpdated?.Invoke();
 
         private class ForwardingLogger : ILogger
         {

@@ -27,7 +27,7 @@ namespace Abc.Zebus.Core
             _logger = ZebusLogManager.GetLogger(loggerFullName);
 
             // Instances of BusMessageLogger are static, no need to unsubscribe from this event
-            ZebusLogManager.LoggerFactoryChanged += UpdateLogConfig;
+            ZebusLogManager.ConfigurationUpdated += UpdateLogConfig;
 
             UpdateLogConfig();
 
