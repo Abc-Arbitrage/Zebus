@@ -10,10 +10,8 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
 
         static MessageIdV2()
         {
-            using (var random = new RNGCryptoServiceProvider())
-            {
-                random.GetBytes(_randomBytes);
-            }
+            using var random = RandomNumberGenerator.Create();
+            random.GetBytes(_randomBytes);
         }
 
         public static Guid CreateNewSequentialId(long timestampTicks)
