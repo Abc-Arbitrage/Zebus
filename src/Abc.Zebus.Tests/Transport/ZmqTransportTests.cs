@@ -302,7 +302,7 @@ namespace Abc.Zebus.Tests.Transport
 
             senderTransport.OutboundSocketCount.ShouldEqual(1);
 
-            using (SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(30.Seconds())))
+            using (SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(30.Seconds())))
             {
                 Wait.Until(() => senderTransport.OutboundSocketCount == 0, 1.Seconds(), "Socket should be disconnected");
             }

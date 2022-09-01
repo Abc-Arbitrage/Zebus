@@ -45,7 +45,6 @@ namespace Abc.Zebus.Directory.Tests
         public async Task register_persist_state_and_advertise()
         {
             using (SystemDateTime.PauseTime())
-            using (SystemDateTime.Set(SystemDateTime.Now))
             {
                 var peerDescriptor = _self.ToPeerDescriptor(false, typeof(FakeCommand));
 
@@ -73,7 +72,6 @@ namespace Abc.Zebus.Directory.Tests
         public async Task unregister_should_persist_state_and_advertise()
         {
             using (SystemDateTime.PauseTime())
-            using (SystemDateTime.Set(SystemDateTime.Now))
             {
                 var peerDescriptor = _self.ToPeerDescriptor(true, typeof(FakeCommand));
 

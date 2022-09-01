@@ -104,17 +104,17 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
             _detector.KnownPeerIds.ShouldBeEquivalentTo(new[] { _persistentAlivePeer.PeerId });
         }
-        
+
         [Test]
         public void should_not_ping_until_the_ping_interval_elapsed()
         {
             var startTime = SystemDateTime.UtcNow;
-            using (SystemDateTime.Set(utcNow: startTime))
+            using (SystemDateTime.PauseTime(startTime))
             {
                 _detector.DetectDeadPeers();
             }
 
-            using (SystemDateTime.Set(startTime + _pingInterval - 1.Second()))
+            using (SystemDateTime.PauseTime(startTime + _pingInterval - 1.Second()))
             {
                 _detector.DetectDeadPeers();
             }
@@ -139,11 +139,11 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
             }
@@ -164,17 +164,17 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_persistentPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_persistentPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_persistentPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_persistentPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectNothing();;
             }
@@ -186,7 +186,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             SetupPeerRepository(_debugPersistentAlivePeer, _debugTransientAlivePeer);
             SetupPeerResponse(_debugPersistentAlivePeer.PeerId, false, true);
             SetupPeerResponse(_debugTransientAlivePeer.PeerId, false, true);
-            
+
             using (SystemDateTime.PauseTime())
             {
                 var startTime = SystemDateTime.UtcNow;
@@ -195,12 +195,12 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_debugPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_debugPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_debugPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_debugPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectNothing();
             }
@@ -211,7 +211,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         {
             SetupPeerRepository(_transientAlivePeer0);
             SetupPeerResponse(_transientAlivePeer0.PeerId, false, false);
-           
+
             using (SystemDateTime.PauseTime())
             {
                 var startTime = SystemDateTime.UtcNow;
@@ -220,17 +220,17 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.Expect(new UnregisterPeerCommand(_transientAlivePeer0.Peer, firstPingTimestampUtc));
             }
         }
 
-        private static readonly string[] _peersNotToDecommissionExamples = 
+        private static readonly string[] _peersNotToDecommissionExamples =
         {
             "Abc.TransientAlive.0",
             "Abc.TransientAlive.*",
@@ -255,12 +255,12 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new MarkPeerAsNotRespondingCommand(_transientAlivePeer0.Peer.Id, firstPingTimestampUtc));
             }
@@ -272,7 +272,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             SetupPeerRepository(_persistentAlivePeer, _transientAlivePeer0);
             SetupPeerResponse(_transientAlivePeer0.PeerId, true, true);
             SetupPeerResponse(_persistentAlivePeer.PeerId, false, false);
-            
+
             using (SystemDateTime.PauseTime())
             {
                 var startTime = SystemDateTime.UtcNow;
@@ -281,19 +281,19 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
-            
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
                 var retryTimestamp = startTime.AddSeconds(_persistentPeerTimeout - 1);
-                SystemDateTime.Set(retryTimestamp);
+                SystemDateTime.PauseTime(retryTimestamp);
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
-            
-                SystemDateTime.Set(startTime.AddSeconds(_persistentPeerTimeout + 1));
+
+                SystemDateTime.PauseTime(startTime.AddSeconds(_persistentPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
             }
@@ -305,7 +305,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             SetupPeerRepository(_directoryPeer, _transientAlivePeer0);
             SetupPeerResponse(_transientAlivePeer0.PeerId, false, false);
             SetupPeerResponse(_directoryPeer.PeerId, false, false);
-           
+
             using (SystemDateTime.PauseTime())
             {
                 var startTime = SystemDateTime.UtcNow;
@@ -315,12 +315,12 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new UnregisterPeerCommand(_transientAlivePeer0.Peer, firstPingTimestampUtc));
             }
@@ -342,11 +342,11 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
 
-                SystemDateTime.Set(startTime.AddSeconds(_transientPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
 
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
@@ -381,16 +381,16 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 var startTime = SystemDateTime.UtcNow;
                 _detector.DetectDeadPeers();
 
-                SystemDateTime.Set(startTime.Add(_pingInterval - 1.Second()));
+                SystemDateTime.PauseTime(startTime.Add(_pingInterval - 1.Second()));
                 _detector.DetectDeadPeers();
                 missedPings.Count.ShouldEqual(0);
 
-                SystemDateTime.Set(startTime.Add(_pingInterval + 1.Second()));
+                SystemDateTime.PauseTime(startTime.Add(_pingInterval + 1.Second()));
                 _detector.DetectDeadPeers();
                 missedPings.Count.ShouldEqual(1);
                 missedPings.First().PeerId.ShouldEqual(_persistentAlivePeer.PeerId);
 
-                SystemDateTime.Set(startTime.Add(_pingInterval + _pingInterval + 1.Second()));
+                SystemDateTime.PauseTime(startTime.Add(_pingInterval + _pingInterval + 1.Second()));
                 _detector.DetectDeadPeers();
                 missedPings.Count.ShouldEqual(2);
                 missedPings.All(evt => evt.PeerId == _persistentAlivePeer.PeerId).ShouldBeTrue();
@@ -412,12 +412,12 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_persistentPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_persistentPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_persistentPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_persistentPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.Expect(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
                 _bus.ClearMessages();
@@ -425,12 +425,12 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 // simulate MarkPeerAsNotRespondingCommand handler
                 _persistentAlivePeer.Peer.IsResponding = false;
 
-                SystemDateTime.Set(SystemDateTime.Now.Add(_pingInterval));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_pingInterval));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(SystemDateTime.Now.Add(_pingInterval));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_pingInterval));
                 _detector.DetectDeadPeers();
                 _bus.Expect(new MarkPeerAsRespondingCommand(_persistentAlivePeer.Peer.Id, SystemDateTime.UtcNow));
             }
@@ -452,12 +452,12 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_debugPeerTimeout - 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_debugPeerTimeout - 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(new PingPeerCommand(), new PingPeerCommand());
                 _bus.ClearMessages();
 
-                SystemDateTime.Set(startTime.AddSeconds(_debugPeerTimeout + 1));
+                SystemDateTime.PauseTime(startTime.AddSeconds(_debugPeerTimeout + 1));
                 _detector.DetectDeadPeers();
                 _bus.ExpectExactly(
                     new UnregisterPeerCommand(_debugTransientAlivePeer.Peer, firstPingTimestampUtc),
@@ -510,7 +510,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 {
                     return new TaskCompletionSource<CommandResult>().Task;
                 }
-             
+
                 return taskCompletionSource.Task;
             }
         }

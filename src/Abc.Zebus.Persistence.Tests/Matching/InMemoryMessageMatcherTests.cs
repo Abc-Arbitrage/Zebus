@@ -92,7 +92,7 @@ namespace Abc.Zebus.Persistence.Tests.Matching
 
                 persistedSignal.WaitOne(500.Milliseconds()).ShouldBeFalse();
 
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(_delay.GetValueOrDefault()));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_delay.GetValueOrDefault()));
 
                 persistedSignal.WaitOne(600.Milliseconds()).ShouldBeTrue();
             }
@@ -140,17 +140,17 @@ namespace Abc.Zebus.Persistence.Tests.Matching
                 // messages for batch 1
                 _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
                 _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(4.Seconds()));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(4.Seconds()));
 
                 // message for batch 2
                 _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(3.Seconds()));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(3.Seconds()));
 
                 _matcher.Start();
 
                 Wait.Until(() => persistedEntries.Count == 2, 500.Milliseconds());
 
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(2.Seconds()));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(2.Seconds()));
 
                 Wait.Until(() => persistedEntries.Count == 3, 500.Milliseconds());
             }
@@ -185,7 +185,7 @@ namespace Abc.Zebus.Persistence.Tests.Matching
                 _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
                 _matcher.EnqueueAck(_peerId, messageId);
 
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(_delay.Value));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_delay.Value));
 
                 var persistCalled = signal.Wait(1.Second());
 
@@ -219,7 +219,7 @@ namespace Abc.Zebus.Persistence.Tests.Matching
                 _matcher.EnqueueMessage(_otherPeerId, messageId, new MessageTypeId("X"), new byte[0]);
                 _matcher.EnqueueAck(_otherPeerId, messageId);
 
-                SystemDateTime.Set(utcNow: SystemDateTime.UtcNow.Add(_delay.Value));
+                SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_delay.Value));
 
                 var persistCalled = signal.Wait(1.Second());
                 persistCalled.ShouldBeTrue();

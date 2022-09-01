@@ -79,13 +79,13 @@ namespace Abc.Zebus.Persistence.Tests
         [Test]
         public void should_replay_messages()
         {
-            var unackedTransportMessages = InsertMessagesInThePast(DateTime.Now, messageCount: 11);
+            var unackedTransportMessages = InsertMessagesInThePast(DateTime.UtcNow, messageCount: 11);
             Thread.Sleep(2);
 
             // make sure we have more than BatchSize messages in the same buckets
             for (int i = 0; i < _replayBatchSize; i++)
             {
-                unackedTransportMessages.AddRange(InsertMessagesInThePast(DateTime.Now, messageCount: 2));
+                unackedTransportMessages.AddRange(InsertMessagesInThePast(DateTime.UtcNow, messageCount: 2));
                 Thread.Sleep(2);
             }
 
@@ -274,7 +274,7 @@ namespace Abc.Zebus.Persistence.Tests
             for (var i = 0; i < messageCount; ++i)
             {
                 TransportMessage transportMessage;
-                using (SystemDateTime.Set(refTime))
+                using (SystemDateTime.PauseTime(refTime))
                 {
                     transportMessage = new FakeCommand(i).ToTransportMessage(_anotherPeer);
                 }

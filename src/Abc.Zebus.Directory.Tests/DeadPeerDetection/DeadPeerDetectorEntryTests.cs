@@ -40,11 +40,12 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             var pingTimestamp = SystemDateTime.UtcNow;
             _entry.Ping(pingTimestamp);
 
-            using (SystemDateTime.Set(pingTimestamp.AddSeconds(15)))
+            using (SystemDateTime.PauseTime(pingTimestamp.AddSeconds(15)))
             {
                 _entry.HasReachedTimeout().ShouldBeFalse();
             }
-            using (SystemDateTime.Set(pingTimestamp.AddSeconds(501)))
+
+            using (SystemDateTime.PauseTime(pingTimestamp.AddSeconds(501)))
             {
                 _entry.HasReachedTimeout().ShouldBeTrue();
             }
@@ -62,11 +63,11 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             var pingTimestamp = SystemDateTime.UtcNow;
             _entry.Ping(pingTimestamp);
 
-            using (SystemDateTime.Set(pingTimestamp.AddSeconds(15)))
+            using (SystemDateTime.PauseTime(pingTimestamp.AddSeconds(15)))
             {
                 _entry.HasReachedTimeout().ShouldBeFalse();
             }
-            using (SystemDateTime.Set(pingTimestamp.AddSeconds(501)))
+            using (SystemDateTime.PauseTime(pingTimestamp.AddSeconds(501)))
             {
                 _entry.HasReachedTimeout().ShouldBeTrue();
             }
@@ -83,11 +84,11 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             var pingTimestamp = SystemDateTime.UtcNow;
             _entry.Ping(pingTimestamp);
 
-            using (SystemDateTime.Set(pingTimestamp.AddSeconds(4)))
+            using (SystemDateTime.PauseTime(pingTimestamp.AddSeconds(4)))
             {
                 _entry.HasReachedTimeout().ShouldBeFalse();
             }
-            using (SystemDateTime.Set(pingTimestamp.AddSeconds(6)))
+            using (SystemDateTime.PauseTime(pingTimestamp.AddSeconds(6)))
             {
                 _entry.HasReachedTimeout().ShouldBeTrue();
             }

@@ -14,11 +14,7 @@ namespace Abc.Zebus.Tests.Util
         {
             var dateTimeUtcNow = DateTime.UtcNow;
             var sysDateTimeUtcNow = SystemDateTime.UtcNow;
-            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(10.Milliseconds());
-
-            var dateTimeNow = DateTime.Now;
-            var sysDateTimeNow = SystemDateTime.Now;
-            sysDateTimeNow.Subtract(dateTimeNow).ShouldBeLessOrEqualThan(10.Milliseconds());
+            sysDateTimeUtcNow.Subtract(dateTimeUtcNow).ShouldBeLessOrEqualThan(50.Milliseconds());
         }
 
         [Test]
@@ -27,16 +23,10 @@ namespace Abc.Zebus.Tests.Util
             using (SystemDateTime.PauseTime())
             {
                 var utcNow = SystemDateTime.UtcNow;
-                Thread.Sleep(50.Milliseconds());
+                Thread.Sleep(2.Milliseconds());
                 utcNow.ShouldEqual(SystemDateTime.UtcNow);
                 utcNow.ShouldEqual(SystemDateTime.UtcNow);
                 utcNow.ShouldEqual(SystemDateTime.UtcNow);
-
-                var now = SystemDateTime.Now;
-                Thread.Sleep(50.Milliseconds());
-                now.ShouldEqual(SystemDateTime.Now);
-                now.ShouldEqual(SystemDateTime.Now);
-                now.ShouldEqual(SystemDateTime.Now);
             }
         }
 
@@ -45,38 +35,24 @@ namespace Abc.Zebus.Tests.Util
         {
             using (SystemDateTime.PauseTime())
             {
-                var now = SystemDateTime.UtcNow;
-                Thread.Sleep(50.Milliseconds());
+                var utcNow = SystemDateTime.UtcNow;
+                Thread.Sleep(2.Milliseconds());
                 SystemDateTime.Reset();
-                Thread.Sleep(50.Milliseconds());
+                Thread.Sleep(2.Milliseconds());
 
-                SystemDateTime.UtcNow.ShouldBeGreaterThan(now);
-                SystemDateTime.Now.ShouldBeGreaterThan(now.ToLocalTime());
+                SystemDateTime.UtcNow.ShouldBeGreaterThan(utcNow);
             }
         }
 
         [Test]
         public void should_reset_time_when_set()
         {
-            var fakeNow = new DateTime(1995, 1, 1, 1, 2, 3, 4, DateTimeKind.Local);
-            using (SystemDateTime.Set(fakeNow))
+            var fakeUtcNow = new DateTime(1995, 1, 1, 1, 2, 3, 4, DateTimeKind.Utc);
+            using (SystemDateTime.PauseTime(fakeUtcNow))
             {
                 SystemDateTime.Reset();
-                
-                SystemDateTime.UtcNow.ShouldBeGreaterThan(fakeNow);
-                SystemDateTime.Now.ShouldBeGreaterThan(fakeNow);
-            }
-        }
 
-        [Test]
-        public void should_set_time_with_fake_local_time()
-        {
-            var fakeNow = new DateTime(1995, 1, 1, 1, 2, 3, 4, DateTimeKind.Local);
-            using (SystemDateTime.Set(fakeNow))
-            {
-                SystemDateTime.Now.ShouldEqual(fakeNow);
-                SystemDateTime.UtcNow.ShouldEqual(fakeNow.ToUniversalTime());
-                SystemDateTime.Today.ShouldEqual(fakeNow.Date);
+                SystemDateTime.UtcNow.ShouldBeGreaterThan(fakeUtcNow);
             }
         }
 
@@ -84,31 +60,10 @@ namespace Abc.Zebus.Tests.Util
         public void should_set_time_with_fake_utc_time()
         {
             var fakeUtcNow = new DateTime(1995, 1, 1, 1, 2, 3, 4, DateTimeKind.Utc);
-            using (SystemDateTime.Set(null, fakeUtcNow))
+            using (SystemDateTime.PauseTime(fakeUtcNow))
             {
-                SystemDateTime.Now.ShouldEqual(fakeUtcNow.ToLocalTime());
                 SystemDateTime.UtcNow.ShouldEqual(fakeUtcNow);
-                SystemDateTime.Today.ShouldEqual(fakeUtcNow.ToLocalTime().Date);
             }
-        }
-
-        [Test]
-        public void should_set_time_with_fake_local_and_utc_time()
-        {
-            var fakeNow = new DateTime(1995, 1, 1, 1, 2, 3, 4, DateTimeKind.Local);
-            var fakeUtcNow = new DateTime(1995, 1, 1, 1, 2, 3, 4, DateTimeKind.Utc);
-            using (SystemDateTime.Set(fakeNow, fakeUtcNow))
-            {
-                SystemDateTime.Now.ShouldEqual(fakeNow);
-                SystemDateTime.UtcNow.ShouldEqual(fakeUtcNow);
-                SystemDateTime.Today.ShouldEqual(fakeUtcNow.Date);
-            }
-        }
-
-        [Test]
-        public void should_throw_when_setting_nulls()
-        {
-            Assert.Throws<ArgumentNullException>(() => SystemDateTime.Set());
         }
     }
 }

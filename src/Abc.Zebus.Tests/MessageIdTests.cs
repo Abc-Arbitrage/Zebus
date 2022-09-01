@@ -113,7 +113,6 @@ namespace Abc.Zebus.Tests
 
             var unpausedId = MessageId.NextId();
             unpausedId.Value.ShouldNotEqual(pausedId.Value);
-            SystemDateTime.Today.ShouldEqual(DateTime.Today);
         }
 
         [Test, Repeat(20)]

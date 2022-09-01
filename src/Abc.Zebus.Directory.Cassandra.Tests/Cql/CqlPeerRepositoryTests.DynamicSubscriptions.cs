@@ -298,7 +298,7 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
             _repository.AddOrUpdatePeer(peer);
             _repository.AddDynamicSubscriptionsForTypes(peer.PeerId, peer.TimestampUtc.Value.AddMilliseconds(1), new[] { subscriptionsForType });
 
-            using (SystemDateTime.Set(utcNow: DateTime.UtcNow.AddHours(1)))
+            using (SystemDateTime.PauseTime(DateTime.UtcNow.AddHours(1)))
             {
                 _repository.RemoveAllDynamicSubscriptionsForPeer(peer.PeerId, peer.TimestampUtc.Value.AddMilliseconds(2));
             }

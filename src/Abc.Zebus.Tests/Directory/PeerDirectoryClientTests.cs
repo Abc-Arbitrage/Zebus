@@ -192,7 +192,7 @@ namespace Abc.Zebus.Tests.Directory
 
             var baseTimestamp = DateTime.UtcNow;
 
-            using (SystemDateTime.Set(utcNow: baseTimestamp))
+            using (SystemDateTime.PauseTime(baseTimestamp))
             {
                 await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
                 await _directory.UnregisterAsync(_bus);
@@ -201,7 +201,7 @@ namespace Abc.Zebus.Tests.Directory
             _bus.Commands.OfType<RegisterPeerCommand>().ShouldHaveSize(2);
 
             // Act 1: before delay
-            using (SystemDateTime.Set(utcNow: baseTimestamp.AddSeconds(29)))
+            using (SystemDateTime.PauseTime(baseTimestamp.AddSeconds(29)))
             {
                 await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
                 await _directory.UnregisterAsync(_bus);
@@ -210,7 +210,7 @@ namespace Abc.Zebus.Tests.Directory
             _bus.Commands.OfType<RegisterPeerCommand>().ShouldHaveSize(3);
 
             // Act 2: after delay
-            using (SystemDateTime.Set(utcNow: baseTimestamp.AddSeconds(31))) // Retry delay + timeout
+            using (SystemDateTime.PauseTime(baseTimestamp.AddSeconds(31))) // Retry delay + timeout
             {
                 await _directory.RegisterAsync(_bus, _self, Array.Empty<Subscription>());
                 await _directory.UnregisterAsync(_bus);
