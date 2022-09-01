@@ -1,21 +1,29 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Scan;
 
 namespace Abc.Zebus.Testing.Dispatch
 {
-    public class TestAsyncMessageHandlerInvoker<TMessage> : MessageHandlerInvoker
+    public class TestAsyncMessageHandlerInvoker<TMessage> : IMessageHandlerInvoker
         where TMessage : class, IMessage
     {
-        public TestAsyncMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true)
-            : base(typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
+        public bool Invoked { get; private set; }
+
+        public Type MessageHandlerType => typeof(Handler);
+        public Type MessageType => typeof(TMessage);
+        public MessageTypeId MessageTypeId => new(MessageType);
+        public string DispatchQueueName => DispatchQueueNameScanner.DefaultQueueName;
+
+        public MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Asynchronous;
+
+        public void InvokeMessageHandler(IMessageHandlerInvocation invocation)
         {
+            throw new NotSupportedException();
         }
 
-        public bool Invoked { get; private set; }
-        public override MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Asynchronous;
-
-        public override async Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
+        public async Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
         {
             Invoked = true;
 
@@ -32,12 +40,22 @@ namespace Abc.Zebus.Testing.Dispatch
             }
         }
 
-        public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
+        public bool ShouldHandle(IMessage message)
         {
-            throw new NotSupportedException();
+            return true;
         }
 
-        public class Handler : IAsyncMessageHandler<TMessage>
+        public bool CanMergeWith(IMessageHandlerInvoker other)
+        {
+            return false;
+        }
+
+        public IEnumerable<Subscription> GetStartupSubscriptions()
+        {
+            return new[] { new Subscription(MessageTypeId) };
+        }
+
+        private class Handler : IAsyncMessageHandler<TMessage>
         {
             public Task Handle(TMessage message)
             {

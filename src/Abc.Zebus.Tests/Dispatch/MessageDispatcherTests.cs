@@ -84,7 +84,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.LoadMessageHandlerInvokers();
 
             var invoker = _messageDispatcher.GetMessageHandlerInvokers().Single(x => x.MessageHandlerType == typeof(ScanCommandHandler2));
-            invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
+            invoker.GetStartupSubscriptions().ShouldBeEmpty();
         }
 
         [Test]
@@ -95,7 +95,21 @@ namespace Abc.Zebus.Tests.Dispatch
             _messageDispatcher.LoadMessageHandlerInvokers();
 
             var invoker = _messageDispatcher.GetMessageHandlerInvokers().Single(x => x.MessageType == typeof(RoutableCommand));
-            invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
+            invoker.GetStartupSubscriptions().ShouldBeEmpty();
+        }
+
+        [Test]
+        public void should_generate_subscriptions_using_startup_subscriber()
+        {
+            var subscriber = new RoutableEventHandler.Subscriber { BindingKeys = { new BindingKey("ABC") } };
+            _containerMock.Setup(x => x.GetInstance(typeof(RoutableEventHandler.Subscriber))).Returns(subscriber);
+
+            _messageDispatcher.LoadMessageHandlerInvokers();
+
+            var invoker = _messageDispatcher.GetMessageHandlerInvokers().Single(x => x.MessageHandlerType == typeof(RoutableEventHandler));
+            invoker.GetStartupSubscriptions().ShouldBeEquivalentTo(new Subscription(MessageUtil.TypeId<RoutableEvent>(), new BindingKey("ABC")));
+
+            subscriber.MessageTypes.ShouldBeEquivalentTo(typeof(RoutableEvent));
         }
 
         [Test]

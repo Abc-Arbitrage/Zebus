@@ -138,15 +138,15 @@ namespace Abc.Zebus.Core
 
         private void PerformStartupSubscribe()
         {
-            var autoSubscribeInvokers = _messageDispatcher.GetMessageHandlerInvokers()
-                                                          .Where(x => x.ShouldBeSubscribedOnStartup)
-                                                          .ToList();
+            var startupSubscriptions = _messageDispatcher.GetMessageHandlerInvokers()
+                                                         .SelectMany(x => x.GetStartupSubscriptions())
+                                                         .ToList();
 
             lock (_subscriptions)
             {
-                foreach (var invoker in autoSubscribeInvokers)
+                foreach (var subscription in startupSubscriptions)
                 {
-                    var status = GetOrAddSubscriptionStatus(new Subscription(invoker.MessageTypeId));
+                    var status = GetOrAddSubscriptionStatus(subscription);
                     status.CurrentSubscriptionCount++;
                 }
 

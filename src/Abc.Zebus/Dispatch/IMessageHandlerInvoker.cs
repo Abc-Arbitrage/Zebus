@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Abc.Zebus.Dispatch
@@ -8,10 +9,10 @@ namespace Abc.Zebus.Dispatch
         Type MessageHandlerType { get; }
         Type MessageType { get; }
         MessageTypeId MessageTypeId { get; }
-        bool ShouldBeSubscribedOnStartup { get; }
         string DispatchQueueName { get; }
         MessageHandlerInvokerMode Mode { get; }
 
+        IEnumerable<Subscription> GetStartupSubscriptions();
         void InvokeMessageHandler(IMessageHandlerInvocation invocation);
         Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation);
         bool ShouldHandle(IMessage message);

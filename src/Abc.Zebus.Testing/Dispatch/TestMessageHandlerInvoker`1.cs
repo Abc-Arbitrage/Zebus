@@ -1,18 +1,37 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Scan;
 using Abc.Zebus.Testing.Extensions;
 
 namespace Abc.Zebus.Testing.Dispatch
 {
-    public class TestMessageHandlerInvoker<TMessage> : MessageHandlerInvoker where TMessage : class, IMessage
+    public class TestMessageHandlerInvoker<TMessage> : IMessageHandlerInvoker where TMessage : class, IMessage
     {
-        public TestMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true) : base(typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
+        private readonly bool _shouldBeSubscribedOnStartup;
+
+        public TestMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true)
         {
+            _shouldBeSubscribedOnStartup = shouldBeSubscribedOnStartup;
         }
 
         public bool Invoked { get; private set; }
 
-        public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
+        public Type MessageHandlerType => typeof(Handler);
+        public Type MessageType => typeof(TMessage);
+        public MessageTypeId MessageTypeId => new(MessageType);
+        public string DispatchQueueName => DispatchQueueNameScanner.DefaultQueueName;
+        public MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Synchronous;
+
+        public IEnumerable<Subscription> GetStartupSubscriptions()
+        {
+            return _shouldBeSubscribedOnStartup
+                ? new[] { new Subscription(MessageTypeId) }
+                : Array.Empty<Subscription>();
+        }
+
+        public void InvokeMessageHandler(IMessageHandlerInvocation invocation)
         {
             Invoked = true;
 
@@ -21,6 +40,21 @@ namespace Abc.Zebus.Testing.Dispatch
                 var message = invocation.Messages.ExpectedSingle() as IExecutableMessage;
                 message?.Execute(invocation);
             }
+        }
+
+        public Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
+        {
+            throw new NotSupportedException();
+        }
+
+        public bool ShouldHandle(IMessage message)
+        {
+            return true;
+        }
+
+        public bool CanMergeWith(IMessageHandlerInvoker other)
+        {
+            return false;
         }
 
         public class Handler : IMessageHandler<TMessage>

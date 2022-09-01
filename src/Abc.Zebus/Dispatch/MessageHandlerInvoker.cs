@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
-using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
 using Abc.Zebus.Util.Extensions;
 using StructureMap;
@@ -13,6 +13,8 @@ namespace Abc.Zebus.Dispatch
 {
     public abstract class MessageHandlerInvoker : IMessageHandlerInvoker
     {
+        private readonly IContainer _container;
+        private readonly MessageHandlerInvokerSubscriber _subscriber;
         private readonly Instance _instance;
         private bool? _isSingleton;
         private IBus? _bus;
@@ -20,23 +22,28 @@ namespace Abc.Zebus.Dispatch
         [ThreadStatic]
         private static MessageContextAwareBus? _dispatchBus;
 
-        protected MessageHandlerInvoker(Type handlerType, Type messageType, bool? shouldBeSubscribedOnStartup = null)
+        protected MessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, MessageHandlerInvokerSubscriber subscriber)
         {
+            _container = container;
+            _subscriber = subscriber;
+            _instance = CreateConstructorInstance(handlerType);
+
             MessageHandlerType = handlerType;
             DispatchQueueName = DispatchQueueNameScanner.GetQueueName(handlerType);
             MessageType = messageType;
-            MessageTypeId = new MessageTypeId(MessageType);
-            ShouldBeSubscribedOnStartup = shouldBeSubscribedOnStartup ?? MessageShouldBeSubscribedOnStartup(messageType);
-
-            _instance = CreateConstructorInstance(handlerType);
+            MessageTypeId = new MessageTypeId(messageType);
         }
 
         public Type MessageHandlerType { get; }
         public Type MessageType { get; }
         public MessageTypeId MessageTypeId { get; }
-        public bool ShouldBeSubscribedOnStartup { get; }
         public string DispatchQueueName { get; }
         public virtual MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Synchronous;
+
+        public IEnumerable<Subscription> GetStartupSubscriptions()
+        {
+            return _subscriber.GetStartupSubscriptions(MessageType, MessageTypeId, _container);
+        }
 
         public abstract void InvokeMessageHandler(IMessageHandlerInvocation invocation);
 
@@ -55,45 +62,19 @@ namespace Abc.Zebus.Dispatch
             return false;
         }
 
-        public static bool MessageShouldBeSubscribedOnStartup(Type messageType, Type handlerType)
+        protected internal object CreateHandler(MessageContext messageContext)
         {
-            return MessageShouldBeSubscribedOnStartup(messageType, GetExplicitSubscriptionMode(handlerType));
-        }
+            if (IsHandlerSingleton())
+                return _container.GetInstance(MessageHandlerType);
 
-        internal static bool MessageShouldBeSubscribedOnStartup(Type messageType, SubscriptionMode? subscriptionMode = null)
-        {
-            if (subscriptionMode != null)
-                return subscriptionMode == SubscriptionMode.Auto;
-
-            return !Attribute.IsDefined(messageType, typeof(Routable));
-        }
-
-        internal static SubscriptionMode? GetExplicitSubscriptionMode(Type handlerType)
-        {
-            var subscriptionModeAttribute = (SubscriptionModeAttribute?)Attribute.GetCustomAttribute(handlerType, typeof(SubscriptionModeAttribute));
-            if (subscriptionModeAttribute != null)
-                return subscriptionModeAttribute.SubscriptionMode;
-
-            var isNoScanHandler = Attribute.IsDefined(handlerType, typeof(NoScanAttribute));
-            if (isNoScanHandler)
-                return SubscriptionMode.Manual;
-
-            return null;
-        }
-
-        protected object CreateHandler(IContainer container, MessageContext messageContext)
-        {
-            if (IsHandlerSingleton(container))
-                return container.GetInstance(MessageHandlerType);
-
-            _bus ??= container.GetInstance<IBus>();
+            _bus ??= _container.GetInstance<IBus>();
             if (_bus == null)
-                return container.GetInstance(MessageHandlerType);
+                return _container.GetInstance(MessageHandlerType);
 
             try
             {
                 _dispatchBus = new MessageContextAwareBus(_bus, messageContext);
-                return container.GetInstance(MessageHandlerType, _instance);
+                return _container.GetInstance(MessageHandlerType, _instance);
             }
             finally
             {
@@ -101,11 +82,11 @@ namespace Abc.Zebus.Dispatch
             }
         }
 
-        private bool IsHandlerSingleton(IContainer container)
+        private bool IsHandlerSingleton()
         {
             if (_isSingleton == null)
             {
-                var model = container.Model?.For(MessageHandlerType);
+                var model = _container.Model?.For(MessageHandlerType);
                 _isSingleton = model != null && model.Lifecycle == Lifecycles.Singleton;
             }
             return _isSingleton.Value;

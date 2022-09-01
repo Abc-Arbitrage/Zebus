@@ -11,9 +11,9 @@ namespace Abc.Zebus.Scan
         {
         }
 
-        protected override IMessageHandlerInvoker BuildMessageHandlerInvoker(Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup)
+        protected override IMessageHandlerInvoker BuildMessageHandlerInvoker(Type handlerType, Type messageType, MessageHandlerInvokerSubscriber subscriber)
         {
-            return new BatchedMessageHandlerInvoker(Container, handlerType, messageType, shouldBeSubscribedOnStartup);
+            return new BatchedMessageHandlerInvoker(Container, handlerType, messageType, subscriber);
         }
     }
 }

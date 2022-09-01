@@ -29,7 +29,7 @@ namespace Abc.Zebus.Scan
                 if (!handlerType.IsClass || handlerType.IsAbstract || !handlerType.IsVisible || !_handlerType.IsAssignableFrom(handlerType))
                     continue;
 
-                var subscriptionMode = MessageHandlerInvoker.GetExplicitSubscriptionMode(handlerType);
+                var subscriber = MessageHandlerInvokerSubscriber.FromAttributes(handlerType);
                 var interfaces = handlerType.GetInterfaces();
 
                 var excludedMessageTypes = interfaces.Where(IsCustomInvokerMessageHandlerInterface)
@@ -42,15 +42,14 @@ namespace Abc.Zebus.Scan
                     var messageType = handleInterface.GetGenericArguments()[0];
                     if (excludedMessageTypes.Contains(messageType))
                         continue;
-
-                    var shouldBeSubscribedOnStartup = MessageHandlerInvoker.MessageShouldBeSubscribedOnStartup(messageType, subscriptionMode);
-                    var invoker = BuildMessageHandlerInvoker(handlerType, messageType, shouldBeSubscribedOnStartup);
+                    
+                    var invoker = BuildMessageHandlerInvoker(handlerType, messageType, subscriber);
                     yield return invoker;
                 }
             }
         }
 
-        protected abstract IMessageHandlerInvoker BuildMessageHandlerInvoker(Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup);
+        protected abstract IMessageHandlerInvoker BuildMessageHandlerInvoker(Type handlerType, Type messageType, MessageHandlerInvokerSubscriber subscriber);
 
         private static bool IsCustomInvokerMessageHandlerInterface(Type interfaceType)
         {

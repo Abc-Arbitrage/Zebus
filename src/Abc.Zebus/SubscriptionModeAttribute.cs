@@ -8,11 +8,26 @@ namespace Abc.Zebus
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class SubscriptionModeAttribute : Attribute
     {
+        /// <summary>
+        /// Specifies a <see cref="Zebus.SubscriptionMode"/> that should be used for all handled messages.
+        /// </summary>
         public SubscriptionModeAttribute(SubscriptionMode subscriptionMode)
         {
             SubscriptionMode = subscriptionMode;
         }
 
-        public SubscriptionMode SubscriptionMode { get; private set; }
+        /// <summary>
+        /// Specifies a startup subscriber (<see cref="IStartupSubscriber"/>) that should be used for all handled messages.
+        /// </summary>
+        public SubscriptionModeAttribute(Type startupSubscriberType)
+        {
+            if (!typeof(IStartupSubscriber).IsAssignableFrom(startupSubscriberType))
+                throw new ArgumentException($"{nameof(startupSubscriberType)} must implement {nameof(IStartupSubscriber)}", nameof(startupSubscriberType));
+
+            StartupSubscriberType = startupSubscriberType;
+        }
+
+        public SubscriptionMode SubscriptionMode { get; }
+        public Type? StartupSubscriberType { get; }
     }
 }

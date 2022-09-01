@@ -7,19 +7,17 @@ namespace Abc.Zebus.Dispatch
 {
     public class SyncMessageHandlerInvoker : MessageHandlerInvoker
     {
-        private readonly IContainer _container;
         private readonly Action<object, IMessage> _handleAction;
 
-        public SyncMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
-            : this(container, handlerType, messageType, shouldBeSubscribedOnStartup, GenerateHandleAction(handlerType, messageType))
+        public SyncMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType)
+            : this(container, handlerType, messageType, MessageHandlerInvokerSubscriber.FromAttributes(handlerType))
         {
         }
 
-        protected SyncMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup, Action<object, IMessage> handleAction)
-            : base(handlerType, messageType, shouldBeSubscribedOnStartup)
+        public SyncMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, MessageHandlerInvokerSubscriber subscriber)
+            : base(container, handlerType, messageType, subscriber)
         {
-            _container = container;
-            _handleAction = handleAction;
+            _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 
         public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
@@ -29,11 +27,6 @@ namespace Abc.Zebus.Dispatch
             {
                 _handleAction(handler, invocation.Messages[0]);
             }
-        }
-
-        internal object CreateHandler(MessageContext messageContext)
-        {
-            return CreateHandler(_container, messageContext);
         }
 
         private static Action<object, IMessage> GenerateHandleAction(Type handlerType, Type messageType)

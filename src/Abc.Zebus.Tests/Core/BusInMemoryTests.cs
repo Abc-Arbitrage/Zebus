@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Core;
+using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Directory;
 using Abc.Zebus.Testing.Extensions;
@@ -28,15 +30,15 @@ namespace Abc.Zebus.Tests.Core
             _transport = new TestTransport();
             _container = new Container();
             _peerDirectory = new TestPeerDirectory();
-
-            _bus = new BusFactory(_container)
-                .WithHandlers(typeof(EventPublisherEventHandler), typeof(CommandHandleThatReplyAndThrow))
-                .CreateAndStartInMemoryBus(_peerDirectory, _transport);
         }
 
         [Test]
         public void should_be_able_to_use_bus_in_handlers_during_shutdown()
         {
+            _bus = new BusFactory(_container)
+                   .WithHandlers(typeof(EventPublisherEventHandler), typeof(CommandHandleThatReplyAndThrow))
+                   .CreateAndStartInMemoryBus(_peerDirectory, _transport);
+
             var handler = new EventPublisherEventHandler(_bus);
 
             _container.Configure(x => x.ForSingletonOf<EventPublisherEventHandler>().Use(handler));
@@ -64,6 +66,10 @@ namespace Abc.Zebus.Tests.Core
         [TestCase(3)]
         public void should_publish_event_to_peers(int peerCount)
         {
+            _bus = new BusFactory(_container)
+                   .WithHandlers(typeof(EventPublisherEventHandler), typeof(CommandHandleThatReplyAndThrow))
+                   .CreateAndStartInMemoryBus(_peerDirectory, _transport);
+
             for (var i = 0; i < peerCount; i++)
             {
                 var peer = TestData.Peer();
@@ -76,8 +82,23 @@ namespace Abc.Zebus.Tests.Core
         }
 
         [Test]
+        public void should_subscribe_to_routable_event_on_startup()
+        {
+            _bus = new BusFactory(_container)
+                   .WithHandlers(typeof(CustomSubscriptionHandler))
+                   .CreateAndStartInMemoryBus(_peerDirectory, _transport);
+
+            var expectedSubscription = Subscription.Matching<RoutableEvent>(x => x.PeerId == _bus.PeerId.ToString());
+            _peerDirectory.GetSelfSubscriptions().ShouldContain(expectedSubscription);
+        }
+
+        [Test]
         public async Task should_preserve_reply_object_on_error()
         {
+            _bus = new BusFactory(_container)
+                   .WithHandlers(typeof(EventPublisherEventHandler), typeof(CommandHandleThatReplyAndThrow))
+                   .CreateAndStartInMemoryBus(_peerDirectory, _transport);
+
             var response = await _bus.Send(new Command());
 
             response.IsSuccess.ShouldBeFalse();
@@ -157,6 +178,39 @@ namespace Abc.Zebus.Tests.Core
                 _bus.Reply(new CommandResponse { Id = 42 });
 
                 throw new Exception("By design");
+            }
+        }
+
+        [ProtoContract, Routable]
+        public class RoutableEvent : IEvent
+        {
+            [ProtoMember(1), RoutingPosition(1)]
+            public string PeerId { get; set; }
+        }
+
+        [SubscriptionMode(typeof(StartupSubscriber))]
+        public class CustomSubscriptionHandler : IMessageHandler<RoutableEvent>
+        {
+            public void Handle(RoutableEvent message)
+            {
+            }
+
+            public class StartupSubscriber : IStartupSubscriber
+            {
+                private readonly IBus _bus;
+
+                public StartupSubscriber(IBus bus)
+                {
+                    _bus = bus;
+                }
+
+                public IEnumerable<BindingKey> GetStartupSubscriptionBindingKeys(Type messageType)
+                {
+                    if (messageType != typeof(RoutableEvent))
+                        throw new NotSupportedException();
+
+                    yield return new BindingKey(_bus.PeerId.ToString());
+                }
             }
         }
     }

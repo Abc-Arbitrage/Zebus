@@ -332,7 +332,7 @@ namespace Abc.Zebus.Tests.Core
             public void should_not_dispatch_subscriptionsUpdated_to_self()
             {
                 // Arrange
-                _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker() });
+                _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new NoopMessageHandlerInvoker<TestSubscriptionHandler, SubscriptionsUpdated>() });
                 var subscription = new SubscriptionsForType(new MessageTypeId(typeof(TestMessage)), BindingKey.Empty);
                 var selfDescriptor = CaptureDispatchedMessage(_self, subscription.ToSubscriptions());
                 var otherDescriptor = CaptureDispatchedMessage(_otherPeer, subscription.ToSubscriptions());
@@ -346,7 +346,7 @@ namespace Abc.Zebus.Tests.Core
 
             private void SetupMessageDispatcher()
             {
-                _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new TestMessageHandlerInvoker() });
+                _messageDispatcherMock.Setup(x => x.GetMessageHandlerInvokers()).Returns(new[] { new NoopMessageHandlerInvoker<TestSubscriptionHandler, SubscriptionsUpdated>() });
                 _messageDispatcherMock.Raise(x => x.MessageHandlerInvokersUpdated += () => { });
             }
 
@@ -369,18 +369,6 @@ namespace Abc.Zebus.Tests.Core
 
             class TestMessage : IEvent
             {
-            }
-
-            class TestMessageHandlerInvoker : MessageHandlerInvoker
-            {
-                public TestMessageHandlerInvoker()
-                    : base(typeof(TestSubscriptionHandler), typeof(SubscriptionsUpdated))
-                {
-                }
-
-                public override void InvokeMessageHandler(IMessageHandlerInvocation invocation)
-                {
-                }
             }
 
             class TestSubscriptionHandler : SubscriptionHandler<TestMessage>

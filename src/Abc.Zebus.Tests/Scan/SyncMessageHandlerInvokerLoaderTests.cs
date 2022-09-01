@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
@@ -23,12 +24,35 @@ namespace Abc.Zebus.Tests.Scan
         }
 
         [Test]
+        public void should_subscribe_to_standard_handler_on_startup()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invokers = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandler>()).ToList();
+
+            invokers.ShouldHaveSize(2);
+
+            foreach (var invoker in invokers)
+            {
+                invoker.GetStartupSubscriptions().ShouldBeEquivalentTo(new Subscription(invoker.MessageTypeId));
+            }
+        }
+
+        [Test]
+        public void should_not_subscribe_to_routable_handler_on_startup()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableHandler>()).ExpectedSingle();
+
+            invoker.GetStartupSubscriptions().ShouldBeEmpty();
+        }
+
+        [Test]
         public void should_switch_to_manual_subscription_mode_when_specified()
         {
             var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
             var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeHandlerWithManualSubscriptionMode>()).ExpectedSingle();
 
-            invoker.ShouldBeSubscribedOnStartup.ShouldBeFalse();
+            invoker.GetStartupSubscriptions().ShouldBeEmpty();
         }
 
         [Test]
@@ -37,7 +61,18 @@ namespace Abc.Zebus.Tests.Scan
             var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
             var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableHandlerWithAutoSubscriptionMode>()).ExpectedSingle();
 
-            invoker.ShouldBeSubscribedOnStartup.ShouldBeTrue();
+            var expectedSubscription = Subscription.Any<FakeRoutableMessage>();
+            invoker.GetStartupSubscriptions().ShouldBeEquivalentTo(expectedSubscription);
+        }
+
+        [Test]
+        public void should_use_startup_subscriber()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableHandlerWithStartupSubscriber>()).ExpectedSingle();
+
+            var expectedSubscription = new Subscription(MessageUtil.TypeId<FakeRoutableMessage>(), new BindingKey("123"));
+            invoker.GetStartupSubscriptions().ShouldBeEquivalentTo(expectedSubscription);
         }
 
         [Test]
@@ -65,6 +100,8 @@ namespace Abc.Zebus.Tests.Scan
         [Routable]
         public class FakeRoutableMessage : IMessage
         {
+            [RoutingPosition(1)]
+            public string Key;
         }
 
         public class FakeHandler : IMessageHandler<FakeMessage>, IMessageHandler<FakeMessage2>
@@ -109,6 +146,29 @@ namespace Abc.Zebus.Tests.Scan
         {
             public void Handle(FakeRoutableMessage message)
             {
+            }
+        }
+
+        public class FakeRoutableHandler : IMessageHandler<FakeRoutableMessage>
+        {
+            public void Handle(FakeRoutableMessage message)
+            {
+            }
+        }
+
+        [SubscriptionMode(typeof(StartupSubscriber))]
+        public class FakeRoutableHandlerWithStartupSubscriber : IMessageHandler<FakeRoutableMessage>
+        {
+            public void Handle(FakeRoutableMessage message)
+            {
+            }
+
+            public class StartupSubscriber : IStartupSubscriber
+            {
+                public IEnumerable<BindingKey> GetStartupSubscriptionBindingKeys(Type messageType)
+                {
+                    yield return new BindingKey("123");
+                }
             }
         }
     }

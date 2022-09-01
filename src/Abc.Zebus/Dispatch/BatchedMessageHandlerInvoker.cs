@@ -10,15 +10,17 @@ namespace Abc.Zebus.Dispatch
     public class BatchedMessageHandlerInvoker : MessageHandlerInvoker
     {
         private static readonly MethodInfo _castMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast))!;
-
-        private readonly IContainer _container;
-        private readonly Action<object, IList<IMessage>> _handleAction;
         private static readonly MethodInfo _toListMethodInfo = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!;
+        private readonly Action<object, IList<IMessage>> _handleAction;
 
-        public BatchedMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, bool shouldBeSubscribedOnStartup = true)
-            : base(handlerType, messageType, shouldBeSubscribedOnStartup)
+        public BatchedMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType)
+            : this(container, handlerType, messageType, MessageHandlerInvokerSubscriber.FromAttributes(handlerType))
         {
-            _container = container;
+        }
+
+        public BatchedMessageHandlerInvoker(IContainer container, Type handlerType, Type messageType, MessageHandlerInvokerSubscriber subscriber)
+            : base(container, handlerType, messageType, subscriber)
+        {
             _handleAction = GenerateHandleAction(handlerType, messageType);
         }
 
@@ -36,11 +38,6 @@ namespace Abc.Zebus.Dispatch
             return other is BatchedMessageHandlerInvoker otherBatchedInvoker
                    && otherBatchedInvoker.MessageHandlerType == MessageHandlerType
                    && otherBatchedInvoker.MessageType == MessageType;
-        }
-
-        private object CreateHandler(MessageContext messageContext)
-        {
-            return CreateHandler(_container, messageContext);
         }
 
         private static Action<object, IList<IMessage>> GenerateHandleAction(Type handlerType, Type messageType)

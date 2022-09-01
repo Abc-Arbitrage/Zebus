@@ -8,8 +8,8 @@ namespace Abc.Zebus.Testing.Dispatch
     public class TestBatchedMessageHandlerInvoker<TMessage> : BatchedMessageHandlerInvoker
         where TMessage : class, IEvent
     {
-        public TestBatchedMessageHandlerInvoker(bool shouldBeSubscribedOnStartup = true)
-            : base(null!, typeof(Handler), typeof(TMessage), shouldBeSubscribedOnStartup)
+        public TestBatchedMessageHandlerInvoker()
+            : base(null!, typeof(Handler), typeof(TMessage), MessageHandlerInvokerSubscriber.FromAttributes(typeof(Handler)))
         {
         }
 
