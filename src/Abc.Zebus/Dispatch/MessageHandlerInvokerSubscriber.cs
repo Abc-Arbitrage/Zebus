@@ -24,16 +24,16 @@ namespace Abc.Zebus.Dispatch
                 return new MessageHandlerInvokerSubscriber(subscriptionModeAttribute.SubscriptionMode, subscriptionModeAttribute.StartupSubscriberType);
 
             if (Attribute.IsDefined(messageHandlerType, typeof(NoScanAttribute)))
-                return new MessageHandlerInvokerSubscriber(SubscriptionMode.Manual, null);
+                return new MessageHandlerInvokerSubscriber(SubscriptionMode.Manual, startupSubscriberType: null);
 
-            return new MessageHandlerInvokerSubscriber(null, null);
+            return new MessageHandlerInvokerSubscriber(subscriptionMode: null, startupSubscriberType: null);
         }
 
         public IEnumerable<Subscription> GetStartupSubscriptions(Type messageType, MessageTypeId messageTypeId, IContainer container)
         {
-            if (_startupSubscriberType is { } startupSubscriberType)
+            if (_startupSubscriberType != null)
             {
-                var startupSubscriber = (IStartupSubscriber)container.GetInstance(startupSubscriberType);
+                var startupSubscriber = (IStartupSubscriber)container.GetInstance(_startupSubscriberType);
                 return GetSubscriptionsFromSubscriber(startupSubscriber, messageTypeId, messageType);
             }
 
@@ -60,7 +60,7 @@ namespace Abc.Zebus.Dispatch
             {
                 SubscriptionMode.Auto   => new[] { new Subscription(messageTypeId) },
                 SubscriptionMode.Manual => Array.Empty<Subscription>(),
-                _                       => throw new NotSupportedException($"Unsupported subscription mode: {_subscriptionMode}"),
+                _                       => throw new NotSupportedException($"Unsupported subscription mode: {subscriptionMode}"),
             };
         }
     }

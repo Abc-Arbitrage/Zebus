@@ -41,26 +41,16 @@ namespace Abc.Zebus.Dispatch
         public virtual MessageHandlerInvokerMode Mode => MessageHandlerInvokerMode.Synchronous;
 
         public IEnumerable<Subscription> GetStartupSubscriptions()
-        {
-            return _subscriber.GetStartupSubscriptions(MessageType, MessageTypeId, _container);
-        }
+            => _subscriber.GetStartupSubscriptions(MessageType, MessageTypeId, _container);
 
         public abstract void InvokeMessageHandler(IMessageHandlerInvocation invocation);
 
         public virtual Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
-        {
-            throw new NotSupportedException("InvokeMessageHandlerAsync is not supported in Synchronous mode");
-        }
+            => throw new NotSupportedException("InvokeMessageHandlerAsync is not supported in Synchronous mode");
 
-        public virtual bool ShouldHandle(IMessage message)
-        {
-            return true;
-        }
+        public virtual bool ShouldHandle(IMessage message) => true;
 
-        public virtual bool CanMergeWith(IMessageHandlerInvoker other)
-        {
-            return false;
-        }
+        public virtual bool CanMergeWith(IMessageHandlerInvoker other) => false;
 
         protected internal object CreateHandler(MessageContext messageContext)
         {

@@ -30,10 +30,7 @@ namespace Abc.Zebus.Dispatch
         public Type MessageType { get; }
         public MessageTypeId MessageTypeId { get; }
 
-        public IEnumerable<Subscription> GetStartupSubscriptions()
-        {
-            return Enumerable.Empty<Subscription>();
-        }
+        public IEnumerable<Subscription> GetStartupSubscriptions() => Enumerable.Empty<Subscription>();
 
         public void InvokeMessageHandler(IMessageHandlerInvocation invocation)
         {
@@ -45,9 +42,7 @@ namespace Abc.Zebus.Dispatch
         }
 
         public Task InvokeMessageHandlerAsync(IMessageHandlerInvocation invocation)
-        {
-            throw new NotSupportedException("InvokeMessageHandlerAsync is not supported in Synchronous mode");
-        }
+            => throw new NotSupportedException("InvokeMessageHandlerAsync is not supported in Synchronous mode");
 
         public bool ShouldHandle(IMessage message)
         {
@@ -60,10 +55,7 @@ namespace Abc.Zebus.Dispatch
             return false;
         }
 
-        public bool CanMergeWith(IMessageHandlerInvoker other)
-        {
-            return false;
-        }
+        public bool CanMergeWith(IMessageHandlerInvoker other) => false;
 
         private class DummyHandler : IMessageHandler<IMessage>
         {

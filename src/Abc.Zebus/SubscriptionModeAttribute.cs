@@ -28,6 +28,10 @@ namespace Abc.Zebus
         }
 
         public SubscriptionMode SubscriptionMode { get; }
+
+        /// <summary>
+        /// A type which implements the interface <see cref="IStartupSubscriber"/>
+        /// </summary>
         public Type? StartupSubscriberType { get; }
     }
 }
