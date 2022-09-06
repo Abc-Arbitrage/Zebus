@@ -26,7 +26,7 @@ namespace Abc.Zebus.Testing
                 if (sw.Elapsed > timeout)
                     throw new TimeoutException(message?.Invoke() ?? "Timed out");
 
-                Thread.Sleep(50);
+                Thread.Sleep(10);
             }
         }
     }
