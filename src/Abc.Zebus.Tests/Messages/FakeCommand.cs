@@ -6,7 +6,7 @@ namespace Abc.Zebus.Tests.Messages
     public class FakeCommand : ICommand
     {
         [ProtoMember(1, IsRequired = true)] public readonly int FakeId;
-        
+
         FakeCommand()
         {
         }

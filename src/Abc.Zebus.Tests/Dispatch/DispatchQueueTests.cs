@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Dispatch.Pipes;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Extensions;
@@ -84,7 +85,7 @@ namespace Abc.Zebus.Tests.Dispatch
             _dispatchQueue.Start();
 
             var message1 = new ExecutableEvent { Callback = x => throw new Exception("Processing error") };
-            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message1, new TestMessageSerializer(), (d, r) => throw new Exception("Continuation error"));
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message1, new MessageSerializer(), (d, r) => throw new Exception("Continuation error"));
             dispatch.SetHandlerCount(1);
 
             _dispatchQueue.Enqueue(dispatch, new TestMessageHandlerInvoker<ExecutableEvent>());
@@ -561,7 +562,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var tcs = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, new TestMessageSerializer(), (d, r) => tcs.SetResult(r));
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, new MessageSerializer(), (d, r) => tcs.SetResult(r));
             dispatch.SetHandlerCount(1);
 
             var invoker = new TestMessageHandlerInvoker<ExecutableEvent>();
@@ -575,7 +576,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var tcs = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, new TestMessageSerializer(), (d, r) => tcs.SetResult(r));
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, new MessageSerializer(), (d, r) => tcs.SetResult(r));
             dispatch.SetHandlerCount(1);
 
             var invoker = new TestAsyncMessageHandlerInvoker<AsyncExecutableEvent>();
@@ -589,7 +590,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var tcs = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, new TestMessageSerializer(), (d, r) => tcs.SetResult(r));
+            var dispatch = new MessageDispatch(MessageContext.CreateTest(), message, new MessageSerializer(), (d, r) => tcs.SetResult(r));
             dispatch.SetHandlerCount(1);
 
             var invoker = new TestBatchedMessageHandlerInvoker<FakeEvent>();

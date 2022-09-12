@@ -151,18 +151,16 @@ namespace Abc.Zebus.Tests.Core
                 using (SystemDateTime.PauseTime())
                 using (MessageId.PauseIdGeneration())
                 {
-                    SetupPeersHandlingMessage<FakeCommand>(_self);
+                    SetupPeersHandlingMessage<UnserializableMessage>(_self);
 
-                    var command = new FakeCommand(123);
+                    var command = new UnserializableMessage();
                     SetupDispatch(command, error: new Exception("Dispatch exception"));
-
-                    _messageSerializer.AddSerializationExceptionFor(command.TypeId(), exceptionMessage: "Serialization exception");
 
                     _bus.Send(command);
 
                     var error = _transport.MessagesSent.OfType<CustomProcessingFailed>().ExpectedSingle();
                     error.ExceptionMessage.ShouldContain("Dispatch exception");
-                    error.ExceptionMessage.ShouldContain("Serialization exception");
+                    error.ExceptionMessage.ShouldContain("Unable to serialize message");
                     error.ExceptionMessage.ShouldContain(command.GetType().FullName);
                 }
             }
