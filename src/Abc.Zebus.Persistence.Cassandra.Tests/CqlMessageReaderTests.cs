@@ -78,7 +78,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         {
             var bytes = new byte[128];
             new Random().NextBytes(bytes);
-            return new TransportMessage(new MessageTypeId("Fake"), new MemoryStream(bytes), new Peer(peerId, string.Empty));
+            return new TransportMessage(new MessageTypeId("Fake"), bytes, new Peer(peerId, string.Empty));
         }
 
         private CqlMessageReader CreateReader(PeerId peerId, DateTime oldestNonAckedMessage)

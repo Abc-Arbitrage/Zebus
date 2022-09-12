@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using Abc.Zebus.Routing;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Transport;
+using AutoFixture;
 
 namespace Abc.Zebus.Tests
 {
@@ -16,11 +18,9 @@ namespace Abc.Zebus.Tests
 
         public static TransportMessage TransportMessage<TMessage>()
         {
-            var contentBytes = new byte[1234];
-            new Random().NextBytes(contentBytes);
-
-            var content = new MemoryStream();
-            content.Write(contentBytes, 0, contentBytes.Length);
+            var fixture = new Fixture();
+            var message = fixture.Create<TMessage>();
+            var content = Serializer.Serialize(message);
 
             return new TransportMessage(new MessageTypeId(typeof(TMessage)), content, new PeerId("Abc.Testing.0"), "tcp://testing:1234")
             {

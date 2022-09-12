@@ -12,14 +12,15 @@ namespace Abc.Zebus.Serialization
     {
         private static readonly ConcurrentDictionary<Type, bool> _hasParameterLessConstructorByType = new ConcurrentDictionary<Type, bool>();
 
-        public static MemoryStream Serialize(object message)
+        public static ReadOnlyMemory<byte> Serialize(object message)
         {
             var stream = new MemoryStream();
             Serialize(stream, message);
-            return stream;
+
+            return new ReadOnlyMemory<byte>(stream.GetBuffer(), 0, (int)stream.Position);
         }
 
-        public static void Serialize(Stream stream, object message)
+        private static void Serialize(Stream stream, object message)
         {
             try
             {
@@ -32,18 +33,33 @@ namespace Abc.Zebus.Serialization
         }
 
         [return: NotNullIfNotNull("messageType")]
-        public static object? Deserialize(Type? messageType, Stream stream)
+        public static object? Deserialize(Type? messageType, ReadOnlyMemory<byte> bytes)
         {
             if (messageType is null)
                 return null;
 
-            stream.Position = 0; // Reset position
+            var obj = CreateMessageIfRequired(messageType);
 
-            object? obj = null;
+            return RuntimeTypeModel.Default.Deserialize(bytes, type: messageType, value: obj);
+        }
+
+        [return: NotNullIfNotNull("messageType")]
+        private static object? Deserialize(Type? messageType, Stream stream)
+        {
+            if (messageType is null)
+                return null;
+
+            var obj = CreateMessageIfRequired(messageType);
+
+            return RuntimeTypeModel.Default.Deserialize(stream, value: obj, type: messageType);
+        }
+
+        private static object? CreateMessageIfRequired(Type messageType)
+        {
             if (!HasParameterLessConstructor(messageType) && messageType != typeof(string))
-                obj = FormatterServices.GetUninitializedObject(messageType);
+                return FormatterServices.GetUninitializedObject(messageType);
 
-            return RuntimeTypeModel.Default.Deserialize(stream, obj, messageType);
+            return null;
         }
 
         public static bool TryClone<T>(T? message, [NotNullWhen(true)] out T? clone)

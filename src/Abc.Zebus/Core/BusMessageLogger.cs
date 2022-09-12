@@ -80,7 +80,7 @@ namespace Abc.Zebus.Core
                 return;
 
             var messageText = logHelper.GetMessageText(message);
-            _logger.LogDebug($"RECV remote: {messageText} from {transportMessage.SenderId} ({transportMessage.Content?.Length} bytes). [{transportMessage.Id}]");
+            _logger.LogDebug($"RECV remote: {messageText} from {transportMessage.SenderId} ({transportMessage.Content.Length} bytes). [{transportMessage.Id}]");
         }
 
         public void LogSendMessage(IMessage message, IList<Peer> peers)
@@ -102,7 +102,7 @@ namespace Abc.Zebus.Core
             var messageText = logHelper.GetMessageText(message);
             var targetPeersText = GetTargetPeersText(peers);
 
-            _logger.LogInformation($"SEND: {messageText} to {targetPeersText} ({transportMessage.Content?.Length} bytes) [{transportMessage.Id}]");
+            _logger.LogInformation($"SEND: {messageText} to {targetPeersText} ({transportMessage.Content.Length} bytes) [{transportMessage.Id}]");
         }
 
         private static string GetTargetPeersText(IList<Peer> peers)

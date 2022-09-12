@@ -22,7 +22,7 @@ namespace Abc.Zebus.Tests
             {
                 MessageId.NextId(),
                 new MessageTypeId("X"),
-                new TransportMessage(new MessageTypeId("lol"), new MemoryStream(new byte[] { 1, 2, 3 }), new PeerId("peer"), "endpoint"),
+                new TransportMessage(new MessageTypeId("lol"), new byte[] { 1, 2, 3 }, new PeerId("peer"), "endpoint"),
                 new BindingKey("Abc", "123"),
                 new Peer(new PeerId("Abc.Testing.0"), "tcp://abctest:123", true, true),
             };
@@ -33,7 +33,7 @@ namespace Abc.Zebus.Tests
         [Test]
         public void should_deserialize_message_with_null_content()
         {
-            var message = Serializer.Deserialize(typeof(EmptyCommand), Stream.Null) as EmptyCommand;
+            var message = Serializer.Deserialize(typeof(EmptyCommand), default) as EmptyCommand;
             message.ShouldNotBeNull();
         }
 

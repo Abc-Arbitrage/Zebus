@@ -10,16 +10,15 @@ namespace Abc.Zebus.Transport
     {
         internal static TransportMessage ReadTransportMessage(this ProtoBufferReader reader)
         {
-            return reader.TryReadTransportMessage(out var transportMessage) ? transportMessage : new TransportMessage();
+            if (reader.TryReadTransportMessage(out var transportMessage))
+                return transportMessage;
+
+            throw new InvalidOperationException("Unable to read transport message from buffer");
         }
 
         internal static bool TryReadTransportMessage(this ProtoBufferReader reader, out TransportMessage transportMessage)
         {
-            transportMessage = new TransportMessage
-            {
-                Content = Stream.Null,
-                Originator = new OriginatorInfo(),
-            };
+            transportMessage = TransportMessage.Empty();
 
             while (reader.CanRead(1))
             {
@@ -48,7 +47,9 @@ namespace Abc.Zebus.Transport
                     transportMessage.MessageTypeId = new MessageTypeId(messageTypeId);
                     break;
                 case 3:
-                    if (!reader.TryReadStream(out var content))
+                    // ReadOnlyMemory<byte> could be used to get a zero-copy reference to the underlying buffer, but
+                    // TransportMessage is assumed to own its underlying buffer.
+                    if (!reader.TryReadByteArray(out var content))
                         return false;
                     transportMessage.Content = content;
                     break;
@@ -123,7 +124,7 @@ namespace Abc.Zebus.Transport
             return true;
         }
 
-        private static bool TryReadStream(this ProtoBufferReader reader, out Stream? value)
+        private static bool TryReadByteArray(this ProtoBufferReader reader, out byte[]? value)
         {
             if (!reader.TryReadLength(out var length) || !reader.TryReadRawBytes(length, out var bytes))
             {
@@ -131,7 +132,7 @@ namespace Abc.Zebus.Transport
                 return false;
             }
 
-            value = new MemoryStream(bytes);
+            value = bytes;
             return true;
         }
 

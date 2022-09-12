@@ -96,7 +96,7 @@ namespace Abc.Zebus.Testing.Transport
 
         public TransportMessage CreateInfrastructureTransportMessage(MessageTypeId messageTypeId)
         {
-            return new TransportMessage(messageTypeId, new MemoryStream(), PeerId, InboundEndPoint);
+            return new TransportMessage(messageTypeId, default, PeerId, InboundEndPoint);
         }
 
         public void RaiseMessageReceived(TransportMessage transportMessage)

@@ -500,27 +500,19 @@ namespace Abc.Zebus.Tests.Transport
             var messageBytes = new byte[5000];
             new Random().NextBytes(messageBytes);
 
-            var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), ToMemoryStream(messageBytes), new PeerId("X"), senderTransport.InboundEndPoint);
+            var bigMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), messageBytes, new PeerId("X"), senderTransport.InboundEndPoint);
             senderTransport.Send(bigMessage, new[] { receiver });
 
             Wait.Until(() => receivedMessages.Count == 1, 2.Seconds());
 
             receivedMessages[0].ShouldHaveSamePropertiesAs(bigMessage, "Environment", "WasPersisted");
 
-            var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), ToMemoryStream(new byte[1]), new PeerId("X"), senderTransport.InboundEndPoint);
+            var smallMessage = new TransportMessage(new MessageTypeId(typeof(FakeCommand)), new byte[1], new PeerId("X"), senderTransport.InboundEndPoint);
             senderTransport.Send(smallMessage, new[] { receiver });
 
             Wait.Until(() => receivedMessages.Count == 2, 2.Seconds());
 
             receivedMessages[1].ShouldHaveSamePropertiesAs(smallMessage, "Environment", "WasPersisted");
-
-            MemoryStream ToMemoryStream(byte[] bytes)
-            {
-                var stream = new MemoryStream();
-                stream.Write(bytes, 0, bytes.Length);
-
-                return stream;
-            }
         }
 
         [Test]

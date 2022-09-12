@@ -79,7 +79,7 @@ namespace Abc.Zebus.Serialization.Protobuf
             else
             {
                 byte[] bytes = Utf8Encoding.GetBytes(value);
-                WriteRawBytes(bytes);
+                WriteRawBytes(bytes.AsSpan());
             }
         }
 
@@ -147,44 +147,18 @@ namespace Abc.Zebus.Serialization.Protobuf
             }
         }
 
-        internal void WriteRawBytes(byte[] value)
+        public void WriteRawBytes(ReadOnlyMemory<byte> bytes)
         {
-            WriteRawBytes(value, 0, value.Length);
+            WriteRawBytes(bytes.Span);
         }
 
-        internal void WriteRawBytes(byte[] value, int offset, int length)
+        public void WriteRawBytes(ReadOnlySpan<byte> bytes)
         {
+            var length = bytes.Length;
             EnsureCapacity(length);
 
-            value.AsSpan(offset, length).CopyTo(_buffer.AsSpan(_position));
+            bytes.CopyTo(_buffer.AsSpan(_position));
             _position += length;
-        }
-
-        public void WriteRawStream(Stream stream)
-        {
-            var length = (int)stream.Length;
-            EnsureCapacity(length);
-
-            stream.Position = 0;
-
-            var memoryStream = stream as MemoryStream;
-            if (memoryStream != null)
-                _position += memoryStream.Read(_buffer, _position, length);
-            else
-                WriteRawStreamSlow(stream);
-        }
-
-        private void WriteRawStreamSlow(Stream stream)
-        {
-            const int blockSize = 4096;
-
-            while (true)
-            {
-                var readCount = stream.Read(_buffer, _position, blockSize);
-                _position += readCount;
-                if (readCount != blockSize)
-                    break;
-            }
         }
 
         private void EnsureCapacity(int length)
