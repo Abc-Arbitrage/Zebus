@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Abc.Zebus.Persistence;
 using Abc.Zebus.Serialization.Protobuf;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -91,8 +92,16 @@ namespace Abc.Zebus.Transport
             return Content.ToArray();
         }
 
-        internal TransportMessage ToPersistTransportMessage(List<PeerId> peerIds) => new TransportMessage(Id, MessageTypeId, Content, Originator, Environment, WasPersisted, peerIds);
-        internal TransportMessage UnpackPersistTransportMessage() => new TransportMessage(Id, MessageTypeId, Content, Originator, Environment, WasPersisted, null);
+        /// <summary>
+        /// Gets a <see cref="TransportMessage"/> that represents a <see cref="PersistMessageCommand"/> that wraps the current transport message.
+        /// </summary>
+        internal TransportMessage ConvertToPersistTransportMessage(List<PeerId> peerIds) => new TransportMessage(Id, MessageTypeId, Content, Originator, Environment, WasPersisted, peerIds);
+
+        /// <summary>
+        /// Gets back the wrapped transport message that is inside a <see cref="PersistMessageCommand"/>.
+        /// </summary>
+        /// <returns></returns>
+        internal TransportMessage ConvertFromPersistTransportMessage() => new TransportMessage(Id, MessageTypeId, Content, Originator, Environment, WasPersisted, null);
 
         public static byte[] Serialize(TransportMessage transportMessage)
         {

@@ -115,7 +115,7 @@ namespace Abc.Zebus.Persistence.Tests.Handlers
                                .Returns<PeerId>(peerId => replayers[peerId]);
 
             var sourceMessage = new FakeCommand(123456);
-            var sourceTransportMessage = sourceMessage.ToTransportMessage().ToPersistTransportMessage(targetPeerIds);
+            var sourceTransportMessage = sourceMessage.ToTransportMessage().ConvertToPersistTransportMessage(targetPeerIds);
             var persistMessageCommand = (PersistMessageCommand)sourceTransportMessage.ToMessage();
 
             // Act

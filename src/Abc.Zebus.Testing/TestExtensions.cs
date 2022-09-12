@@ -29,7 +29,7 @@ namespace Abc.Zebus.Testing
 
         public static TransportMessage ToPersistTransportMessage(this TransportMessage transportMessage, params PeerId[] peerIds)
         {
-            return transportMessage.ToPersistTransportMessage(peerIds.ToList());
+            return transportMessage.ConvertToPersistTransportMessage(peerIds.ToList());
         }
 
         public static IMessage? ToMessage(this TransportMessage transportMessage)
