@@ -7,6 +7,7 @@ using Abc.Zebus.Dispatch;
 using Abc.Zebus.Dispatch.Pipes;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Scan;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Dispatch.DispatchMessages;
@@ -205,7 +206,7 @@ namespace Abc.Zebus.Tests.Dispatch
             var context = MessageContext.CreateTest("u.name");
             var command = new DispatchCommand();
             var dispatched = new ManualResetEvent(false);
-            var dispatch = new MessageDispatch(context, command, new TestMessageSerializer(), (x, r) => dispatched.Set());
+            var dispatch = new MessageDispatch(context, command, new MessageSerializer(), (x, r) => dispatched.Set());
             _messageDispatcher.Dispatch(dispatch, x => x == typeof(AsyncCommandHandler));
 
             dispatched.WaitOne(5.Seconds()).ShouldBeTrue();
@@ -355,7 +356,7 @@ namespace Abc.Zebus.Tests.Dispatch
 
             int? replyCode = null;
             var context = MessageContext.CreateTest();
-            var dispatch = new MessageDispatch(context, new ReplyCommand(), new TestMessageSerializer(), (x, r) => replyCode = context.ReplyCode);
+            var dispatch = new MessageDispatch(context, new ReplyCommand(), new MessageSerializer(), (x, r) => replyCode = context.ReplyCode);
             _messageDispatcher.Dispatch(dispatch);
 
             Wait.Until(() => replyCode == ReplyCommand.ReplyCode, 2.Seconds());
@@ -457,7 +458,7 @@ namespace Abc.Zebus.Tests.Dispatch
         {
             var taskCompletionSource = new TaskCompletionSource<DispatchResult>();
 
-            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, new TestMessageSerializer(), (x, r) => taskCompletionSource.SetResult(r))
+            var dispatch = new MessageDispatch(MessageContext.CreateTest("u.name"), message, new MessageSerializer(), (x, r) => taskCompletionSource.SetResult(r))
             {
                 IsLocal = isLocal
             };

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Abc.Zebus.Core;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Dispatch;
 using Abc.Zebus.Testing.Transport;
@@ -26,7 +27,7 @@ namespace Abc.Zebus.Tests.Core
         private TestTransport _transport;
         private Mock<IPeerDirectory> _directoryMock;
         private Mock<IMessageDispatcher> _messageDispatcherMock;
-        private TestMessageSerializer _messageSerializer;
+        private MessageSerializer _messageSerializer;
         private List<IMessageHandlerInvoker> _invokers;
 
         [SetUp]
@@ -36,7 +37,7 @@ namespace Abc.Zebus.Tests.Core
             _transport = new TestTransport(_self.EndPoint);
             _directoryMock = new Mock<IPeerDirectory>();
             _messageDispatcherMock = new Mock<IMessageDispatcher>();
-            _messageSerializer = new TestMessageSerializer();
+            _messageSerializer = new MessageSerializer();
 
             _bus = new Bus(_transport, _directoryMock.Object, _messageSerializer, _messageDispatcherMock.Object, new DefaultMessageSendingStrategy(), new DefaultStoppingStrategy(), _configuration);
             _bus.Configure(_self.Id, _environment);
