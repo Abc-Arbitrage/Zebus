@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Abc.Zebus.Serialization.Protobuf;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -20,12 +19,12 @@ namespace Abc.Zebus.Transport
         [ProtoMember(3, IsRequired = true)]
         private byte[] ContentBytes
         {
-            get => GetContentBytes();
-            set => Content = new MemoryStream(value, 0, value.Length, false, true);
+            get => Content.ToArray();
+            set => Content = value.AsMemory();
         }
 
         [ProtoIgnore, JsonIgnore]
-        public Stream? Content { get; set; }
+        public ReadOnlyMemory<byte> Content { get; set; }
 
         [ProtoMember(4, IsRequired = true)]
         public OriginatorInfo Originator { get; set; }
@@ -45,28 +44,41 @@ namespace Abc.Zebus.Transport
         [JsonIgnore]
         public PeerId SenderId => Originator.SenderId;
 
-        public TransportMessage(MessageTypeId messageTypeId, Stream content, Peer sender)
+        public TransportMessage(MessageTypeId messageTypeId, ReadOnlyMemory<byte> content, Peer sender)
             : this(messageTypeId, content, sender.Id, sender.EndPoint)
         {
         }
 
-        public TransportMessage(MessageTypeId messageTypeId, Stream content, PeerId senderId, string senderEndPoint)
+        public TransportMessage(MessageTypeId messageTypeId, ReadOnlyMemory<byte> content, PeerId senderId, string senderEndPoint)
             : this(messageTypeId, content, CreateOriginator(senderId, senderEndPoint))
         {
         }
 
-        public TransportMessage(MessageTypeId messageTypeId, Stream content, OriginatorInfo originator)
+        public TransportMessage(MessageTypeId messageTypeId, ReadOnlyMemory<byte> content, OriginatorInfo originator)
+            : this(MessageId.NextId(), messageTypeId, content, originator)
         {
-            Id = MessageId.NextId();
-            MessageTypeId = messageTypeId;
-            Content = content;
-            Originator = originator;
         }
 
         [UsedImplicitly]
         internal TransportMessage()
         {
             Originator = default!;
+        }
+
+        public TransportMessage(MessageId id, MessageTypeId messageTypeId, ReadOnlyMemory<byte> content, OriginatorInfo originator)
+            : this(id, messageTypeId, content, originator, null, null, null)
+        {
+        }
+
+        internal TransportMessage(MessageId id, MessageTypeId messageTypeId, ReadOnlyMemory<byte> content, OriginatorInfo originator, string? environment, bool? wasPersisted, List<PeerId>? persistentPeerIds)
+        {
+            Id = id;
+            MessageTypeId = messageTypeId;
+            Content = content;
+            Originator = originator;
+            Environment = environment;
+            WasPersisted = wasPersisted;
+            PersistentPeerIds = persistentPeerIds;
         }
 
         private static OriginatorInfo CreateOriginator(PeerId peerId, string peerEndPoint)
@@ -76,31 +88,11 @@ namespace Abc.Zebus.Transport
 
         public byte[] GetContentBytes()
         {
-            if (Content == null)
-                return Array.Empty<byte>();
-
-            var position = Content.Position;
-            var buffer = new byte[Content.Length];
-            Content.Position = 0;
-            Content.Read(buffer, 0, buffer.Length);
-            Content.Position = position;
-
-            return buffer;
+            return Content.ToArray();
         }
 
-        internal TransportMessage ToPersistTransportMessage(List<PeerId> peerIds) => CloneWithPeerIds(peerIds);
-        internal TransportMessage UnpackPersistTransportMessage() => CloneWithPeerIds(null);
-
-        private TransportMessage CloneWithPeerIds(List<PeerId>? peerIds) => new TransportMessage
-        {
-            Id = Id,
-            MessageTypeId = MessageTypeId,
-            Content = Content,
-            Originator = Originator,
-            Environment = Environment,
-            WasPersisted = WasPersisted,
-            PersistentPeerIds = peerIds,
-        };
+        internal TransportMessage ToPersistTransportMessage(List<PeerId> peerIds) => new TransportMessage(Id, MessageTypeId, Content, Originator, Environment, WasPersisted, peerIds);
+        internal TransportMessage UnpackPersistTransportMessage() => new TransportMessage(Id, MessageTypeId, Content, Originator, Environment, WasPersisted, null);
 
         public static byte[] Serialize(TransportMessage transportMessage)
         {
@@ -115,5 +107,7 @@ namespace Abc.Zebus.Transport
             var reader = new ProtoBufferReader(bytes, bytes.Length);
             return reader.ReadTransportMessage();
         }
+
+        internal static TransportMessage Empty() => new TransportMessage { Originator = new OriginatorInfo() };
     }
 }

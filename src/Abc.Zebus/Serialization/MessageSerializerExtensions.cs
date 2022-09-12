@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Transport;
 
@@ -16,13 +17,10 @@ namespace Abc.Zebus.Serialization
 
         public static IMessage? ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage)
         {
-            if (transportMessage.Content is null)
-                return null;
-
             return ToMessage(serializer, transportMessage, transportMessage.MessageTypeId, transportMessage.Content);
         }
 
-        public static IMessage? ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage, MessageTypeId messageTypeId, Stream content)
+        public static IMessage? ToMessage(this IMessageSerializer serializer, TransportMessage transportMessage, MessageTypeId messageTypeId, ReadOnlyMemory<byte> content)
         {
             if (transportMessage.IsPersistTransportMessage)
                 return ToPersistMessageCommand(transportMessage);

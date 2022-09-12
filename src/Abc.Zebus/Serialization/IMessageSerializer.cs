@@ -1,12 +1,12 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.IO;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Abc.Zebus.Serialization
 {
     public interface IMessageSerializer
     {
-        Stream Serialize(IMessage message);
-        IMessage? Deserialize(MessageTypeId messageTypeId, Stream stream);
+        ReadOnlyMemory<byte> Serialize(IMessage message);
+        IMessage? Deserialize(MessageTypeId messageTypeId, ReadOnlyMemory<byte> stream);
         bool TryClone(IMessage message, [MaybeNullWhen(false)] out IMessage clone);
     }
 }

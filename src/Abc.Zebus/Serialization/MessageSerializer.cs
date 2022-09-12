@@ -1,4 +1,4 @@
-﻿using System.IO;
+﻿using System;
 using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Serialization
@@ -7,7 +7,7 @@ namespace Abc.Zebus.Serialization
     {
         private static readonly ILogger _log = ZebusLogManager.GetLogger(typeof(MessageSerializer));
 
-        public IMessage? Deserialize(MessageTypeId messageTypeId, Stream stream)
+        public IMessage? Deserialize(MessageTypeId messageTypeId, ReadOnlyMemory<byte> stream)
         {
             var messageType = messageTypeId.GetMessageType();
             if (messageType != null)
@@ -17,13 +17,9 @@ namespace Abc.Zebus.Serialization
             return null;
         }
 
-        public Stream Serialize(IMessage message)
+        public ReadOnlyMemory<byte> Serialize(IMessage message)
         {
-            var stream = new MemoryStream();
-            Serializer.Serialize(stream, message);
-            stream.Position = 0;
-
-            return stream;
+            return Serializer.Serialize(message);
         }
 
         public bool TryClone(IMessage message, out IMessage clone)

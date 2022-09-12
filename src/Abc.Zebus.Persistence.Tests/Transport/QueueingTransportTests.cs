@@ -179,10 +179,10 @@ namespace Abc.Zebus.Persistence.Tests.Transport
                 stopped.ShouldBeFalse();
 
                 var targets = _allPeers.Where(peer => peer.PeerId != self.Id).Select(desc => desc.Peer).ToArray(); // do not send to self
-                _innerTransport.ExpectExactly(new TransportMessageSent(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), self), targets));
+                _innerTransport.ExpectExactly(new TransportMessageSent(new TransportMessage(MessageTypeId.PersistenceStopping, default, self), targets));
 
-                _innerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), _allPeers[0].Peer));
-                _innerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), _allPeers[1].Peer));
+                _innerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStoppingAck, default, _allPeers[0].Peer));
+                _innerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStoppingAck, default, _allPeers[1].Peer));
 
                 Wait.Until(() => stopped, 2.Seconds());
             }
@@ -209,7 +209,7 @@ namespace Abc.Zebus.Persistence.Tests.Transport
                 Wait.Until(() => _innerTransport.Messages.Count == 1, 2.Seconds());
                 stopped.ShouldBeFalse();
 
-                _innerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), _allPeers[1].Peer));
+                _innerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStoppingAck, default, _allPeers[1].Peer));
 
                 Wait.Until(() => stopped, 2.Seconds());
             }

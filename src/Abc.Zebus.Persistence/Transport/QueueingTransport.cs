@@ -91,7 +91,7 @@ namespace Abc.Zebus.Persistence.Transport
             var targets = _peerDirectory.GetPeerDescriptors().Select(desc => desc.Peer).Where(peer => peer.Id != _transport.PeerId).ToList();
             _ackCountdown = new CountdownEvent(targets.Count);
 
-            _transport.Send(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), PeerId, InboundEndPoint), targets, new SendContext());
+            _transport.Send(new TransportMessage(MessageTypeId.PersistenceStopping, default, PeerId, InboundEndPoint), targets, new SendContext());
 
             _logger.LogInformation($"Waiting for {targets.Count} persistence stopping acknowledgments within the next {_configuration.QueuingTransportStopTimeout.TotalSeconds} seconds");
             var success = _ackCountdown.Wait(_configuration.QueuingTransportStopTimeout);

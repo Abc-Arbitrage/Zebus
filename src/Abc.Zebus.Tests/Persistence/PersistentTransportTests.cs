@@ -351,8 +351,8 @@ namespace Abc.Zebus.Tests.Persistence
             using(MessageId.PauseIdGeneration())
             {
                 // Stopping persistence
-                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), PersistencePeer));
-                InnerTransport.ExpectExactly(new TransportMessageSent(new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), Self), PersistencePeer));
+                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, default, PersistencePeer));
+                InnerTransport.ExpectExactly(new TransportMessageSent(new TransportMessage(MessageTypeId.PersistenceStoppingAck, default, Self), PersistencePeer));
 
                 InnerTransport.Messages.Clear();
 
@@ -396,7 +396,7 @@ namespace Abc.Zebus.Tests.Persistence
             using (MessageId.PauseIdGeneration())
             {
                 // Stopping persistence
-                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), PersistencePeer));
+                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, default, PersistencePeer));
                 InnerTransport.Messages.Clear();
 
                 var ackedMessage = new FakeCommand(456).ToTransportMessage();
@@ -412,7 +412,7 @@ namespace Abc.Zebus.Tests.Persistence
                 });
 
                 // Stopping persistence again
-                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), PersistencePeer));
+                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, default, PersistencePeer));
                 InnerTransport.Messages.Clear();
 
                 // starting persistence again - should not have anything to send
@@ -433,7 +433,7 @@ namespace Abc.Zebus.Tests.Persistence
                              .Returns(new List<Peer> { PersistencePeer });
 
                 // Stopping persistence
-                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, new MemoryStream(), PersistencePeer));
+                InnerTransport.RaiseMessageReceived(new TransportMessage(MessageTypeId.PersistenceStopping, default, PersistencePeer));
                 InnerTransport.Messages.Clear();
 
                 var ackedMessage = new FakeCommand(456).ToTransportMessage();

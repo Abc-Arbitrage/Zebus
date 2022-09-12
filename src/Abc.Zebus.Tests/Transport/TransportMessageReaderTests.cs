@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Abc.Zebus.Serialization.Protobuf;
@@ -47,7 +48,7 @@ namespace Abc.Zebus.Tests.Transport
 
             deserialized.Id.ShouldEqual(transportMessage.Id);
             deserialized.MessageTypeId.ShouldEqual(transportMessage.MessageTypeId);
-            deserialized.Content.ShouldEqual(Stream.Null);
+            deserialized.GetContentBytes().ShouldEqual(Array.Empty<byte>());
             deserialized.Originator.ShouldEqualDeeply(transportMessage.Originator);
             deserialized.Environment.ShouldEqual(transportMessage.Environment);
             deserialized.WasPersisted.ShouldEqual(transportMessage.WasPersisted);

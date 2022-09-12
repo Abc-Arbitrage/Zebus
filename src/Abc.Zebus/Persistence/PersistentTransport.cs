@@ -253,7 +253,7 @@ namespace Abc.Zebus.Persistence
             {
                 _persistenceIsDown = true;
 
-                var ackMessage = new TransportMessage(MessageTypeId.PersistenceStoppingAck, new MemoryStream(), _innerTransport.PeerId, _innerTransport.InboundEndPoint);
+                var ackMessage = new TransportMessage(MessageTypeId.PersistenceStoppingAck, default, _innerTransport.PeerId, _innerTransport.InboundEndPoint);
 
                 _logger.LogInformation($"Sending PersistenceStoppingAck to {transportMessage.Originator.SenderId}");
                 _innerTransport.Send(ackMessage, new[] { new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint) }, new SendContext());

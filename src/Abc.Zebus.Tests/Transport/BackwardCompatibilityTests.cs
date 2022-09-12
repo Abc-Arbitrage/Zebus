@@ -15,7 +15,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_deserialize_1_4_1_transport_messages()
         {
-            var content = new MemoryStream(new byte[] { 1, 2, 3 });
+            var content = new byte[] { 1, 2, 3 };
             var originatorInfo = new OriginatorInfo(new PeerId("peer"), "endpoint", "MACHINEXXX", "username");
             var messageId = new MessageId(Guid.Parse("ce0ac850-a9c5-e511-932e-d8e94a2d2418"));
             var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId };
@@ -30,7 +30,7 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_read_WasPersisted_as_null_for_older_versions()
         {
-            var content = new MemoryStream(new byte[] { 1, 2, 3 });
+            var content = new byte[] { 1, 2, 3 };
             var originatorInfo = new OriginatorInfo(new PeerId("peer"), "endpoint", "MACHINEXXX", "username");
             var messageId = new MessageId(Guid.Parse("ce0ac850-a9c5-e511-932e-d8e94a2d2418"));
             var expectedMessage = new TransportMessage(new MessageTypeId("lol"), content, originatorInfo) { Id = messageId, WasPersisted = false };
@@ -55,12 +55,9 @@ namespace Abc.Zebus.Tests.Transport
             var oldOutput = new MemoryStream();
             ProtoBuf.Serializer.Serialize(oldOutput, oldTransportMessage);
 
-            var newTransportMessage = new TransportMessage()
-            {
-                Id = oldTransportMessage.Id,
-                Originator = new OriginatorInfo(),
-                Content = new MemoryStream(),
-            };
+            var newTransportMessage = TransportMessage.Empty();
+            newTransportMessage.Id = oldTransportMessage.Id;
+
             var bufferWriter = new ProtoBufferWriter();
             bufferWriter.WriteTransportMessage(newTransportMessage);
 

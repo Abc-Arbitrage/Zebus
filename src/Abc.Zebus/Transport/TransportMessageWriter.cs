@@ -16,10 +16,10 @@ namespace Abc.Zebus.Transport
             writer.WriteRawTag(2 << 3 | 2);
             Write(writer, transportMessage.MessageTypeId);
 
-            var transportMessageContent = transportMessage.Content ?? _emptyStream;
+            var transportMessageContent = transportMessage.Content;
             writer.WriteRawTag(3 << 3 | 2);
             writer.WriteLength((int)transportMessageContent.Length);
-            writer.WriteRawStream(transportMessageContent);
+            writer.WriteRawBytes(transportMessageContent);
 
             writer.WriteRawTag(4 << 3 | 2);
             Write(writer, transportMessage.Originator);

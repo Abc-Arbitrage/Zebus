@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Serialization;
+using Newtonsoft.Json;
 using ProtoBuf;
 
 namespace Abc.Zebus.Core
@@ -25,7 +26,14 @@ namespace Abc.Zebus.Core
         public MessageTypeId? PayloadTypeId { get; private set; }
 
         [ProtoMember(4, IsRequired = false)]
-        public byte[]? Payload { get; private set; }
+        private byte[]? PayloadBytes
+        {
+            get => Payload.ToArray();
+            set => Payload = value;
+        }
+
+        [ProtoIgnore, JsonIgnore]
+        public ReadOnlyMemory<byte> Payload { get; private set; }
 
         [ProtoMember(5, IsRequired = false)]
         public string? ResponseMessage { get; private set; } = string.Empty;
@@ -43,7 +51,7 @@ namespace Abc.Zebus.Core
             ResponseMessage = responseMessage ?? string.Empty;
         }
 
-        public MessageExecutionCompleted(MessageId sourceCommandId, MessageTypeId payloadTypeId, byte[]? payload)
+        public MessageExecutionCompleted(MessageId sourceCommandId, MessageTypeId payloadTypeId, ReadOnlyMemory<byte> payload)
         {
             SourceCommandId = sourceCommandId;
             ErrorCode = 0;
@@ -71,8 +79,7 @@ namespace Abc.Zebus.Core
 
         public static MessageExecutionCompleted Success(MessageId sourceCommandId, IMessage payload, IMessageSerializer serializer)
         {
-            var payloadStream = serializer.Serialize(payload);
-            var payloadBytes = ToBytes(payloadStream);
+            var payloadBytes = serializer.Serialize(payload).ToArray();
 
             return new MessageExecutionCompleted(sourceCommandId, payload.TypeId(), payloadBytes);
         }
@@ -82,17 +89,6 @@ namespace Abc.Zebus.Core
             var errorStatus = CommandResult.GetErrorStatus(exceptions);
 
             return new MessageExecutionCompleted(sourceCommandId, errorStatus.Code, errorStatus.Message);
-        }
-
-        private static byte[] ToBytes(Stream payloadStream)
-        {
-            var memoryStream = payloadStream as MemoryStream;
-            if (memoryStream == null)
-            {
-                memoryStream = new MemoryStream();
-                payloadStream.CopyTo(memoryStream);
-            }
-            return memoryStream.ToArray();
         }
     }
 }

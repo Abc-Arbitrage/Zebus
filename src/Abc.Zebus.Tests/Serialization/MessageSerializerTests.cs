@@ -64,9 +64,18 @@ namespace Abc.Zebus.Tests.Serialization
             var message = new SerializableMessage { Value = 42 };
 
             _messageSerializer.TryClone(message, out var clone).ShouldBeTrue();
-            clone.ShouldNotBeNull();
             clone.ShouldNotBeTheSameAs(message);
-            clone.ShouldBe<SerializableMessage>().Value.ShouldEqual(message.Value);
+            clone.ShouldEqualDeeply(message);
+        }
+
+        [Test]
+        public void should_clone_serializable_message_without_parameterless_constructor()
+        {
+            var message = new SerializableMessageWithoutParameterlessConstructor(123456789);
+
+            _messageSerializer.TryClone(message, out var clone).ShouldBeTrue();
+            clone.ShouldNotBeTheSameAs(message);
+            clone.ShouldEqualDeeply(message);
         }
 
         [Test]
@@ -81,6 +90,18 @@ namespace Abc.Zebus.Tests.Serialization
         {
             [ProtoMember(1)]
             public int Value { get; set; }
+        }
+
+        [ProtoContract]
+        public class SerializableMessageWithoutParameterlessConstructor : IMessage
+        {
+            [ProtoMember(1)]
+            public int Value { get; set; }
+
+            public SerializableMessageWithoutParameterlessConstructor(int value)
+            {
+                Value = value;
+            }
         }
 
         public class NonSerializableMessage : IMessage

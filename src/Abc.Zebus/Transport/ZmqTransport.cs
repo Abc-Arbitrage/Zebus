@@ -328,7 +328,7 @@ namespace Abc.Zebus.Transport
         {
             _logger.LogInformation("Sending EndOfStreamAck to {0}", transportMessage.Originator.SenderEndPoint);
 
-            var endOfStreamAck = new TransportMessage(MessageTypeId.EndOfStreamAck, new MemoryStream(), PeerId, InboundEndPoint);
+            var endOfStreamAck = new TransportMessage(MessageTypeId.EndOfStreamAck, default, PeerId, InboundEndPoint);
             var closingPeer = new Peer(transportMessage.Originator.SenderId, transportMessage.Originator.SenderEndPoint);
 
             SafeAdd(_outboundSocketActions!, OutboundSocketAction.Send(endOfStreamAck, new[] { closingPeer }, new SendContext()));
@@ -453,7 +453,7 @@ namespace Abc.Zebus.Transport
             {
                 _logger.LogInformation($"Sending EndOfStream to {outboundSocket.EndPoint}");
 
-                var endOfStreamMessage = new TransportMessage(MessageTypeId.EndOfStream, new MemoryStream(), PeerId, InboundEndPoint) { WasPersisted = false };
+                var endOfStreamMessage = new TransportMessage(MessageTypeId.EndOfStream, default, PeerId, InboundEndPoint) { WasPersisted = false };
                 bufferWriter.Reset();
                 bufferWriter.WriteTransportMessage(endOfStreamMessage, _environment);
                 outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, endOfStreamMessage);

@@ -8,10 +8,10 @@ namespace Abc.Zebus.Tests.Serialization
     public class TestMessageSerializer : IMessageSerializer
     {
         private readonly Dictionary<MessageTypeId, Exception> _serializationExceptions = new Dictionary<MessageTypeId, Exception>();
-        private readonly Dictionary<MessageTypeId, Func<IMessage, Stream>> _serializationFuncs = new Dictionary<MessageTypeId, Func<IMessage, Stream>>();
+        private readonly Dictionary<MessageTypeId, Func<IMessage, ReadOnlyMemory<byte>>> _serializationFuncs = new Dictionary<MessageTypeId, Func<IMessage, ReadOnlyMemory<byte>>>();
         private readonly MessageSerializer _serializer = new MessageSerializer();
 
-        public void AddSerializationFuncFor<TMessage>(Func<TMessage, Stream> func)
+        public void AddSerializationFuncFor<TMessage>(Func<TMessage, ReadOnlyMemory<byte>> func)
             where TMessage : IMessage
         {
             _serializationFuncs.Add(MessageUtil.TypeId<TMessage>(), msg => func((TMessage)msg));
@@ -28,18 +28,18 @@ namespace Abc.Zebus.Tests.Serialization
             _serializationExceptions.Add(MessageUtil.TypeId<TMessage>(), exception);
         }
 
-        public IMessage Deserialize(MessageTypeId messageTypeId, Stream stream)
+        public IMessage Deserialize(MessageTypeId messageTypeId, ReadOnlyMemory<byte> bytes)
         {
             if (_serializationExceptions.TryGetValue(messageTypeId, out var exception))
                 throw exception;
 
-            return _serializer.Deserialize(messageTypeId, stream);
+            return _serializer.Deserialize(messageTypeId, bytes);
         }
 
         public bool TryClone(IMessage message, out IMessage clone)
             => _serializer.TryClone(message, out clone);
 
-        public Stream Serialize(IMessage message)
+        public ReadOnlyMemory<byte> Serialize(IMessage message)
         {
             if (_serializationExceptions.TryGetValue(message.TypeId(), out var exception))
                 throw exception;

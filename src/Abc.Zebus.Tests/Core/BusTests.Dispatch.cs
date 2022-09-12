@@ -49,7 +49,7 @@ namespace Abc.Zebus.Tests.Core
                 SetupDispatch(command, _ => invokerCalled = true);
 
                 var transportMessageReceived = command.ToTransportMessage(_peerUp);
-                transportMessageReceived.Content = Stream.Null;
+                transportMessageReceived.Content = default;
                 _transport.RaiseMessageReceived(transportMessageReceived);
 
                 invokerCalled.ShouldBeTrue();
@@ -194,7 +194,7 @@ namespace Abc.Zebus.Tests.Core
             {
                 var command = new EmptyCommand();
                 var transportMessage = command.ToTransportMessage();
-                transportMessage.Content = Stream.Null;
+                transportMessage.Content = default;
                 var dispatch = _bus.CreateMessageDispatch(transportMessage);
 
                 dispatch.Message.ShouldEqualDeeply(command);
