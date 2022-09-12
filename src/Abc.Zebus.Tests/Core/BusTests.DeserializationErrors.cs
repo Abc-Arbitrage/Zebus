@@ -45,6 +45,7 @@ namespace Abc.Zebus.Tests.Core
                         x.FailingMessage.ShouldEqual(transportMessage);
                         x.ExceptionUtcTime.ShouldEqual(SystemDateTime.UtcNow);
                         x.ExceptionMessage.ShouldContain("Unable to deserialize message");
+                        x.ExceptionMessage.ShouldContain($"MessageId: {transportMessage.Id}");
                         return messageProcessingFailedBytes;
                     });
 

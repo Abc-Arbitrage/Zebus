@@ -840,7 +840,7 @@ namespace Abc.Zebus.Core
         private void HandleDeserializationError(MessageTypeId messageTypeId, ReadOnlyMemory<byte> messageContent, OriginatorInfo originator, Exception exception, TransportMessage transportMessage)
         {
             var dumpLocation = DumpMessageOnDisk(messageTypeId, messageContent);
-            var errorMessage = $"Unable to deserialize message {messageTypeId.FullName}. Originator: {originator.SenderId}. Message dumped at: {dumpLocation}\r\n{exception}";
+            var errorMessage = $"Unable to deserialize message {messageTypeId.FullName}. MessageId: {transportMessage.Id}. Originator: {originator.SenderId}. Message dumped at: {dumpLocation}\r\n{exception}";
             _logger.LogError(errorMessage);
 
             if (!_configuration.IsErrorPublicationEnabled || !IsRunning)
