@@ -79,7 +79,7 @@ namespace Abc.Zebus.Core
 
         public static MessageExecutionCompleted Success(MessageId sourceCommandId, IMessage payload, IMessageSerializer serializer)
         {
-            var payloadBytes = serializer.Serialize(payload).ToArray();
+            var payloadBytes = serializer.Serialize(payload);
 
             return new MessageExecutionCompleted(sourceCommandId, payload.TypeId(), payloadBytes);
         }
