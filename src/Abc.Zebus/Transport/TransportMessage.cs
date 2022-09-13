@@ -100,7 +100,6 @@ namespace Abc.Zebus.Transport
         /// <summary>
         /// Gets back the wrapped transport message that is inside a <see cref="PersistMessageCommand"/>.
         /// </summary>
-        /// <returns></returns>
         internal TransportMessage ConvertFromPersistTransportMessage() => new TransportMessage(Id, MessageTypeId, Content, Originator, Environment, WasPersisted, null);
 
         public static byte[] Serialize(TransportMessage transportMessage)
