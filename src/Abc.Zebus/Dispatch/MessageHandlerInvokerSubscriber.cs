@@ -42,6 +42,21 @@ namespace Abc.Zebus.Dispatch
             return GetSubscriptionsFromMode(subscriptionMode, messageTypeId);
         }
 
+        /// <summary>
+        /// Gets the default subscription mode for the specified message handler and message type.
+        /// </summary>
+        /// <remarks>
+        /// Note that the startup subscriptions can be overriden if the message handler uses a <see cref="IStartupSubscriber"/>.
+        /// </remarks>
+        public static SubscriptionMode GetDefaultSubscriptionMode(Type messageHandlerType, Type messageType)
+        {
+            var subscriptionModeAttribute = (SubscriptionModeAttribute?)Attribute.GetCustomAttribute(messageHandlerType, typeof(SubscriptionModeAttribute));
+            if (subscriptionModeAttribute != null && subscriptionModeAttribute.StartupSubscriberType == null)
+                return subscriptionModeAttribute.SubscriptionMode;
+
+            return DefaultSubscriptionMode(messageType);
+        }
+
         private static IEnumerable<Subscription> GetSubscriptionsFromSubscriber(IStartupSubscriber startupSubscriber, MessageTypeId messageTypeId, Type messageType)
         {
             return startupSubscriber.GetStartupSubscriptionBindingKeys(messageType)
