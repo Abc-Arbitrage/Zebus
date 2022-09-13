@@ -51,8 +51,8 @@ namespace Abc.Zebus.Dispatch
         public static SubscriptionMode GetDefaultSubscriptionMode(Type messageHandlerType, Type messageType)
         {
             var subscriptionModeAttribute = (SubscriptionModeAttribute?)Attribute.GetCustomAttribute(messageHandlerType, typeof(SubscriptionModeAttribute));
-            if (subscriptionModeAttribute != null && subscriptionModeAttribute.StartupSubscriberType == null)
-                return subscriptionModeAttribute.SubscriptionMode;
+            if (subscriptionModeAttribute != null && subscriptionModeAttribute.SubscriptionMode != null)
+                return subscriptionModeAttribute.SubscriptionMode.Value;
 
             return DefaultSubscriptionMode(messageType);
         }

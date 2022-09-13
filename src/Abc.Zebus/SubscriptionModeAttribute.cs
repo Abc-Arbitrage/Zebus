@@ -3,7 +3,7 @@
 namespace Abc.Zebus
 {
     /// <summary>
-    /// Specifies the subscription mode of the target message handler.
+    /// Specifies the startup subscription mode of the target message handler.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class SubscriptionModeAttribute : Attribute
@@ -27,7 +27,7 @@ namespace Abc.Zebus
             StartupSubscriberType = startupSubscriberType;
         }
 
-        public SubscriptionMode SubscriptionMode { get; }
+        public SubscriptionMode? SubscriptionMode { get; }
 
         /// <summary>
         /// A type which implements the interface <see cref="IStartupSubscriber"/>
