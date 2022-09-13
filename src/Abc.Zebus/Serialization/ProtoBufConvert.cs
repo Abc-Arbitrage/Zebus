@@ -8,7 +8,7 @@ using ProtoBuf.Meta;
 
 namespace Abc.Zebus.Serialization
 {
-    internal static class Serializer
+    internal static class ProtoBufConvert
     {
         private static readonly ConcurrentDictionary<Type, bool> _hasParameterLessConstructorByType = new ConcurrentDictionary<Type, bool>();
 
@@ -20,7 +20,7 @@ namespace Abc.Zebus.Serialization
             return new ReadOnlyMemory<byte>(stream.GetBuffer(), 0, (int)stream.Position);
         }
 
-        private static void Serialize(Stream stream, object message)
+        public static void Serialize(Stream stream, object message)
         {
             try
             {
@@ -32,23 +32,15 @@ namespace Abc.Zebus.Serialization
             }
         }
 
-        [return: NotNullIfNotNull("messageType")]
-        public static object? Deserialize(Type? messageType, ReadOnlyMemory<byte> bytes)
+        public static object Deserialize(Type messageType, ReadOnlyMemory<byte> bytes)
         {
-            if (messageType is null)
-                return null;
-
             var obj = CreateMessageIfRequired(messageType);
 
             return RuntimeTypeModel.Default.Deserialize(bytes, type: messageType, value: obj);
         }
 
-        [return: NotNullIfNotNull("messageType")]
-        private static object? Deserialize(Type? messageType, Stream stream)
+        public static object Deserialize(Type messageType, Stream stream)
         {
-            if (messageType is null)
-                return null;
-
             var obj = CreateMessageIfRequired(messageType);
 
             return RuntimeTypeModel.Default.Deserialize(stream, value: obj, type: messageType);
@@ -62,33 +54,14 @@ namespace Abc.Zebus.Serialization
             return null;
         }
 
-        public static bool TryClone<T>(T? message, [NotNullWhen(true)] out T? clone)
-            where T : class
-        {
-            var messageType = message?.GetType();
-            if (messageType != null && RuntimeTypeModel.Default.CanSerialize(messageType))
-            {
-                // Cannot use the DeepClone method as it doesn't handle classes without a parameterless constructor
-
-                using (var ms = new MemoryStream())
-                {
-                    Serialize(ms, message!);
-                    ms.Position = 0;
-                    clone = (T)Deserialize(messageType, ms);
-                }
-
-                return true;
-            }
-
-            clone = null;
-            return false;
-        }
-
         [SuppressMessage("ReSharper", "ConvertClosureToMethodGroup")]
         private static bool HasParameterLessConstructor(Type messageType)
             => _hasParameterLessConstructorByType.GetOrAdd(messageType, type => ComputeHasParameterLessConstructor(type));
 
         private static bool ComputeHasParameterLessConstructor(Type type)
             => type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null) != null;
+
+        public static bool CanSerialize([NotNullWhen(true)] Type? messageType)
+            => messageType != null && RuntimeTypeModel.Default.CanSerialize(messageType);
     }
 }

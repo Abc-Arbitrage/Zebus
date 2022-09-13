@@ -47,7 +47,7 @@ namespace Abc.Zebus.Persistence.Tests.Handlers
             message.peerId.ShouldEqual(peerId);
             message.messageId.ShouldEqual(transportMessage.Id);
             message.messageTypeId.ShouldEqual(transportMessage.MessageTypeId);
-            message.transportMessageBytes.ShouldEqual(Serializer.Serialize(transportMessage).ToArray());
+            message.transportMessageBytes.ShouldEqual(ProtoBufConvert.Serialize(transportMessage).ToArray());
         }
 
         [Test]
@@ -90,14 +90,14 @@ namespace Abc.Zebus.Persistence.Tests.Handlers
 
             var message = new FakeCommand(1);
             var transportMessage = message.ToTransportMessage();
-            transportMessage.GetContentBytes().ShouldEqual(Serializer.Serialize(message).ToArray());
+            transportMessage.GetContentBytes().ShouldEqual(ProtoBufConvert.Serialize(message).ToArray());
 
             // Act
             _handler.Handle(new PersistMessageCommand(transportMessage, targetPeerId));
 
             // Assert
             replayerMock.Verify(x => x.AddLiveMessage(transportMessage));
-            transportMessage.GetContentBytes().ShouldEqual(Serializer.Serialize(message).ToArray());
+            transportMessage.GetContentBytes().ShouldEqual(ProtoBufConvert.Serialize(message).ToArray());
         }
 
         [Test, Repeat(5)]

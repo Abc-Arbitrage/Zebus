@@ -82,8 +82,8 @@ namespace Abc.Zebus.Testing
 
             Console.WriteLine("{{{0}}}", message);
 
-            var bytes = Serializer.Serialize(message);
-            var messageCopy = Serializer.Deserialize(messageType, bytes);
+            var bytes = ProtoBufConvert.Serialize(message);
+            var messageCopy = ProtoBufConvert.Deserialize(messageType, bytes);
 
             messageCopy.ShouldNotBeNull();
 

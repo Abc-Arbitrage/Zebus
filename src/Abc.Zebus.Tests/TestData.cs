@@ -20,7 +20,7 @@ namespace Abc.Zebus.Tests
         {
             var fixture = new Fixture();
             var message = fixture.Create<TMessage>();
-            var content = Serializer.Serialize(message);
+            var content = ProtoBufConvert.Serialize(message);
 
             return new TransportMessage(new MessageTypeId(typeof(TMessage)), content, new PeerId("Abc.Testing.0"), "tcp://testing:1234")
             {

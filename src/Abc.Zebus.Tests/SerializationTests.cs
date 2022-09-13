@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Abc.Zebus.Routing;
+using Abc.Zebus.Serialization;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
@@ -8,7 +9,6 @@ using Abc.Zebus.Transport;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using ProtoBuf;
-using Serializer = Abc.Zebus.Serialization.Serializer;
 
 namespace Abc.Zebus.Tests
 {
@@ -33,7 +33,7 @@ namespace Abc.Zebus.Tests
         [Test]
         public void should_deserialize_message_with_null_content()
         {
-            var message = Serializer.Deserialize(typeof(EmptyCommand), default) as EmptyCommand;
+            var message = ProtoBufConvert.Deserialize(typeof(EmptyCommand), ReadOnlyMemory<byte>.Empty) as EmptyCommand;
             message.ShouldNotBeNull();
         }
 
