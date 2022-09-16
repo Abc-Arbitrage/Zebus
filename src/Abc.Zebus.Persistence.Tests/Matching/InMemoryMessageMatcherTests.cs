@@ -90,11 +90,11 @@ namespace Abc.Zebus.Persistence.Tests.Matching
 
                 _matcher.EnqueueMessage(_peerId, MessageId.NextId(), new MessageTypeId("Abc.X"), new byte[0]);
 
-                persistedSignal.WaitOne(500.Milliseconds()).ShouldBeFalse();
+                persistedSignal.WaitOne(1.Second()).ShouldBeFalse();
 
                 SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_delay.GetValueOrDefault()));
 
-                persistedSignal.WaitOne(600.Milliseconds()).ShouldBeTrue();
+                persistedSignal.WaitOne(1.Second()).ShouldBeTrue();
             }
         }
 
@@ -115,12 +115,12 @@ namespace Abc.Zebus.Persistence.Tests.Matching
 
                 var signal = new AutoResetEvent(false);
                 _matcher.EnqueueWaitHandle(signal);
-                signal.WaitOne(50000).ShouldBeTrue();
+                signal.WaitOne(1.Second()).ShouldBeTrue();
 
                 _matcher.EnqueueAck(_peerId, messageId);
 
                 _matcher.EnqueueWaitHandle(signal);
-                signal.WaitOne(50000).ShouldBeTrue();
+                signal.WaitOne(1.Second()).ShouldBeTrue();
 
                 persistedEntries.Count.ShouldEqual(2);
             }
@@ -148,11 +148,11 @@ namespace Abc.Zebus.Persistence.Tests.Matching
 
                 _matcher.Start();
 
-                Wait.Until(() => persistedEntries.Count == 2, 500.Milliseconds());
+                Wait.Until(() => persistedEntries.Count == 2, 1.Second());
 
                 SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(2.Seconds()));
 
-                Wait.Until(() => persistedEntries.Count == 3, 500.Milliseconds());
+                Wait.Until(() => persistedEntries.Count == 3, 1.Second());
             }
         }
 
@@ -276,10 +276,10 @@ namespace Abc.Zebus.Persistence.Tests.Matching
             using (var signal2 = new ManualResetEvent(false))
             {
                 _matcher.EnqueueWaitHandle(signal1);
-                signal1.WaitOne(500.Milliseconds()).ShouldBeTrue();
+                signal1.WaitOne(1.Second()).ShouldBeTrue();
 
                 _matcher.EnqueueWaitHandle(signal2);
-                signal2.WaitOne(500.Milliseconds()).ShouldBeTrue();
+                signal2.WaitOne(1.Second()).ShouldBeTrue();
             }
         }
 
@@ -321,7 +321,7 @@ namespace Abc.Zebus.Persistence.Tests.Matching
 
                 _matcher.Start();
 
-                var isSetAfterStart = waitHandle.WaitOne(500.Milliseconds());
+                var isSetAfterStart = waitHandle.WaitOne(1.Second());
                 isSetAfterStart.ShouldBeTrue();
 
                 persistedEntries.ExpectedSingle().MessageBytes.ShouldEqual(messageBytes);
