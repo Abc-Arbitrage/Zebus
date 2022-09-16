@@ -16,9 +16,10 @@ using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Directory
 {
-    // WARN: in the tests, do not reuse the same PeerDescriptor instance multiple times when calling PeerDirectoryClient methods,
-    //       you might end up with a test passing by coincidence
-
+    /// <remarks>
+    /// Do not reuse the same PeerDescriptor instance multiple times when calling PeerDirectoryClient methods,
+    /// you might end up with a test passing by coincidence.
+    /// </remarks>
     [TestFixture]
     public partial class PeerDirectoryClientTests
     {
@@ -151,7 +152,7 @@ namespace Abc.Zebus.Tests.Directory
             var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
 
             _configuration.IsDirectoryPickedRandomly = true;
-            _configuration.RegistrationTimeout = 500.Milliseconds();
+            _configuration.RegistrationTimeout = 1.Second(); // Makes test slower but more robust (for CI/GH)
 
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<RegisterPeerCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
@@ -174,7 +175,7 @@ namespace Abc.Zebus.Tests.Directory
                 if (failureMode == DirectoryFailureMode.Error)
                     throw new Exception("Bad directory!");
 
-                Thread.Sleep(2.Seconds());
+                Thread.Sleep(3.Seconds());
                 return new RegisterPeerResponse(Array.Empty<PeerDescriptor>());
             }
         }
@@ -185,7 +186,7 @@ namespace Abc.Zebus.Tests.Directory
             // Arrange
             var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
 
-            _configuration.RegistrationTimeout = 500.Milliseconds();
+            _configuration.RegistrationTimeout = 1.Second(); // Makes test slower but more robust (for CI/GH)
 
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<RegisterPeerCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
@@ -223,7 +224,7 @@ namespace Abc.Zebus.Tests.Directory
                 if (failureMode == DirectoryFailureMode.Error)
                     throw new Exception("Bad directory!");
 
-                Thread.Sleep(2.Seconds());
+                Thread.Sleep(3.Seconds());
                 return new RegisterPeerResponse(Array.Empty<PeerDescriptor>());
             }
         }
@@ -235,7 +236,7 @@ namespace Abc.Zebus.Tests.Directory
             var failingDirectoryId = new PeerId("Abc.Zebus.DirectoryService.0");
 
             _configuration.IsDirectoryPickedRandomly = true;
-            _configuration.RegistrationTimeout = 500.Milliseconds();
+            _configuration.RegistrationTimeout = 1.Second(); // Makes test slower but more robust (for CI/GH)
 
             _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
             _bus.AddHandlerForPeer<UpdatePeerSubscriptionsForTypesCommand>(failingDirectoryId, _ => HandleCommandOnFailingDirectory());
