@@ -4,10 +4,10 @@ namespace Abc.Zebus.Persistence.Reporter
 {
     public class NoopReporter : IReporter
     {
-        private static readonly List<ReplaySpeedReport> _emptyReplayReports = new List<ReplaySpeedReport>(0);
-        private static readonly List<StorageReport> _emptyStorageReports = new List<StorageReport>(0);
+        private static readonly List<ReplaySpeedReport> _emptyReplayReports = new(0);
+        private static readonly List<StorageReport> _emptyStorageReports = new(0);
 
-        public void AddReplaySpeedReport(int messagesReplayedCount, double sendDurationInSeconds, double ackDurationInSeconds)
+        public void AddReplaySpeedReport(ReplaySpeedReport replaySpeedReport)
         {
         }
 
@@ -16,7 +16,7 @@ namespace Abc.Zebus.Persistence.Reporter
             return _emptyReplayReports;
         }
 
-        public void AddStorageReport(int messageCount, int batchSizeInBytes, int fattestMessageSizeInBytes, string fattestMessageTypeId)
+        public void AddStorageReport(StorageReport storageReport)
         {
         }
 

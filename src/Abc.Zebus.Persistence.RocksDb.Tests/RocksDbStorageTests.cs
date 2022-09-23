@@ -225,7 +225,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         }
 
         [Test, Explicit]
-        public void should_report_storage_informations()
+        public void should_report_storage_information()
         {
             var peer = new PeerId("peer");
 
@@ -235,7 +235,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
                 MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message.Fat"), new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             });
 
-            _reporterMock.Verify(r => r.AddStorageReport(2, 7, 4, "Abc.Message.Fat"));
+            _reporterMock.Verify(r => r.AddStorageReport(new StorageReport(2, 7, 4, "Abc.Message.Fat", new Dictionary<string, MessageTypeStatistics>())));
         }
 
         private TransportMessage CreateTestTransportMessage(int i)
