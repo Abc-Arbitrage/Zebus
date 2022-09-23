@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
+using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using RocksDbSharp;
 using StructureMap;
@@ -20,6 +21,7 @@ namespace Abc.Zebus.Persistence.RocksDb
     /// </summary>
     public class RocksDbStorage : IStorage, IDisposable
     {
+        private readonly IReporter _reporter;
         private static readonly int _guidLength = Guid.Empty.ToByteArray().Length;
 
         private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
@@ -31,14 +33,15 @@ namespace Abc.Zebus.Persistence.RocksDb
         private ColumnFamilyHandle _acksColumnFamily = default!;
 
         [DefaultConstructor]
-        public RocksDbStorage()
-            : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "database"))
+        public RocksDbStorage(IReporter reporter)
+            : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "database"), reporter)
         {
         }
 
-        public RocksDbStorage(string databaseDirectoryPath)
+        public RocksDbStorage(string databaseDirectoryPath, IReporter reporter)
         {
             _databaseDirectoryPath = databaseDirectoryPath;
+            _reporter = reporter;
         }
 
         public void Start()
@@ -75,6 +78,8 @@ namespace Abc.Zebus.Persistence.RocksDb
 
         public Task Write(IList<MatcherEntry> entriesToPersist)
         {
+            _reporter.AddStorageReport(ToStorageReport(entriesToPersist));
+
             foreach (var entry in entriesToPersist)
             {
                 var key = CreateKeyBuffer(entry.PeerId);
@@ -113,6 +118,14 @@ namespace Abc.Zebus.Persistence.RocksDb
             }
 
             return Task.CompletedTask;
+        }
+
+        private static StorageReport ToStorageReport(IList<MatcherEntry> entriesToPersist)
+        {
+            var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageBytes?.Length ?? 0).First();
+            var entriesByTypeName = entriesToPersist.ToLookup(x => x.MessageTypeName)
+                                                    .ToDictionary(xs => xs.Key, xs => new MessageTypeStatistics(xs.Count(), xs.Sum(x => x.MessageBytes?.Length) ?? 0));
+            return new StorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageBytes?.Length ?? 0), fattestMessage.MessageBytes?.Length ?? 0, fattestMessage.MessageTypeName, entriesByTypeName);
         }
 
         private void UpdateNonAckedCounts(IGrouping<PeerId, MatcherEntry> entry)

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
 using Moq;
@@ -27,7 +28,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             _databaseDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
             _reporterMock = new Mock<IReporter>();
-            _storage = new RocksDbStorage(_databaseDirectoryPath);
+            _storage = new RocksDbStorage(_databaseDirectoryPath,  _reporterMock.Object);
             _storage.Start();
         }
 
@@ -210,7 +211,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             await _storage.Write(new[] { MatcherEntry.Ack(peer, messageId) });
             _storage.Stop();
 
-            _storage = new RocksDbStorage(_databaseDirectoryPath);
+            _storage = new RocksDbStorage(_databaseDirectoryPath, _reporterMock.Object);
             _storage.Start();
 
             var message = MatcherEntry.Message(peer, messageId, MessageUtil.TypeId<Message1>(), Array.Empty<byte>());
@@ -224,7 +225,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
             }
         }
 
-        [Test, Explicit]
+        [Test]
         public void should_report_storage_information()
         {
             var peer = new PeerId("peer");
@@ -235,7 +236,13 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
                 MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message.Fat"), new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             });
 
-            _reporterMock.Verify(r => r.AddStorageReport(new StorageReport(2, 7, 4, "Abc.Message.Fat", new Dictionary<string, MessageTypeStatistics>())));
+            var entryTypeStatistics = new Dictionary<string, MessageTypeStatistics> { ["Abc.Message"] = new(1, 3),  ["Abc.Message.Fat"] = new(1, 4)  };
+            var storageReport = new StorageReport(2, 7, 4, "Abc.Message.Fat", entryTypeStatistics);
+            _reporterMock.Verify(r => r.AddStorageReport(It.Is<StorageReport>(x => x.MessageCount == storageReport.MessageCount
+                                                                              && x.BatchSizeInBytes == storageReport.BatchSizeInBytes
+                                                                              && x.FattestMessageTypeId == storageReport.FattestMessageTypeId
+                                                                              && x.FattestMessageSizeInBytes == storageReport.FattestMessageSizeInBytes
+                                                                              && x.MessageTypeStatistics.DeepCompare(storageReport.MessageTypeStatistics))));
         }
 
         private TransportMessage CreateTestTransportMessage(int i)
