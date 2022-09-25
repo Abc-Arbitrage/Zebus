@@ -82,8 +82,8 @@ namespace Abc.Zebus.Persistence.Matching
             switch (entry.Type)
             {
                 case MatcherEntryType.Message:
-                    var isPairUpSuccessfull = _ackMessageKeys.Remove(new MessageKey(entry.PeerId, entry.MessageId));
-                    if (isPairUpSuccessfull)
+                    var isPairUpSuccessful = _ackMessageKeys.Remove(new MessageKey(entry.PeerId, entry.MessageId));
+                    if (isPairUpSuccessful)
                     {
                         InMemoryAckCount++;
                         return;
@@ -206,7 +206,7 @@ namespace Abc.Zebus.Persistence.Matching
             return purgedMessageCount;
         }
 
-        private struct MessageKey : IEquatable<MessageKey>
+        private readonly struct MessageKey : IEquatable<MessageKey>
         {
             private readonly PeerId _peerId;
             private readonly MessageId _messageId;
@@ -217,10 +217,7 @@ namespace Abc.Zebus.Persistence.Matching
                 _peerId = peerId;
             }
 
-            public bool Equals(MessageKey other)
-            {
-                return _peerId.Equals(other._peerId) && _messageId.Equals(other._messageId);
-            }
+            public bool Equals(MessageKey other) => _peerId.Equals(other._peerId) && _messageId.Equals(other._messageId);
 
             public override int GetHashCode()
             {
