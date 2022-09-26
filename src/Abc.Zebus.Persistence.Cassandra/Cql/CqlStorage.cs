@@ -86,7 +86,12 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
             }
 
             var insertTasks = new List<Task>();
+
+            // The SemaphoreSlim is deliberately not disposed here:
+            // - Disposing the semaphore is only useful to dispose the underlying WaitHandle, which is not used (instantiated) here.
+            // - Disposing the semaphore would require complex logic: it must be disposed after the insertTask continuations to avoid ObjectDisposedException.
             var remaining = new SemaphoreSlim(_maxParallelInsertTasks);
+
             foreach (var matcherEntry in entriesToPersist)
             {
                 var gotSlot = remaining.Wait(TimeSpan.FromSeconds(10));
