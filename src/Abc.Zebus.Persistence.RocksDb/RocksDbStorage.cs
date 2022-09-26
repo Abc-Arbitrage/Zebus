@@ -122,10 +122,10 @@ namespace Abc.Zebus.Persistence.RocksDb
 
         private static StorageReport ToStorageReport(IList<MatcherEntry> entriesToPersist)
         {
-            var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageBytes?.Length ?? 0).First();
+            var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageLength).First();
             var entriesByTypeName = entriesToPersist.ToLookup(x => x.MessageTypeName)
-                                                    .ToDictionary(xs => xs.Key, xs => new MessageTypeStatistics(xs.Count(), xs.Sum(x => x.MessageBytes?.Length) ?? 0));
-            return new StorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageBytes?.Length ?? 0), fattestMessage.MessageBytes?.Length ?? 0, fattestMessage.MessageTypeName, entriesByTypeName);
+                                                    .ToDictionary(xs => xs.Key, xs => new MessageTypeStatistics(xs.Count(), xs.Sum(x => x.MessageLength)));
+            return new StorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageLength), fattestMessage.MessageLength, fattestMessage.MessageTypeName, entriesByTypeName);
         }
 
         private void UpdateNonAckedCounts(IGrouping<PeerId, MatcherEntry> entry)

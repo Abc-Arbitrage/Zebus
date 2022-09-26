@@ -47,5 +47,7 @@ namespace Abc.Zebus.Persistence.Matching
         {
             return IsEventWaitHandle || SystemDateTime.UtcNow - TimestampUtc >= delay;
         }
+
+        public int MessageLength => MessageBytes?.Length ?? 0;
     }
 }
