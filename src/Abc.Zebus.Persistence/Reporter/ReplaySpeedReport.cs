@@ -1,16 +1,18 @@
-﻿namespace Abc.Zebus.Persistence.Reporter
+﻿using System;
+
+namespace Abc.Zebus.Persistence.Reporter
 {
     public class ReplaySpeedReport
     {
         public int MessageCount { get; }
-        public double SendDurationInSeconds { get; }
-        public double AckDurationInSeconds { get; }
+        public TimeSpan SendDuration { get; }
+        public TimeSpan AckDuration { get; }
 
-        public ReplaySpeedReport(int messageCount, double sendDurationInSeconds, double ackDurationInSeconds)
+        public ReplaySpeedReport(int messageCount, TimeSpan sendDuration, TimeSpan ackDuration)
         {
             MessageCount = messageCount;
-            SendDurationInSeconds = sendDurationInSeconds;
-            AckDurationInSeconds = ackDurationInSeconds;
+            SendDuration = sendDuration;
+            AckDuration = ackDuration;
         }
     }
 }
