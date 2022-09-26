@@ -8,20 +8,20 @@ namespace Abc.Zebus.Persistence.Reporter
         public int BatchSizeInBytes { get; }
         public int FattestMessageSizeInBytes { get; }
         public string FattestMessageTypeId { get; }
-        public Dictionary<string, MessageTypeStatistics> MessageTypeStatistics { get; }
+        public Dictionary<string, MessageTypeStorageReport> MessageTypeStorageReports { get; }
 
-        public StorageReport(int messageCount, int batchSizeInBytes, int fattestMessageSizeInBytes, string fattestMessageTypeId, Dictionary<string, MessageTypeStatistics> messageTypeStatistics)
+        public StorageReport(int messageCount, int batchSizeInBytes, int fattestMessageSizeInBytes, string fattestMessageTypeId, Dictionary<string, MessageTypeStorageReport> messageTypeStorageReports)
         {
             MessageCount = messageCount;
             BatchSizeInBytes = batchSizeInBytes;
             FattestMessageSizeInBytes = fattestMessageSizeInBytes;
             FattestMessageTypeId = fattestMessageTypeId;
-            MessageTypeStatistics = messageTypeStatistics;
+            MessageTypeStorageReports = messageTypeStorageReports;
         }
 
         public override string ToString()
-            => $"{nameof(MessageCount)}: {MessageCount}, {nameof(BatchSizeInBytes)}: {BatchSizeInBytes}, {nameof(FattestMessageSizeInBytes)}: {FattestMessageSizeInBytes}, {nameof(FattestMessageTypeId)}: {FattestMessageTypeId}, {nameof(MessageTypeStatistics)}: {MessageTypeStatistics}";
+            => $"{nameof(MessageCount)}: {MessageCount}, {nameof(BatchSizeInBytes)}: {BatchSizeInBytes}, {nameof(FattestMessageSizeInBytes)}: {FattestMessageSizeInBytes}, {nameof(FattestMessageTypeId)}: {FattestMessageTypeId}, {nameof(MessageTypeStorageReports)}: {MessageTypeStorageReports}";
     }
 
-    public record MessageTypeStatistics(int Count, int TotalBytes);
+    public record MessageTypeStorageReport(int Count, int TotalBytes);
 }

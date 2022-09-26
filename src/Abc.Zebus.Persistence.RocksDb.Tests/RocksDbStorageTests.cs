@@ -236,13 +236,13 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
                 MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message.Fat"), new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             });
 
-            var entryTypeStatistics = new Dictionary<string, MessageTypeStatistics> { ["Abc.Message"] = new(1, 3),  ["Abc.Message.Fat"] = new(1, 4)  };
+            var entryTypeStatistics = new Dictionary<string, MessageTypeStorageReport> { ["Abc.Message"] = new(1, 3),  ["Abc.Message.Fat"] = new(1, 4)  };
             var storageReport = new StorageReport(2, 7, 4, "Abc.Message.Fat", entryTypeStatistics);
             _reporterMock.Verify(r => r.AddStorageReport(It.Is<StorageReport>(x => x.MessageCount == storageReport.MessageCount
                                                                               && x.BatchSizeInBytes == storageReport.BatchSizeInBytes
                                                                               && x.FattestMessageTypeId == storageReport.FattestMessageTypeId
                                                                               && x.FattestMessageSizeInBytes == storageReport.FattestMessageSizeInBytes
-                                                                              && x.MessageTypeStatistics.DeepCompare(storageReport.MessageTypeStatistics))));
+                                                                              && x.MessageTypeStorageReports.DeepCompare(storageReport.MessageTypeStorageReports))));
         }
 
         private TransportMessage CreateTestTransportMessage(int i)

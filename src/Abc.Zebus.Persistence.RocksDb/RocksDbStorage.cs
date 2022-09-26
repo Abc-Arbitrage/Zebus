@@ -124,7 +124,7 @@ namespace Abc.Zebus.Persistence.RocksDb
         {
             var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageLength).First();
             var entriesByTypeName = entriesToPersist.ToLookup(x => x.MessageTypeName)
-                                                    .ToDictionary(xs => xs.Key, xs => new MessageTypeStatistics(xs.Count(), xs.Sum(x => x.MessageLength)));
+                                                    .ToDictionary(xs => xs.Key, xs => new MessageTypeStorageReport(xs.Count(), xs.Sum(x => x.MessageLength)));
             return new StorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageLength), fattestMessage.MessageLength, fattestMessage.MessageTypeName, entriesByTypeName);
         }
 
