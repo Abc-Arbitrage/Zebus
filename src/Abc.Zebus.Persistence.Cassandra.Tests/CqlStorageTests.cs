@@ -8,11 +8,10 @@ using Abc.Zebus.Persistence.Cassandra.Tests.Cql;
 using Abc.Zebus.Persistence.Matching;
 using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Reporter;
-using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Testing;
+using Abc.Zebus.Testing.Comparison;
 using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Transport;
-using Abc.Zebus.Util;
 using Cassandra.Data.Linq;
 using Moq;
 using NUnit.Framework;
@@ -123,7 +122,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         {
             var messageBytes = new byte[512];
             new Random().NextBytes(messageBytes);
-            var messageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9706-ae1ea5dcf365"));      // Time component @2016-01-01 00:00:00Z
+            var messageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9706-ae1ea5dcf365")); // Time component @2016-01-01 00:00:00Z
             var otherMessageId = new MessageId(Guid.Parse("0000c399-1ab0-e511-9806-f1ef55aac8e9")); // Time component @2016-01-01 00:00:00Z
             var peerId = "Abc.Peer.0";
 
@@ -334,15 +333,15 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
             {
                 var transportMessages = Enumerable.Range(1, 100).Select(CreateTestTransportMessage).ToList();
                 var messages = transportMessages.SelectMany(x =>
-                                                        {
-                                                            var transportMessageBytes = TransportMessage.Serialize(x);
-                                                            return new[]
-                                                            {
-                                                                MatcherEntry.Message(firstPeer, x.Id, x.MessageTypeId, transportMessageBytes),
-                                                                MatcherEntry.Message(secondPeer, x.Id, x.MessageTypeId, transportMessageBytes),
-                                                            };
-                                                        })
-                                                        .ToList();
+                                                {
+                                                    var transportMessageBytes = TransportMessage.Serialize(x);
+                                                    return new[]
+                                                    {
+                                                        MatcherEntry.Message(firstPeer, x.Id, x.MessageTypeId, transportMessageBytes),
+                                                        MatcherEntry.Message(secondPeer, x.Id, x.MessageTypeId, transportMessageBytes),
+                                                    };
+                                                })
+                                                .ToList();
 
                 await _storage.Write(messages);
 
@@ -360,7 +359,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         }
 
         [Test]
-        public void should_report_storage_informations()
+        public void should_report_storage_information()
         {
             var peer = new PeerId("peer");
 
@@ -370,7 +369,13 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
                 MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message.Fat"), new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             });
 
-            _reporterMock.Verify(r => r.AddStorageReport(2, 7, 4, "Abc.Message.Fat"));
+            var entryTypeStatistics = new Dictionary<string, MessageTypeStorageReport> { ["Abc.Message"] = new(1, 3),  ["Abc.Message.Fat"] = new(1, 4)  };
+            var storageReport = new StorageReport(2, 7, 4, "Abc.Message.Fat", entryTypeStatistics);
+            _reporterMock.Verify(r => r.AddStorageReport(It.Is<StorageReport>(x => x.MessageCount == storageReport.MessageCount
+                                                                              && x.BatchSizeInBytes == storageReport.BatchSizeInBytes
+                                                                              && x.FattestMessageTypeId == storageReport.FattestMessageTypeId
+                                                                              && x.FattestMessageSizeInBytes == storageReport.FattestMessageSizeInBytes
+                                                                              && x.MessageTypeStorageReports.DeepCompare(storageReport.MessageTypeStorageReports))));
         }
 
         [Test]

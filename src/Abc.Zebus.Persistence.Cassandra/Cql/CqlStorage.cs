@@ -10,7 +10,6 @@ using Abc.Zebus.Persistence.Messages;
 using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Persistence.Util;
-using Abc.Zebus.Util;
 using Cassandra;
 using Cassandra.Data.Linq;
 using Microsoft.Extensions.Logging;
@@ -68,8 +67,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
             if (entriesToPersist.Count == 0)
                 return Task.CompletedTask;
 
-            var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageBytes?.Length ?? 0).First();
-            _reporter.AddStorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageBytes?.Length ?? 0), fattestMessage.MessageBytes?.Length ?? 0, fattestMessage.MessageTypeName);
+            _reporter.AddStorageReport(ToStorageReport(entriesToPersist));
 
             var countByPeer = new Dictionary<PeerId, int>();
             foreach (var matcherEntry in entriesToPersist)
@@ -114,16 +112,17 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
                 var insertTask = _dataContext.Session.ExecuteAsync(boundStatement);
                 insertTasks.Add(insertTask);
                 insertTask.ContinueWith(t =>
-                {
-                    var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
-                    if (shouldInvestigatePeer)
-                        _log.LogInformation($"Storage done for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}");
+                                        {
+                                            var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
+                                            if (shouldInvestigatePeer)
+                                                _log.LogInformation($"Storage done for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}");
 
-                    if (t.IsFaulted)
-                        _log.LogError(t.Exception, "Error while inserting to Cassandra");
+                                            if (t.IsFaulted)
+                                                _log.LogError(t.Exception, "Error while inserting to Cassandra");
 
-                    remaining.Release();
-                }, TaskContinuationOptions.ExecuteSynchronously);
+                                            remaining.Release();
+                                        },
+                                        TaskContinuationOptions.ExecuteSynchronously);
             }
 
             var updateNonAckedCountTasks = new List<Task>();
@@ -133,6 +132,14 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
             }
 
             return Task.WhenAll(insertTasks.Concat(updateNonAckedCountTasks));
+        }
+
+        private static StorageReport ToStorageReport(IList<MatcherEntry> entriesToPersist)
+        {
+            var fattestMessage = entriesToPersist.OrderByDescending(msg => msg.MessageLength).First();
+            var entriesByTypeName = entriesToPersist.ToLookup(x => x.MessageTypeName)
+                                                    .ToDictionary(xs => xs.Key, xs => new MessageTypeStorageReport(xs.Count(), xs.Sum(x => x.MessageLength)));
+            return new StorageReport(entriesToPersist.Count, entriesToPersist.Sum(msg => msg.MessageLength), fattestMessage.MessageLength, fattestMessage.MessageTypeName, entriesByTypeName);
         }
 
         public Task RemovePeer(PeerId peerId)

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Persistence.Matching;
+using Abc.Zebus.Persistence.Reporter;
 using Abc.Zebus.Persistence.Storage;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Transport;
@@ -23,7 +24,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         [SetUp]
         public void SetUp()
         {
-            _storage = new RocksDbStorage(Guid.NewGuid().ToString());
+            _storage = new RocksDbStorage(Guid.NewGuid().ToString(), new NoopReporter());
             _storage.Start();
         }
 
