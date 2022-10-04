@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Abc.Zebus.Persistence.Reporter
 {
@@ -17,6 +18,10 @@ namespace Abc.Zebus.Persistence.Reporter
         }
 
         public void AddStorageReport(StorageReport storageReport)
+        {
+        }
+
+        public void AddStorageTime(TimeSpan elapsed)
         {
         }
 

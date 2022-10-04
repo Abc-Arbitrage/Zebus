@@ -243,6 +243,8 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
                                                                               && x.FattestMessageTypeId == storageReport.FattestMessageTypeId
                                                                               && x.FattestMessageSizeInBytes == storageReport.FattestMessageSizeInBytes
                                                                               && x.MessageTypeStorageReports.DeepCompare(storageReport.MessageTypeStorageReports))));
+
+            _reporterMock.Verify(r => r.AddStorageTime(It.IsAny<TimeSpan>()), Times.Exactly(2));
         }
 
         private TransportMessage CreateTestTransportMessage(int i)

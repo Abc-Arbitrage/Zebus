@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -80,8 +81,11 @@ namespace Abc.Zebus.Persistence.RocksDb
         {
             _reporter.AddStorageReport(ToStorageReport(entriesToPersist));
 
+            var stopwatch = new Stopwatch();
             foreach (var entry in entriesToPersist)
             {
+                stopwatch.Restart();
+
                 var key = CreateKeyBuffer(entry.PeerId);
                 FillKey(key, entry.PeerId, entry.MessageId.GetDateTime().Ticks, entry.MessageId.Value);
                 if (entry.IsAck)
@@ -110,6 +114,8 @@ namespace Abc.Zebus.Persistence.RocksDb
                         // Otherwise ignore the message and remove the ack as it has already been acked
                         _db.Remove(key, _acksColumnFamily);
                 }
+
+                _reporter.AddStorageTime(stopwatch.Elapsed);
             }
 
             foreach (var entry in entriesToPersist.GroupBy(x => x.PeerId))
@@ -132,7 +138,7 @@ namespace Abc.Zebus.Persistence.RocksDb
         {
             var nonAcked = entry.Aggregate(0, (s, e) => s + (e.IsAck ? -1 : 1));
             var peerKey = GetPeerKey(entry.Key);
-            using (var iterator = _db.NewIterator(_peersColumnFamily))//, new ReadOptions().SetTotalOrderSeek(true)))
+            using (var iterator = _db.NewIterator(_peersColumnFamily)) //, new ReadOptions().SetTotalOrderSeek(true)))
             {
                 // TODO: figure out why Seek() returns true for a different key
                 var alreadyExists = iterator.Seek(peerKey).Valid() && CompareStart(iterator.Key(), peerKey, peerKey.Length);
@@ -171,7 +177,8 @@ namespace Abc.Zebus.Persistence.RocksDb
                     currentKey = cursor.Key();
                     _db.Remove(currentKey);
                     cursor.Next();
-                } while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
+                }
+                while (cursor.Valid() && CompareStart(currentKey, key, peerIdLength));
             }
 
             _db.Remove(GetPeerKey(peerId), _peersColumnFamily);

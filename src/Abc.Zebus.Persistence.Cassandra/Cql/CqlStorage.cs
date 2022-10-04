@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -109,10 +110,14 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
                     ToUnixMicroSeconds(rowTimestamp)
                 );
 
+                var stopwatch = Stopwatch.StartNew();
                 var insertTask = _dataContext.Session.ExecuteAsync(boundStatement);
                 insertTasks.Add(insertTask);
                 insertTask.ContinueWith(t =>
                                         {
+                                            var elapsed = stopwatch.Elapsed;
+                                            _reporter.AddStorageTime(elapsed);
+
                                             var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
                                             if (shouldInvestigatePeer)
                                                 _log.LogInformation($"Storage done for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}");

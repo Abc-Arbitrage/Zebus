@@ -359,11 +359,11 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         }
 
         [Test]
-        public void should_report_storage_information()
+        public async Task should_report_storage_information()
         {
             var peer = new PeerId("peer");
 
-            _storage.Write(new[]
+            await _storage.Write(new[]
             {
                 MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message"), new byte[] { 0x01, 0x02, 0x03 }),
                 MatcherEntry.Message(peer, MessageId.NextId(), new MessageTypeId("Abc.Message.Fat"), new byte[] { 0x01, 0x02, 0x03, 0x04 }),
@@ -376,6 +376,8 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
                                                                               && x.FattestMessageTypeId == storageReport.FattestMessageTypeId
                                                                               && x.FattestMessageSizeInBytes == storageReport.FattestMessageSizeInBytes
                                                                               && x.MessageTypeStorageReports.DeepCompare(storageReport.MessageTypeStorageReports))));
+
+            _reporterMock.Verify(r => r.AddStorageTime(It.IsAny<TimeSpan>()), Times.Exactly(2));
         }
 
         [Test]
