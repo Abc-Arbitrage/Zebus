@@ -123,7 +123,7 @@ namespace Abc.Zebus.Persistence.Runner
                 c.Forward<IInMemoryMessageMatcher, IProvideQueueLength>();
                 c.ForSingletonOf<IStoppingStrategy>().Use<PersistenceStoppingStrategy>();
 
-                c.ForSingletonOf<IReporter>().Use<NoopReporter>();
+                c.ForSingletonOf<IPersistenceReporter>().Use<NoopPersistenceReporter>();
 
                 // Cassandra specific
                 if (useCassandraStorage)

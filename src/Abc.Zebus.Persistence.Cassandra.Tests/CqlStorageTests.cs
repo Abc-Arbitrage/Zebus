@@ -25,7 +25,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
 
         private CqlStorage _storage;
         private Mock<IPersistenceConfiguration> _configurationMock;
-        private Mock<IReporter> _reporterMock;
+        private Mock<IPersistenceReporter> _reporterMock;
 
         public override void CreateSchema()
         {
@@ -44,7 +44,7 @@ namespace Abc.Zebus.Persistence.Cassandra.Tests
         public void SetUp()
         {
             _configurationMock = new Mock<IPersistenceConfiguration>();
-            _reporterMock = new Mock<IReporter>();
+            _reporterMock = new Mock<IPersistenceReporter>();
             _storage = new CqlStorage(DataContext, _configurationMock.Object, _reporterMock.Object);
             _storage.Start();
         }

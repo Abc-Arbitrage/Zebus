@@ -22,7 +22,7 @@ namespace Abc.Zebus.Persistence.RocksDb
     /// </summary>
     public class RocksDbStorage : IStorage, IDisposable
     {
-        private readonly IReporter _reporter;
+        private readonly IPersistenceReporter _reporter;
         private static readonly int _guidLength = Guid.Empty.ToByteArray().Length;
 
         private readonly ConcurrentDictionary<MessageId, bool> _outOfOrderAcks = new ConcurrentDictionary<MessageId, bool>();
@@ -34,12 +34,12 @@ namespace Abc.Zebus.Persistence.RocksDb
         private ColumnFamilyHandle _acksColumnFamily = default!;
 
         [DefaultConstructor]
-        public RocksDbStorage(IReporter reporter)
+        public RocksDbStorage(IPersistenceReporter reporter)
             : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "database"), reporter)
         {
         }
 
-        public RocksDbStorage(string databaseDirectoryPath, IReporter reporter)
+        public RocksDbStorage(string databaseDirectoryPath, IPersistenceReporter reporter)
         {
             _databaseDirectoryPath = databaseDirectoryPath;
             _reporter = reporter;

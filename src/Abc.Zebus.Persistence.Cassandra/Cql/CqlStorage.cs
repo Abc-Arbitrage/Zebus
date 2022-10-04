@@ -26,10 +26,10 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly PeerStateRepository _peerStateRepository;
         private readonly IPersistenceConfiguration _configuration;
-        private readonly IReporter _reporter;
+        private readonly IPersistenceReporter _reporter;
         private readonly PreparedStatement _preparedStatement;
 
-        public CqlStorage(PersistenceCqlDataContext dataContext, IPersistenceConfiguration configuration, IReporter reporter)
+        public CqlStorage(PersistenceCqlDataContext dataContext, IPersistenceConfiguration configuration, IPersistenceReporter reporter)
         {
             _dataContext = dataContext;
             _peerStateRepository = new PeerStateRepository(dataContext);

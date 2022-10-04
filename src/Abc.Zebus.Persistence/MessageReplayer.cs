@@ -28,7 +28,7 @@ namespace Abc.Zebus.Persistence
         private readonly Peer _self;
         private readonly Peer _peer;
         private readonly Guid _replayId;
-        private readonly IReporter _reporter;
+        private readonly IPersistenceReporter _reporter;
         private readonly IMessageSerializer _messageSerializer;
         private CancellationTokenSource? _cancellationTokenSource;
         private Thread? _runThread;
@@ -43,7 +43,7 @@ namespace Abc.Zebus.Persistence
                                IInMemoryMessageMatcher inMemoryMessageMatcher,
                                Peer peer,
                                Guid replayId,
-                               IReporter reporter,
+                               IPersistenceReporter reporter,
                                IMessageSerializer messageSerializer)
         {
             _persistenceConfiguration = persistenceConfiguration;

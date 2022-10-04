@@ -19,7 +19,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
     public class RocksDbStorageTests
     {
         private RocksDbStorage _storage;
-        private Mock<IReporter> _reporterMock;
+        private Mock<IPersistenceReporter> _reporterMock;
         private string _databaseDirectoryPath;
 
         [SetUp]
@@ -27,7 +27,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         {
             _databaseDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-            _reporterMock = new Mock<IReporter>();
+            _reporterMock = new Mock<IPersistenceReporter>();
             _storage = new RocksDbStorage(_databaseDirectoryPath,  _reporterMock.Object);
             _storage.Start();
         }
