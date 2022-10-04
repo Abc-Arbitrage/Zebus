@@ -19,7 +19,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
     public class RocksDbStorageTests
     {
         private RocksDbStorage _storage;
-        private Mock<IReporter> _reporterMock;
+        private Mock<IPersistenceReporter> _reporterMock;
         private string _databaseDirectoryPath;
 
         [SetUp]
@@ -27,7 +27,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         {
             _databaseDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-            _reporterMock = new Mock<IReporter>();
+            _reporterMock = new Mock<IPersistenceReporter>();
             _storage = new RocksDbStorage(_databaseDirectoryPath,  _reporterMock.Object);
             _storage.Start();
         }
@@ -243,6 +243,8 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
                                                                               && x.FattestMessageTypeId == storageReport.FattestMessageTypeId
                                                                               && x.FattestMessageSizeInBytes == storageReport.FattestMessageSizeInBytes
                                                                               && x.MessageTypeStorageReports.DeepCompare(storageReport.MessageTypeStorageReports))));
+
+            _reporterMock.Verify(r => r.AddStorageTime(It.IsAny<TimeSpan>()), Times.Exactly(2));
         }
 
         private TransportMessage CreateTestTransportMessage(int i)

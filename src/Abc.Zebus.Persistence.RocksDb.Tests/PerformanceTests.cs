@@ -24,7 +24,7 @@ namespace Abc.Zebus.Persistence.RocksDb.Tests
         [SetUp]
         public void SetUp()
         {
-            _storage = new RocksDbStorage(Guid.NewGuid().ToString(), new NoopReporter());
+            _storage = new RocksDbStorage(Guid.NewGuid().ToString(), new NoopPersistenceReporter());
             _storage.Start();
         }
 

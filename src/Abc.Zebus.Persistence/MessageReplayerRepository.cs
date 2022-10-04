@@ -16,7 +16,7 @@ namespace Abc.Zebus.Persistence
         private readonly IBus _bus;
         private readonly ITransport _transport;
         private readonly IInMemoryMessageMatcher _inMemoryMessageMatcher;
-        private readonly IReporter _speedReporter;
+        private readonly IPersistenceReporter _speedReporter;
         private readonly IMessageSerializer _messageSerializer;
         private bool _messageReplayersEnabled = true;
 
@@ -25,7 +25,7 @@ namespace Abc.Zebus.Persistence
                                          IBus bus,
                                          ITransport transport,
                                          IInMemoryMessageMatcher inMemoryMessageMatcher,
-                                         IReporter speedReporter,
+                                         IPersistenceReporter speedReporter,
                                          IMessageSerializer messageSerializer)
         {
             _persistenceConfiguration = persistenceConfiguration;

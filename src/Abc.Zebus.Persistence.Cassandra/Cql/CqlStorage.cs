@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,10 +26,10 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
         private readonly PersistenceCqlDataContext _dataContext;
         private readonly PeerStateRepository _peerStateRepository;
         private readonly IPersistenceConfiguration _configuration;
-        private readonly IReporter _reporter;
+        private readonly IPersistenceReporter _reporter;
         private readonly PreparedStatement _preparedStatement;
 
-        public CqlStorage(PersistenceCqlDataContext dataContext, IPersistenceConfiguration configuration, IReporter reporter)
+        public CqlStorage(PersistenceCqlDataContext dataContext, IPersistenceConfiguration configuration, IPersistenceReporter reporter)
         {
             _dataContext = dataContext;
             _peerStateRepository = new PeerStateRepository(dataContext);
@@ -109,10 +110,14 @@ namespace Abc.Zebus.Persistence.Cassandra.Cql
                     ToUnixMicroSeconds(rowTimestamp)
                 );
 
+                var stopwatch = Stopwatch.StartNew();
                 var insertTask = _dataContext.Session.ExecuteAsync(boundStatement);
                 insertTasks.Add(insertTask);
                 insertTask.ContinueWith(t =>
                                         {
+                                            var elapsed = stopwatch.Elapsed;
+                                            _reporter.AddStorageTime(elapsed);
+
                                             var shouldInvestigatePeer = _configuration.PeerIdsToInvestigate != null && _configuration.PeerIdsToInvestigate.Contains(matcherEntry.PeerId.ToString());
                                             if (shouldInvestigatePeer)
                                                 _log.LogInformation($"Storage done for peer {matcherEntry.PeerId}, Type: {matcherEntry.Type}, Message Id: {matcherEntry.MessageId}, TaskResult: {t.Status}");

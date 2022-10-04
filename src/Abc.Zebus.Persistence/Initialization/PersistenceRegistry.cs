@@ -8,7 +8,7 @@ namespace Abc.Zebus.Persistence.Initialization
     {
         public PersistenceRegistry()
         {
-            ForSingletonOf<IReporter>().UseIfNone<NoopReporter>();
+            ForSingletonOf<IPersistenceReporter>().UseIfNone<NoopPersistenceReporter>();
             ForSingletonOf<PersistMessageCommandHandler>().Use<PersistMessageCommandHandler>();
         }
     }
