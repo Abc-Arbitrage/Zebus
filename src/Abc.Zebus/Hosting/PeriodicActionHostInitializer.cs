@@ -18,6 +18,7 @@ namespace Abc.Zebus.Hosting
         private DateTime _nextInvocationUtc;
         private DateTime _pauseEndTimeUtc;
 
+        /// <param name="dueTimeUtcFunc">If this is not provided the UTC due time will be DateTime.UtcNow at the time the initializer is started</param>
         protected PeriodicActionHostInitializer(IBus bus, TimeSpan period, Func<DateTime>? dueTimeUtcFunc = null)
         {
             _logger = ZebusLogManager.GetLogger(GetType());
@@ -29,6 +30,7 @@ namespace Abc.Zebus.Hosting
 
         public bool IsRunning => _timer != null;
 
+        /// <summary> This period is applied to the UTC due time calculated by <see cref="_dueTimeUtcFunc"/> </summary>
         public TimeSpan Period { get; }
         public bool ErrorPublicationEnabled { get; set; } = true;
         public int ErrorCountBeforePause { get; set; } = 10;
