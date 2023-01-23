@@ -47,5 +47,34 @@ namespace Abc.Zebus.Tests
 
             cmdResult.GetErrorMessageFromEnum<FakeEnumErrorCode>().ShouldBeEmpty();
         }
+
+        [TestCase(0, null, "Success")]
+        [TestCase(1, null, "Error, ErrorCode: 1")]
+        [TestCase(256, null, "Error, ErrorCode: 256")]
+        [TestCase(256, "Expected message", "Error, ErrorCode: 256, ResponseMessage: [Expected message]")]
+        public void should_get_string_from_result(int errorCode, string responseMessage, string expectedText)
+        {
+            var commandResult = new CommandResult(errorCode, responseMessage, null);
+
+            commandResult.ToString().ShouldEqual(expectedText);
+        }
+
+        [TestCase(0, null, "Success, Response: [Response!]")]
+        [TestCase(256, null, "Error, ErrorCode: 256, Response: [Response!]")]
+        [TestCase(256, "Expected message", "Error, ErrorCode: 256, ResponseMessage: [Expected message], Response: [Response!]")]
+        public void should_get_string_from_result_with_response(int errorCode, string responseMessage, string expectedText)
+        {
+            var commandResult = new CommandResult(errorCode, responseMessage, new Response());
+
+            commandResult.ToString().ShouldEqual(expectedText);
+        }
+
+        private class Response
+        {
+            public override string ToString()
+            {
+                return $"Response!";
+            }
+        }
     }
 }
