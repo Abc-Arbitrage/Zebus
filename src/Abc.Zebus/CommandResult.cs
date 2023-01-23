@@ -14,12 +14,6 @@ namespace Abc.Zebus
     /// </remarks>
     public class CommandResult
     {
-        [Obsolete("Use the constructor with the responseMessage parameter")]
-        public CommandResult(int errorCode, object? response)
-            : this(errorCode, null, response)
-        {
-        }
-
         public CommandResult(int errorCode, string? responseMessage, object? response)
         {
             ErrorCode = errorCode;
