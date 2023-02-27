@@ -51,7 +51,9 @@ jobs:
           dotnet-version: ${{ env.BUILD_DOTNET_VERSION }}
 
       - name: Install RocksDb dependencies
-        run: sudo apt-get install libsnappy-dev
+        run: |
+          sudo apt-get install libsnappy-dev
+          sudo ln -s /lib/x86_64-linux-gnu/libdl.so.2 /lib/x86_64-linux-gnu/libdl.so
 
       - name: Restore
         run: dotnet restore src/Abc.Zebus.Tests.proj
