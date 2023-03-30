@@ -72,7 +72,7 @@ namespace Abc.Zebus.Core
         public string Environment { get; private set; } = string.Empty;
         public bool IsRunning => Status == BusStatus.Started || Status == BusStatus.Stopping;
         public string EndPoint => _transport.InboundEndPoint;
-        public string DeserializationFailureDumpDirectoryPath { get; set; } = PathUtil.InBaseDirectory("deserialization_failure_dumps");
+        public string? DeserializationFailureDumpDirectoryPath { get; set; }
 
         private BusStatus Status
         {
@@ -84,6 +84,7 @@ namespace Abc.Zebus.Core
         {
             PeerId = peerId;
             Environment = environment;
+            DeserializationFailureDumpDirectoryPath = Path.Combine(Path.GetTempPath(), $"zebus_deserialization_dumps_{peerId}");
             _transport.Configure(peerId, environment);
         }
 
@@ -878,6 +879,9 @@ namespace Abc.Zebus.Core
 
         private string DumpMessageOnDisk(MessageTypeId messageTypeId, ReadOnlyMemory<byte> messageContent)
         {
+            if (string.IsNullOrEmpty(DeserializationFailureDumpDirectoryPath))
+                return "Message could not be dumped";
+
             try
             {
                 if (!System.IO.Directory.Exists(DeserializationFailureDumpDirectoryPath))
