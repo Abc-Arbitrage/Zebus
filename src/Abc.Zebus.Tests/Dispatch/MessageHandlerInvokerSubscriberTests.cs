@@ -13,10 +13,13 @@ namespace Abc.Zebus.Tests.Dispatch
     {
         [TestCase(typeof(DefaultHandler), typeof(Event), SubscriptionMode.Auto)]
         [TestCase(typeof(DefaultHandler), typeof(RoutableEvent), SubscriptionMode.Manual)]
+        [TestCase(typeof(DefaultHandler), typeof(AutoSubscribeRoutableEvent), SubscriptionMode.Auto)]
         [TestCase(typeof(ManualHandler), typeof(Event), SubscriptionMode.Manual)]
         [TestCase(typeof(ManualHandler), typeof(RoutableEvent), SubscriptionMode.Manual)]
+        [TestCase(typeof(ManualHandler), typeof(AutoSubscribeRoutableEvent), SubscriptionMode.Manual)]
         [TestCase(typeof(AutoHandler), typeof(Event), SubscriptionMode.Auto)]
         [TestCase(typeof(AutoHandler), typeof(RoutableEvent), SubscriptionMode.Auto)]
+        [TestCase(typeof(AutoHandler), typeof(AutoSubscribeRoutableEvent), SubscriptionMode.Auto)]
         public void should_get_default_subscription_mode(Type handlerType, Type messageType, SubscriptionMode expectedSubscriptionMode)
         {
             // Arrange
@@ -42,41 +45,60 @@ namespace Abc.Zebus.Tests.Dispatch
             public int Key { get; set; }
         }
 
+        [Routable(AutoSubscribe = true)]
+        public class AutoSubscribeRoutableEvent : IEvent
+        {
+            [RoutingPosition(1)]
+            public int Key { get; set; }
+        }
+
         public class Event : IEvent
         {
         }
 
-        public class DefaultHandler : IMessageHandler<RoutableEvent>, IMessageHandler<Event>
+        public class DefaultHandler : IMessageHandler<RoutableEvent>, IMessageHandler<Event>, IMessageHandler<AutoSubscribeRoutableEvent>
         {
             public void Handle(RoutableEvent message)
             {
             }
 
             public void Handle(Event message)
+            {
+            }
+
+            public void Handle(AutoSubscribeRoutableEvent message)
             {
             }
         }
 
         [SubscriptionMode(SubscriptionMode.Manual)]
-        public class ManualHandler : IMessageHandler<RoutableEvent>, IMessageHandler<Event>
+        public class ManualHandler : IMessageHandler<RoutableEvent>, IMessageHandler<Event>, IMessageHandler<AutoSubscribeRoutableEvent>
         {
             public void Handle(RoutableEvent message)
             {
             }
 
             public void Handle(Event message)
+            {
+            }
+
+            public void Handle(AutoSubscribeRoutableEvent message)
             {
             }
         }
 
         [SubscriptionMode(SubscriptionMode.Auto)]
-        public class AutoHandler : IMessageHandler<RoutableEvent>, IMessageHandler<Event>
+        public class AutoHandler : IMessageHandler<RoutableEvent>, IMessageHandler<Event>, IMessageHandler<AutoSubscribeRoutableEvent>
         {
             public void Handle(RoutableEvent message)
             {
             }
 
             public void Handle(Event message)
+            {
+            }
+
+            public void Handle(AutoSubscribeRoutableEvent message)
             {
             }
         }
