@@ -47,6 +47,34 @@ namespace Abc.Zebus.Tests.Scan
         }
 
         [Test]
+        public void should_subscribe_to_auto_subscribe_routable_message_handler_on_startup()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableMessageWithAutoSubscribeHandler>()).ExpectedSingle();
+
+            invoker.GetStartupSubscriptions().ShouldBeEquivalentTo(Subscription.Any<FakeRoutableMessageWithAutoSubscribe>());
+        }
+
+        [Test]
+        public void should_subscribe_to_auto_subscribe_routable_message_handler_with_auto_subscription_mode_on_startup()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableMessageWithAutoSubscribeHandler_Auto>()).ExpectedSingle();
+
+            invoker.GetStartupSubscriptions().ShouldBeEquivalentTo(Subscription.Any<FakeRoutableMessageWithAutoSubscribe>());
+        }
+
+
+        [Test]
+        public void should_not_subscribe_to_auto_subscribe_routable_message_handler_with_manual_subscription_mode_on_startup()
+        {
+            var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
+            var invoker = invokerLoader.LoadMessageHandlerInvokers(TypeSource.FromType<FakeRoutableMessageWithAutoSubscribeHandler_Manual>()).ExpectedSingle();
+
+            invoker.GetStartupSubscriptions().ShouldBeEmpty();
+        }
+
+        [Test]
         public void should_switch_to_manual_subscription_mode_when_specified()
         {
             var invokerLoader = new SyncMessageHandlerInvokerLoader(new Container());
@@ -104,6 +132,14 @@ namespace Abc.Zebus.Tests.Scan
             public string Key;
         }
 
+
+        [Routable(AutoSubscribe = true)]
+        public class FakeRoutableMessageWithAutoSubscribe : IMessage
+        {
+            [RoutingPosition(1)]
+            public string Key;
+        }
+
         public class FakeHandler : IMessageHandler<FakeMessage>, IMessageHandler<FakeMessage2>
         {
             public void Handle(FakeMessage message)
@@ -155,6 +191,30 @@ namespace Abc.Zebus.Tests.Scan
             {
             }
         }
+
+        public class FakeRoutableMessageWithAutoSubscribeHandler : IMessageHandler<FakeRoutableMessageWithAutoSubscribe>
+        {
+            public void Handle(FakeRoutableMessageWithAutoSubscribe message)
+            {
+            }
+        }
+
+        [SubscriptionMode(SubscriptionMode.Auto)]
+        public class FakeRoutableMessageWithAutoSubscribeHandler_Auto : IMessageHandler<FakeRoutableMessageWithAutoSubscribe>
+        {
+            public void Handle(FakeRoutableMessageWithAutoSubscribe message)
+            {
+            }
+        }
+
+        [SubscriptionMode(SubscriptionMode.Manual)]
+        public class FakeRoutableMessageWithAutoSubscribeHandler_Manual : IMessageHandler<FakeRoutableMessageWithAutoSubscribe>
+        {
+            public void Handle(FakeRoutableMessageWithAutoSubscribe message)
+            {
+            }
+        }
+
 
         [SubscriptionMode(typeof(StartupSubscriber))]
         public class FakeRoutableHandlerWithStartupSubscriber : IMessageHandler<FakeRoutableMessage>

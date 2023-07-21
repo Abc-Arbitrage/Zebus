@@ -66,7 +66,10 @@ namespace Abc.Zebus.Dispatch
 
         private static SubscriptionMode DefaultSubscriptionMode(Type messageType)
         {
-            return Attribute.IsDefined(messageType, typeof(Routable)) ? SubscriptionMode.Manual : SubscriptionMode.Auto;
+            if (Attribute.GetCustomAttribute(messageType, typeof(Routable), true) is Routable { AutoSubscribe: false })
+                return SubscriptionMode.Manual;
+
+            return SubscriptionMode.Auto;
         }
 
         private IEnumerable<Subscription> GetSubscriptionsFromMode(SubscriptionMode subscriptionMode, MessageTypeId messageTypeId)
