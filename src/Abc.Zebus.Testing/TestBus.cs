@@ -16,8 +16,7 @@ namespace Abc.Zebus.Testing
         private readonly MessageComparer _messageComparer = new MessageComparer();
         private readonly Dictionary<PeerId, List<IMessage>> _messagesByPeerId = new Dictionary<PeerId, List<IMessage>>();
         private readonly Dictionary<ICommand, Peer?> _peerByCommand = new Dictionary<ICommand, Peer?>();
-        private readonly List<IEvent> _events = new List<IEvent>();
-        private readonly List<ICommand> _commands = new List<ICommand>();
+        private readonly List<IMessage> _messages = new();
         private readonly HashSet<Subscription> _subscriptions = new HashSet<Subscription>();
 
         public TestBus()
@@ -31,13 +30,24 @@ namespace Abc.Zebus.Testing
         public event Action Stopping = delegate { };
         public event Action Stopped = delegate { };
 
+        public IEnumerable<IMessage> Messages
+        {
+            get
+            {
+                lock (_messages)
+                {
+                    return _messages.ToList();
+                }
+            }
+        }
+
         public IEnumerable<ICommand> Commands
         {
             get
             {
-                lock (_commands)
+                lock (_messages)
                 {
-                    return _commands.ToList();
+                    return _messages.OfType<ICommand>().ToList();
                 }
             }
         }
@@ -46,14 +56,23 @@ namespace Abc.Zebus.Testing
         {
             get
             {
-                lock (_events)
+                lock (_messages)
                 {
-                    return _events.ToList();
+                    return _messages.OfType<IEvent>().ToList();
                 }
             }
         }
 
-        public int MessageCount => _commands.Count + _events.Count;
+        public int MessageCount
+        {
+            get
+            {
+                lock (_messages)
+                {
+                    return _messages.Count;
+                }
+            }
+        }
 
         public HashSet<Subscription> Subscriptions
         {
@@ -77,8 +96,6 @@ namespace Abc.Zebus.Testing
         public string Environment { get; private set; } = string.Empty;
         public bool IsRunning { get; private set; }
 
-        public IEnumerable<IMessage> Messages => Events.Cast<IMessage>().Concat(Commands);
-
         public void Publish(IEvent message)
         {
             Publish(message, null);
@@ -94,9 +111,9 @@ namespace Abc.Zebus.Testing
             if (MessageSerializer.TryClone(message, out var clone))
                 message = (IEvent)clone;
 
-            lock (_events)
+            lock (_messages)
             {
-                _events.Add(message);
+                _messages.Add(message);
                 if (targetPeer != null)
                     _messagesByPeerId.GetValueOrAdd(targetPeer.Value, p => new List<IMessage>()).Add(message);
             }
@@ -115,9 +132,9 @@ namespace Abc.Zebus.Testing
             if (MessageSerializer.TryClone(message, out var clone))
                 message = (ICommand)clone;
 
-            lock (_commands)
+            lock (_messages)
             {
-                _commands.Add(message);
+                _messages.Add(message);
                 if (peer != null)
                     _messagesByPeerId.GetValueOrAdd(peer.Id, p => new List<IMessage>()).Add(message);
 
@@ -432,16 +449,11 @@ namespace Abc.Zebus.Testing
 
         public void ClearMessages()
         {
-            lock (_commands)
+            lock (_messages)
             {
-                _commands.Clear();
+                _messages.Clear();
                 _peerByCommand.Clear();
                 _messagesByPeerId.Clear();
-            }
-
-            lock (_events)
-            {
-                _events.Clear();
             }
         }
     }
