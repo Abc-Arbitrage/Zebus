@@ -10,27 +10,21 @@ using Abc.Zebus.Util.Extensions;
 
 namespace Abc.Zebus.Testing
 {
-    public class TestBus : IBus, IInternalBus
+    public class TestBus : IInternalBus
     {
-        private readonly ConcurrentDictionary<HandlerKey, Func<IMessage, object?>> _handlers = new ConcurrentDictionary<HandlerKey, Func<IMessage, object?>>();
-        private readonly MessageComparer _messageComparer = new MessageComparer();
-        private readonly Dictionary<PeerId, List<IMessage>> _messagesByPeerId = new Dictionary<PeerId, List<IMessage>>();
-        private readonly Dictionary<ICommand, Peer?> _peerByCommand = new Dictionary<ICommand, Peer?>();
+        private readonly ConcurrentDictionary<HandlerKey, Func<IMessage, object?>> _handlers = new();
+        private readonly MessageComparer _messageComparer = new();
+        private readonly Dictionary<PeerId, List<IMessage>> _messagesByPeerId = new();
+        private readonly Dictionary<ICommand, Peer?> _peerByCommand = new();
         private readonly List<IMessage> _messages = new();
-        private readonly HashSet<Subscription> _subscriptions = new HashSet<Subscription>();
+        private readonly HashSet<Subscription> _subscriptions = new();
 
-        public TestBus()
-        {
-            MessageSerializer = new MessageSerializer();
-            HandlerExecutor = new DefaultHandlerExecutor();
-        }
+        public event Action? Starting;
+        public event Action? Started;
+        public event Action? Stopping;
+        public event Action? Stopped;
 
-        public event Action Starting = delegate { };
-        public event Action Started = delegate { };
-        public event Action Stopping = delegate { };
-        public event Action Stopped = delegate { };
-
-        public IEnumerable<IMessage> Messages
+        public IReadOnlyList<IMessage> Messages
         {
             get
             {
@@ -41,7 +35,7 @@ namespace Abc.Zebus.Testing
             }
         }
 
-        public IEnumerable<ICommand> Commands
+        public IReadOnlyList<ICommand> Commands
         {
             get
             {
@@ -52,7 +46,7 @@ namespace Abc.Zebus.Testing
             }
         }
 
-        public IEnumerable<IEvent> Events
+        public IReadOnlyList<IEvent> Events
         {
             get
             {
@@ -88,8 +82,8 @@ namespace Abc.Zebus.Testing
         public int LastReplyCode { get; set; }
         public string? LastReplyMessage { get; set; }
         public object? LastReplyResponse { get; set; }
-        public IHandlerExecutor HandlerExecutor { get; set; }
-        public IMessageSerializer MessageSerializer { get; set; }
+        public IHandlerExecutor HandlerExecutor { get; set; } = new DefaultHandlerExecutor();
+        public IMessageSerializer MessageSerializer { get; set; } = new MessageSerializer();
         public bool IsStarted { get; private set; }
         public bool IsStopped { get; private set; }
         public PeerId PeerId { get; private set; }
@@ -256,18 +250,18 @@ namespace Abc.Zebus.Testing
 
         public void Start()
         {
-            Starting();
+            Starting?.Invoke();
             IsStarted = true;
             IsRunning = true;
-            Started();
+            Started?.Invoke();
         }
 
         public void Stop()
         {
-            Stopping();
+            Stopping?.Invoke();
             IsStopped = true;
             IsRunning = false;
-            Stopped();
+            Stopped?.Invoke();
         }
 
         public void AddHandler<TMessage>(Func<TMessage, object?> handler)
