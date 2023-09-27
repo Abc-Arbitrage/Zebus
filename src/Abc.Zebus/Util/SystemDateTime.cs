@@ -25,6 +25,14 @@ namespace Abc.Zebus.Util
             return new Scope();
         }
 
+        public static void AddToPausedTime(TimeSpan timeSpan)
+        {
+            if (_pausedValue == null)
+                throw new InvalidOperationException($"{nameof(SystemDateTime)} is not paused");
+
+            _pausedValue = _pausedValue.Value.Add(timeSpan);
+        }
+
         private class Scope : IDisposable
         {
             public void Dispose()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -22,7 +23,6 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private readonly IDirectoryConfiguration _configuration;
         private readonly TimeSpan _detectionPeriod = 5.Seconds();
         private Thread? _detectionThread;
-        private DateTime? _lastPingTimeUtc;
         private bool _isRunning;
 
         public DeadPeerDetector(IBus bus, IPeerRepository peerRepository, IDirectoryConfiguration configuration)
@@ -44,22 +44,51 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         internal void DetectDeadPeers()
         {
             var timestampUtc = SystemDateTime.UtcNow;
-            var entries = _peerRepository.GetPeers(loadDynamicSubscriptions: false)
-                                         .Where(peer => peer.Subscriptions.All(sub => sub.MessageTypeId != MessageUtil.TypeId<RegisterPeerCommand>()))
-                                         .Select(ToPeerEntry)
-                                         .ToList();
 
-            var shouldSendPing = ShouldSendPing(timestampUtc);
-            if (shouldSendPing)
-                _lastPingTimeUtc = timestampUtc;
-
-            foreach (var entry in entries.Where(x => x.IsUp))
+            if (TryLoadPeerEntries(out var entries))
             {
-                entry.Process(timestampUtc, shouldSendPing);
-            }
+                foreach (var entry in entries.Where(x => x.IsUp))
+                {
+                    entry.Process(timestampUtc);
+                }
 
-            var decommissionedPeerIds = _peers.Keys.Except(entries.Select(x => x.Descriptor.PeerId)).ToList();
-            _peers.RemoveRange(decommissionedPeerIds);
+                var decommissionedPeerIds = _peers.Keys.Except(entries.Select(x => x.Descriptor.PeerId)).ToList();
+                _peers.RemoveRange(decommissionedPeerIds);
+            }
+            else
+            {
+                // Fallback for unavailable peer repository, simply ping peers
+
+                foreach (var entry in _peers.Values.Where(x => x.IsUp))
+                {
+                    entry.PingIfRequired(timestampUtc);
+                }
+            }
+        }
+
+        private bool TryLoadPeerEntries([NotNullWhen(true)] out List<DeadPeerDetectorEntry>? entries)
+        {
+            try
+            {
+                entries = LoadPeerEntries();
+                return true;
+            }
+            catch (Exception e)
+            {
+                OnError(e);
+
+                entries = default;
+                return false;
+            }
+        }
+
+        private List<DeadPeerDetectorEntry> LoadPeerEntries()
+        {
+            return _peerRepository.GetPeers(loadDynamicSubscriptions: false)
+                                  // Exclude DirectoryService
+                                  .Where(peer => !peer.Subscriptions.Any(sub => sub.MessageTypeId == MessageUtil.TypeId<RegisterPeerCommand>()))
+                                  .Select(ToPeerEntry)
+                                  .ToList();
         }
 
         private DeadPeerDetectorEntry ToPeerEntry(PeerDescriptor descriptor)
@@ -123,15 +152,6 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private void OnPeerResponding(DeadPeerDetectorEntry entry, DateTime timeoutTimestampUtc)
         {
             _bus.Send(new MarkPeerAsRespondingCommand(entry.Descriptor.PeerId, timeoutTimestampUtc)).Wait(_commandTimeout);
-        }
-
-        private bool ShouldSendPing(DateTime timestampUtc)
-        {
-            if (_lastPingTimeUtc == null)
-                return true;
-
-            var elapsedSinceLastPing = timestampUtc - _lastPingTimeUtc.Value;
-            return elapsedSinceLastPing >= _configuration.PeerPingInterval;
         }
 
         public void Start()

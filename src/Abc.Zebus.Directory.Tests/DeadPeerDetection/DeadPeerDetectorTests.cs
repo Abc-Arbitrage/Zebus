@@ -130,7 +130,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_not_timeout_if_a_transient_service_responds_to_the_second_ping()
         {
             SetupPeerRepository(_transientAlivePeer0);
-            SetupPeerResponse(_transientAlivePeer0.PeerId, false, true);
+            SetupPeerResponses(_transientAlivePeer0.PeerId, false, true);
 
             using (SystemDateTime.PauseTime())
             {
@@ -153,8 +153,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_not_timeout_if_a_persistent_service_responds_to_the_second_ping()
         {
             SetupPeerRepository(_persistentAlivePeer, _transientAlivePeer0);
-            SetupPeerResponse(_transientAlivePeer0.PeerId, true, true);
-            SetupPeerResponse(_persistentAlivePeer.PeerId, false, true);
+            SetupPeerResponses(_transientAlivePeer0.PeerId, true, true);
+            SetupPeerResponses(_persistentAlivePeer.PeerId, false, true);
 
             using (SystemDateTime.PauseTime())
             {
@@ -184,8 +184,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_not_timeout_if_a_debug_service_responds_to_the_second_ping()
         {
             SetupPeerRepository(_debugPersistentAlivePeer, _debugTransientAlivePeer);
-            SetupPeerResponse(_debugPersistentAlivePeer.PeerId, false, true);
-            SetupPeerResponse(_debugTransientAlivePeer.PeerId, false, true);
+            SetupPeerResponses(_debugPersistentAlivePeer.PeerId, false, true);
+            SetupPeerResponses(_debugTransientAlivePeer.PeerId, false, true);
 
             using (SystemDateTime.PauseTime())
             {
@@ -210,7 +210,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_timeout_if_a_transient_service_does_not_respond_in_time()
         {
             SetupPeerRepository(_transientAlivePeer0);
-            SetupPeerResponse(_transientAlivePeer0.PeerId, false, false);
+            SetupPeerResponses(_transientAlivePeer0.PeerId, false, false);
 
             using (SystemDateTime.PauseTime())
             {
@@ -244,7 +244,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         {
             _peersNotToDecommission = new[] { peerNotToDecommission };
             SetupPeerRepository(_transientAlivePeer0);
-            SetupPeerResponse(_transientAlivePeer0.PeerId, false, false);
+            SetupPeerResponses(_transientAlivePeer0.PeerId, false, false);
 
             using (SystemDateTime.PauseTime())
             {
@@ -270,8 +270,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_timeout_if_a_persistent_service_does_not_respond_in_time()
         {
             SetupPeerRepository(_persistentAlivePeer, _transientAlivePeer0);
-            SetupPeerResponse(_transientAlivePeer0.PeerId, true, true);
-            SetupPeerResponse(_persistentAlivePeer.PeerId, false, false);
+            SetupPeerResponses(_transientAlivePeer0.PeerId, true, true);
+            SetupPeerResponses(_persistentAlivePeer.PeerId, false, false);
 
             using (SystemDateTime.PauseTime())
             {
@@ -303,8 +303,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_not_decommission_directory_peer()
         {
             SetupPeerRepository(_directoryPeer, _transientAlivePeer0);
-            SetupPeerResponse(_transientAlivePeer0.PeerId, false, false);
-            SetupPeerResponse(_directoryPeer.PeerId, false, false);
+            SetupPeerResponses(_transientAlivePeer0.PeerId, false, false);
+            SetupPeerResponses(_directoryPeer.PeerId, false, false);
 
             using (SystemDateTime.PauseTime())
             {
@@ -330,7 +330,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_not_decommission_the_persistence()
         {
             SetupPeerRepository(_persistencePeer);
-            SetupPeerResponse(_persistencePeer.PeerId, false, false);
+            SetupPeerResponses(_persistencePeer.PeerId, false, false);
 
             using (SystemDateTime.PauseTime())
             {
@@ -370,8 +370,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_raise_PingMissed_before_a_peer_is_marked_as_timed_out()
         {
             SetupPeerRepository(_persistentAlivePeer, _transientAlivePeer0);
-            SetupPeerResponse(_transientAlivePeer0.PeerId, true, true);
-            SetupPeerResponse(_persistentAlivePeer.PeerId, false, false);
+            SetupPeerResponses(_transientAlivePeer0.PeerId, true, true);
+            SetupPeerResponses(_persistentAlivePeer.PeerId, false, false);
 
             using (SystemDateTime.PauseTime())
             {
@@ -401,7 +401,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_raise_PeerResponding_when_peer_starts_replying_again_to_ping()
         {
             SetupPeerRepository(_persistentAlivePeer);
-            SetupPeerResponse(_persistentAlivePeer.PeerId, false, false, false, true);
+            SetupPeerResponses(_persistentAlivePeer.PeerId, false, false, false, true);
 
             using (SystemDateTime.PauseTime())
             {
@@ -440,8 +440,8 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
         public void should_timeout_if_any_debug_service_does_not_respond_in_time()
         {
             SetupPeerRepository(_debugPersistentAlivePeer, _debugTransientAlivePeer);
-            SetupPeerResponse(_debugPersistentAlivePeer.PeerId, false, false);
-            SetupPeerResponse(_debugTransientAlivePeer.PeerId, false, false);
+            SetupPeerResponses(_debugPersistentAlivePeer.PeerId, false, false);
+            SetupPeerResponses(_debugTransientAlivePeer.PeerId, false, false);
 
             using (SystemDateTime.PauseTime())
             {
@@ -466,12 +466,79 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
             }
         }
 
+        [Test]
+        public void should_ping_peers_on_peer_repository_timeout()
+        {
+            using (SystemDateTime.PauseTime())
+            {
+                // 1: Repository is operational
+                SetupPeerRepository(_transientAlivePeer0, _transientAlivePeer1);
+                SetupPeerResponse(_transientAlivePeer0.PeerId, true);
+                SetupPeerResponse(_transientAlivePeer1.PeerId, true);
+
+                _detector.DetectDeadPeers();
+
+                _bus.ExpectExactly(PingPeerCommands(2));
+
+                SystemDateTime.AddToPausedTime(_transientPeerTimeout.Seconds());
+
+                _detector.DetectDeadPeers();
+
+                _bus.ExpectExactly(PingPeerCommands(4));
+
+                // 2: Repository is broken
+                SetupPeerRepository(() => new TimeoutException("The task didn't complete before timeout."));
+
+                SystemDateTime.AddToPausedTime(_transientPeerTimeout.Seconds());
+
+                _detector.DetectDeadPeers();
+
+                _bus.ExpectExactly(PingPeerCommands(6));
+
+                SystemDateTime.AddToPausedTime(_transientPeerTimeout.Seconds());
+
+                // 3: Peer0 stops responding to pings
+                SetupPeerResponse(_transientAlivePeer0.PeerId, false);
+
+                _detector.DetectDeadPeers();
+
+                _bus.ExpectExactly(PingPeerCommands(8));
+
+                var firstUnansweredPingTimestampUtc = SystemDateTime.UtcNow;
+
+                SystemDateTime.AddToPausedTime(_transientPeerTimeout.Seconds());
+
+                _detector.DetectDeadPeers();
+
+                _bus.ExpectExactly(PingPeerCommands(10));
+
+                SystemDateTime.AddToPausedTime(_transientPeerTimeout.Seconds());
+
+                // 4: Repository is operational again
+                SetupPeerRepository(_transientAlivePeer0, _transientAlivePeer1);
+
+                _detector.DetectDeadPeers();
+
+                _bus.ExpectExactly(PingPeerCommands(11).Append(new UnregisterPeerCommand(_transientAlivePeer0.Peer, firstUnansweredPingTimestampUtc)).ToArray());
+            }
+        }
+
+        private IMessage[] PingPeerCommands(int count)
+        {
+            return Enumerable.Range(0, count).Select(x => (IMessage)new PingPeerCommand()).ToArray();
+        }
+
         private void SetupPeerRepository(params PeerDescriptor[] peer)
         {
             _peerRepositoryMock.Setup(repo => repo.GetPeers(It.IsAny<bool>())).Returns(new List<PeerDescriptor>(peer));
         }
 
-        private void SetupPeerResponse(PeerId peerId, params bool[] respondToPing)
+        private void SetupPeerRepository(Func<Exception> exception)
+        {
+            _peerRepositoryMock.Setup(repo => repo.GetPeers(It.IsAny<bool>())).Throws(exception);
+        }
+
+        private void SetupPeerResponses(PeerId peerId, params bool[] respondToPing)
         {
             var invocationCount = 0;
             _bus.AddHandlerForPeer<PingPeerCommand>(peerId, cmd =>
@@ -479,6 +546,17 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 var shouldRespond = invocationCount < respondToPing.Length && respondToPing[invocationCount];
                 ++invocationCount;
                 if(shouldRespond)
+                    return true;
+
+                throw new InvalidOperationException();
+            });
+        }
+
+        private void SetupPeerResponse(PeerId peerId, bool respondToPing)
+        {
+            _bus.AddHandlerForPeer<PingPeerCommand>(peerId, cmd =>
+            {
+                if(respondToPing)
                     return true;
 
                 throw new InvalidOperationException();

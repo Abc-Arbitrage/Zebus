@@ -13,6 +13,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private readonly IBus _bus;
         private readonly TaskScheduler _taskScheduler;
         private readonly object _lock = new object();
+        private DateTime? _lastPingTimeUtc;
         private DateTime? _oldestUnansweredPingTimeUtc;
         private DateTime? _timeoutTimestampUtc;
 
@@ -44,7 +45,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
         }
 
-        public void Process(DateTime timestampUtc, bool shouldSendPing)
+        public void Process(DateTime timestampUtc)
         {
             if (WasRestarted)
                 Reset();
@@ -52,14 +53,30 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             var hasReachedTimeout = Status == DeadPeerStatus.Up && HasReachedTimeout();
             if (hasReachedTimeout)
                 Timeout();
-            else if (shouldSendPing)
+            else
+                PingIfRequired(timestampUtc);
+        }
+
+        public void PingIfRequired(DateTime timestampUtc)
+        {
+            if (ShouldSendPing(timestampUtc))
                 Ping(timestampUtc);
+        }
+
+        private bool ShouldSendPing(DateTime timestampUtc)
+        {
+            if (_lastPingTimeUtc == null)
+                return true;
+
+            var elapsedSinceLastPing = timestampUtc - _lastPingTimeUtc.Value;
+            return elapsedSinceLastPing >= _configuration.PeerPingInterval;
         }
 
         public void Ping(DateTime timestampUtc)
         {
             lock (_lock)
             {
+                _lastPingTimeUtc = timestampUtc;
                 if (_oldestUnansweredPingTimeUtc == null)
                     _oldestUnansweredPingTimeUtc = timestampUtc;
                 var elapsedTimeSinceFirstPing = SystemDateTime.UtcNow - _oldestUnansweredPingTimeUtc;
