@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Abc.Zebus.Util.Extensions;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 using ProtoBuf;
 
 namespace Abc.Zebus.Routing
@@ -12,12 +13,12 @@ namespace Abc.Zebus.Routing
     [ProtoContract]
     public readonly struct BindingKey : IEquatable<BindingKey>
     {
-        public static readonly BindingKey Empty = new BindingKey();
+        public static readonly BindingKey Empty = new();
 
         [ProtoMember(1, IsRequired = true)]
         private readonly string[]? _parts;
 
-        public BindingKey(params string[] parts)
+        public BindingKey(params string[]? parts)
         {
             if (parts == null || parts.Length == 0)
                 _parts = null;
@@ -25,8 +26,13 @@ namespace Abc.Zebus.Routing
                 _parts = parts;
         }
 
+        [JsonProperty]
+        public IReadOnlyList<string> Parts => _parts ?? Array.Empty<string>();
+
+        [JsonIgnore]
         public int PartCount => _parts?.Length ?? 0;
 
+        [JsonIgnore]
         public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
 
         public bool IsSharp(int index)

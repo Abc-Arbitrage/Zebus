@@ -1,6 +1,7 @@
 using System;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing.Extensions;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Abc.Zebus.Tests.Routing
@@ -14,6 +15,15 @@ namespace Abc.Zebus.Tests.Routing
             var empty = new BindingKey(Array.Empty<string>());
 
             empty.ToString().ShouldEqual("#");
+        }
+
+        [Test]
+        public void should_serialize_parts_to_json()
+        {
+            var bindingKey = new BindingKey("foobar", "*");
+            var json = JsonConvert.SerializeObject(bindingKey);
+            json.ShouldContain("foobar");
+            json.ShouldContain("*");
         }
     }
 }
