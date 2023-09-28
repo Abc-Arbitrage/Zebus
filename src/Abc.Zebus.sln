@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "@ Solution Items", "@ Solut
 		nuget.config = nuget.config
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
 		Abc.Zebus.Tests.proj = Abc.Zebus.Tests.proj
+		NuGetReadme.md = NuGetReadme.md
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abc.Zebus.Contracts", "Abc.Zebus.Contracts\Abc.Zebus.Contracts.csproj", "{507A4411-DB8A-4663-A491-CCA29854B890}"

@@ -31,7 +31,12 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Copyright © ABC arbitrage $([System.DateTime]::Now.ToString('yyyy'))</Copyright>
     <PackageOutputPath>$(MSBuildThisFileDirectory)..\output</PackageOutputPath>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)NuGetReadme.md" Pack="true" PackagePath="/README.md" Visible="false" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(NCrunch)' == '1'">
     <EnableSourceLink>false</EnableSourceLink>
