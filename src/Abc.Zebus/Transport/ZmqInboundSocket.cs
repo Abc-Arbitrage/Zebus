@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Text.RegularExpressions;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
 using Microsoft.Extensions.Logging;
@@ -10,9 +9,6 @@ namespace Abc.Zebus.Transport;
 internal class ZmqInboundSocket : IDisposable
 {
     private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(ZmqInboundSocket));
-
-    private static readonly Regex _endpointRegex = new(@"^tcp://(?<host>\*|[0-9a-zA-Z_.-]+):(?<port>\*|[0-9]+)/?$", RegexOptions.IgnoreCase);
-    private static readonly Regex _ipRegex = new(@"^(?:[0-9]+\.){3}[0-9]+$");
 
     private readonly ZmqContext _context;
     private readonly ZmqEndPoint _configuredEndPoint;
@@ -32,11 +28,12 @@ internal class ZmqInboundSocket : IDisposable
     {
         _socket = CreateSocket();
 
-        var (configuredHost, configuredPort) = ParseEndpoint(_configuredEndPoint.ToString());
+        var (configuredHost, configuredPort) = ZmqEndPoint.Parse(_configuredEndPoint.ToString());
 
-        _socket.Bind($"tcp://{(_ipRegex.IsMatch(configuredHost) ? configuredHost : "*")}:{configuredPort}");
+        _socket.Bind($"tcp://*:{configuredPort}");
 
-        var (boundHost, boundPort) = ParseEndpoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+        var (boundHost, boundPort) = ZmqEndPoint.Parse(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+
         if (boundHost == "0.0.0.0")
         {
             // Use the hostname from the config when one is provided, or the FQDN otherwise
@@ -49,14 +46,6 @@ internal class ZmqInboundSocket : IDisposable
         _logger.LogInformation($"Socket bound, Inbound EndPoint: {socketEndPoint}");
 
         return socketEndPoint;
-
-        static (string host, string port) ParseEndpoint(string endpoint)
-        {
-            var match = _endpointRegex.Match(endpoint);
-            return match.Success
-                ? (match.Groups["host"].Value, match.Groups["port"].Value)
-                : throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
-        }
     }
 
     public void Dispose()

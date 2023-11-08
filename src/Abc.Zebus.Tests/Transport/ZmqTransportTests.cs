@@ -270,16 +270,15 @@ namespace Abc.Zebus.Tests.Transport
             var senderTransport = CreateAndStartZmqTransport();
 
             var receivedMessages = new ConcurrentBag<TransportMessage>();
-            var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
-            var receiver = receiverTransport.GetPeer();
+            var receiverTransport1 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receiverTransport2 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var receiver = receiverTransport1.GetPeer();
 
             senderTransport.Send(new FakeCommand(0).ToTransportMessage(), new[] { receiver });
             Wait.Until(() => receivedMessages.Count == 1, 2.Seconds());
 
-            var newEndPoint = "tcp://127.0.0.1:" + TcpUtil.GetRandomUnusedPort();
-            receiverTransport.Stop();
-            receiverTransport = CreateAndStartZmqTransport(newEndPoint, receivedMessages.Add);
-            receiver.EndPoint = receiverTransport.InboundEndPoint;
+            receiverTransport1.Stop();
+            receiver.EndPoint = receiverTransport2.InboundEndPoint;
 
             senderTransport.Send(new FakeCommand(0).ToTransportMessage(), new[] { receiver });
             Wait.Until(() => receivedMessages.Count == 2, 2.Seconds(), "unable to receive message");
