@@ -216,7 +216,7 @@ namespace Abc.Zebus.Transport
             ZmqInboundSocket? inboundSocket = null;
             try
             {
-                inboundSocket = new ZmqInboundSocket(_context!, PeerId, _configuredInboundEndPoint, _socketOptions);
+                inboundSocket = new ZmqInboundSocket(_context!, _configuredInboundEndPoint, _socketOptions);
                 _effectiveInboundEndPoint = inboundSocket.Bind();
                 return inboundSocket;
             }

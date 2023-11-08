@@ -15,17 +15,15 @@ namespace Abc.Zebus.Transport
         private static readonly Regex _ipRegex = new(@"^(?:[0-9]+\.){3}[0-9]+$");
 
         private readonly ZmqContext _context;
-        private readonly PeerId _peerId;
         private readonly ZmqEndPoint _configuredEndPoint;
         private readonly ZmqSocketOptions _options;
         private byte[] _readBuffer = Array.Empty<byte>();
         private ZmqSocket? _socket;
         private TimeSpan _lastReceiveTimeout;
 
-        public ZmqInboundSocket(ZmqContext context, PeerId peerId, ZmqEndPoint configuredEndPoint, ZmqSocketOptions options)
+        public ZmqInboundSocket(ZmqContext context, ZmqEndPoint configuredEndPoint, ZmqSocketOptions options)
         {
             _context = context;
-            _peerId = peerId;
             _configuredEndPoint = configuredEndPoint;
             _options = options;
         }
