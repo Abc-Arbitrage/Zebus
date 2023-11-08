@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Text;
+using System.Net;
+using System.Text.RegularExpressions;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,9 @@ namespace Abc.Zebus.Transport
     internal class ZmqInboundSocket : IDisposable
     {
         private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(ZmqInboundSocket));
+
+        private static readonly Regex _endpointRegex = new(@"^tcp://(?<host>\*|[0-9a-zA-Z_.-]+):(?<port>\*|[0-9]+)/?$", RegexOptions.IgnoreCase);
+        private static readonly Regex _ipRegex = new(@"^(?:[0-9]+\.){3}[0-9]+$");
 
         private readonly ZmqContext _context;
         private readonly PeerId _peerId;
@@ -30,12 +34,31 @@ namespace Abc.Zebus.Transport
         {
             _socket = CreateSocket();
 
-            _socket.Bind(_configuredEndPoint.ToString());
+            var (configuredHost, configuredPort) = ParseEndpoint(_configuredEndPoint.ToString());
 
-            var socketEndPoint = new ZmqEndPoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+            _socket.Bind($"tcp://{(_ipRegex.IsMatch(configuredHost) ? configuredHost : "*")}:{configuredPort}");
+
+            var (boundHost, boundPort) = ParseEndpoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+            if (boundHost == "0.0.0.0")
+            {
+                // Use the hostname from the config when one is provided, or the FQDN otherwise
+                boundHost = configuredHost == "*"
+                    ? Dns.GetHostEntry(string.Empty).HostName
+                    : configuredHost;
+            }
+
+            var socketEndPoint = new ZmqEndPoint($"tcp://{boundHost}:{boundPort}");
             _logger.LogInformation($"Socket bound, Inbound EndPoint: {socketEndPoint}");
 
             return socketEndPoint;
+
+            static (string host, string port) ParseEndpoint(string endpoint)
+            {
+                var match = _endpointRegex.Match(endpoint);
+                return match.Success
+                    ? (match.Groups["host"].Value, match.Groups["port"].Value)
+                    : throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
+            }
         }
 
         public void Dispose()

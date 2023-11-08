@@ -285,6 +285,14 @@ namespace Abc.Zebus.Tests.Transport
             Wait.Until(() => receivedMessages.Count == 2, 2.Seconds(), "unable to receive message");
         }
 
+        [Test]
+        public void should_use_fqdn_in_endpoint()
+        {
+            var transport = CreateAndStartZmqTransport("tcp://some.test.fqdn:*");
+            transport.InboundEndPoint.ShouldStartWith("tcp://some.test.fqdn:");
+            transport.Stop();
+        }
+
         [Test, Repeat(5)]
         public void should_terminate_zmq_connection_of_a_forgotten_peer_after_some_time()
         {
