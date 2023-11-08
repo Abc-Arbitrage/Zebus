@@ -1,7 +1,6 @@
-﻿namespace Abc.Zebus
+﻿namespace Abc.Zebus;
+
+public interface IMessageContextAware
 {
-    public interface IMessageContextAware
-    {
-        MessageContext? Context { get; set; }
-    }
+    MessageContext? Context { get; set; }
 }

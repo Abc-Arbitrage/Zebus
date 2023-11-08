@@ -5,119 +5,118 @@ using JetBrains.Annotations;
 using Newtonsoft.Json;
 using ProtoBuf;
 
-namespace Abc.Zebus.Routing
+namespace Abc.Zebus.Routing;
+
+/// <summary>
+/// Routing key of a subscription.
+/// </summary>
+[ProtoContract]
+public readonly struct BindingKey : IEquatable<BindingKey>
 {
-    /// <summary>
-    /// Routing key of a subscription.
-    /// </summary>
-    [ProtoContract]
-    public readonly struct BindingKey : IEquatable<BindingKey>
+    public static readonly BindingKey Empty = new();
+
+    [ProtoMember(1, IsRequired = true)]
+    private readonly string[]? _parts;
+
+    public BindingKey(params string[]? parts)
     {
-        public static readonly BindingKey Empty = new();
+        if (parts == null || parts.Length == 0)
+            _parts = null;
+        else
+            _parts = parts;
+    }
 
-        [ProtoMember(1, IsRequired = true)]
-        private readonly string[]? _parts;
+    [JsonProperty]
+    public IReadOnlyList<string> Parts => _parts ?? Array.Empty<string>();
 
-        public BindingKey(params string[]? parts)
+    [JsonIgnore]
+    public int PartCount => _parts?.Length ?? 0;
+
+    [JsonIgnore]
+    public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
+
+    public bool IsSharp(int index)
+        => _parts?[index] == BindingKeyPart.SharpToken;
+
+    public bool IsStar(int index)
+        => _parts?[index] == BindingKeyPart.StarToken;
+
+    [Pure]
+    public string? GetPartToken(int index)
+        => index < PartCount ? _parts![index] : null;
+
+    [Pure]
+    public BindingKeyPart GetPart(int index)
+    {
+        if (_parts == null)
+            return BindingKeyPart.Star;
+
+        if (index < _parts.Length)
+            return BindingKeyPart.Parse(_parts[index]);
+
+        for (var i = 0; i < _parts.Length; i++)
         {
-            if (parts == null || parts.Length == 0)
-                _parts = null;
-            else
-                _parts = parts;
-        }
-
-        [JsonProperty]
-        public IReadOnlyList<string> Parts => _parts ?? Array.Empty<string>();
-
-        [JsonIgnore]
-        public int PartCount => _parts?.Length ?? 0;
-
-        [JsonIgnore]
-        public bool IsEmpty => _parts == null || _parts.Length == 1 && IsSharp(0);
-
-        public bool IsSharp(int index)
-            => _parts?[index] == BindingKeyPart.SharpToken;
-
-        public bool IsStar(int index)
-            => _parts?[index] == BindingKeyPart.StarToken;
-
-        [Pure]
-        public string? GetPartToken(int index)
-            => index < PartCount ? _parts![index] : null;
-
-        [Pure]
-        public BindingKeyPart GetPart(int index)
-        {
-            if (_parts == null)
+            if (IsSharp(i))
                 return BindingKeyPart.Star;
-
-            if (index < _parts.Length)
-                return BindingKeyPart.Parse(_parts[index]);
-
-            for (var i = 0; i < _parts.Length; i++)
-            {
-                if (IsSharp(i))
-                    return BindingKeyPart.Star;
-            }
-
-            return BindingKeyPart.Null;
         }
 
-        public override bool Equals(object? obj)
-            => obj is BindingKey other && Equals(other);
+        return BindingKeyPart.Null;
+    }
 
-        public bool Equals(BindingKey other)
-        {
-            if (Equals(_parts, other._parts))
-                return true;
+    public override bool Equals(object? obj)
+        => obj is BindingKey other && Equals(other);
 
-            if (_parts == null || other._parts == null || _parts.Length != other._parts.Length)
-                return false;
-
-            for (var partIndex = 0; partIndex < _parts.Length; ++partIndex)
-            {
-                if (!string.Equals(_parts[partIndex], other._parts[partIndex]))
-                    return false;
-            }
-
+    public bool Equals(BindingKey other)
+    {
+        if (Equals(_parts, other._parts))
             return true;
-        }
 
-        public override int GetHashCode()
+        if (_parts == null || other._parts == null || _parts.Length != other._parts.Length)
+            return false;
+
+        for (var partIndex = 0; partIndex < _parts.Length; ++partIndex)
         {
-            if (_parts == null || _parts.Length == 0)
-                return 0;
-
-            var hashCode = _parts[0].GetHashCode();
-            for (var partIndex = 1; partIndex < _parts.Length; ++partIndex)
-            {
-                hashCode = (hashCode * 397) ^ _parts[partIndex].GetHashCode();
-            }
-
-            return hashCode;
+            if (!string.Equals(_parts[partIndex], other._parts[partIndex]))
+                return false;
         }
 
-        public override string ToString()
+        return true;
+    }
+
+    public override int GetHashCode()
+    {
+        if (_parts == null || _parts.Length == 0)
+            return 0;
+
+        var hashCode = _parts[0].GetHashCode();
+        for (var partIndex = 1; partIndex < _parts.Length; ++partIndex)
         {
-            if (_parts == null)
-                return BindingKeyPart.SharpToken;
-
-            return string.Join(".", _parts);
+            hashCode = (hashCode * 397) ^ _parts[partIndex].GetHashCode();
         }
 
-        internal static BindingKey Create(Type messageType, IDictionary<string, string> fieldValues)
+        return hashCode;
+    }
+
+    public override string ToString()
+    {
+        if (_parts == null)
+            return BindingKeyPart.SharpToken;
+
+        return string.Join(".", _parts);
+    }
+
+    internal static BindingKey Create(Type messageType, IDictionary<string, string> fieldValues)
+    {
+        var routingMembers = MessageUtil.GetTypeId(messageType).Descriptor.RoutingMembers;
+        if (routingMembers.Length == 0)
+            return Empty;
+
+        var parts = new string[routingMembers.Length];
+        for (var tokenIndex = 0; tokenIndex < routingMembers.Length; ++tokenIndex)
         {
-            var routingMembers = MessageUtil.GetTypeId(messageType).Descriptor.RoutingMembers;
-            if (routingMembers.Length == 0)
-                return Empty;
-
-            var parts = new string[routingMembers.Length];
-            for (var tokenIndex = 0; tokenIndex < routingMembers.Length; ++tokenIndex)
-            {
-                parts[tokenIndex] = fieldValues.GetValueOrDefault(routingMembers[tokenIndex].Member.Name, BindingKeyPart.StarToken);
-            }
-
-            return new BindingKey(parts);
+            parts[tokenIndex] = fieldValues.GetValueOrDefault(routingMembers[tokenIndex].Member.Name, BindingKeyPart.StarToken);
         }
+
+        return new BindingKey(parts);
     }
 }

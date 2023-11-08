@@ -3,78 +3,77 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+public class SubscriptionRequestBatch
 {
-    public class SubscriptionRequestBatch
+    private readonly TaskCompletionSource<object?> _submitCompletionSource = new();
+    private readonly TaskCompletionSource<object?> _registerCompletionSource = new();
+    private readonly List<SubscriptionRequest> _requests = new();
+    private bool _isConsumed;
+
+    internal void AddRequest(SubscriptionRequest request)
     {
-        private readonly TaskCompletionSource<object?> _submitCompletionSource = new TaskCompletionSource<object?>();
-        private readonly TaskCompletionSource<object?> _registerCompletionSource = new TaskCompletionSource<object?>();
-        private readonly List<SubscriptionRequest> _requests = new List<SubscriptionRequest>();
-        private bool _isConsumed;
+        EnsureNotSubmitted();
 
-        internal void AddRequest(SubscriptionRequest request)
+        lock (_requests)
         {
-            EnsureNotSubmitted();
+            _requests.Add(request);
+        }
+    }
 
-            lock (_requests)
-            {
-                _requests.Add(request);
-            }
+    public async Task SubmitAsync()
+    {
+        EnsureNotSubmitted();
+
+        lock (_requests)
+        {
+            if (_requests.Any(i => !i.IsSubmitted))
+                throw new InvalidOperationException($"Not all requests in the batch have been submitted with {nameof(IBus)}.{nameof(IBus.SubscribeAsync)}");
         }
 
-        public async Task SubmitAsync()
+        _submitCompletionSource.SetResult(null);
+
+        await WhenRegistrationCompletedAsync().ConfigureAwait(false);
+    }
+
+    internal Task WhenSubmittedAsync()
+        => _submitCompletionSource.Task;
+
+    internal void NotifyRegistrationCompleted(Exception? exception)
+    {
+        if (exception != null)
+            _registerCompletionSource.SetException(exception);
+        else
+            _registerCompletionSource.SetResult(null);
+    }
+
+    internal async Task WhenRegistrationCompletedAsync()
+    {
+        lock (_requests)
         {
-            EnsureNotSubmitted();
-
-            lock (_requests)
-            {
-                if (_requests.Any(i => !i.IsSubmitted))
-                    throw new InvalidOperationException($"Not all requests in the batch have been submitted with {nameof(IBus)}.{nameof(IBus.SubscribeAsync)}");
-            }
-
-            _submitCompletionSource.SetResult(null);
-
-            await WhenRegistrationCompletedAsync().ConfigureAwait(false);
+            if (_requests.Count == 0)
+                return;
         }
 
-        internal Task WhenSubmittedAsync()
-            => _submitCompletionSource.Task;
+        await _registerCompletionSource.Task.ConfigureAwait(false);
+    }
 
-        internal void NotifyRegistrationCompleted(Exception? exception)
+    internal IEnumerable<Subscription>? TryConsumeBatchSubscriptions()
+    {
+        lock (_requests)
         {
-            if (exception != null)
-                _registerCompletionSource.SetException(exception);
-            else
-                _registerCompletionSource.SetResult(null);
+            if (_isConsumed)
+                return null;
+
+            _isConsumed = true;
+            return _requests.SelectMany(i => i.Subscriptions).ToList();
         }
+    }
 
-        internal async Task WhenRegistrationCompletedAsync()
-        {
-            lock (_requests)
-            {
-                if (_requests.Count == 0)
-                    return;
-            }
-
-            await _registerCompletionSource.Task.ConfigureAwait(false);
-        }
-
-        internal IEnumerable<Subscription>? TryConsumeBatchSubscriptions()
-        {
-            lock (_requests)
-            {
-                if (_isConsumed)
-                    return null;
-
-                _isConsumed = true;
-                return _requests.SelectMany(i => i.Subscriptions).ToList();
-            }
-        }
-
-        private void EnsureNotSubmitted()
-        {
-            if (_submitCompletionSource.Task.IsCompleted)
-                throw new InvalidOperationException("This subscription batch has already been submitted");
-        }
+    private void EnsureNotSubmitted()
+    {
+        if (_submitCompletionSource.Task.IsCompleted)
+            throw new InvalidOperationException("This subscription batch has already been submitted");
     }
 }

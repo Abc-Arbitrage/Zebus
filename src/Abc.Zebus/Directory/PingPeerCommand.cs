@@ -1,9 +1,8 @@
 ﻿using ProtoBuf;
 
-namespace Abc.Zebus.Directory
+namespace Abc.Zebus.Directory;
+
+[ProtoContract, Transient, Infrastructure]
+public sealed class PingPeerCommand : ICommand
 {
-    [ProtoContract, Transient, Infrastructure]
-    public sealed class PingPeerCommand : ICommand 
-    {
-    }
 }

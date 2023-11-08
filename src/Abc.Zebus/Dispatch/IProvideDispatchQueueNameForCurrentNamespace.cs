@@ -1,7 +1,6 @@
-﻿namespace Abc.Zebus.Dispatch
+﻿namespace Abc.Zebus.Dispatch;
+
+public interface IProvideDispatchQueueNameForCurrentNamespace
 {
-    public interface IProvideDispatchQueueNameForCurrentNamespace
-    {
-        string QueueName { get; } 
-    }
+    string QueueName { get; }
 }

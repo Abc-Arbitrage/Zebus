@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace Abc.Zebus.Persistence
+namespace Abc.Zebus.Persistence;
+
+public interface IReplayEvent : IEvent
 {
-    public interface IReplayEvent : IEvent
-    {
-        Guid ReplayId { get; }
-    }
+    Guid ReplayId { get; }
 }

@@ -1,7 +1,6 @@
-﻿namespace Abc.Zebus.Directory
+﻿namespace Abc.Zebus.Directory;
+
+public static class DirectoryErrorCodes
 {
-    public static class DirectoryErrorCodes
-    {
-        public const int PeerAlreadyExists = 1001;
-    }
+    public const int PeerAlreadyExists = 1001;
 }

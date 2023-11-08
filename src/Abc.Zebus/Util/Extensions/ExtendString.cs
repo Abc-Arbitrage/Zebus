@@ -1,20 +1,19 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Abc.Zebus.Util.Extensions
+namespace Abc.Zebus.Util.Extensions;
+
+internal static class ExtendString
 {
-    internal static class ExtendString
+    [return: NotNullIfNotNull("input")]
+    public static string? Qualifier(this string? input)
     {
-        [return: NotNullIfNotNull("input")]
-        public static string? Qualifier(this string? input)
-        {
-            if (input == null)
-                return null;
+        if (input == null)
+            return null;
 
-            var lastDotIndex = input.LastIndexOf('.');
-            if (lastDotIndex == -1)
-                return input;
+        var lastDotIndex = input.LastIndexOf('.');
+        if (lastDotIndex == -1)
+            return input;
 
-            return input.Substring(0, lastDotIndex);
-        }
+        return input.Substring(0, lastDotIndex);
     }
 }

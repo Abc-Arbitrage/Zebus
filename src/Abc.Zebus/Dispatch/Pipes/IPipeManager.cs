@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 
-namespace Abc.Zebus.Dispatch.Pipes
-{
-    public interface IPipeManager
-    {
-        void EnablePipe(string pipeName);
-        void DisablePipe(string pipeName);
+namespace Abc.Zebus.Dispatch.Pipes;
 
-        PipeInvocation BuildPipeInvocation(IMessageHandlerInvoker messageHandlerInvoker, List<IMessage> messages, MessageContext messageContext);
-    }
+public interface IPipeManager
+{
+    void EnablePipe(string pipeName);
+    void DisablePipe(string pipeName);
+
+    PipeInvocation BuildPipeInvocation(IMessageHandlerInvoker messageHandlerInvoker, List<IMessage> messages, MessageContext messageContext);
 }

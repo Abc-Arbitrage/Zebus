@@ -1,9 +1,8 @@
 ﻿using Abc.Zebus.Dispatch;
 
-namespace Abc.Zebus.Testing.Dispatch
+namespace Abc.Zebus.Testing.Dispatch;
+
+public interface IExecutableMessage : IMessage
 {
-    public interface IExecutableMessage : IMessage
-    {
-        void Execute(IMessageHandlerInvocation invocation);
-    }
+    void Execute(IMessageHandlerInvocation invocation);
 }

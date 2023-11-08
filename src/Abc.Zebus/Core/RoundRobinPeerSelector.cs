@@ -2,33 +2,32 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace Abc.Zebus.Core
+namespace Abc.Zebus.Core;
+
+internal class RoundRobinPeerSelector
 {
-    internal class RoundRobinPeerSelector
+    private readonly ConcurrentDictionary<Type, int> _peerIndexes = new();
+
+    public Peer? GetTargetPeer(ICommand command, IList<Peer> handlingPeers)
     {
-        private readonly ConcurrentDictionary<Type, int> _peerIndexes = new ConcurrentDictionary<Type, int>();
+        if (handlingPeers.Count == 1)
+            return handlingPeers[0];
 
-        public Peer? GetTargetPeer(ICommand command, IList<Peer> handlingPeers)
-        {
-            if (handlingPeers.Count == 1)
-                return handlingPeers[0];
+        if (handlingPeers.Count == 0)
+            return null;
 
-            if (handlingPeers.Count == 0)
-                return null;
+        var commandType = command.GetType();
 
-            var commandType = command.GetType();
+        if (!_peerIndexes.TryGetValue(commandType, out var index))
+            index = 0;
 
-            if (!_peerIndexes.TryGetValue(commandType, out var index))
-                index = 0;
+        if (index >= handlingPeers.Count)
+            index = 0;
 
-            if (index >= handlingPeers.Count)
-                index = 0;
+        var resolvedPeer = handlingPeers[index];
 
-            var resolvedPeer = handlingPeers[index];
+        _peerIndexes[commandType] = ++index;
 
-            _peerIndexes[commandType] = ++index;
-
-            return resolvedPeer;
-        }
+        return resolvedPeer;
     }
 }

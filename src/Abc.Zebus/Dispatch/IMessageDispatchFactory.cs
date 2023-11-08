@@ -1,9 +1,8 @@
 ﻿using Abc.Zebus.Transport;
 
-namespace Abc.Zebus.Dispatch
+namespace Abc.Zebus.Dispatch;
+
+public interface IMessageDispatchFactory
 {
-    public interface IMessageDispatchFactory
-    {
-        MessageDispatch? CreateMessageDispatch(TransportMessage transportMessage);
-    }
+    MessageDispatch? CreateMessageDispatch(TransportMessage transportMessage);
 }

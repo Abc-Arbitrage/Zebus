@@ -1,9 +1,8 @@
 ﻿using Abc.Zebus.Transport;
 
-namespace Abc.Zebus.Persistence
+namespace Abc.Zebus.Persistence;
+
+public interface IPersistentTransport : ITransport
 {
-    public interface IPersistentTransport : ITransport
-    {
-        int PendingPersistenceSendCount { get; }
-    }
+    int PendingPersistenceSendCount { get; }
 }

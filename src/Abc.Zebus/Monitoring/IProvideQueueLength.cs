@@ -1,8 +1,7 @@
-﻿namespace Abc.Zebus.Monitoring
+﻿namespace Abc.Zebus.Monitoring;
+
+public interface IProvideQueueLength
 {
-    public interface IProvideQueueLength
-    {
-        int GetReceiveQueueLength();
-        int Purge();
-    }
+    int GetReceiveQueueLength();
+    int Purge();
 }

@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+public interface IBatchedMessageHandler<T> : IMessageHandler
+    where T : class, IEvent
 {
-    public interface IBatchedMessageHandler<T> : IMessageHandler
-        where T : class, IEvent
-    {
-        void Handle(IList<T> messages);
-    }
+    void Handle(IList<T> messages);
 }

@@ -1,17 +1,16 @@
 using System;
 using ProtoBuf;
 
-namespace Abc.Zebus.Persistence
-{
-    [ProtoContract, Transient]
-    public class StartMessageReplayCommand : ICommand
-    {
-        [ProtoMember(1, IsRequired = true)]
-        public readonly Guid ReplayId;
+namespace Abc.Zebus.Persistence;
 
-        public StartMessageReplayCommand(Guid replayId)
-        {
-            ReplayId = replayId;
-        }
+[ProtoContract, Transient]
+public class StartMessageReplayCommand : ICommand
+{
+    [ProtoMember(1, IsRequired = true)]
+    public readonly Guid ReplayId;
+
+    public StartMessageReplayCommand(Guid replayId)
+    {
+        ReplayId = replayId;
     }
 }

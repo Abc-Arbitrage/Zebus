@@ -1,18 +1,18 @@
 ﻿using ProtoBuf;
 
-namespace Abc.Zebus.Directory
+namespace Abc.Zebus.Directory;
+
+[ProtoContract]
+public class DecommissionPeerCommand : ICommand
 {
-    [ProtoContract]
-    public class DecommissionPeerCommand : ICommand
+    [ProtoMember(1, IsRequired = true)]
+    public readonly PeerId PeerId;
+
+    public DecommissionPeerCommand(PeerId peerId)
     {
-        [ProtoMember(1, IsRequired = true)]
-        public readonly PeerId PeerId;
-
-        public DecommissionPeerCommand(PeerId peerId)
-        {
-            PeerId = peerId;
-        }
-
-        public override string ToString() => PeerId.ToString();
+        PeerId = peerId;
     }
+
+    public override string ToString()
+        => PeerId.ToString();
 }

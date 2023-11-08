@@ -1,10 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Abc.Zebus.Dispatch;
 
-namespace Abc.Zebus.Testing.Dispatch
+namespace Abc.Zebus.Testing.Dispatch;
+
+public interface IAsyncExecutableMessage : IMessage
 {
-    public interface IAsyncExecutableMessage : IMessage
-    {
-        Task ExecuteAsync(IMessageHandlerInvocation invocation);
-    }
+    Task ExecuteAsync(IMessageHandlerInvocation invocation);
 }

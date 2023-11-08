@@ -1,8 +1,7 @@
-﻿namespace Abc.Zebus.Dispatch
+﻿namespace Abc.Zebus.Dispatch;
+
+public enum MessageHandlerInvokerMode
 {
-    public enum MessageHandlerInvokerMode
-    {
-        Synchronous,
-        Asynchronous,
-    }
+    Synchronous,
+    Asynchronous,
 }

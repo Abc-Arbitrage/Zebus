@@ -1,11 +1,10 @@
-﻿namespace Abc.Zebus.Directory
+﻿namespace Abc.Zebus.Directory;
+
+public enum PeerUpdateAction
 {
-    public enum PeerUpdateAction
-    {
-        Stopped,
-        Started,
-        /// <summary>  Peer subscriptions are updated </summary>
-        Updated,
-        Decommissioned,
-    }
+    Stopped,
+    Started,
+    /// <summary>  Peer subscriptions are updated </summary>
+    Updated,
+    Decommissioned,
 }

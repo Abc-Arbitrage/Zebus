@@ -1,7 +1,6 @@
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+internal interface IInternalBus : IBus
 {
-    internal interface IInternalBus : IBus
-    {
-        void Publish(IEvent message, PeerId targetPeer);
-    }
+    void Publish(IEvent message, PeerId targetPeer);
 }

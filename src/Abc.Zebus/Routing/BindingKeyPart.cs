@@ -1,37 +1,36 @@
-namespace Abc.Zebus.Routing
+namespace Abc.Zebus.Routing;
+
+public readonly struct BindingKeyPart
 {
-    public readonly struct BindingKeyPart
+    internal const string StarToken = "*";
+    internal const string SharpToken = "#";
+
+    public static BindingKeyPart Star { get; } = new(null, true);
+    public static BindingKeyPart Null { get; } = default;
+
+    private BindingKeyPart(string? value, bool matchesAllValues)
     {
-        internal const string StarToken = "*";
-        internal const string SharpToken = "#";
+        Value = value;
+        MatchesAllValues = matchesAllValues;
+    }
 
-        public static BindingKeyPart Star { get; } = new BindingKeyPart(null, true);
-        public static BindingKeyPart Null { get; } = default;
+    public string? Value { get; }
+    public bool MatchesAllValues { get; }
 
-        private BindingKeyPart(string? value, bool matchesAllValues)
-        {
-            Value = value;
-            MatchesAllValues = matchesAllValues;
-        }
+    public bool Matches(string s)
+        => MatchesAllValues || Value == s;
 
-        public string? Value { get; }
-        public bool MatchesAllValues { get; }
+    public override string ToString()
+    {
+        return MatchesAllValues
+            ? StarToken
+            : Value ?? "null";
+    }
 
-        public bool Matches(string s)
-            => MatchesAllValues || Value == s;
-
-        public override string ToString()
-        {
-            return MatchesAllValues
-                ? StarToken
-                : Value ?? "null";
-        }
-
-        public static BindingKeyPart Parse(string token)
-        {
-            return token == SharpToken || token == StarToken
-                ? Star
-                : new BindingKeyPart(token, false);
-        }
+    public static BindingKeyPart Parse(string token)
+    {
+        return token is SharpToken or StarToken
+            ? Star
+            : new BindingKeyPart(token, false);
     }
 }

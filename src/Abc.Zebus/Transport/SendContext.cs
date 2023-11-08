@@ -1,21 +1,20 @@
 ﻿using System.Collections.Generic;
 
-namespace Abc.Zebus.Transport
+namespace Abc.Zebus.Transport;
+
+public class SendContext
 {
-    public class SendContext
+    public List<PeerId> PersistentPeerIds { get; } = new();
+    public Peer? PersistencePeer { get; set; }
+
+    public bool WasPersisted(PeerId peerId)
     {
-        public List<PeerId> PersistentPeerIds { get; } = new List<PeerId>();
-        public Peer? PersistencePeer { get; set; }
-
-        public bool WasPersisted(PeerId peerId)
+        for (var index = 0; index < PersistentPeerIds.Count; index++)
         {
-            for (var index = 0; index < PersistentPeerIds.Count; index++)
-            {
-                if (PersistentPeerIds[index] == peerId)
-                    return true;
-            }
-
-            return false;
+            if (PersistentPeerIds[index] == peerId)
+                return true;
         }
+
+        return false;
     }
 }

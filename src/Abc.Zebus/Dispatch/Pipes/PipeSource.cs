@@ -2,20 +2,20 @@ using System;
 using System.Collections.Generic;
 using StructureMap;
 
-namespace Abc.Zebus.Dispatch.Pipes
+namespace Abc.Zebus.Dispatch.Pipes;
+
+public class PipeSource<TPipe> : IPipeSource
+    where TPipe : class, IPipe
 {
-    public class PipeSource<TPipe> : IPipeSource where TPipe : class, IPipe 
+    private readonly IContainer _container;
+
+    public PipeSource(IContainer container)
     {
-        private readonly IContainer _container;
+        _container = container;
+    }
 
-        public PipeSource(IContainer container)
-        {
-            _container = container;
-        }
-
-        public IEnumerable<IPipe> GetPipes(Type messageHandlerType)
-        {
-            yield return _container.GetInstance<TPipe>();
-        }
+    public IEnumerable<IPipe> GetPipes(Type messageHandlerType)
+    {
+        yield return _container.GetInstance<TPipe>();
     }
 }

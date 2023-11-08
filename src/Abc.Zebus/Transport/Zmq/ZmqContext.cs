@@ -1,62 +1,61 @@
 ﻿using System;
 
-namespace Abc.Zebus.Transport.Zmq
+namespace Abc.Zebus.Transport.Zmq;
+
+internal sealed class ZmqContext : IDisposable
 {
-    internal sealed class ZmqContext : IDisposable
+    internal IntPtr Handle { get; private set; }
+
+    public ZmqContext()
     {
-        internal IntPtr Handle { get; private set; }
+        Handle = ZmqNative.ctx_new();
 
-        public ZmqContext()
+        if (Handle == IntPtr.Zero)
+            ZmqUtil.ThrowLastError("Could not create ZMQ context");
+    }
+
+    ~ZmqContext()
+    {
+        Terminate(false);
+    }
+
+    public void Dispose()
+    {
+        Terminate(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Terminate(bool canThrow)
+    {
+        if (Handle == IntPtr.Zero)
+            return;
+
+        while (ZmqNative.ctx_term(Handle) == -1)
         {
-            Handle = ZmqNative.ctx_new();
+            if (ZmqUtil.WasInterrupted())
+                continue;
 
-            if (Handle == IntPtr.Zero)
-                ZmqUtil.ThrowLastError("Could not create ZMQ context");
+            if (canThrow)
+                ZmqUtil.ThrowLastError("Could not terminate ZMQ context");
+
+            break;
         }
 
-        ~ZmqContext()
-        {
-            Terminate(false);
-        }
+        Handle = IntPtr.Zero;
+    }
 
-        public void Dispose()
-        {
-            Terminate(true);
-            GC.SuppressFinalize(this);
-        }
+    public void SetOption(ZmqContextOption option, int value)
+    {
+        if (ZmqNative.ctx_set(Handle, (int)option, value) == -1)
+            ZmqUtil.ThrowLastError($"Unable to set ZMQ context option {option} to {value}");
+    }
 
-        private void Terminate(bool canThrow)
-        {
-            if (Handle == IntPtr.Zero)
-                return;
+    public int GetOptionInt32(ZmqContextOption option)
+    {
+        var result = ZmqNative.ctx_get(Handle, (int)option);
+        if (result == -1)
+            ZmqUtil.ThrowLastError($"Unable to get ZMQ context option {option}");
 
-            while (ZmqNative.ctx_term(Handle) == -1)
-            {
-                if (ZmqUtil.WasInterrupted())
-                    continue;
-
-                if (canThrow)
-                    ZmqUtil.ThrowLastError("Could not terminate ZMQ context");
-
-                break;
-            }
-
-            Handle = IntPtr.Zero;
-        }
-
-        public void SetOption(ZmqContextOption option, int value)
-        {
-            if (ZmqNative.ctx_set(Handle, (int)option, value) == -1)
-                ZmqUtil.ThrowLastError($"Unable to set ZMQ context option {option} to {value}");
-        }
-
-        public int GetOptionInt32(ZmqContextOption option)
-        {
-            var result = ZmqNative.ctx_get(Handle, (int)option);
-            if (result == -1)
-                ZmqUtil.ThrowLastError($"Unable to get ZMQ context option {option}");
-
-            return result;
-        }
+        return result;
     }
 }

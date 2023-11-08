@@ -1,15 +1,14 @@
 ﻿using System;
 
-namespace Abc.Zebus
-{
-    [AttributeUsage(AttributeTargets.Class)]
-    public sealed class MessageTypeIdAttribute : Attribute
-    {
-        public Guid MessageTypeId { get; }
+namespace Abc.Zebus;
 
-        public MessageTypeIdAttribute(string typeId)
-        {
-            MessageTypeId = Guid.Parse(typeId);
-        }
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class MessageTypeIdAttribute : Attribute
+{
+    public Guid MessageTypeId { get; }
+
+    public MessageTypeIdAttribute(string typeId)
+    {
+        MessageTypeId = Guid.Parse(typeId);
     }
 }

@@ -3,21 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using StructureMap;
 
-namespace Abc.Zebus.Dispatch.Pipes
+namespace Abc.Zebus.Dispatch.Pipes;
+
+public class AttributePipeSource : IPipeSource
 {
-    public class AttributePipeSource : IPipeSource
+    private readonly IContainer _container;
+
+    public AttributePipeSource(IContainer container)
     {
-        private readonly IContainer _container;
+        _container = container;
+    }
 
-        public AttributePipeSource(IContainer container)
-        {
-            _container = container;
-        }
-
-        public IEnumerable<IPipe> GetPipes(Type messageHandlerType)
-        {
-            var attributes = (PipeAttribute[])messageHandlerType.GetCustomAttributes(typeof(PipeAttribute), true);
-            return attributes.Select(x => (IPipe)_container.GetInstance(x.PipeType));
-        }
+    public IEnumerable<IPipe> GetPipes(Type messageHandlerType)
+    {
+        var attributes = (PipeAttribute[])messageHandlerType.GetCustomAttributes(typeof(PipeAttribute), true);
+        return attributes.Select(x => (IPipe)_container.GetInstance(x.PipeType));
     }
 }

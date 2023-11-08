@@ -5,105 +5,104 @@ using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
 using Microsoft.Extensions.Logging;
 
-namespace Abc.Zebus.Transport
+namespace Abc.Zebus.Transport;
+
+internal class ZmqInboundSocket : IDisposable
 {
-    internal class ZmqInboundSocket : IDisposable
+    private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(ZmqInboundSocket));
+
+    private static readonly Regex _endpointRegex = new(@"^tcp://(?<host>\*|[0-9a-zA-Z_.-]+):(?<port>\*|[0-9]+)/?$", RegexOptions.IgnoreCase);
+    private static readonly Regex _ipRegex = new(@"^(?:[0-9]+\.){3}[0-9]+$");
+
+    private readonly ZmqContext _context;
+    private readonly ZmqEndPoint _configuredEndPoint;
+    private readonly ZmqSocketOptions _options;
+    private byte[] _readBuffer = Array.Empty<byte>();
+    private ZmqSocket? _socket;
+    private TimeSpan _lastReceiveTimeout;
+
+    public ZmqInboundSocket(ZmqContext context, ZmqEndPoint configuredEndPoint, ZmqSocketOptions options)
     {
-        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(ZmqInboundSocket));
+        _context = context;
+        _configuredEndPoint = configuredEndPoint;
+        _options = options;
+    }
 
-        private static readonly Regex _endpointRegex = new(@"^tcp://(?<host>\*|[0-9a-zA-Z_.-]+):(?<port>\*|[0-9]+)/?$", RegexOptions.IgnoreCase);
-        private static readonly Regex _ipRegex = new(@"^(?:[0-9]+\.){3}[0-9]+$");
+    public ZmqEndPoint Bind()
+    {
+        _socket = CreateSocket();
 
-        private readonly ZmqContext _context;
-        private readonly ZmqEndPoint _configuredEndPoint;
-        private readonly ZmqSocketOptions _options;
-        private byte[] _readBuffer = Array.Empty<byte>();
-        private ZmqSocket? _socket;
-        private TimeSpan _lastReceiveTimeout;
+        var (configuredHost, configuredPort) = ParseEndpoint(_configuredEndPoint.ToString());
 
-        public ZmqInboundSocket(ZmqContext context, ZmqEndPoint configuredEndPoint, ZmqSocketOptions options)
+        _socket.Bind($"tcp://{(_ipRegex.IsMatch(configuredHost) ? configuredHost : "*")}:{configuredPort}");
+
+        var (boundHost, boundPort) = ParseEndpoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+        if (boundHost == "0.0.0.0")
         {
-            _context = context;
-            _configuredEndPoint = configuredEndPoint;
-            _options = options;
+            // Use the hostname from the config when one is provided, or the FQDN otherwise
+            boundHost = configuredHost == "*"
+                ? Dns.GetHostEntry(string.Empty).HostName
+                : configuredHost;
         }
 
-        public ZmqEndPoint Bind()
+        var socketEndPoint = new ZmqEndPoint($"tcp://{boundHost}:{boundPort}");
+        _logger.LogInformation($"Socket bound, Inbound EndPoint: {socketEndPoint}");
+
+        return socketEndPoint;
+
+        static (string host, string port) ParseEndpoint(string endpoint)
         {
-            _socket = CreateSocket();
+            var match = _endpointRegex.Match(endpoint);
+            return match.Success
+                ? (match.Groups["host"].Value, match.Groups["port"].Value)
+                : throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
+        }
+    }
 
-            var (configuredHost, configuredPort) = ParseEndpoint(_configuredEndPoint.ToString());
+    public void Dispose()
+    {
+        _socket?.Dispose();
+    }
 
-            _socket.Bind($"tcp://{(_ipRegex.IsMatch(configuredHost) ? configuredHost : "*")}:{configuredPort}");
-
-            var (boundHost, boundPort) = ParseEndpoint(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
-            if (boundHost == "0.0.0.0")
-            {
-                // Use the hostname from the config when one is provided, or the FQDN otherwise
-                boundHost = configuredHost == "*"
-                    ? Dns.GetHostEntry(string.Empty).HostName
-                    : configuredHost;
-            }
-
-            var socketEndPoint = new ZmqEndPoint($"tcp://{boundHost}:{boundPort}");
-            _logger.LogInformation($"Socket bound, Inbound EndPoint: {socketEndPoint}");
-
-            return socketEndPoint;
-
-            static (string host, string port) ParseEndpoint(string endpoint)
-            {
-                var match = _endpointRegex.Match(endpoint);
-                return match.Success
-                    ? (match.Groups["host"].Value, match.Groups["port"].Value)
-                    : throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
-            }
+    // TODO: return Span instead of ProtoBufferReader
+    public ProtoBufferReader? Receive(TimeSpan? timeout = null)
+    {
+        var receiveTimeout = timeout ?? _options.ReceiveTimeout;
+        if (receiveTimeout != _lastReceiveTimeout)
+        {
+            _socket!.SetOption(ZmqSocketOption.RCVTIMEO, (int)receiveTimeout.TotalMilliseconds);
+            _lastReceiveTimeout = receiveTimeout;
         }
 
-        public void Dispose()
-        {
-            _socket?.Dispose();
-        }
+        if (_socket!.TryReadMessage(ref _readBuffer, out var messageLength, out var error))
+            return new ProtoBufferReader(_readBuffer, messageLength);
 
-        // TODO: return Span instead of ProtoBufferReader
-        public ProtoBufferReader? Receive(TimeSpan? timeout = null)
-        {
-            var receiveTimeout = timeout ?? _options.ReceiveTimeout;
-            if (receiveTimeout != _lastReceiveTimeout)
-            {
-                _socket!.SetOption(ZmqSocketOption.RCVTIMEO, (int)receiveTimeout.TotalMilliseconds);
-                _lastReceiveTimeout = receiveTimeout;
-            }
+        // EAGAIN: Non-blocking mode was requested and no messages are available at the moment.
+        if (error == ZmqErrorCode.EAGAIN || messageLength == 0)
+            return null;
 
-            if (_socket!.TryReadMessage(ref _readBuffer, out var messageLength, out var error))
-                return new ProtoBufferReader(_readBuffer, messageLength);
+        throw ZmqUtil.ThrowLastError("ZMQ Receive error");
+    }
 
-            // EAGAIN: Non-blocking mode was requested and no messages are available at the moment.
-            if (error == ZmqErrorCode.EAGAIN || messageLength == 0)
-                return null;
+    private ZmqSocket CreateSocket()
+    {
+        var socket = new ZmqSocket(_context, ZmqSocketType.PULL);
+        socket.SetOption(ZmqSocketOption.RCVHWM, _options.ReceiveHighWaterMark);
+        socket.SetOption(ZmqSocketOption.RCVTIMEO, (int)_options.ReceiveTimeout.TotalMilliseconds);
 
-            throw ZmqUtil.ThrowLastError("ZMQ Receive error");
-        }
+        _lastReceiveTimeout = _options.ReceiveTimeout;
 
-        private ZmqSocket CreateSocket()
-        {
-            var socket = new ZmqSocket(_context, ZmqSocketType.PULL);
-            socket.SetOption(ZmqSocketOption.RCVHWM, _options.ReceiveHighWaterMark);
-            socket.SetOption(ZmqSocketOption.RCVTIMEO, (int)_options.ReceiveTimeout.TotalMilliseconds);
+        return socket;
+    }
 
-            _lastReceiveTimeout = _options.ReceiveTimeout;
+    public void Disconnect()
+    {
+        var endpoint = _socket?.GetOptionString(ZmqSocketOption.LAST_ENDPOINT);
+        if (endpoint == null)
+            return;
 
-            return socket;
-        }
-
-        public void Disconnect()
-        {
-            var endpoint = _socket?.GetOptionString(ZmqSocketOption.LAST_ENDPOINT);
-            if (endpoint == null)
-                return;
-
-            _logger.LogInformation($"Unbinding socket, Inbound Endpoint: {endpoint}");
-            if (!_socket!.TryUnbind(endpoint))
-                _logger.LogWarning($"Socket error, Inbound Endpoint: {endpoint}, Error: {ZmqUtil.GetLastErrorMessage()}");
-        }
+        _logger.LogInformation($"Unbinding socket, Inbound Endpoint: {endpoint}");
+        if (!_socket!.TryUnbind(endpoint))
+            _logger.LogWarning($"Socket error, Inbound Endpoint: {endpoint}, Error: {ZmqUtil.GetLastErrorMessage()}");
     }
 }

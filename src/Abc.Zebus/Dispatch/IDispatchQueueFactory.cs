@@ -1,7 +1,6 @@
-﻿namespace Abc.Zebus.Dispatch
+﻿namespace Abc.Zebus.Dispatch;
+
+public interface IDispatchQueueFactory
 {
-    public interface IDispatchQueueFactory
-    {
-        DispatchQueue Create(string queueName);
-    }
+    DispatchQueue Create(string queueName);
 }

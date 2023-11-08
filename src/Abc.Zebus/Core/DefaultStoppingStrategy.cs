@@ -1,14 +1,13 @@
 ﻿using Abc.Zebus.Dispatch;
 using Abc.Zebus.Transport;
 
-namespace Abc.Zebus.Core
+namespace Abc.Zebus.Core;
+
+public class DefaultStoppingStrategy : IStoppingStrategy
 {
-    public class DefaultStoppingStrategy : IStoppingStrategy
+    public void Stop(ITransport transport, IMessageDispatcher messageDispatcher)
     {
-        public void Stop(ITransport transport, IMessageDispatcher messageDispatcher)
-        {
-            messageDispatcher.Stop();
-            transport.Stop();   
-        }
+        messageDispatcher.Stop();
+        transport.Stop();
     }
 }

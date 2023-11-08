@@ -3,74 +3,73 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+public static class ZebusLogManager
 {
-    public static class ZebusLogManager
+    private static ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
+
+    public static ILoggerFactory LoggerFactory
     {
-        private static ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
-
-        public static ILoggerFactory LoggerFactory
+        get => _loggerFactory;
+        set
         {
-            get => _loggerFactory;
-            set
-            {
-                value ??= NullLoggerFactory.Instance;
+            value ??= NullLoggerFactory.Instance;
 
-                if (ReferenceEquals(value, _loggerFactory))
-                    return;
+            if (ReferenceEquals(value, _loggerFactory))
+                return;
 
-                _loggerFactory = value;
-                RefreshConfiguration();
-            }
+            _loggerFactory = value;
+            RefreshConfiguration();
+        }
+    }
+
+    public static event Action? ConfigurationUpdated;
+
+    public static ILogger GetLogger(string name)
+        => new ForwardingLogger(name);
+
+    public static ILogger GetLogger(Type type)
+        => GetLogger(type.FullName!);
+
+    public static void RefreshConfiguration()
+        => ConfigurationUpdated?.Invoke();
+
+    private class ForwardingLogger : ILogger
+    {
+        private readonly string _name;
+        private ILogger _logger;
+        private ILoggerFactory _currentLoggerFactory = NullLoggerFactory.Instance;
+
+        private ILogger Logger
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ReferenceEquals(_currentLoggerFactory, _loggerFactory)
+                ? _logger
+                : CreateLogger();
         }
 
-        public static event Action? ConfigurationUpdated;
-
-        public static ILogger GetLogger(string name)
-            => new ForwardingLogger(name);
-
-        public static ILogger GetLogger(Type type)
-            => GetLogger(type.FullName!);
-
-        public static void RefreshConfiguration()
-            => ConfigurationUpdated?.Invoke();
-
-        private class ForwardingLogger : ILogger
+        public ForwardingLogger(string name)
         {
-            private readonly string _name;
-            private ILogger _logger;
-            private ILoggerFactory _currentLoggerFactory = NullLoggerFactory.Instance;
+            _name = name;
+            _logger = CreateLogger();
+        }
 
-            private ILogger Logger
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => ReferenceEquals(_currentLoggerFactory, _loggerFactory)
-                    ? _logger
-                    : CreateLogger();
-            }
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => Logger.Log(logLevel, eventId, state, exception, formatter);
 
-            public ForwardingLogger(string name)
-            {
-                _name = name;
-                _logger = CreateLogger();
-            }
+        public bool IsEnabled(LogLevel logLevel)
+            => Logger.IsEnabled(logLevel);
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-                => Logger.Log(logLevel, eventId, state, exception, formatter);
+        public IDisposable BeginScope<TState>(TState state)
+            => Logger.BeginScope(state);
 
-            public bool IsEnabled(LogLevel logLevel)
-                => Logger.IsEnabled(logLevel);
-
-            public IDisposable BeginScope<TState>(TState state)
-                => Logger.BeginScope(state);
-
-            [MethodImpl(MethodImplOptions.NoInlining)]
-            private ILogger CreateLogger()
-            {
-                _logger = _loggerFactory.CreateLogger(_name);
-                _currentLoggerFactory = _loggerFactory;
-                return _logger;
-            }
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private ILogger CreateLogger()
+        {
+            _logger = _loggerFactory.CreateLogger(_name);
+            _currentLoggerFactory = _loggerFactory;
+            return _logger;
         }
     }
 }

@@ -1,12 +1,15 @@
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+[UsedImplicitly]
+public interface IAsyncMessageHandler
 {
-    [UsedImplicitly]
-    public interface IAsyncMessageHandler { }
-    public interface IAsyncMessageHandler<T> : IAsyncMessageHandler where T : class
-    {
-        Task Handle(T message);
-    }
+}
+
+public interface IAsyncMessageHandler<T> : IAsyncMessageHandler
+    where T : class
+{
+    Task Handle(T message);
 }

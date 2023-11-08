@@ -1,6 +1,5 @@
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+public interface IMessage
 {
-    public interface IMessage
-    {
-    }
 }

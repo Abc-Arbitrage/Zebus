@@ -5,84 +5,83 @@ using System.Linq;
 using Abc.Zebus.Util.Collections;
 using Microsoft.Extensions.Logging;
 
-namespace Abc.Zebus.Dispatch.Pipes
+namespace Abc.Zebus.Dispatch.Pipes;
+
+internal class PipeManager : IPipeManager
 {
-    internal class PipeManager : IPipeManager
+    private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(PipeManager));
+
+    private readonly ConcurrentDictionary<Type, PipeList> _pipesByMessageType = new();
+    private readonly ConcurrentSet<string> _enabledPipeNames = new();
+    private readonly ConcurrentSet<string> _disabledPipeNames = new();
+    private readonly Func<Type, PipeList> _createPipeList;
+    private readonly IPipeSource[] _pipeSources;
+
+    public PipeManager(IPipeSource[] pipeSources)
     {
-        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(PipeManager));
+        _pipeSources = pipeSources;
+        _createPipeList = CreatePipeList;
+    }
 
-        private readonly ConcurrentDictionary<Type, PipeList> _pipesByMessageType = new ConcurrentDictionary<Type, PipeList>();
-        private readonly ConcurrentSet<string> _enabledPipeNames = new ConcurrentSet<string>();
-        private readonly ConcurrentSet<string> _disabledPipeNames = new ConcurrentSet<string>();
-        private readonly Func<Type, PipeList> _createPipeList;
-        private readonly IPipeSource[] _pipeSources;
+    public void EnablePipe(string pipeName)
+    {
+        _logger.LogInformation($"Enabling pipe [{pipeName}]");
 
-        public PipeManager(IPipeSource[] pipeSources)
+        _enabledPipeNames.Add(pipeName);
+        _disabledPipeNames.Remove(pipeName);
+
+        foreach (var pipeListEntry in _pipesByMessageType.Values)
+            pipeListEntry.ReloadEnabledPipes();
+    }
+
+    public void DisablePipe(string pipeName)
+    {
+        _logger.LogInformation($"Disabling pipe [{pipeName}]");
+
+        _enabledPipeNames.Remove(pipeName);
+        _disabledPipeNames.Add(pipeName);
+
+        foreach (var pipeListEntry in _pipesByMessageType.Values)
+            pipeListEntry.ReloadEnabledPipes();
+    }
+
+    public PipeInvocation BuildPipeInvocation(IMessageHandlerInvoker messageHandlerInvoker, List<IMessage> messages, MessageContext messageContext)
+    {
+        var pipes = GetEnabledPipes(messageHandlerInvoker.MessageHandlerType);
+        return new PipeInvocation(messageHandlerInvoker, messages, messageContext, pipes);
+    }
+
+    public IEnumerable<IPipe> GetEnabledPipes(Type messageHandlerType)
+        => GetPipeList(messageHandlerType).EnabledPipes;
+
+    private PipeList GetPipeList(Type messageHandlerType)
+        => _pipesByMessageType.GetOrAdd(messageHandlerType, _createPipeList);
+
+    private PipeList CreatePipeList(Type handlerType)
+        => new(this, _pipeSources.SelectMany(x => x.GetPipes(handlerType)));
+
+    private bool IsPipeEnabled(IPipe pipe)
+        => !_disabledPipeNames.Contains(pipe.Name)
+           && (pipe.IsAutoEnabled || _enabledPipeNames.Contains(pipe.Name));
+
+    private class PipeList
+    {
+        private readonly PipeManager _pipeManager;
+        private readonly List<IPipe> _pipes;
+
+        public PipeList(PipeManager pipeManager, IEnumerable<IPipe> pipes)
         {
-            _pipeSources = pipeSources;
-            _createPipeList = CreatePipeList;
+            _pipeManager = pipeManager;
+            _pipes = pipes.OrderByDescending(x => x.Priority).ToList();
+
+            ReloadEnabledPipes();
         }
 
-        public void EnablePipe(string pipeName)
+        public IList<IPipe> EnabledPipes { get; private set; } = default!;
+
+        internal void ReloadEnabledPipes()
         {
-            _logger.LogInformation($"Enabling pipe [{pipeName}]");
-
-            _enabledPipeNames.Add(pipeName);
-            _disabledPipeNames.Remove(pipeName);
-
-            foreach (var pipeListEntry in _pipesByMessageType.Values)
-                pipeListEntry.ReloadEnabledPipes();
-        }
-
-        public void DisablePipe(string pipeName)
-        {
-            _logger.LogInformation($"Disabling pipe [{pipeName}]");
-
-            _enabledPipeNames.Remove(pipeName);
-            _disabledPipeNames.Add(pipeName);
-
-            foreach (var pipeListEntry in _pipesByMessageType.Values)
-                pipeListEntry.ReloadEnabledPipes();
-        }
-
-        public PipeInvocation BuildPipeInvocation(IMessageHandlerInvoker messageHandlerInvoker, List<IMessage> messages, MessageContext messageContext)
-        {
-            var pipes = GetEnabledPipes(messageHandlerInvoker.MessageHandlerType);
-            return new PipeInvocation(messageHandlerInvoker, messages, messageContext, pipes);
-        }
-
-        public IEnumerable<IPipe> GetEnabledPipes(Type messageHandlerType)
-            => GetPipeList(messageHandlerType).EnabledPipes;
-
-        private PipeList GetPipeList(Type messageHandlerType)
-            => _pipesByMessageType.GetOrAdd(messageHandlerType, _createPipeList);
-
-        private PipeList CreatePipeList(Type handlerType)
-            => new PipeList(this, _pipeSources.SelectMany(x => x.GetPipes(handlerType)));
-
-        private bool IsPipeEnabled(IPipe pipe)
-            => !_disabledPipeNames.Contains(pipe.Name)
-               && (pipe.IsAutoEnabled || _enabledPipeNames.Contains(pipe.Name));
-
-        private class PipeList
-        {
-            private readonly PipeManager _pipeManager;
-            private readonly List<IPipe> _pipes;
-
-            public PipeList(PipeManager pipeManager, IEnumerable<IPipe> pipes)
-            {
-                _pipeManager = pipeManager;
-                _pipes = pipes.OrderByDescending(x => x.Priority).ToList();
-
-                ReloadEnabledPipes();
-            }
-
-            public IList<IPipe> EnabledPipes { get; private set; } = default!;
-
-            internal void ReloadEnabledPipes()
-            {
-                EnabledPipes = _pipes.Where(_pipeManager.IsPipeEnabled).ToList();
-            }
+            EnabledPipes = _pipes.Where(_pipeManager.IsPipeEnabled).ToList();
         }
     }
 }

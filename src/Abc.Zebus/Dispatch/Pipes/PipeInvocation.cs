@@ -4,122 +4,121 @@ using System.Threading.Tasks;
 using Abc.Zebus.Core;
 using Abc.Zebus.Util.Extensions;
 
-namespace Abc.Zebus.Dispatch.Pipes
+namespace Abc.Zebus.Dispatch.Pipes;
+
+public class PipeInvocation : IMessageHandlerInvocation
 {
-    public class PipeInvocation : IMessageHandlerInvocation
+    private static readonly BusMessageLogger _messageLogger = new("Abc.Zebus.Dispatch");
+
+    private readonly List<Action<object>> _handlerMutations = new();
+    private readonly IMessageHandlerInvoker _invoker;
+    private readonly IList<IMessage> _messages;
+    private readonly MessageContext _messageContext;
+    private readonly IList<IPipe> _pipes;
+
+    public PipeInvocation(IMessageHandlerInvoker invoker, List<IMessage> messages, MessageContext messageContext, IEnumerable<IPipe> pipes)
     {
-        private static readonly BusMessageLogger _messageLogger = new BusMessageLogger("Abc.Zebus.Dispatch");
+        _invoker = invoker;
+        _messages = messages;
+        _messageContext = messageContext;
+        _pipes = pipes.AsList();
+    }
 
-        private readonly List<Action<object>> _handlerMutations = new List<Action<object>>();
-        private readonly IMessageHandlerInvoker _invoker;
-        private readonly IList<IMessage> _messages;
-        private readonly MessageContext _messageContext;
-        private readonly IList<IPipe> _pipes;
+    internal IList<IPipe> Pipes => _pipes;
 
-        public PipeInvocation(IMessageHandlerInvoker invoker, List<IMessage> messages, MessageContext messageContext, IEnumerable<IPipe> pipes)
+    public IMessageHandlerInvoker Invoker => _invoker;
+
+    public IList<IMessage> Messages => _messages;
+
+    public MessageContext Context => _messageContext;
+
+    public void AddHandlerMutation(Action<object> action)
+    {
+        _handlerMutations.Add(action);
+    }
+
+    protected internal virtual void Run()
+    {
+        var pipeStates = BeforeInvoke();
+
+        try
         {
-            _invoker = invoker;
-            _messages = messages;
-            _messageContext = messageContext;
-            _pipes = pipes.AsList();
+            _invoker.InvokeMessageHandler(this);
+        }
+        catch (Exception exception)
+        {
+            AfterInvoke(pipeStates, true, exception);
+            throw;
         }
 
-        internal IList<IPipe> Pipes => _pipes;
+        AfterInvoke(pipeStates, false, null);
+    }
 
-        public IMessageHandlerInvoker Invoker => _invoker;
+    private object?[] BeforeInvoke()
+    {
+        if (_pipes.Count == 0)
+            return Array.Empty<object?>();
 
-        public IList<IMessage> Messages => _messages;
-
-        public MessageContext Context => _messageContext;
-
-        public void AddHandlerMutation(Action<object> action)
+        var stateRef = new BeforeInvokeArgs.StateRef();
+        var pipeStates = new object?[_pipes.Count];
+        for (var pipeIndex = 0; pipeIndex < _pipes.Count; ++pipeIndex)
         {
-            _handlerMutations.Add(action);
+            var beforeInvokeArgs = new BeforeInvokeArgs(this, stateRef);
+            _pipes[pipeIndex].BeforeInvoke(beforeInvokeArgs);
+            pipeStates[pipeIndex] = beforeInvokeArgs.State;
         }
 
-        protected internal virtual void Run()
+        return pipeStates;
+    }
+
+    private void AfterInvoke(object?[] pipeStates, bool isFaulted, Exception? exception)
+    {
+        for (var pipeIndex = _pipes.Count - 1; pipeIndex >= 0; --pipeIndex)
         {
-            var pipeStates = BeforeInvoke();
+            var afterInvokeArgs = new AfterInvokeArgs(this, pipeStates[pipeIndex], isFaulted, exception);
+            _pipes[pipeIndex].AfterInvoke(afterInvokeArgs);
+        }
+    }
 
-            try
-            {
-                _invoker.InvokeMessageHandler(this);
-            }
-            catch (Exception exception)
-            {
-                AfterInvoke(pipeStates, true, exception);
-                throw;
-            }
+    protected internal virtual Task RunAsync()
+    {
+        var pipeStates = BeforeInvoke();
 
-            AfterInvoke(pipeStates, false, null);
+        var runTask = _invoker.InvokeMessageHandlerAsync(this);
+
+        if (runTask.Status == TaskStatus.Created)
+        {
+            var exception = new InvalidProgramException($"{Invoker.MessageHandlerType.Name}.Handle({Invoker.MessageType.Name}) did not start the returned task");
+            runTask = Task.FromException(exception);
         }
 
-        private object?[] BeforeInvoke()
-        {
-            if (_pipes.Count == 0)
-                return Array.Empty<object?>();
+        runTask.ContinueWith(task => AfterInvoke(pipeStates, task.IsFaulted || task.IsCanceled, task.Exception), TaskContinuationOptions.ExecuteSynchronously);
 
-            var stateRef = new BeforeInvokeArgs.StateRef();
-            var pipeStates = new object?[_pipes.Count];
-            for (var pipeIndex = 0; pipeIndex < _pipes.Count; ++pipeIndex)
-            {
-                var beforeInvokeArgs = new BeforeInvokeArgs(this, stateRef);
-                _pipes[pipeIndex].BeforeInvoke(beforeInvokeArgs);
-                pipeStates[pipeIndex] = beforeInvokeArgs.State;
-            }
+        return runTask;
+    }
 
-            return pipeStates;
-        }
+    IDisposable IMessageHandlerInvocation.SetupForInvocation()
+    {
+        _messageLogger.LogHandleMessage(_messages, _invoker.DispatchQueueName, _messageContext.MessageId);
 
-        private void AfterInvoke(object?[] pipeStates, bool isFaulted, Exception? exception)
-        {
-            for (var pipeIndex = _pipes.Count - 1; pipeIndex >= 0; --pipeIndex)
-            {
-                var afterInvokeArgs = new AfterInvokeArgs(this, pipeStates[pipeIndex], isFaulted, exception);
-                _pipes[pipeIndex].AfterInvoke(afterInvokeArgs);
-            }
-        }
+        return MessageContext.SetCurrent(_messageContext);
+    }
 
-        protected internal virtual Task RunAsync()
-        {
-            var pipeStates = BeforeInvoke();
+    IDisposable IMessageHandlerInvocation.SetupForInvocation(object messageHandler)
+    {
+        _messageLogger.LogHandleMessage(_messages, _invoker.DispatchQueueName, _messageContext.MessageId);
 
-            var runTask = _invoker.InvokeMessageHandlerAsync(this);
+        ApplyMutations(messageHandler);
 
-            if (runTask.Status == TaskStatus.Created)
-            {
-                var exception = new InvalidProgramException($"{Invoker.MessageHandlerType.Name}.Handle({Invoker.MessageType.Name}) did not start the returned task");
-                runTask = Task.FromException(exception);
-            }
+        return MessageContext.SetCurrent(_messageContext);
+    }
 
-            runTask.ContinueWith(task => AfterInvoke(pipeStates, task.IsFaulted || task.IsCanceled, task.Exception), TaskContinuationOptions.ExecuteSynchronously);
+    private void ApplyMutations(object messageHandler)
+    {
+        if (messageHandler is IMessageContextAware messageContextAwareHandler)
+            messageContextAwareHandler.Context = Context;
 
-            return runTask;
-        }
-
-        IDisposable IMessageHandlerInvocation.SetupForInvocation()
-        {
-            _messageLogger.LogHandleMessage(_messages, _invoker.DispatchQueueName, _messageContext.MessageId);
-
-            return MessageContext.SetCurrent(_messageContext);
-        }
-
-        IDisposable IMessageHandlerInvocation.SetupForInvocation(object messageHandler)
-        {
-            _messageLogger.LogHandleMessage(_messages, _invoker.DispatchQueueName, _messageContext.MessageId);
-
-            ApplyMutations(messageHandler);
-
-            return MessageContext.SetCurrent(_messageContext);
-        }
-
-        private void ApplyMutations(object messageHandler)
-        {
-            if (messageHandler is IMessageContextAware messageContextAwareHandler)
-                messageContextAwareHandler.Context = Context;
-
-            foreach (var messageHandlerMutation in _handlerMutations)
-                messageHandlerMutation(messageHandler);
-        }
+        foreach (var messageHandlerMutation in _handlerMutations)
+            messageHandlerMutation(messageHandler);
     }
 }

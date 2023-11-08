@@ -5,31 +5,30 @@
 using System;
 using System.Threading;
 
-namespace Abc.Zebus.Util
+namespace Abc.Zebus.Util;
+
+/// <summary>
+/// Class that allows action to be executed, when it is disposed
+/// </summary>
+[Serializable]
+internal sealed class DisposableAction : IDisposable
 {
+    private Action? _action;
+
     /// <summary>
-    /// Class that allows action to be executed, when it is disposed
+    /// Initializes a new instance of the <see cref="DisposableAction"/> class.
     /// </summary>
-    [Serializable]
-    internal sealed class DisposableAction : IDisposable
+    /// <param name="action">The action.</param>
+    public DisposableAction(Action action)
     {
-        private Action? _action;
+        _action = action;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DisposableAction"/> class.
-        /// </summary>
-        /// <param name="action">The action.</param>
-        public DisposableAction(Action action)
-        {
-            _action = action;
-        }
-
-        /// <summary>
-        /// Executes the action
-        /// </summary>
-        public void Dispose()
-        {
-            Interlocked.Exchange(ref _action, null)?.Invoke();
-        }
+    /// <summary>
+    /// Executes the action
+    /// </summary>
+    public void Dispose()
+    {
+        Interlocked.Exchange(ref _action, null)?.Invoke();
     }
 }

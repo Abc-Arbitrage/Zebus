@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+[AttributeUsage(AttributeTargets.Class)]
+internal sealed class InfrastructureAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Class)]
-    internal sealed class InfrastructureAttribute : Attribute
-    {
-    }
 }

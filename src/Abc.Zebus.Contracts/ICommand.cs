@@ -1,6 +1,5 @@
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+public interface ICommand : IMessage
 {
-    public interface ICommand : IMessage
-    {
-    }
 }

@@ -4,56 +4,55 @@ using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
 using ProtoBuf;
 
-namespace Abc.Zebus.Testing.Comparison
+namespace Abc.Zebus.Testing.Comparison;
+
+internal static class ComparisonExtensions
 {
-    internal static class ComparisonExtensions
+    public static bool DeepCompare<T>(this T firstObj, T secondObj, params string[] elementsToIgnore)
     {
-        public static bool DeepCompare<T>(this T firstObj, T secondObj, params string[] elementsToIgnore)
-        {
-            var comparer = CreateComparer();
-            comparer.Config.MembersToIgnore.AddRange(elementsToIgnore);
+        var comparer = CreateComparer();
+        comparer.Config.MembersToIgnore.AddRange(elementsToIgnore);
 
-            return comparer.Compare(firstObj, secondObj).AreEqual;
-        }
+        return comparer.Compare(firstObj, secondObj).AreEqual;
+    }
 
-        public static CompareLogic CreateComparer()
+    public static CompareLogic CreateComparer()
+    {
+        return new CompareLogic
         {
-            return new CompareLogic
+            Config =
             {
-                Config =
+                CompareStaticProperties = false,
+                CompareStaticFields = false,
+                CustomComparers =
                 {
-                    CompareStaticProperties = false,
-                    CompareStaticFields = false,
-                    CustomComparers =
-                    {
-                        // TODO : Is this still used?
-                        new EquatableComparer()
-                    },
-                    AttributesToIgnore = new List<Type> { typeof(ProtoIgnoreAttribute) },
-                }
-            };
+                    // TODO : Is this still used?
+                    new EquatableComparer()
+                },
+                AttributesToIgnore = new List<Type> { typeof(ProtoIgnoreAttribute) },
+            }
+        };
+    }
+
+    private class EquatableComparer : BaseTypeComparer
+    {
+        public EquatableComparer()
+            : base(RootComparerFactory.GetRootComparer())
+        {
         }
 
-        private class EquatableComparer : BaseTypeComparer
+        public override bool IsTypeMatch(Type type1, Type type2)
         {
-            public EquatableComparer()
-                : base(RootComparerFactory.GetRootComparer())
-            {
-            }
+            if (type1 != type2)
+                return false;
 
-            public override bool IsTypeMatch(Type type1, Type type2)
-            {
-                if (type1 != type2)
-                    return false;
+            return typeof(IEquatable<>).MakeGenericType(type1).IsAssignableFrom(type1);
+        }
 
-                return typeof(IEquatable<>).MakeGenericType(type1).IsAssignableFrom(type1);
-            }
-
-            public override void CompareType(CompareParms parms)
-            {
-                if (!Equals(parms.Object1, parms.Object2))
-                    AddDifference(parms);
-            }
+        public override void CompareType(CompareParms parms)
+        {
+            if (!Equals(parms.Object1, parms.Object2))
+                AddDifference(parms);
         }
     }
 }

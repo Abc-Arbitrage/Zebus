@@ -1,7 +1,8 @@
 using JetBrains.Annotations;
 
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+[UsedImplicitly]
+public interface IMessageHandler
 {
-    [UsedImplicitly]
-    public interface IMessageHandler {}
 }

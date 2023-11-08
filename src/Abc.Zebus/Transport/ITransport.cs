@@ -2,24 +2,23 @@
 using System.Collections.Generic;
 using Abc.Zebus.Directory;
 
-namespace Abc.Zebus.Transport
+namespace Abc.Zebus.Transport;
+
+public interface ITransport
 {
-    public interface ITransport
-    {
-        event Action<TransportMessage> MessageReceived;
-        
-        void OnRegistered();
-        void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction);
+    event Action<TransportMessage> MessageReceived;
 
-        void Configure(PeerId peerId, string environment);
-        void Start();
-        void Stop();
+    void OnRegistered();
+    void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction);
 
-        PeerId PeerId { get; }
-        string InboundEndPoint { get; }
-        int PendingSendCount { get; }
+    void Configure(PeerId peerId, string environment);
+    void Start();
+    void Stop();
 
-        void Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context);
-        void AckMessage(TransportMessage transportMessage);
-    }
+    PeerId PeerId { get; }
+    string InboundEndPoint { get; }
+    int PendingSendCount { get; }
+
+    void Send(TransportMessage message, IEnumerable<Peer> peers, SendContext context);
+    void AckMessage(TransportMessage transportMessage);
 }

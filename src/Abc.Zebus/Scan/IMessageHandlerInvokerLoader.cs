@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using Abc.Zebus.Dispatch;
 
-namespace Abc.Zebus.Scan
+namespace Abc.Zebus.Scan;
+
+public interface IMessageHandlerInvokerLoader
 {
-    public interface IMessageHandlerInvokerLoader
-    {
-        IEnumerable<IMessageHandlerInvoker> LoadMessageHandlerInvokers(TypeSource typeSource);
-    }
+    IEnumerable<IMessageHandlerInvoker> LoadMessageHandlerInvokers(TypeSource typeSource);
 }

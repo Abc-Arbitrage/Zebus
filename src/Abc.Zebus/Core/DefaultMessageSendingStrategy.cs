@@ -1,9 +1,8 @@
 using Abc.Zebus.Transport;
 
-namespace Abc.Zebus.Core
+namespace Abc.Zebus.Core;
+
+public class DefaultMessageSendingStrategy : IMessageSendingStrategy
 {
-    public class DefaultMessageSendingStrategy : IMessageSendingStrategy
-    {
-        public bool IsMessagePersistent(TransportMessage transportMessage) => transportMessage.MessageTypeId.IsPersistent();
-    }
+    public bool IsMessagePersistent(TransportMessage transportMessage) => transportMessage.MessageTypeId.IsPersistent();
 }

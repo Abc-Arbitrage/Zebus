@@ -1,6 +1,5 @@
-namespace Abc.Zebus
+namespace Abc.Zebus;
+
+public interface ICommandHandler
 {
-    public interface ICommandHandler
-    {
-    }
 }

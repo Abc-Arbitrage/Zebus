@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace Abc.Zebus.Dispatch.Pipes
+namespace Abc.Zebus.Dispatch.Pipes;
+
+public interface IPipeSource
 {
-    public interface IPipeSource
-    {
-        IEnumerable<IPipe> GetPipes(Type messageHandlerType);
-    }
+    IEnumerable<IPipe> GetPipes(Type messageHandlerType);
 }

@@ -1,33 +1,32 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Abc.Zebus.Transport.Zmq
+namespace Abc.Zebus.Transport.Zmq;
+
+internal static partial class ZmqNative
 {
-    internal static partial class ZmqNative
+    private static readonly LibImpl _impl = GetLibImpl();
+
+    private static unsafe LibImpl GetLibImpl()
     {
-        private static readonly LibImpl _impl = GetLibImpl();
-
-        private static unsafe LibImpl GetLibImpl()
+        try
         {
-            try
-            {
-                var impl = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    ? new WinImpl()
-                    : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                        ? (LibImpl)new LinuxImpl()
-                        : throw new PlatformNotSupportedException();
+            var impl = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? new WinImpl()
+                : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    ? (LibImpl)new LinuxImpl()
+                    : throw new PlatformNotSupportedException();
 
-                int dummy;
-                impl.version(&dummy, &dummy, &dummy);
-                return impl;
-            }
-            catch (DllNotFoundException) when (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // Used in the .NET Framework, and in .NET Core unit tests
-                return Environment.Is64BitProcess
-                    ? new Win64Impl()
-                    : new Win32Impl();
-            }
+            int dummy;
+            impl.version(&dummy, &dummy, &dummy);
+            return impl;
+        }
+        catch (DllNotFoundException) when (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            // Used in the .NET Framework, and in .NET Core unit tests
+            return Environment.Is64BitProcess
+                ? new Win64Impl()
+                : new Win32Impl();
         }
     }
 }

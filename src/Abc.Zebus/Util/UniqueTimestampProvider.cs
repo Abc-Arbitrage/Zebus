@@ -1,28 +1,27 @@
 ﻿using System;
 
-namespace Abc.Zebus.Util
+namespace Abc.Zebus.Util;
+
+internal class UniqueTimestampProvider
 {
-    internal class UniqueTimestampProvider
+    private DateTime _lastEventTimestamp = SystemDateTime.UtcNow;
+    private readonly object _lastEventTimestampLock = new();
+    private readonly int _incrementInTicks;
+
+    public UniqueTimestampProvider(int incrementInTicks = 1)
     {
-        private DateTime _lastEventTimestamp = SystemDateTime.UtcNow;
-        private readonly object _lastEventTimestampLock = new object();
-        private int _incrementInTicks;
+        _incrementInTicks = incrementInTicks;
+    }
 
-        public UniqueTimestampProvider(int incrementInTicks = 1)
+    public DateTime NextUtcTimestamp()
+    {
+        lock (_lastEventTimestampLock)
         {
-            _incrementInTicks = incrementInTicks;
-        }
-
-        public DateTime NextUtcTimestamp()
-        {
-            lock (_lastEventTimestampLock)
-            {
-                var currentTime = SystemDateTime.UtcNow;
-                if (currentTime <= _lastEventTimestamp)
-                    currentTime = _lastEventTimestamp.AddTicks(_incrementInTicks);
-                _lastEventTimestamp = currentTime;
-                return _lastEventTimestamp;
-            }
+            var currentTime = SystemDateTime.UtcNow;
+            if (currentTime <= _lastEventTimestamp)
+                currentTime = _lastEventTimestamp.AddTicks(_incrementInTicks);
+            _lastEventTimestamp = currentTime;
+            return _lastEventTimestamp;
         }
     }
 }

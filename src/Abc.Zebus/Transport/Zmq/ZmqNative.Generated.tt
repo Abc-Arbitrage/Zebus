@@ -58,40 +58,39 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security;
 
-namespace Abc.Zebus.Transport.Zmq
+namespace Abc.Zebus.Transport.Zmq;
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+unsafe partial class ZmqNative
 {
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    unsafe partial class ZmqNative
+<# foreach (var func in funcs) { #>
+    public static <#= func.Declaration #>
+        => _impl.<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.Name)) #>);
+
+<# } #>
+
+    private abstract class LibImpl
     {
 <# foreach (var func in funcs) { #>
-        public static <#= func.Declaration #>
-            => _impl.<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.Name)) #>);
-
+        public abstract <#= func.Declaration #>;
 <# } #>
-
-        private abstract class LibImpl
-        {
-<# foreach (var func in funcs) { #>
-            public abstract <#= func.Declaration #>;
-<# } #>
-        }
+    }
 
 <# foreach (var platform in platforms) { #>
-        [SuppressUnmanagedCodeSecurity]
-        private class <#= platform.Name #>Impl : LibImpl
-        {
+    [SuppressUnmanagedCodeSecurity]
+    private class <#= platform.Name #>Impl : LibImpl
+    {
 <# foreach (var func in funcs) { #>
-            public override <#= func.Declaration #>
-                => zmq_<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.Name)) #>);
+        public override <#= func.Declaration #>
+            => zmq_<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.Name)) #>);
 
-            [DllImport("<#= platform.LibName #>", CallingConvention = CallingConvention.Cdecl)]
-            private static extern <#= func.ReturnType #> zmq_<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.GetPInvokeAttributes() + p.Declaration)) #>);
-
-<# } #>
-        }
+        [DllImport("<#= platform.LibName #>", CallingConvention = CallingConvention.Cdecl)]
+        private static extern <#= func.ReturnType #> zmq_<#= func.Name #>(<#= string.Join(", ", func.Parameters.Select(p => p.GetPInvokeAttributes() + p.Declaration)) #>);
 
 <# } #>
     }
+
+<# } #>
 }
 <#+
 
