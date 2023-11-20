@@ -164,7 +164,18 @@ public class BusFactory
         }
 
         public bool Matches(Assembly assembly)
-            => _assembly == null || _assembly == assembly;
+        {
+            if (_assembly is null)
+            {
+                // Ignore this assembly by default, since GetTypes() fails there in net8.0: https://github.com/dotnet/SqlClient/issues/1930
+                if (assembly.GetName().Name == "System.Data.SqlClient")
+                    return false;
+
+                return true;
+            }
+
+            return _assembly == assembly;
+        }
 
         public bool Matches(Type type)
         {

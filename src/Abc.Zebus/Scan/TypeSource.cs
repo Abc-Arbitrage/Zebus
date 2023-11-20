@@ -12,7 +12,11 @@ public class TypeSource
 
     public virtual IEnumerable<Type> GetTypes()
     {
-        return AppDomain.CurrentDomain.GetAssemblies().Where(AssemblyFilter).SelectMany(x => x.GetTypes()).Where(TypeFilter);
+        return AppDomain.CurrentDomain
+                        .GetAssemblies()
+                        .Where(AssemblyFilter)
+                        .SelectMany(a => a.GetTypes())
+                        .Where(TypeFilter);
     }
 
     public static implicit operator TypeSource(Type type)
