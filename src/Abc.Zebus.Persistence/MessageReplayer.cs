@@ -114,7 +114,7 @@ namespace Abc.Zebus.Persistence
             {
                 Run(_cancellationTokenSource!.Token);
                 if (_cancellationTokenSource!.IsCancellationRequested)
-                    _logger.LogWarning("Replay cancelled, PeerId: {_peer.Id}");
+                    _logger.LogWarning($"Replay cancelled, PeerId: {_peer.Id}");
             }
             catch (Exception ex)
             {

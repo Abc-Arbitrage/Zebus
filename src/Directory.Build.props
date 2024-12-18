@@ -1,9 +1,10 @@
 ﻿<Project>
 
   <PropertyGroup>
+    <LangVersion>13.0</LangVersion>
+    <AnalysisLevel>9.0</AnalysisLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>11.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
     <DefaultItemExcludes>$(DefaultItemExcludes);*.DotSettings;*.ncrunchproject</DefaultItemExcludes>
@@ -44,8 +45,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
