@@ -14,7 +14,7 @@
     <PackageReference Include="AutoFixture" Version="4.17.0" />
     <PackageReference Include="CompareNETObjects" Version="4.71.0" />
     <PackageReference Include="Moq" Version="4.17.2" />
-    <PackageReference Include="NUnit" Version="3.13.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="System.Management" Version="6.0.0" />
   </ItemGroup>
 
