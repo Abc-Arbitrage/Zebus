@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net48;net6.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <PackageId>Zebus.Testing</PackageId>
     <Description>Test tools for Zebus</Description>
     <Version>$(ZebusTestingVersion)</Version>
@@ -14,7 +14,7 @@
     <PackageReference Include="AutoFixture" Version="4.17.0" />
     <PackageReference Include="CompareNETObjects" Version="4.71.0" />
     <PackageReference Include="Moq" Version="4.17.2" />
-    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit" Version="4.3.0" />
     <PackageReference Include="System.Management" Version="6.0.0" />
   </ItemGroup>
 

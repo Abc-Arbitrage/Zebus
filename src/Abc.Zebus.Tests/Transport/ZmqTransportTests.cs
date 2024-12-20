@@ -355,7 +355,6 @@ namespace Abc.Zebus.Tests.Transport
             }
         }
 
-        [Timeout(10 * 60 * 1000)]
         [TestCase(10)]
         [TestCase(25)]
         // Cases with high peer counts are too slow to run automatically, but they are required to validate edge cases.
