@@ -19,31 +19,25 @@ internal delegate void MethodThatThrows();
 internal static class NUnitExtensions
 {
     public static void ShouldBeFalse(this bool condition, string? message = null)
-    {
-        Assert.IsFalse(condition, message);
-    }
+        => Assert.That(condition, Is.False, message);
 
     public static void ShouldBeTrue(this bool condition, string? message = null)
-    {
-        Assert.IsTrue(condition, message);
-    }
+        => Assert.That(condition, Is.True, message);
 
     public static object ShouldEqual(this object actual, object expected, string? message = null)
     {
-        Assert.AreEqual(expected, actual, message);
+        Assert.That(actual, Is.EqualTo(expected), message);
         return expected;
     }
 
     public static object ShouldEqual(this IEnumerable actual, IEnumerable expected)
     {
-        CollectionAssert.AreEqual(expected, actual);
+        Assert.That(actual, Is.EqualTo(expected).AsCollection);
         return expected;
     }
 
     public static void ShouldEqualOneOf<T>(this T actual, params T[] expected)
-    {
-        Assert.That(new[] { actual }, Is.SubsetOf(expected));
-    }
+        => Assert.That(new[] { actual }, Is.SubsetOf(expected));
 
     public static object ShouldEqualDeeply(this object actual, object expected)
     {
@@ -51,7 +45,7 @@ internal static class NUnitExtensions
         var result = comparer.Compare(actual, expected);
         if (!result.AreEqual)
             Console.WriteLine(result.DifferencesString);
-        Assert.IsTrue(result.AreEqual);
+        Assert.That(result.AreEqual, Is.True);
         return expected;
     }
 
@@ -76,77 +70,66 @@ internal static class NUnitExtensions
     public static object ShouldEqualEpsilon(this decimal actual, decimal expected, decimal epsilon)
     {
         Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
-
         return expected;
     }
 
     public static object? ShouldEqualEpsilon(this decimal? actual, decimal? expected, decimal epsilon)
     {
         Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
-
         return expected;
     }
 
     public static object? ShouldEqualEpsilon(this decimal actual, decimal? expected, decimal epsilon)
     {
         Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
-
         return expected;
     }
 
     public static object ShouldEqualEpsilon(this double actual, double expected, double epsilon)
     {
         Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
-
         return expected;
     }
 
     public static object? ShouldEqualEpsilon(this double? actual, double? expected, double epsilon)
     {
         Assert.That(actual, Is.EqualTo(expected).Within(epsilon));
-
         return expected;
     }
 
     public static object ShouldNotEqual(this object actual, object expected)
     {
-        Assert.AreNotEqual(expected, actual);
+        Assert.That(actual, Is.Not.EqualTo(expected));
         return expected;
     }
 
     public static void ShouldBeNull(this object? anObject, string? message = null)
-    {
-        Assert.IsNull(anObject, message);
-    }
+        => Assert.That(anObject, Is.Null, message);
 
     [ContractAnnotation("anObject: null => halt")]
     public static void ShouldNotBeNull(this object? anObject, string? message = null)
-    {
-        Assert.IsNotNull(anObject, message);
-    }
+        => Assert.That(anObject, Is.Not.Null, message);
 
     public static object ShouldBeTheSameAs(this object actual, object expected)
     {
-        Assert.AreSame(expected, actual);
+        Assert.That(actual, Is.SameAs(expected));
         return expected;
     }
 
     public static object ShouldNotBeTheSameAs(this object actual, object expected)
     {
-        Assert.AreNotSame(expected, actual);
+        Assert.That(actual, Is.Not.SameAs(expected));
         return expected;
     }
 
     public static T ShouldBe<T>(this object? actual)
     {
-        Assert.IsInstanceOf<T>(actual);
+        Assert.That(actual, Is.InstanceOf<T>());
         return (T)actual!;
     }
 
     public static void ShouldNotBeOfType<T>(this object? actual)
-    {
-        Assert.IsNotInstanceOf<T>(actual);
-    }
+        => Assert.That(actual, Is.Not.InstanceOf<T>());
 
     public static void ShouldContain(this IEnumerable actual, object expected)
     {
@@ -157,7 +140,7 @@ internal static class NUnitExtensions
                 return;
         }
 
-        Assert.Fail("'{0}' is not present in the enumerable", expected);
+        Assert.Fail($"'{expected}' is not present in the enumerable");
     }
 
     public static void ShouldContain<T>(this IEnumerable<T> actual, Expression<Func<T, bool>> predicate)
@@ -178,14 +161,12 @@ internal static class NUnitExtensions
         {
             var empty = Tolerance.Default;
             if (new NUnitEqualityComparer().AreEqual(obj, expected, ref empty))
-                Assert.Fail("'{0}' is present in the enumerable", expected);
+                Assert.Fail($"'{expected}' is present in the enumerable");
         }
     }
 
     public static void ShouldBeEquivalentTo<T>(this IEnumerable<T> collection, params T[] expected)
-    {
-        ShouldBeEquivalentTo((IEnumerable)collection, expected);
-    }
+        => ShouldBeEquivalentTo((IEnumerable)collection, expected);
 
     public static void ShouldBeEquivalentTo(this IEnumerable collection, IEnumerable expected, bool compareDeeply = false)
     {
@@ -195,83 +176,67 @@ internal static class NUnitExtensions
             collection.ShouldBeEquivalentTo(expected, (a, b) => compareLogic.Compare(a, b).AreEqual);
         }
         else
+        {
             Assert.That(collection, Is.EquivalentTo(expected));
+        }
     }
 
     public static void ShouldBeOrdered(this IEnumerable collection)
-    {
-        Assert.That(collection, Is.Ordered);
-    }
+        => Assert.That(collection, Is.Ordered);
 
     public static void ShouldBeEquivalentTo(this IEnumerable collection, IEnumerable expected, Func<object?, object?, bool> comparer)
-    {
-        Assert.That(collection, Is.EquivalentTo(expected).Using(new EqualityComparer(comparer)));
-    }
+        => Assert.That(collection, Is.EquivalentTo(expected).Using(new EqualityComparer(comparer)));
 
     public static IComparable ShouldBeGreaterThan(this IComparable arg1, IComparable arg2)
     {
-        Assert.Greater(arg1, arg2);
+        Assert.That(arg1, Is.GreaterThan(arg2));
         return arg2;
     }
 
     public static IComparable ShouldBeGreaterOrEqualThan(this IComparable arg1, IComparable arg2)
     {
-        Assert.GreaterOrEqual(arg1, arg2);
+        Assert.That(arg1, Is.GreaterThanOrEqualTo(arg2));
         return arg2;
     }
 
     public static IComparable ShouldBeLessOrEqualThan(this IComparable arg1, IComparable arg2, string? message = null)
     {
-        Assert.LessOrEqual(arg1, arg2, message);
+        Assert.That(arg1, Is.LessThanOrEqualTo(arg2), message);
         return arg2;
     }
 
     public static IComparable ShouldBeLessThan(this IComparable arg1, IComparable arg2)
     {
-        Assert.Less(arg1, arg2);
+        Assert.That(arg1, Is.LessThan(arg2));
         return arg2;
     }
 
     public static void ShouldBeEmpty<T>(this IEnumerable<T> enumerable, string? message = null)
-    {
-        Assert.IsFalse(enumerable.Any(), message ?? "the collection is not empty");
-    }
+        => Assert.That(enumerable.Any(), Is.False, message ?? "the collection is not empty");
 
     public static void ShouldNotBeEmpty<T>(this IEnumerable<T> enumerable, string? message = null)
-    {
-        Assert.IsTrue(enumerable.Any(), message ?? "the collection is empty");
-    }
+        => Assert.That(enumerable.Any(), Is.True, message ?? "the collection is empty");
 
     public static void ShouldBeEmpty(this string aString)
-    {
-        Assert.IsEmpty(aString);
-    }
+        => Assert.That(aString, Is.Empty);
 
     public static void ShouldNotBeEmpty(this IEnumerable collection, string? message = null)
-    {
-        Assert.IsNotEmpty(collection, message);
-    }
+        => Assert.That(collection, Is.Not.Empty, message);
 
     public static void ShouldNotBeEmpty(this string aString)
-    {
-        Assert.IsNotEmpty(aString);
-    }
+        => Assert.That(aString, Is.Not.Empty);
 
     public static void ShouldContain(this string actual, string expected)
-    {
-        Assert.That(actual, Does.Contain(expected));
-    }
+        => Assert.That(actual, Does.Contain(expected));
 
     public static void ShouldContainIgnoreCase(this string actual, string expected)
-    {
-        Assert.That(actual, Does.Contain(expected).IgnoreCase);
-    }
+        => Assert.That(actual, Does.Contain(expected).IgnoreCase);
 
     public static void ShouldNotContain(this string actual, string expected)
     {
         try
         {
-            StringAssert.Contains(expected, actual);
+            Assert.That(actual, Does.Contain(expected));
         }
         catch (AssertionException)
         {
@@ -283,51 +248,47 @@ internal static class NUnitExtensions
 
     public static string ShouldBeEqualIgnoringCase(this string actual, string expected)
     {
-        StringAssert.AreEqualIgnoringCase(expected, actual);
+        Assert.That(actual, Is.EqualTo(expected).IgnoreCase);
         return expected;
     }
 
     public static void ShouldStartWith(this string actual, string expected)
-    {
-        StringAssert.StartsWith(expected, actual);
-    }
+        => Assert.That(actual, Does.StartWith(expected));
 
     public static void ShouldEndWith(this string actual, string expected)
-    {
-        StringAssert.EndsWith(expected, actual);
-    }
+        => Assert.That(actual, Does.EndWith(expected));
 
     public static void ShouldBeSurroundedWith(this string actual, string expectedStartDelimiter, string expectedEndDelimiter)
     {
-        StringAssert.StartsWith(expectedStartDelimiter, actual);
-        StringAssert.EndsWith(expectedEndDelimiter, actual);
+        Assert.That(actual, Does.StartWith(expectedStartDelimiter));
+        Assert.That(actual, Does.EndWith(expectedEndDelimiter));
     }
 
     public static void ShouldBeSurroundedWith(this string actual, string expectedDelimiter)
     {
-        StringAssert.StartsWith(expectedDelimiter, actual);
-        StringAssert.EndsWith(expectedDelimiter, actual);
+        Assert.That(actual, Does.StartWith(expectedDelimiter));
+        Assert.That(actual, Does.EndWith(expectedDelimiter));
     }
 
     public static void ShouldContainErrorMessage(this Exception exception, string expected)
     {
-        StringAssert.Contains(expected, exception.Message);
+        Assert.That(exception.Message, Does.Contain(expected));
     }
 
     public static Exception ShouldBeThrownBy(this Type exceptionType, MethodThatThrows method)
     {
         var exception = method.GetException();
 
-        Assert.IsNotNull(exception, $"{exceptionType.Name} was not thrown");
-        Assert.AreEqual(exceptionType, exception!.GetType());
+        Assert.That(exception, Is.Not.Null, $"{exceptionType.Name} was not thrown");
+        Assert.That(exception!.GetType(), Is.EqualTo(exceptionType));
 
         return exception!;
     }
 
     public static void ShouldBeBetween(this DateTime actual, DateTime inferior, DateTime superior)
     {
-        Assert.LessOrEqual(inferior, actual);
-        Assert.GreaterOrEqual(superior, actual);
+        Assert.That(inferior, Is.LessThanOrEqualTo(actual));
+        Assert.That(superior, Is.GreaterThanOrEqualTo(actual));
     }
 
     public static Exception? GetException(this MethodThatThrows method)
@@ -347,9 +308,7 @@ internal static class NUnitExtensions
     }
 
     public static void ShouldBeOfType<T>(this object? actual)
-    {
-        Assert.IsInstanceOf<T>(actual);
-    }
+        => Assert.That(actual, Is.InstanceOf<T>());
 
     public static void ShouldHaveSamePropertiesAs(this object actual, object expected, params string[] ignoredProperties)
     {
@@ -379,17 +338,15 @@ internal static class NUnitExtensions
                 continue;
 
             if (expectedValue == null)
-                Assert.Fail("Missing field or property {0} on type {1}", actualProperty.Name, expected.GetType());
+                Assert.Fail($"Missing field or property {actualProperty.Name} on type {expected.GetType()}");
 
             if (!LooseEquals(expectedValue, actualValue))
-                Assert.Fail("{0} should be equal, found {1}, expected {2}", actualProperty.Name, actualValue, expectedValue);
+                Assert.Fail($"{actualProperty.Name} should be equal, found {actualValue}, expected {expectedValue}");
         }
     }
 
     public static void ShouldHaveSize<T>(this IEnumerable<T> enumerable, int size)
-    {
-        enumerable.Count().ShouldEqual(size, $"Collection should contain {size} items");
-    }
+        => enumerable.Count().ShouldEqual(size, $"Collection should contain {size} items");
 
     public static TSource ExpectedSingle<TSource>(this IEnumerable<TSource> source)
     {
@@ -453,18 +410,12 @@ internal static class NUnitExtensions
         private readonly Func<object?, object?, bool> _comparer;
 
         public EqualityComparer(Func<object?, object?, bool> comparer)
-        {
-            _comparer = comparer;
-        }
+            => _comparer = comparer;
 
         bool IEqualityComparer.Equals(object? x, object? y)
-        {
-            return _comparer(x, y);
-        }
+            => _comparer(x, y);
 
         public int GetHashCode(object obj)
-        {
-            return obj.GetHashCode();
-        }
+            => obj.GetHashCode();
     }
 }

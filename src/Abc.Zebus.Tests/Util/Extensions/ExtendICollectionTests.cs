@@ -21,8 +21,8 @@ namespace Abc.Zebus.Tests.Util.Extensions
             ICollection<int> collection = new[] { 1, 2, 3 }.ToList();
             var returned = collection.AddRange(new[] { 4, 5 });
 
-            Assert.AreSame(collection, returned);
-            CollectionAssert.AreEquivalent(collection, new[] { 1, 2, 3, 4, 5 });
+            Assert.That(returned, Is.SameAs(collection));
+            Assert.That(new[] { 1, 2, 3, 4, 5 }, Is.EquivalentTo(collection));
         }
 
         [Test]
@@ -31,8 +31,8 @@ namespace Abc.Zebus.Tests.Util.Extensions
             ICollection<int> collection = new[] { 1, 2, 3 }.ToList();
             var returned = collection.RemoveRange(new[] { 1, 4 });
 
-            Assert.AreSame(collection, returned);
-            CollectionAssert.AreEquivalent(collection, new[] { 2, 3 });
+            Assert.That(returned, Is.SameAs(collection));
+            Assert.That(new[] { 2, 3 }, Is.EquivalentTo(collection));
         }
     }
 }
