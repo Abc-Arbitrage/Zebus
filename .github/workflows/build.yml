@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   BUILD_DOTNET_VERSION: 9.0.x
-  BUILD_LINUX_TEST_TFM: net6.0
+  BUILD_LINUX_TEST_TFM: net9.0
   DOTNET_NOLOGO: 1
 
 jobs:
