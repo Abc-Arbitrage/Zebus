@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.DeadPeerDetection;
@@ -520,6 +521,49 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 _detector.DetectDeadPeers();
 
                 _bus.ExpectExactly(PingPeerCommands(11).Append(new UnregisterPeerCommand(_transientAlivePeer0.Peer, firstUnansweredPingTimestampUtc)).ToArray());
+            }
+        }
+
+        [Test]
+        public void should_ignore_ping_response_on_removed_peer()
+        {
+            _bus.HandlerExecutor = new TestBus.AsyncHandlerExecutor();
+
+            SetupPeerRepository(_persistentAlivePeer);
+
+            var pingTaskCompletionSources = new List<TaskCompletionSource<object>>();
+            _bus.AddHandler<PingPeerCommand>(cmd =>
+            {
+                var taskCompletionSource = new TaskCompletionSource<object>();
+                pingTaskCompletionSources.Add(taskCompletionSource);
+
+                taskCompletionSource.Task.Wait();
+            });
+
+            using (SystemDateTime.PauseTime())
+            {
+                // Initial ping
+                var initialTime = SystemDateTime.UtcNow;
+                _detector.DetectDeadPeers();
+                Wait.Until(() => pingTaskCompletionSources.Count == 1, 1.Second());
+
+                // Peer marked as not responding
+                SystemDateTime.AddToPausedTime(_persistentPeerTimeout.Seconds());
+                _detector.DetectDeadPeers();
+                _bus.Expect(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.PeerId, initialTime));
+
+                // Peer removed
+                SetupPeerRepository();
+                _bus.ClearMessages();
+                _detector.DetectDeadPeers();
+
+                // Ping ack
+                pingTaskCompletionSources[0].SetResult(null);
+
+                // Task completions are processed asynchronously, so the sleep is required.
+                Thread.Sleep(100);
+
+                _bus.ExpectNothing();
             }
         }
 

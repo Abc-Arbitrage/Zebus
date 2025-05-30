@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Abc.Zebus.Directory.DeadPeerDetection
 {
-    public class DeadPeerDetectorEntry
+    public class DeadPeerDetectorEntry : IDisposable
     {
         private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(DeadPeerDetectorEntry));
         private readonly IDirectoryConfiguration _configuration;
@@ -16,6 +16,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         private DateTime? _lastPingTimeUtc;
         private DateTime? _oldestUnansweredPingTimeUtc;
         private DateTime? _timeoutTimestampUtc;
+        private bool _disposed;
 
         public DeadPeerDetectorEntry(PeerDescriptor descriptor, IDirectoryConfiguration configuration, IBus bus, TaskScheduler taskScheduler)
         {
@@ -168,6 +169,12 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
             lock (_lock)
             {
+                if (_disposed)
+                {
+                    _logger.LogWarning($"Ping ignored on disposed entry, PeerId: {Descriptor.PeerId}");
+                    return;
+                }
+
                 var peer = Descriptor.Peer;
                 if (!peer.IsResponding)
                 {
@@ -180,6 +187,14 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 PeerRespondingDetected?.Invoke(this, pingTimestampUtc);
 
             Reset();
+        }
+
+        public void Dispose()
+        {
+            lock (_lock)
+            {
+                _disposed = true;
+            }
         }
     }
 }

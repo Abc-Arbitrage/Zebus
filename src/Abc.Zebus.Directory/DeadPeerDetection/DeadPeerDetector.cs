@@ -17,7 +17,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
     {
         private static readonly TimeSpan _commandTimeout = 5.Seconds();
         private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(DeadPeerDetector));
-        private readonly Dictionary<PeerId, DeadPeerDetectorEntry> _peers = new Dictionary<PeerId, DeadPeerDetectorEntry>();
+        private readonly Dictionary<PeerId, DeadPeerDetectorEntry> _peerEntries = new Dictionary<PeerId, DeadPeerDetectorEntry>();
         private readonly IBus _bus;
         private readonly IPeerRepository _peerRepository;
         private readonly IDirectoryConfiguration _configuration;
@@ -39,7 +39,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
         public event Action<PeerId, DateTime>? PingTimeout;
 
         public TaskScheduler TaskScheduler { get; set; }
-        public IEnumerable<PeerId> KnownPeerIds => _peers.Keys;
+        public IEnumerable<PeerId> KnownPeerIds => _peerEntries.Keys;
 
         internal void DetectDeadPeers()
         {
@@ -52,14 +52,13 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                     entry.Process(timestampUtc);
                 }
 
-                var decommissionedPeerIds = _peers.Keys.Except(entries.Select(x => x.Descriptor.PeerId)).ToList();
-                _peers.RemoveRange(decommissionedPeerIds);
+                RemoveUnknownPeerEntries(entries);
             }
             else
             {
                 // Fallback for unavailable peer repository, simply ping peers
 
-                foreach (var entry in _peers.Values.Where(x => x.IsUp))
+                foreach (var entry in _peerEntries.Values.Where(x => x.IsUp))
                 {
                     entry.PingIfRequired(timestampUtc);
                 }
@@ -93,7 +92,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         private DeadPeerDetectorEntry ToPeerEntry(PeerDescriptor descriptor)
         {
-            var peer = _peers.GetValueOrAdd(descriptor.PeerId, () => CreateEntry(descriptor));
+            var peer = _peerEntries.GetValueOrAdd(descriptor.PeerId, () => CreateEntry(descriptor));
             peer.Descriptor = descriptor;
 
             return peer;
@@ -214,6 +213,18 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             catch (Exception errorException)
             {
                 _logger.LogError(errorException, "Error in event handler");
+            }
+        }
+
+        private void RemoveUnknownPeerEntries(List<DeadPeerDetectorEntry> loadedEntries)
+        {
+            var loadedPeerIds = loadedEntries.Select(x => x.Descriptor.PeerId);
+            var unknownPeerIds = _peerEntries.Keys.Except(loadedPeerIds).ToList();
+
+            foreach (var peerId in unknownPeerIds)
+            {
+                _peerEntries[peerId].Dispose();
+                _peerEntries.Remove(peerId);
             }
         }
     }
