@@ -159,16 +159,9 @@ public readonly struct MessageId : IEquatable<MessageId>
 
         private static unsafe long GetTicks(Guid uuid)
         {
-            var proxy = (GuidProxy*)&uuid;
-            var timestamp = proxy->a;
+            var proxy = (long*)&uuid;
+            var timestamp = proxy[0];
             return timestamp & 0x0FFFFFFFFFFFFFFFL;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
-        private struct GuidProxy
-        {
-            public long a;
         }
     }
 }
