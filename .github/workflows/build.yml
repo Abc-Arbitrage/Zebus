@@ -2,9 +2,7 @@
 name: Build
 on: [push, pull_request]
 
-env:
-  BUILD_DOTNET_VERSION: 9.0.x
-  BUILD_LINUX_TEST_TFM: net9.0
+env: 
   DOTNET_NOLOGO: 1
 
 jobs:
@@ -18,7 +16,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.BUILD_DOTNET_VERSION }}
+          dotnet-version: | 
+            8.0.x
+            9.0.x
 
       - name: Restore
         run: dotnet restore src/Abc.Zebus.sln
@@ -48,7 +48,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.BUILD_DOTNET_VERSION }}
+          dotnet-version: | 
+            8.0.x
+            9.0.x
 
       - name: Install RocksDb dependencies
         run: |
@@ -59,7 +61,7 @@ jobs:
         run: dotnet restore src/Abc.Zebus.Tests.proj
 
       - name: Build
-        run: dotnet build --configuration Release --framework ${{ env.BUILD_LINUX_TEST_TFM }} --no-restore src/Abc.Zebus.Tests.proj
+        run: dotnet build --configuration Release --framework net9.0 --no-restore src/Abc.Zebus.Tests.proj
 
       - name: Test
-        run: dotnet test --configuration Release --framework ${{ env.BUILD_LINUX_TEST_TFM }} --no-build src/Abc.Zebus.Tests.proj
+        run: dotnet test --configuration Release --framework net9.0 --no-build src/Abc.Zebus.Tests.proj
