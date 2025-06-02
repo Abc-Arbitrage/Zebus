@@ -433,7 +433,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_pingInterval));
                 _detector.DetectDeadPeers();
-                _bus.Expect(new MarkPeerAsRespondingCommand(_persistentAlivePeer.Peer.Id, SystemDateTime.UtcNow));
+                _bus.Expect(new MarkPeerAsRespondingCommand(_persistentAlivePeer.Peer.Id, _persistentAlivePeer.TimestampUtc.Value + 1.Millisecond()));
             }
         }
 

@@ -81,31 +81,34 @@ namespace Abc.Zebus.Directory.Cassandra.Storage
 
         public void RemovePeer(PeerId peerId)
         {
-            var now = DateTime.UtcNow;
+            RemovePeer(peerId, DateTime.UtcNow);
+        }
 
+        public void RemovePeer(PeerId peerId, DateTime timestampUtc)
+        {
             _dataContext.Peers
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
                         .Where(peer => peer.PeerId == peerId.ToString())
                         .Delete()
-                        .SetTimestamp(now)
+                        .SetTimestamp(timestampUtc)
                         .Execute();
 
             _dataContext.DynamicSubscriptions
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
                         .Where(s => s.PeerId == peerId.ToString())
                         .Delete()
-                        .SetTimestamp(now)
+                        .SetTimestamp(timestampUtc)
                         .Execute();
         }
 
-        public void SetPeerResponding(PeerId peerId, bool isResponding)
+        public void SetPeerResponding(PeerId peerId, bool isResponding, DateTime timestampUtc)
         {
             _dataContext.Peers
                         .SetConsistencyLevel(ConsistencyLevel.LocalQuorum)
                         .Where(peer => peer.PeerId == peerId.ToString())
-                        .Select(peer =>  new CassandraPeer { IsResponding = isResponding })
+                        .Select(peer =>  new CassandraPeer { IsResponding = isResponding, TimestampUtc = timestampUtc})
                         .Update()
-                        .SetTimestamp(DateTime.UtcNow)
+                        .SetTimestamp(timestampUtc)
                         .Execute();
 
         }

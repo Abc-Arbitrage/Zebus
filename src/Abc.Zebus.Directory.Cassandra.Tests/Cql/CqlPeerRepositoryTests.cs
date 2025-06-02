@@ -182,16 +182,32 @@ namespace Abc.Zebus.Directory.Cassandra.Tests.Cql
         public void should_mark_peer_as_responding()
         {
             var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
-            descriptor.TimestampUtc = DateTime.UtcNow.AddTicks(-10);
+            var baseTimestampUtc = DateTime.UtcNow;
+            descriptor.TimestampUtc = baseTimestampUtc;
             _repository.AddOrUpdatePeer(descriptor);
 
-            _repository.SetPeerResponding(_peer1.Id, false);
+            _repository.SetPeerResponding(_peer1.Id, false, baseTimestampUtc.AddMilliseconds(1));
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeFalse();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeFalse();
 
-            _repository.SetPeerResponding(_peer1.Id, true);
+            _repository.SetPeerResponding(_peer1.Id, true, baseTimestampUtc.AddMilliseconds(1));
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeTrue();
+        }
+
+
+        [Test]
+        public void should_not_mark_removed_peer_as_responding()
+        {
+            var descriptor = _peer1.ToPeerDescriptorWithRoundedTime(true);
+            var baseTimestampUtc = DateTime.UtcNow;
+            descriptor.TimestampUtc = baseTimestampUtc;
+            _repository.AddOrUpdatePeer(descriptor);
+
+            _repository.RemovePeer(descriptor.PeerId, baseTimestampUtc.AddMilliseconds(100));
+            _repository.SetPeerResponding(_peer1.Id, true, baseTimestampUtc.AddMilliseconds(99));
+
+            _repository.GetPeers().ShouldBeEmpty();
         }
 
         [Test]

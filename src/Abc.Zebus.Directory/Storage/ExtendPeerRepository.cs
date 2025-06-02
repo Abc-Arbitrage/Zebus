@@ -21,12 +21,10 @@ namespace Abc.Zebus.Directory.Storage
         public static bool SetPeerRespondingState(this IPeerRepository repository, PeerId peerId, bool isResponding, DateTime timestampUtc)
         {
             var peer = repository.Get(peerId);
-            if (peer == null || peer.TimestampUtc > timestampUtc)
+            if (peer == null || peer.TimestampUtc == null || peer.TimestampUtc > timestampUtc)
                 return false;
 
-            peer.Peer.IsResponding = isResponding;
-            peer.TimestampUtc = timestampUtc;
-            repository.AddOrUpdatePeer(peer);
+            repository.SetPeerResponding(peer.PeerId, isResponding, timestampUtc);
 
             return true;
         }

@@ -164,7 +164,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                 return;
             }
 
-            var pingTimestampUtc = (DateTime)state!;
+            var timestampUtc = default(DateTime);
             var peerRespondingDetected = false;
 
             lock (_lock)
@@ -175,6 +175,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
                     return;
                 }
 
+                timestampUtc = Descriptor.TimestampUtc + TimeSpan.FromMilliseconds(1) ?? SystemDateTime.UtcNow;
                 var peer = Descriptor.Peer;
                 if (!peer.IsResponding)
                 {
@@ -184,7 +185,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
 
             if (peerRespondingDetected)
-                PeerRespondingDetected?.Invoke(this, pingTimestampUtc);
+                PeerRespondingDetected?.Invoke(this, timestampUtc);
 
             Reset();
         }

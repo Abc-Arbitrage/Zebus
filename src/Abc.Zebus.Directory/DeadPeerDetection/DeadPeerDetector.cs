@@ -148,9 +148,9 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             return true;
         }
 
-        private void OnPeerResponding(DeadPeerDetectorEntry entry, DateTime timeoutTimestampUtc)
+        private void OnPeerResponding(DeadPeerDetectorEntry entry, DateTime timestampUtc)
         {
-            _bus.Send(new MarkPeerAsRespondingCommand(entry.Descriptor.PeerId, timeoutTimestampUtc)).Wait(_commandTimeout);
+            _bus.Send(new MarkPeerAsRespondingCommand(entry.Descriptor.PeerId, timestampUtc)).Wait(_commandTimeout);
         }
 
         public void Start()

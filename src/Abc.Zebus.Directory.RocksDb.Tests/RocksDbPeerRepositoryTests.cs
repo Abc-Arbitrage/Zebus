@@ -126,15 +126,17 @@ namespace Abc.Zebus.Directory.RocksDb.Tests
         [Test]
         public void should_mark_peer_as_responding()
         {
+            var baseTimestampUtc = DateTime.UtcNow;
+
             var descriptor = CreatePeerDescriptor(_peer1.Id);
-            descriptor.TimestampUtc = DateTime.UtcNow.AddTicks(-10);
+            descriptor.TimestampUtc = baseTimestampUtc;
             _repository.AddOrUpdatePeer(descriptor);
 
-            _repository.SetPeerResponding(_peer1.Id, false);
+            _repository.SetPeerResponding(_peer1.Id, false, baseTimestampUtc.AddMilliseconds(1));
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeFalse();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeFalse();
 
-            _repository.SetPeerResponding(_peer1.Id, true);
+            _repository.SetPeerResponding(_peer1.Id, true, baseTimestampUtc.AddMilliseconds(1));
             _repository.Get(_peer1.Id).Peer.IsResponding.ShouldBeTrue();
             _repository.GetPeers().ExpectedSingle().Peer.IsResponding.ShouldBeTrue();
         }

@@ -252,12 +252,13 @@ namespace Abc.Zebus.Directory.RocksDb.Storage
             RemoveAllDynamicSubscriptionsForPeer(peerId);
         }
 
-        public void SetPeerResponding(PeerId peerId, bool isResponding)
+        public void SetPeerResponding(PeerId peerId, bool isResponding, DateTime timestampUtc)
         {
             var peer = Get(peerId);
             if (peer != null)
             {
                 peer.Peer.IsResponding = isResponding;
+                peer.TimestampUtc = timestampUtc;
                 AddOrUpdatePeer(peer);
             }
         }

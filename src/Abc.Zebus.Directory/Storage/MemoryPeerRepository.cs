@@ -63,11 +63,14 @@ namespace Abc.Zebus.Directory.Storage
             _peers.TryRemove(peerId, out _);
         }
 
-        public void SetPeerResponding(PeerId peerId, bool isResponding)
+        public void SetPeerResponding(PeerId peerId, bool isResponding, DateTime timestampUtc)
         {
             var peerEntry = GetEntry(peerId);
             if (peerEntry != null)
+            {
+                peerEntry.PeerDescriptor.TimestampUtc = timestampUtc;
                 peerEntry.PeerDescriptor.Peer.IsResponding = isResponding;
+            }
         }
 
         private PeerEntry? GetEntry(PeerId peerId)
