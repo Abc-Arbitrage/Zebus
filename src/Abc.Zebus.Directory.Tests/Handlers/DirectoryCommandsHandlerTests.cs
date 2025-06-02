@@ -2,6 +2,7 @@
 using System.Linq;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.Handlers;
+using Abc.Zebus.Directory.Messages;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Routing;
 using Abc.Zebus.Testing;
@@ -473,9 +474,23 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123");
             _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns(peerDescriptor);
 
+            _handler.Handle(new MarkPeerAsNotRespondingCommand(peerDescriptor.PeerId, default));
+
+            var expectedTimestampUtc = peerDescriptor.TimestampUtc.Value.AddMilliseconds(1);
+            _repositoryMock.Verify(x => x.SetPeerResponding(peerDescriptor.PeerId, false, expectedTimestampUtc));
+            _bus.ExpectExactly(new PeerNotResponding(peerDescriptor.PeerId, expectedTimestampUtc));
+        }
+
+        [Test]
+        public void should_persist_not_responding_peer_with_timestamp()
+        {
+
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123");
+            _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns(peerDescriptor);
+
             var timestampUtc = peerDescriptor.TimestampUtc.Value.AddSeconds(1);
 
-            _handler.Handle(new MarkPeerAsNotRespondingCommand(peerDescriptor.PeerId, timestampUtc));
+            _handler.Handle(new MarkPeerAsNotRespondingInternalCommand(peerDescriptor.PeerId, timestampUtc));
 
             _repositoryMock.Verify(x => x.SetPeerResponding(peerDescriptor.PeerId, false, timestampUtc));
             _bus.ExpectExactly(new PeerNotResponding(peerDescriptor.PeerId, timestampUtc));
@@ -487,9 +502,22 @@ namespace Abc.Zebus.Directory.Tests.Handlers
             var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
             _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns(peerDescriptor);
 
+            _handler.Handle(new MarkPeerAsRespondingCommand(peerDescriptor.PeerId, default));
+
+            var expectedTimestampUtc = peerDescriptor.TimestampUtc.Value.AddMilliseconds(1);
+            _repositoryMock.Verify(x => x.SetPeerResponding(peerDescriptor.PeerId, true, expectedTimestampUtc));
+            _bus.ExpectExactly(new PeerResponding(peerDescriptor.PeerId, expectedTimestampUtc));
+        }
+
+        [Test]
+        public void should_persist_responding_peer_with_timestamp()
+        {
+            var peerDescriptor = TestData.PersistentPeerDescriptor("tcp://abctest:123", typeof(FakeCommand));
+            _repositoryMock.Setup(x => x.Get(peerDescriptor.PeerId)).Returns(peerDescriptor);
+
             var timestampUtc = peerDescriptor.TimestampUtc.Value.AddSeconds(1);
 
-            _handler.Handle(new MarkPeerAsRespondingCommand(peerDescriptor.PeerId, timestampUtc));
+            _handler.Handle(new MarkPeerAsRespondingInternalCommand(peerDescriptor.PeerId, timestampUtc));
 
             _repositoryMock.Verify(x => x.SetPeerResponding(peerDescriptor.PeerId, true, timestampUtc));
 

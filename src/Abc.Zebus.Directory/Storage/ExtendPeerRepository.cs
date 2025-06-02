@@ -18,6 +18,21 @@ namespace Abc.Zebus.Directory.Storage
             return true;
         }
 
+        public static bool SetPeerRespondingState(this IPeerRepository repository, PeerId peerId, bool isResponding, out DateTime timestampUtc)
+        {
+            var peer = repository.Get(peerId);
+            if (peer == null || peer.TimestampUtc == null)
+            {
+                timestampUtc = default;
+                return false;
+            }
+
+            timestampUtc = peer.TimestampUtc.Value.AddMilliseconds(1);
+            repository.SetPeerResponding(peer.PeerId, isResponding, peer.TimestampUtc.Value.AddMilliseconds(1));
+
+            return true;
+        }
+
         public static bool SetPeerRespondingState(this IPeerRepository repository, PeerId peerId, bool isResponding, DateTime timestampUtc)
         {
             var peer = repository.Get(peerId);

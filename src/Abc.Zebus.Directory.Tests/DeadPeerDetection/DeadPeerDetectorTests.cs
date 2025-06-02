@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
 using Abc.Zebus.Directory.DeadPeerDetection;
+using Abc.Zebus.Directory.Messages;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Testing;
 using Abc.Zebus.Testing.Extensions;
@@ -263,7 +264,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.PauseTime(startTime.AddSeconds(_transientPeerTimeout + 1));
                 _detector.DetectDeadPeers();
-                _bus.ExpectExactly(new MarkPeerAsNotRespondingCommand(_transientAlivePeer0.Peer.Id, firstPingTimestampUtc));
+                _bus.ExpectExactly(new MarkPeerAsNotRespondingInternalCommand(_transientAlivePeer0.Peer.Id, firstPingTimestampUtc));
             }
         }
 
@@ -296,7 +297,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.PauseTime(startTime.AddSeconds(_persistentPeerTimeout + 1));
                 _detector.DetectDeadPeers();
-                _bus.ExpectExactly(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
+                _bus.ExpectExactly(new MarkPeerAsNotRespondingInternalCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
             }
         }
 
@@ -420,7 +421,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.PauseTime(startTime.AddSeconds(_persistentPeerTimeout + 1));
                 _detector.DetectDeadPeers();
-                _bus.Expect(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
+                _bus.Expect(new MarkPeerAsNotRespondingInternalCommand(_persistentAlivePeer.Peer.Id, firstPingTimestampUtc));
                 _bus.ClearMessages();
 
                 // simulate MarkPeerAsNotRespondingCommand handler
@@ -433,7 +434,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
 
                 SystemDateTime.PauseTime(SystemDateTime.UtcNow.Add(_pingInterval));
                 _detector.DetectDeadPeers();
-                _bus.Expect(new MarkPeerAsRespondingCommand(_persistentAlivePeer.Peer.Id, _persistentAlivePeer.TimestampUtc.Value + 1.Millisecond()));
+                _bus.Expect(new MarkPeerAsRespondingInternalCommand(_persistentAlivePeer.Peer.Id, _persistentAlivePeer.TimestampUtc.Value + 1.Millisecond()));
             }
         }
 
@@ -550,7 +551,7 @@ namespace Abc.Zebus.Directory.Tests.DeadPeerDetection
                 // Peer marked as not responding
                 SystemDateTime.AddToPausedTime(_persistentPeerTimeout.Seconds());
                 _detector.DetectDeadPeers();
-                _bus.Expect(new MarkPeerAsNotRespondingCommand(_persistentAlivePeer.PeerId, initialTime));
+                _bus.Expect(new MarkPeerAsNotRespondingInternalCommand(_persistentAlivePeer.PeerId, initialTime));
 
                 // Peer removed
                 SetupPeerRepository();

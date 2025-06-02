@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Abc.Zebus.Directory.Configuration;
+using Abc.Zebus.Directory.Messages;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
@@ -17,6 +18,8 @@ namespace Abc.Zebus.Directory.Handlers
                                             IMessageHandler<UpdatePeerSubscriptionsForTypesCommand>,
                                             IMessageHandler<MarkPeerAsRespondingCommand>,
                                             IMessageHandler<MarkPeerAsNotRespondingCommand>,
+                                            IMessageHandler<MarkPeerAsRespondingInternalCommand>,
+                                            IMessageHandler<MarkPeerAsNotRespondingInternalCommand>,
                                             IMessageContextAware
     {
         private readonly HashSet<string> _blacklistedMachines;
@@ -152,11 +155,25 @@ namespace Abc.Zebus.Directory.Handlers
 
         public void Handle(MarkPeerAsRespondingCommand message)
         {
+            // Explicitly ignores the command timestamp to avoid update / delete race conditions.
+            if (_peerRepository.SetPeerRespondingState(message.PeerId, true, out var timestampUtc))
+                _bus.Publish(new PeerResponding(message.PeerId, timestampUtc));
+        }
+
+        public void Handle(MarkPeerAsNotRespondingCommand message)
+        {
+            // Explicitly ignores the command timestamp to avoid update / delete race conditions.
+            if (_peerRepository.SetPeerRespondingState(message.PeerId, false, out var timestampUtc))
+                _bus.Publish(new PeerNotResponding(message.PeerId, timestampUtc));
+        }
+
+        public void Handle(MarkPeerAsRespondingInternalCommand message)
+        {
             if (_peerRepository.SetPeerRespondingState(message.PeerId, true, message.TimestampUtc))
                 _bus.Publish(new PeerResponding(message.PeerId, message.TimestampUtc));
         }
 
-        public void Handle(MarkPeerAsNotRespondingCommand message)
+        public void Handle(MarkPeerAsNotRespondingInternalCommand message)
         {
             if (_peerRepository.SetPeerRespondingState(message.PeerId, false, message.TimestampUtc))
                 _bus.Publish(new PeerNotResponding(message.PeerId, message.TimestampUtc));

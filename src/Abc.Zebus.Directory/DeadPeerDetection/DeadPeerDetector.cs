@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Abc.Zebus.Directory.Configuration;
+using Abc.Zebus.Directory.Messages;
 using Abc.Zebus.Directory.Storage;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
@@ -124,7 +125,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
             }
             else if (descriptor.Peer.IsResponding)
             {
-                _bus.Send(new MarkPeerAsNotRespondingCommand(descriptor.PeerId, timeoutTimestampUtc)).Wait(_commandTimeout);
+                _bus.Send(new MarkPeerAsNotRespondingInternalCommand(descriptor.PeerId, timeoutTimestampUtc)).Wait(_commandTimeout);
                 descriptor.Peer.IsResponding = false;
             }
         }
@@ -150,7 +151,7 @@ namespace Abc.Zebus.Directory.DeadPeerDetection
 
         private void OnPeerResponding(DeadPeerDetectorEntry entry, DateTime timestampUtc)
         {
-            _bus.Send(new MarkPeerAsRespondingCommand(entry.Descriptor.PeerId, timestampUtc)).Wait(_commandTimeout);
+            _bus.Send(new MarkPeerAsRespondingInternalCommand(entry.Descriptor.PeerId, timestampUtc)).Wait(_commandTimeout);
         }
 
         public void Start()
