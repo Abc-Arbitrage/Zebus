@@ -7,9 +7,18 @@ namespace Abc.Zebus.Persistence.Cassandra.Util
         public static DateTime GetDateTimeForV2OrV3(this MessageId messageId)
         {
             var dateTime = messageId.GetDateTime();
-            var isInvalidDateTime = dateTime.Year > DateTime.UtcNow.Year + 2;
 
-            return isInvalidDateTime ? MessageIdV2.GetDateTime(messageId.Value) : dateTime;
+            // Attempt to identify and support broken message IDs from outdated clients.
+            var isInvalidVersion = GetGuidVersion(messageId.Value) != 1;
+            var isInvalidDateTime = dateTime.Year > DateTime.UtcNow.Year + 2 || dateTime.Year < 2000;
+
+            return isInvalidVersion || isInvalidDateTime ? MessageIdV2.GetDateTime(messageId.Value) : dateTime;
+        }
+
+        private static unsafe byte GetGuidVersion(Guid guid)
+        {
+            var bytes = (byte*)&guid;
+            return (byte)((bytes[7] & 0xF0) >> 4);
         }
 
         private struct MessageIdV2
