@@ -12,6 +12,7 @@ namespace Abc.Zebus.Persistence.Runner
             KeySpace = AppSettings.Get("Cassandra.KeySpace", "");
             QueryTimeout = AppSettings.Get("Cassandra.QueryTimeout", 5.Seconds());
             LocalDataCenter = AppSettings.Get("Cassandra.LocalDataCenter", "");
+            UseSsl = AppSettings.Get("Cassandra.UseSsl", false);
             OldestMessagePerPeerCheckPeriod = AppSettings.Get("Cassandra.OldestMessagePerPeerCheckPeriod", 1.Minutes());
             OldestMessagePerPeerGlobalCheckPeriod = AppSettings.Get("Cassandra.OldestMessagePerPeerCheckPeriod", 1.Hours());
         }
@@ -20,6 +21,7 @@ namespace Abc.Zebus.Persistence.Runner
         public string KeySpace { get; }
         public TimeSpan QueryTimeout { get; }
         public string LocalDataCenter { get; }
+        public bool UseSsl { get; }
         public TimeSpan OldestMessagePerPeerCheckPeriod { get; set; }
         public TimeSpan OldestMessagePerPeerGlobalCheckPeriod { get; set; }
     }
