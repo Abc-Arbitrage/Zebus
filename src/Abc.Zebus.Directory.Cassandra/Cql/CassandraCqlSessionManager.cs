@@ -1,43 +1,62 @@
-﻿using System;
+﻿using Cassandra;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Concurrent;
-using System.Linq;
-using Cassandra;
+using System.Net.Security;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Abc.Zebus.Directory.Cassandra.Cql
 {
     public class CassandraCqlSessionManager : IDisposable
     {
-        private readonly ConcurrentDictionary<string, Cluster> _clusters = new ConcurrentDictionary<string, Cluster>();
+        private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(CassandraCqlSessionManager));
 
-        private readonly ConcurrentDictionary<Cluster, ISession> _sessions = new ConcurrentDictionary<Cluster, ISession>();
+        private readonly ConcurrentDictionary<string, Cluster> _clusters = new();
+        private readonly ConcurrentDictionary<Cluster, ISession> _sessions = new();
 
         private ISession GetOrCreateSession(Cluster cluster, string keySpace)
         {
-            if (!_sessions.TryGetValue(cluster, out var session))
-            {
-                session = cluster.Connect(keySpace);
-                _sessions.TryAdd(cluster, session);
-            }
+            if (_sessions.TryGetValue(cluster, out var session))
+                return session;
+
+            session = cluster.Connect(keySpace);
+            _sessions.TryAdd(cluster, session);
+
             return session;
         }
 
-        private Cluster GetOrCreateCluster(string hosts, string defaultKeySpace, TimeSpan queryTimeout, string localDataCenter)
+        private Cluster GetOrCreateCluster(ICassandraConfiguration configuration)
         {
-            if (!_clusters.TryGetValue(hosts, out var cluster))
-            {
-                var contactPoints = hosts.Split(' ').ToArray();
+            if (_clusters.TryGetValue(configuration.Hosts, out var cluster))
+                return cluster;
 
-                cluster = Cluster
-                    .Builder()
-                    .WithDefaultKeyspace(defaultKeySpace)
-                    .WithQueryTimeout((int)queryTimeout.TotalMilliseconds)
-                    .AddContactPoints(contactPoints)
-                    .WithLoadBalancingPolicy(new DCAwareRoundRobinPolicy(localDataCenter))
-                    .Build();
+            var contactPoints = configuration.Hosts.Split(' ');
 
-                _clusters.TryAdd(hosts, cluster);
-            }
+            var clusterBuilder = Cluster
+                                 .Builder()
+                                 .WithDefaultKeyspace(configuration.KeySpace)
+                                 .WithQueryTimeout((int) configuration.QueryTimeout.TotalMilliseconds)
+                                 .AddContactPoints(contactPoints)
+                                 .WithLoadBalancingPolicy(new DCAwareRoundRobinPolicy(configuration.LocalDataCenter));
+
+            if (configuration.UseSsl)
+                clusterBuilder = clusterBuilder.WithSSL(new SSLOptions(SslProtocols.None, false, ValidateServerCertificate));
+
+            cluster = clusterBuilder.Build();
+
+            _clusters.TryAdd(configuration.Hosts, cluster);
+
             return cluster;
+
+            bool ValidateServerCertificate(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslPolicyErrors)
+            {
+                if (sslPolicyErrors == SslPolicyErrors.None)
+                    return true;
+
+                _logger.Log(LogLevel.Error, "Failed to validate certificate: {SslPolicyErrors}", sslPolicyErrors);
+                return false;
+            }
         }
 
         public void Dispose()
@@ -51,14 +70,14 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
 
         public ISession GetSession(ICassandraConfiguration configuration)
         {
-            var cluster = GetOrCreateCluster(configuration.Hosts, configuration.KeySpace, configuration.QueryTimeout, configuration.LocalDataCenter);
+            var cluster = GetOrCreateCluster(configuration);
 
             return GetOrCreateSession(cluster, configuration.KeySpace);
         }
 
         public Cluster GetCluster(ICassandraConfiguration configuration)
         {
-            return GetOrCreateCluster(configuration.Hosts, configuration.KeySpace, configuration.QueryTimeout, configuration.LocalDataCenter);
+            return GetOrCreateCluster(configuration);
         }
     }
 }

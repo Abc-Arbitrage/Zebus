@@ -25,5 +25,10 @@ namespace Abc.Zebus.Directory.Cassandra.Cql
         /// will discover the rest of the cluster)
         /// </summary>
         string LocalDataCenter { get; }
+
+        /// <summary>
+        /// Whether to use SSL to connect to Cassandra nodes
+        /// </summary>
+        bool UseSsl { get; }
     }
 }
