@@ -1,6 +1,6 @@
 # Zebus
 
-[![Build](https://github.com/Abc-Arbitrage/Zebus/workflows/Build/badge.svg)](https://github.com/Abc-Arbitrage/Zebus/actions?query=workflow%3ABuild)
+[![Build](https://github.com/Abc-Arbitrage/Zebus/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Abc-Arbitrage/Zebus/actions/workflows/build.yml)
 [![NuGet](https://img.shields.io/nuget/v/Zebus.svg?label=NuGet&logo=NuGet)](http://www.nuget.org/packages/Zebus/)
 [![Gitter](https://img.shields.io/gitter/room/Abc-Arbitrage/Zebus.svg?label=Chat&logo=Gitter&color=blue)](https://gitter.im/Abc-Arbitrage/Zebus)
 
