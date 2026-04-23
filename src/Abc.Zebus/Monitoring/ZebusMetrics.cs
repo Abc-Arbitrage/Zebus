@@ -28,7 +28,7 @@ public static class ZebusMetrics
 
     internal static readonly Counter<long> MessageSentCount = Meter.CreateCounter<long>(
         "zebus.messages.sent",
-        description: "Number of messages sent");
+        description: "Number of logical messages sent (one per Send/Publish call)");
 
     internal static readonly Counter<long> MessageReceivedCount = Meter.CreateCounter<long>(
         "zebus.messages.received",
