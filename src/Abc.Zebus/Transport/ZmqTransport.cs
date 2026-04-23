@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
+using Abc.Zebus.Monitoring;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
 using Abc.Zebus.Util;
@@ -279,6 +280,8 @@ public class ZmqTransport : ITransport
             return true;
 
         _logger.LogDebug($"Unable to read transport message, Length: {bufferReader.Length}, Bytes: {bufferReader.ToDebugString(50)}");
+
+        ZebusMetrics.TransportMessageDeserializationFailureCount.Add(1);
 
         return false;
     }

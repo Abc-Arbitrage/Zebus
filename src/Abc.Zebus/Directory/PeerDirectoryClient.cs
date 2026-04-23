@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Abc.Zebus.Monitoring;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using Microsoft.Extensions.Logging;
@@ -58,6 +59,8 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         _messagesReceivedDuringRegister = new BlockingCollection<IEvent>();
 
+        var registrationStopwatch = Stopwatch.StartNew();
+
         try
         {
             await TryRegisterOnDirectoryAsync(bus, selfDescriptor).ConfigureAwait(false);
@@ -66,6 +69,10 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         {
             _messagesReceivedDuringRegister.CompleteAdding();
         }
+
+        registrationStopwatch.Stop();
+        ZebusMetrics.DirectoryRegistrationCount.Add(1);
+        ZebusMetrics.DirectoryRegistrationDuration.Record(registrationStopwatch.Elapsed.TotalMilliseconds);
 
         _pingStopwatch.Restart();
         ProcessMessagesReceivedDuringRegister();

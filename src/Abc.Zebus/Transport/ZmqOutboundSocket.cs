@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Abc.Zebus.Monitoring;
 using Abc.Zebus.Transport.Zmq;
 using Microsoft.Extensions.Logging;
 
@@ -124,6 +125,8 @@ internal class ZmqOutboundSocket
         _logger.LogError($"Unable to send message, destination peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}, Error: {errorMessage}");
         _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
 
+        ZebusMetrics.TransportSendFailureCount.Add(1);
+
         if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)
             SwitchToClosedState(_options.ClosedStateDurationAfterSendFailure);
 
@@ -153,6 +156,8 @@ internal class ZmqOutboundSocket
         _closedStateStopwatch.Start();
         _closedStateDuration = duration;
         _isInClosedState = true;
+
+        ZebusMetrics.SocketClosedStateCount.Add(1);
     }
 
     private void SwitchToOpenState()

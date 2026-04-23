@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
+using Abc.Zebus.Monitoring;
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Subscriptions;
@@ -135,6 +136,8 @@ public class Bus : IInternalBus, IMessageDispatchFactory
         }
 
         Started?.Invoke();
+
+        ZebusMetrics.BusStartedCount.Add(1);
     }
 
     private void PerformStartupSubscribe()
@@ -200,6 +203,8 @@ public class Bus : IInternalBus, IMessageDispatchFactory
         }
 
         InternalStop(true);
+
+        ZebusMetrics.BusStoppedCount.Add(1);
 
         Stopped?.Invoke();
     }
@@ -636,10 +641,15 @@ public class Bus : IInternalBus, IMessageDispatchFactory
     }
 
     private void OnPeerUpdated(PeerId peerId, PeerUpdateAction peerUpdateAction)
-        => _transport.OnPeerUpdated(peerId, peerUpdateAction);
+    {
+        _transport.OnPeerUpdated(peerId, peerUpdateAction);
+        ZebusMetrics.PeerUpdatedCount.Add(1);
+    }
 
     private void OnTransportMessageReceived(TransportMessage transportMessage)
     {
+        ZebusMetrics.MessageReceivedCount.Add(1);
+
         if (transportMessage.MessageTypeId == MessageExecutionCompleted.TypeId)
         {
             HandleMessageExecutionCompleted(transportMessage);
@@ -813,7 +823,10 @@ public class Bus : IInternalBus, IMessageDispatchFactory
     }
 
     protected void SendTransportMessage(TransportMessage transportMessage, IList<Peer> peers)
-        => _transport.Send(transportMessage, peers, new SendContext());
+    {
+        _transport.Send(transportMessage, peers, new SendContext());
+        ZebusMetrics.MessageSentCount.Add(1);
+    }
 
     protected void AckTransportMessage(TransportMessage transportMessage)
         => _transport.AckMessage(transportMessage);
