@@ -285,7 +285,7 @@ public class ZmqTransport : ITransport
             {
                 MessageReceived?.Invoke(transportMessage);
 #if NET10_0_OR_GREATER
-                ZebusMetrics.MessagesReceived.Add(1);
+                ZebusMetrics.MessagesReceived.Add(1, ZebusMetrics.PeerTag(transportMessage.Originator.SenderId));
 #endif
             }
         }
