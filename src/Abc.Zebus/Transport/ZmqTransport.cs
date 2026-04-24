@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
+#if NET10_0_OR_GREATER
+using Abc.Zebus.Monitoring;
+#endif
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
 using Abc.Zebus.Util;
@@ -265,7 +268,12 @@ public class ZmqTransport : ITransport
             }
 
             if (_isListening)
+            {
                 MessageReceived?.Invoke(transportMessage);
+#if NET10_0_OR_GREATER
+                ZebusMetrics.MessagesReceived.Add(1);
+#endif
+            }
         }
         catch (Exception ex)
         {
@@ -397,6 +405,9 @@ public class ZmqTransport : ITransport
         try
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
+#if NET10_0_OR_GREATER
+            ZebusMetrics.MessagesSent.Add(1);
+#endif
         }
         catch (Exception ex)
         {
@@ -412,6 +423,9 @@ public class ZmqTransport : ITransport
                 continue;
 
             outboundSocket.Disconnect();
+#if NET10_0_OR_GREATER
+            ZebusMetrics.OutboundSocketCount.Add(-1);
+#endif
         }
     }
 
@@ -423,6 +437,10 @@ public class ZmqTransport : ITransport
             outboundSocket.ConnectFor(transportMessage);
 
             _outboundSockets.TryAdd(peer.Id, outboundSocket);
+#if NET10_0_OR_GREATER
+            if (outboundSocket.IsConnected)
+                ZebusMetrics.OutboundSocketCount.Add(1);
+#endif
         }
         else if (!string.Equals(outboundSocket.EndPoint, peer.EndPoint, StringComparison.OrdinalIgnoreCase))
         {

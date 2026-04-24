@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
+#if NET10_0_OR_GREATER
+using Abc.Zebus.Monitoring;
+#endif
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Subscriptions;
@@ -135,6 +138,9 @@ public class Bus : IInternalBus, IMessageDispatchFactory
         }
 
         Started?.Invoke();
+#if NET10_0_OR_GREATER
+        ZebusMetrics.ActiveBusCount.Add(1);
+#endif
     }
 
     private void PerformStartupSubscribe()
@@ -202,6 +208,9 @@ public class Bus : IInternalBus, IMessageDispatchFactory
         InternalStop(true);
 
         Stopped?.Invoke();
+#if NET10_0_OR_GREATER
+        ZebusMetrics.ActiveBusCount.Add(-1);
+#endif
     }
 
     private void InternalStop(bool unregister)

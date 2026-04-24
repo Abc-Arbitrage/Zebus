@@ -1,10 +1,4 @@
-#if NETCOREAPP
-
-using System.Runtime.CompilerServices;
-
-[assembly: TypeForwardedTo(typeof(IsExternalInit))]
-
-#else
+#if !NETCOREAPP
 
 // ReSharper disable once CheckNamespace
 namespace System.Runtime.CompilerServices

@@ -48,10 +48,12 @@ public class DomainException : MessageProcessingException
     {
     }
 
+#if !NETCOREAPP
     protected DomainException(SerializationInfo info, StreamingContext context)
         : base(info, context)
     {
     }
+#endif
 
     private static string ReadDescriptionFromAttribute(Expression<Func<int>> errorCodeExpression)
     {

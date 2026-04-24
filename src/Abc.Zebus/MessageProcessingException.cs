@@ -32,8 +32,10 @@ public class MessageProcessingException : Exception
     {
     }
 
+#if !NETCOREAPP
     protected MessageProcessingException(SerializationInfo info, StreamingContext context)
         : base(info, context)
     {
     }
+#endif
 }
