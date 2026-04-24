@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+#if NET10_0_OR_GREATER
+using System.Diagnostics.Metrics;
+#endif
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -34,6 +37,9 @@ public class ZmqTransport : ITransport
     private string _environment = string.Empty;
     private CountdownEvent? _outboundSocketsToStop;
     private bool _isRunning;
+#if NET10_0_OR_GREATER
+    private ObservableGauge<int>? _connectionStateGauge;
+#endif
 
     public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
     {
@@ -113,6 +119,14 @@ public class ZmqTransport : ITransport
 
         startSequenceState.Wait();
         _isRunning = true;
+
+#if NET10_0_OR_GREATER
+        _connectionStateGauge = ZebusMetrics.Meter.CreateObservableGauge(
+            "zebus.transport.connection.alive",
+            observeValues: ObserveConnectionStates,
+            unit: "{connection}",
+            description: "Whether a peer connection is alive (1) or dead (0)");
+#endif
     }
 
     public void Stop()
@@ -406,7 +420,7 @@ public class ZmqTransport : ITransport
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
 #if NET10_0_OR_GREATER
-            ZebusMetrics.MessagesSent.Add(1);
+            ZebusMetrics.MessagesSent.Add(1, ZebusMetrics.PeerTag(target.Id));
 #endif
         }
         catch (Exception ex)
@@ -507,6 +521,18 @@ public class ZmqTransport : ITransport
             _logger.LogWarning(ex, $"Unable to enqueue item, Type: {typeof(T).Name}");
         }
     }
+
+#if NET10_0_OR_GREATER
+    private IEnumerable<Measurement<int>> ObserveConnectionStates()
+    {
+        foreach (var (peerId, socket) in _outboundSockets)
+        {
+            yield return new Measurement<int>(
+                socket.IsConnected ? 1 : 0,
+                ZebusMetrics.PeerTag(peerId));
+        }
+    }
+#endif
 
     private readonly struct OutboundSocketAction
     {

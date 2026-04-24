@@ -1,17 +1,21 @@
 #if NET10_0_OR_GREATER
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
 namespace Abc.Zebus.Monitoring;
 
 /// <summary>
 /// Provides <see cref="System.Diagnostics.Metrics"/> instruments for monitoring Zebus connection state and messaging.
+/// All per-connection metrics include a <c>zebus.peer.id</c> tag for filtering by individual peer.
 /// </summary>
 internal static class ZebusMetrics
 {
     internal static readonly Meter Meter = new("Abc.Zebus", typeof(ZebusMetrics).Assembly.GetName().Version?.ToString());
 
-    // Transport: messages
+    private const string PeerIdTag = "zebus.peer.id";
+
+    // Transport: per-connection message counters
     internal static readonly Counter<long> MessagesSent = Meter.CreateCounter<long>(
         "zebus.transport.messages.sent",
         unit: "{message}",
@@ -27,7 +31,7 @@ internal static class ZebusMetrics
         unit: "{message}",
         description: "Number of transport message send failures");
 
-    // Transport: connections
+    // Transport: per-connection state
     internal static readonly Counter<long> PeerConnections = Meter.CreateCounter<long>(
         "zebus.transport.peer_connections",
         unit: "{connection}",
@@ -43,7 +47,7 @@ internal static class ZebusMetrics
         unit: "{failure}",
         description: "Number of outbound peer socket connection failures");
 
-    // Transport: outbound socket state
+    // Transport: aggregate outbound socket count
     internal static readonly UpDownCounter<int> OutboundSocketCount = Meter.CreateUpDownCounter<int>(
         "zebus.transport.outbound_sockets",
         unit: "{socket}",
@@ -65,5 +69,8 @@ internal static class ZebusMetrics
         "zebus.bus.active",
         unit: "{bus}",
         description: "Current number of active (started) bus instances");
+
+    internal static KeyValuePair<string, object?> PeerTag(PeerId peerId)
+        => new(PeerIdTag, peerId.ToString());
 }
 #endif
