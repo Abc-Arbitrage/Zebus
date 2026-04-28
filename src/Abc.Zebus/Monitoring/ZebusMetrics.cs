@@ -64,13 +64,18 @@ internal static class ZebusMetrics
         unit: "{update}",
         description: "Number of peer update events received");
 
-    // Bus: status
-    internal static readonly UpDownCounter<int> ActiveBusCount = Meter.CreateUpDownCounter<int>(
+    // Bus: per-instance status
+    private const string BusIdTag = "zebus.bus.id";
+
+    internal static readonly UpDownCounter<int> BusActive = Meter.CreateUpDownCounter<int>(
         "zebus.bus.active",
         unit: "{bus}",
-        description: "Current number of active (started) bus instances");
+        description: "Whether a bus instance is active (1) or stopped (0)");
 
     internal static KeyValuePair<string, object?> PeerTag(PeerId peerId)
         => new(PeerIdTag, peerId.ToString());
+
+    internal static KeyValuePair<string, object?> BusTag(int busInstanceId)
+        => new(BusIdTag, busInstanceId);
 }
 #endif
