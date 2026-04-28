@@ -1,5 +1,6 @@
 #if NET10_0_OR_GREATER
 using System.Diagnostics.Metrics;
+#endif
 
 namespace Abc.Zebus.Monitoring;
 
@@ -9,6 +10,7 @@ namespace Abc.Zebus.Monitoring;
 /// </summary>
 internal static class TransportMetrics
 {
+#if NET10_0_OR_GREATER
     // Per-connection message counters
     internal static readonly Counter<long> MessagesSent = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.messages.sent",
@@ -46,5 +48,5 @@ internal static class TransportMetrics
         "zebus.transport.outbound_sockets",
         unit: "{socket}",
         description: "Current number of active outbound sockets");
-}
 #endif
+}

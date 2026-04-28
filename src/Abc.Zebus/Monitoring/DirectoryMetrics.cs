@@ -1,5 +1,6 @@
 #if NET10_0_OR_GREATER
 using System.Diagnostics.Metrics;
+#endif
 
 namespace Abc.Zebus.Monitoring;
 
@@ -8,6 +9,7 @@ namespace Abc.Zebus.Monitoring;
 /// </summary>
 internal static class DirectoryMetrics
 {
+#if NET10_0_OR_GREATER
     internal static readonly UpDownCounter<int> KnownPeerCount = ZebusMetrics.Meter.CreateUpDownCounter<int>(
         "zebus.directory.known_peers",
         unit: "{peer}",
@@ -17,5 +19,5 @@ internal static class DirectoryMetrics
         "zebus.directory.peer_updates",
         unit: "{update}",
         description: "Number of peer update events received");
-}
 #endif
+}

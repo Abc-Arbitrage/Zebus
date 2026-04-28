@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-#if NET10_0_OR_GREATER
 using Abc.Zebus.Monitoring;
-#endif
 using Abc.Zebus.Transport.Zmq;
 using Microsoft.Extensions.Logging;
 
