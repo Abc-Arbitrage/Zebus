@@ -8,9 +8,6 @@ using System.Threading.Tasks;
 using Abc.Zebus.Directory;
 using Abc.Zebus.Dispatch;
 using Abc.Zebus.Lotus;
-#if NET10_0_OR_GREATER
-using Abc.Zebus.Monitoring;
-#endif
 using Abc.Zebus.Persistence;
 using Abc.Zebus.Serialization;
 using Abc.Zebus.Subscriptions;
@@ -26,10 +23,6 @@ public class Bus : IInternalBus, IMessageDispatchFactory
 {
     private static readonly BusMessageLogger _messageLogger = new(typeof(Bus));
     private static readonly ILogger _logger = ZebusLogManager.GetLogger(typeof(Bus));
-#if NET10_0_OR_GREATER
-    private static int _nextInstanceId;
-    private readonly int _instanceId = Interlocked.Increment(ref _nextInstanceId);
-#endif
 
     private readonly ConcurrentDictionary<MessageId, TaskCompletionSource<CommandResult>> _messageIdToTaskCompletionSources = new();
     private readonly UniqueTimestampProvider _deserializationFailureTimestampProvider = new();
@@ -142,9 +135,6 @@ public class Bus : IInternalBus, IMessageDispatchFactory
         }
 
         Started?.Invoke();
-#if NET10_0_OR_GREATER
-        ZebusMetrics.BusActive.Add(1, ZebusMetrics.BusTag(_instanceId));
-#endif
     }
 
     private void PerformStartupSubscribe()
@@ -212,9 +202,6 @@ public class Bus : IInternalBus, IMessageDispatchFactory
         InternalStop(true);
 
         Stopped?.Invoke();
-#if NET10_0_OR_GREATER
-        ZebusMetrics.BusActive.Add(-1, ZebusMetrics.BusTag(_instanceId));
-#endif
     }
 
     private void InternalStop(bool unregister)

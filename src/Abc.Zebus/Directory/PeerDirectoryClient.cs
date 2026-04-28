@@ -265,7 +265,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         {
             PeerUpdated?.Invoke(peerDescriptor.Peer.Id, PeerUpdateAction.Started);
 #if NET10_0_OR_GREATER
-            ZebusMetrics.PeerUpdates.Add(1);
+            DirectoryMetrics.PeerUpdates.Add(1);
 #endif
         }
 
@@ -276,7 +276,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         PeerEntry CreatePeerEntry()
         {
 #if NET10_0_OR_GREATER
-            ZebusMetrics.KnownPeerCount.Add(1);
+            DirectoryMetrics.KnownPeerCount.Add(1);
 #endif
             return new(peerDescriptor, _globalSubscriptionsIndex);
         }
@@ -340,7 +340,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Stopped);
 #if NET10_0_OR_GREATER
-        ZebusMetrics.PeerUpdates.Add(1);
+        DirectoryMetrics.PeerUpdates.Add(1);
 #endif
     }
 
@@ -354,12 +354,12 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         removedPeer.RemoveSubscriptions();
 #if NET10_0_OR_GREATER
-        ZebusMetrics.KnownPeerCount.Add(-1);
+        DirectoryMetrics.KnownPeerCount.Add(-1);
 #endif
 
         PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Decommissioned);
 #if NET10_0_OR_GREATER
-        ZebusMetrics.PeerUpdates.Add(1);
+        DirectoryMetrics.PeerUpdates.Add(1);
 #endif
     }
 
@@ -382,7 +382,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
 #if NET10_0_OR_GREATER
-        ZebusMetrics.PeerUpdates.Add(1);
+        DirectoryMetrics.PeerUpdates.Add(1);
 #endif
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptions);
@@ -424,7 +424,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
 #if NET10_0_OR_GREATER
-        ZebusMetrics.PeerUpdates.Add(1);
+        DirectoryMetrics.PeerUpdates.Add(1);
 #endif
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptionsForTypes);
@@ -476,7 +476,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         PeerUpdated?.Invoke(peerId, PeerUpdateAction.Updated);
 #if NET10_0_OR_GREATER
-        ZebusMetrics.PeerUpdates.Add(1);
+        DirectoryMetrics.PeerUpdates.Add(1);
 #endif
     }
 
