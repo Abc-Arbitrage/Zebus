@@ -22,6 +22,16 @@ internal static class TransportMetrics
         unit: "{message}",
         description: "Number of transport messages received");
 
+    internal static readonly Counter<long> BytesSent = ZebusMetrics.Meter.CreateCounter<long>(
+        "zebus.transport.bytes.sent",
+        unit: "By",
+        description: "Number of bytes sent to peers");
+
+    internal static readonly Counter<long> BytesReceived = ZebusMetrics.Meter.CreateCounter<long>(
+        "zebus.transport.bytes.received",
+        unit: "By",
+        description: "Number of bytes received from peers");
+
     internal static readonly Counter<long> MessageSendFailures = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.messages.send_failures",
         unit: "{message}",

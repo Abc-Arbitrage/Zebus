@@ -283,7 +283,9 @@ public class ZmqTransport : ITransport
             {
                 MessageReceived?.Invoke(transportMessage);
 #if NET10_0_OR_GREATER
-                TransportMetrics.MessagesReceived.Add(1, ZebusMetrics.PeerTag(transportMessage.Originator.SenderId));
+                var peerTag = ZebusMetrics.PeerTag(transportMessage.Originator.SenderId);
+                TransportMetrics.MessagesReceived.Add(1, peerTag);
+                TransportMetrics.BytesReceived.Add(bufferReader.Length, peerTag);
 #endif
             }
         }
@@ -418,7 +420,9 @@ public class ZmqTransport : ITransport
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
 #if NET10_0_OR_GREATER
-            TransportMetrics.MessagesSent.Add(1, ZebusMetrics.PeerTag(target.Id));
+            var peerTag = ZebusMetrics.PeerTag(target.Id);
+            TransportMetrics.MessagesSent.Add(1, peerTag);
+            TransportMetrics.BytesSent.Add(bufferWriter.Position, peerTag);
 #endif
         }
         catch (Exception ex)
