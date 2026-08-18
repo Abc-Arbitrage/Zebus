@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-#if NET10_0_OR_GREATER
+#if NET
 using System.Diagnostics.Metrics;
 #endif
 using System.IO;
@@ -35,7 +35,7 @@ public class ZmqTransport : ITransport
     private string _environment = string.Empty;
     private CountdownEvent? _outboundSocketsToStop;
     private bool _isRunning;
-#if NET10_0_OR_GREATER
+#if NET
     private ObservableGauge<int>? _connectionStateGauge;
 #endif
 
@@ -118,12 +118,8 @@ public class ZmqTransport : ITransport
         startSequenceState.Wait();
         _isRunning = true;
 
-#if NET10_0_OR_GREATER
-        _connectionStateGauge = ZebusMetrics.Meter.CreateObservableGauge(
-            "zebus.transport.connection.alive",
-            observeValues: ObserveConnectionStates,
-            unit: "{connection}",
-            description: "Whether a peer connection is alive (1) or dead (0)");
+#if NET
+        _connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates);
 #endif
     }
 
@@ -282,11 +278,9 @@ public class ZmqTransport : ITransport
             if (_isListening)
             {
                 MessageReceived?.Invoke(transportMessage);
-#if NET10_0_OR_GREATER
-                var peerTag = ZebusMetrics.PeerTag(transportMessage.Originator.SenderId);
-                TransportMetrics.MessagesReceived.Add(1, peerTag);
-                TransportMetrics.BytesReceived.Add(bufferReader.Length, peerTag);
-#endif
+                var senderId = transportMessage.Originator.SenderId;
+                TransportMetrics.AddMessagesReceived(1, senderId);
+                TransportMetrics.AddBytesReceived(bufferReader.Length, senderId);
             }
         }
         catch (Exception ex)
@@ -419,11 +413,8 @@ public class ZmqTransport : ITransport
         try
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
-#if NET10_0_OR_GREATER
-            var peerTag = ZebusMetrics.PeerTag(target.Id);
-            TransportMetrics.MessagesSent.Add(1, peerTag);
-            TransportMetrics.BytesSent.Add(bufferWriter.Position, peerTag);
-#endif
+            TransportMetrics.AddMessagesSent(1, target.Id);
+            TransportMetrics.AddBytesSent(bufferWriter.Position, target.Id);
         }
         catch (Exception ex)
         {
@@ -439,9 +430,7 @@ public class ZmqTransport : ITransport
                 continue;
 
             outboundSocket.Disconnect();
-#if NET10_0_OR_GREATER
-            TransportMetrics.OutboundSocketCount.Add(-1);
-#endif
+            TransportMetrics.AddOutboundSocketCount(-1);
         }
     }
 
@@ -453,10 +442,8 @@ public class ZmqTransport : ITransport
             outboundSocket.ConnectFor(transportMessage);
 
             _outboundSockets.TryAdd(peer.Id, outboundSocket);
-#if NET10_0_OR_GREATER
             if (outboundSocket.IsConnected)
-                TransportMetrics.OutboundSocketCount.Add(1);
-#endif
+                TransportMetrics.AddOutboundSocketCount(1);
         }
         else if (!string.Equals(outboundSocket.EndPoint, peer.EndPoint, StringComparison.OrdinalIgnoreCase))
         {
@@ -524,7 +511,7 @@ public class ZmqTransport : ITransport
         }
     }
 
-#if NET10_0_OR_GREATER
+#if NET
     private IEnumerable<Measurement<int>> ObserveConnectionStates()
     {
         foreach (var (peerId, socket) in _outboundSockets)

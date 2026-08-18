@@ -1,4 +1,4 @@
-#if NET10_0_OR_GREATER
+#if NET
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 #endif
@@ -11,7 +11,7 @@ namespace Abc.Zebus.Monitoring;
 /// </summary>
 internal static class ZebusMetrics
 {
-#if NET10_0_OR_GREATER
+#if NET
     internal static readonly Meter Meter = new("Abc.Zebus", typeof(ZebusMetrics).Assembly.GetName().Version?.ToString());
 
     private const string PeerIdTag = "zebus.peer.id";

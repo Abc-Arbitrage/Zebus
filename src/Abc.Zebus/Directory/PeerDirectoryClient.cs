@@ -262,9 +262,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         if (shouldRaisePeerUpdated)
         {
             PeerUpdated?.Invoke(peerDescriptor.Peer.Id, PeerUpdateAction.Started);
-#if NET10_0_OR_GREATER
-            DirectoryMetrics.PeerUpdates.Add(1);
-#endif
+            DirectoryMetrics.AddPeerUpdates(1);
         }
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptions);
@@ -273,9 +271,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         PeerEntry CreatePeerEntry()
         {
-#if NET10_0_OR_GREATER
-            DirectoryMetrics.KnownPeerCount.Add(1);
-#endif
+            DirectoryMetrics.AddKnownPeerCount(1);
             return new(peerDescriptor, _globalSubscriptionsIndex);
         }
 
@@ -337,9 +333,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         peer.Value.TimestampUtc = message.TimestampUtc ?? DateTime.UtcNow;
 
         PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Stopped);
-#if NET10_0_OR_GREATER
-        DirectoryMetrics.PeerUpdates.Add(1);
-#endif
+        DirectoryMetrics.AddPeerUpdates(1);
     }
 
     public void Handle(PeerDecommissioned message)
@@ -351,14 +345,10 @@ public partial class PeerDirectoryClient : IPeerDirectory,
             return;
 
         removedPeer.RemoveSubscriptions();
-#if NET10_0_OR_GREATER
-        DirectoryMetrics.KnownPeerCount.Add(-1);
-#endif
+        DirectoryMetrics.AddKnownPeerCount(-1);
 
         PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Decommissioned);
-#if NET10_0_OR_GREATER
-        DirectoryMetrics.PeerUpdates.Add(1);
-#endif
+        DirectoryMetrics.AddPeerUpdates(1);
     }
 
     public void Handle(PeerSubscriptionsUpdated message)
@@ -379,9 +369,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         peer.Value.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
         PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
-#if NET10_0_OR_GREATER
-        DirectoryMetrics.PeerUpdates.Add(1);
-#endif
+        DirectoryMetrics.AddPeerUpdates(1);
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptions);
         if (observedSubscriptions.Count > 0)
@@ -421,9 +409,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         peer.Value.SetSubscriptionsForType(subscriptionsForTypes, message.TimestampUtc);
 
         PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
-#if NET10_0_OR_GREATER
-        DirectoryMetrics.PeerUpdates.Add(1);
-#endif
+        DirectoryMetrics.AddPeerUpdates(1);
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptionsForTypes);
         if (observedSubscriptions.Count > 0)
@@ -473,9 +459,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         peer.Peer.IsResponding = isResponding;
 
         PeerUpdated?.Invoke(peerId, PeerUpdateAction.Updated);
-#if NET10_0_OR_GREATER
-        DirectoryMetrics.PeerUpdates.Add(1);
-#endif
+        DirectoryMetrics.AddPeerUpdates(1);
     }
 
     private PeerEntryResult GetPeerCheckTimestamp(PeerId peerId, DateTime? timestampUtc)

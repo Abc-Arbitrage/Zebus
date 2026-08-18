@@ -1,4 +1,6 @@
-#if NET10_0_OR_GREATER
+#if NET
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 #endif
 
@@ -10,53 +12,125 @@ namespace Abc.Zebus.Monitoring;
 /// </summary>
 internal static class TransportMetrics
 {
-#if NET10_0_OR_GREATER
+#if NET
     // Per-connection message counters
-    internal static readonly Counter<long> MessagesSent = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _messagesSent = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.messages.sent",
         unit: "{message}",
         description: "Number of transport messages sent to peers");
 
-    internal static readonly Counter<long> MessagesReceived = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _messagesReceived = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.messages.received",
         unit: "{message}",
         description: "Number of transport messages received");
 
-    internal static readonly Counter<long> BytesSent = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _bytesSent = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.bytes.sent",
         unit: "By",
         description: "Number of bytes sent to peers");
 
-    internal static readonly Counter<long> BytesReceived = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _bytesReceived = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.bytes.received",
         unit: "By",
         description: "Number of bytes received from peers");
 
-    internal static readonly Counter<long> MessageSendFailures = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _messageSendFailures = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.messages.send_failures",
         unit: "{message}",
         description: "Number of transport message send failures");
 
     // Per-connection state
-    internal static readonly Counter<long> PeerConnections = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _peerConnections = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.peer_connections",
         unit: "{connection}",
         description: "Number of outbound peer socket connections established");
 
-    internal static readonly Counter<long> PeerDisconnections = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _peerDisconnections = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.peer_disconnections",
         unit: "{disconnection}",
         description: "Number of outbound peer socket disconnections");
 
-    internal static readonly Counter<long> PeerConnectionFailures = ZebusMetrics.Meter.CreateCounter<long>(
+    private static readonly Counter<long> _peerConnectionFailures = ZebusMetrics.Meter.CreateCounter<long>(
         "zebus.transport.peer_connection_failures",
         unit: "{failure}",
         description: "Number of outbound peer socket connection failures");
 
     // Aggregate outbound socket count
-    internal static readonly UpDownCounter<int> OutboundSocketCount = ZebusMetrics.Meter.CreateUpDownCounter<int>(
+    private static readonly UpDownCounter<int> _outboundSocketCount = ZebusMetrics.Meter.CreateUpDownCounter<int>(
         "zebus.transport.outbound_sockets",
         unit: "{socket}",
         description: "Current number of active outbound sockets");
+#endif
+
+    internal static void AddMessagesSent(long delta, PeerId peerId)
+    {
+#if NET
+        _messagesSent.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddMessagesReceived(long delta, PeerId peerId)
+    {
+#if NET
+        _messagesReceived.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddBytesSent(long delta, PeerId peerId)
+    {
+#if NET
+        _bytesSent.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddBytesReceived(long delta, PeerId peerId)
+    {
+#if NET
+        _bytesReceived.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddMessageSendFailures(long delta, PeerId peerId)
+    {
+#if NET
+        _messageSendFailures.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddPeerConnections(long delta, PeerId peerId)
+    {
+#if NET
+        _peerConnections.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddPeerDisconnections(long delta, PeerId peerId)
+    {
+#if NET
+        _peerDisconnections.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddPeerConnectionFailures(long delta, PeerId peerId)
+    {
+#if NET
+        _peerConnectionFailures.Add(delta, ZebusMetrics.PeerTag(peerId));
+#endif
+    }
+
+    internal static void AddOutboundSocketCount(int delta)
+    {
+#if NET
+        _outboundSocketCount.Add(delta);
+#endif
+    }
+
+#if NET
+    internal static ObservableGauge<int> CreateConnectionStateGauge(Func<IEnumerable<Measurement<int>>> observeValues)
+        => ZebusMetrics.Meter.CreateObservableGauge(
+            "zebus.transport.connection.alive",
+            observeValues: observeValues,
+            unit: "{connection}",
+            description: "Whether a peer connection is alive (1) or dead (0)");
 #endif
 }
