@@ -32,7 +32,7 @@ public class ZmqTransport : ITransport
     private string _environment = string.Empty;
     private CountdownEvent? _outboundSocketsToStop;
     private bool _isRunning;
-private object? _connectionStateGauge;
+    private ConnectionStateGauge? _connectionStateGauge;
 
     public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
     {
@@ -113,7 +113,7 @@ private object? _connectionStateGauge;
         startSequenceState.Wait();
         _isRunning = true;
 
-_connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates);
+        _connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates);
     }
 
     public void Stop()
