@@ -407,6 +407,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         RaisePeerUpdated(message.PeerId, PeerUpdateAction.Updated);
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptionsForTypes);
+        if (observedSubscriptions.Count > 0)
             PeerSubscriptionsUpdated?.Invoke(message.PeerId, observedSubscriptions);
     }
 
