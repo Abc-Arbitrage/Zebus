@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
+using Abc.Zebus.Monitoring;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
 using Abc.Zebus.Util;
@@ -31,6 +32,7 @@ public class ZmqTransport : ITransport
     private string _environment = string.Empty;
     private CountdownEvent? _outboundSocketsToStop;
     private bool _isRunning;
+    private ConnectionStateGauge? _connectionStateGauge;
 
     public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
     {
@@ -110,6 +112,8 @@ public class ZmqTransport : ITransport
 
         startSequenceState.Wait();
         _isRunning = true;
+
+        _connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates);
     }
 
     public void Stop()
@@ -265,7 +269,12 @@ public class ZmqTransport : ITransport
             }
 
             if (_isListening)
+            {
                 MessageReceived?.Invoke(transportMessage);
+                var senderId = transportMessage.Originator.SenderId;
+                TransportMetrics.AddMessagesReceived(1, senderId);
+                TransportMetrics.AddBytesReceived(bufferReader.Length, senderId);
+            }
         }
         catch (Exception ex)
         {
@@ -397,6 +406,8 @@ public class ZmqTransport : ITransport
         try
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
+            TransportMetrics.AddMessagesSent(1, target.Id);
+            TransportMetrics.AddBytesSent(bufferWriter.Position, target.Id);
         }
         catch (Exception ex)
         {
@@ -412,6 +423,7 @@ public class ZmqTransport : ITransport
                 continue;
 
             outboundSocket.Disconnect();
+            TransportMetrics.AddOutboundSocketCount(-1);
         }
     }
 
@@ -423,6 +435,8 @@ public class ZmqTransport : ITransport
             outboundSocket.ConnectFor(transportMessage);
 
             _outboundSockets.TryAdd(peer.Id, outboundSocket);
+            if (outboundSocket.IsConnected)
+                TransportMetrics.AddOutboundSocketCount(1);
         }
         else if (!string.Equals(outboundSocket.EndPoint, peer.EndPoint, StringComparison.OrdinalIgnoreCase))
         {
@@ -488,6 +502,12 @@ public class ZmqTransport : ITransport
         {
             _logger.LogWarning(ex, $"Unable to enqueue item, Type: {typeof(T).Name}");
         }
+    }
+
+    private IEnumerable<(PeerId peerId, bool isConnected)> ObserveConnectionStates()
+    {
+        foreach (var kvp in _outboundSockets)
+            yield return (kvp.Key, kvp.Value.IsConnected);
     }
 
     private readonly struct OutboundSocketAction

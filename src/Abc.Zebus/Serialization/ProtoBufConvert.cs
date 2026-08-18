@@ -3,7 +3,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
+#if !NET
 using System.Runtime.Serialization;
+#else
+using System.Runtime.CompilerServices;
+#endif
 using ProtoBuf.Meta;
 
 namespace Abc.Zebus.Serialization;
@@ -49,7 +53,11 @@ internal static class ProtoBufConvert
     private static object? CreateMessageIfRequired(Type messageType)
     {
         if (!HasParameterLessConstructor(messageType) && messageType != typeof(string))
+#if !NET
             return FormatterServices.GetUninitializedObject(messageType);
+#else
+            return RuntimeHelpers.GetUninitializedObject(messageType);
+#endif
 
         return null;
     }

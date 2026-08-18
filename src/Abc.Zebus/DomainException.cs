@@ -48,10 +48,12 @@ public class DomainException : MessageProcessingException
     {
     }
 
+#pragma warning disable SYSLIB0051
     protected DomainException(SerializationInfo info, StreamingContext context)
         : base(info, context)
     {
     }
+#pragma warning restore SYSLIB0051
 
     private static string ReadDescriptionFromAttribute(Expression<Func<int>> errorCodeExpression)
     {
