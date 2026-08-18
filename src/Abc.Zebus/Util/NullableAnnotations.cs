@@ -1,4 +1,4 @@
-#if !NETCOREAPP
+#if !NET
 // ReSharper disable CheckNamespace
 namespace System.Diagnostics.CodeAnalysis;
 

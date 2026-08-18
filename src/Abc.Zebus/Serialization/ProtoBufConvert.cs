@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
-#if !NETCOREAPP
+#if !NET
 using System.Runtime.Serialization;
 #else
 using System.Runtime.CompilerServices;
@@ -53,7 +53,7 @@ internal static class ProtoBufConvert
     private static object? CreateMessageIfRequired(Type messageType)
     {
         if (!HasParameterLessConstructor(messageType) && messageType != typeof(string))
-#if !NETCOREAPP
+#if !NET
             return FormatterServices.GetUninitializedObject(messageType);
 #else
             return RuntimeHelpers.GetUninitializedObject(messageType);

@@ -62,7 +62,7 @@ public readonly struct MessageId : IEquatable<MessageId>
     private class TimeGuidGenerator
     {
         private static readonly long _gregorianCalendarTimeTicks = new DateTime(1582, 10, 15, 0, 0, 0, DateTimeKind.Utc).Ticks;
-#if !NETCOREAPP
+#if !NET
         private static readonly RNGCryptoServiceProvider _cryptoServiceProvider = new();
 #endif
 
@@ -141,7 +141,7 @@ public readonly struct MessageId : IEquatable<MessageId>
         private static byte[] GetRandomNodeId()
         {
             var nodeId = new byte[6];
-#if !NETCOREAPP
+#if !NET
             _cryptoServiceProvider.GetBytes(nodeId);
 #else
             RandomNumberGenerator.Fill(nodeId);
@@ -153,7 +153,7 @@ public readonly struct MessageId : IEquatable<MessageId>
         private static ushort GetRandomClockId()
         {
             var clockId = new byte[2];
-#if !NETCOREAPP
+#if !NET
             _cryptoServiceProvider.GetBytes(clockId);
 #else
             RandomNumberGenerator.Fill(clockId);

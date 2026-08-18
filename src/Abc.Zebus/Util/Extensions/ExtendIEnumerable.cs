@@ -7,7 +7,7 @@ namespace Abc.Zebus.Util.Extensions;
 
 internal static class ExtendIEnumerable
 {
-#if !NETCOREAPP
+#if !NET
     [Pure]
     public static HashSet<T> ToHashSet<T>([InstantHandle] this IEnumerable<T> collection)
     {

@@ -34,7 +34,7 @@ internal static class ExtendDictionary
         return dictionary.TryGetValue(key, out var value) ? value : (TValue?)null;
     }
 
-#if !NETCOREAPP
+#if !NET
     [Pure]
     [return: MaybeNull]
     public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
