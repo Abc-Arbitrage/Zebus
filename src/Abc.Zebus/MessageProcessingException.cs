@@ -32,10 +32,10 @@ public class MessageProcessingException : Exception
     {
     }
 
-#if !NETCOREAPP
+#pragma warning disable SYSLIB0051
     protected MessageProcessingException(SerializationInfo info, StreamingContext context)
         : base(info, context)
     {
     }
-#endif
+#pragma warning restore SYSLIB0051
 }
