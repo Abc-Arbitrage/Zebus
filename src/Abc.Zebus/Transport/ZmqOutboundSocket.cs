@@ -55,7 +55,7 @@ internal class ZmqOutboundSocket
 
             _logger.LogError(ex, $"Unable to connect socket, Peer: {PeerId}, EndPoint: {EndPoint}");
             _errorHandler.OnConnectException(PeerId, EndPoint, ex);
-TransportMetrics.AddPeerConnectionFailures(1, PeerId);
+            TransportMetrics.AddPeerConnectionFailures(1, PeerId);
 
             SwitchToClosedState(_options.ClosedStateDurationAfterConnectFailure);
         }
@@ -98,7 +98,7 @@ TransportMetrics.AddPeerConnectionFailures(1, PeerId);
         {
             _socket!.SetOption(ZmqSocketOption.LINGER, 0);
             _socket!.Dispose();
-TransportMetrics.AddPeerDisconnections(1, PeerId);
+            TransportMetrics.AddPeerDisconnections(1, PeerId);
 
             _logger.LogInformation($"Socket disconnected, Peer: {PeerId}");
         }
@@ -127,7 +127,7 @@ TransportMetrics.AddPeerDisconnections(1, PeerId);
 
         _logger.LogError($"Unable to send message, destination peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}, Error: {errorMessage}");
         _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
-TransportMetrics.AddMessageSendFailures(1, PeerId);
+        TransportMetrics.AddMessageSendFailures(1, PeerId);
 
         if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)
             SwitchToClosedState(_options.ClosedStateDurationAfterSendFailure);

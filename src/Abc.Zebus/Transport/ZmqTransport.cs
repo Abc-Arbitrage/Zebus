@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-#if NET
-using System.Diagnostics.Metrics;
-#endif
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -35,9 +32,7 @@ public class ZmqTransport : ITransport
     private string _environment = string.Empty;
     private CountdownEvent? _outboundSocketsToStop;
     private bool _isRunning;
-#if NET
-    private ObservableGauge<int>? _connectionStateGauge;
-#endif
+private object? _connectionStateGauge;
 
     public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
     {
@@ -118,9 +113,7 @@ public class ZmqTransport : ITransport
         startSequenceState.Wait();
         _isRunning = true;
 
-#if NET
-        _connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates);
-#endif
+_connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates);
     }
 
     public void Stop()
@@ -511,17 +504,11 @@ public class ZmqTransport : ITransport
         }
     }
 
-#if NET
-    private IEnumerable<Measurement<int>> ObserveConnectionStates()
+    private IEnumerable<(PeerId peerId, bool isConnected)> ObserveConnectionStates()
     {
-        foreach (var (peerId, socket) in _outboundSockets)
-        {
-            yield return new Measurement<int>(
-                socket.IsConnected ? 1 : 0,
-                ZebusMetrics.PeerTag(peerId));
-        }
+        foreach (var kvp in _outboundSockets)
+            yield return (kvp.Key, kvp.Value.IsConnected);
     }
-#endif
 
     private readonly struct OutboundSocketAction
     {

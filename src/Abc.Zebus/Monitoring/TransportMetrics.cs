@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+#else
+using System;
+using System.Collections.Generic;
 #endif
 
 namespace Abc.Zebus.Monitoring;
@@ -125,12 +128,29 @@ internal static class TransportMetrics
 #endif
     }
 
+    /// <summary>
+    /// Creates an observable gauge that reports connection state (1=alive, 0=dead) per peer.
+    /// </summary>
+    /// <param name="observeValues">Callback returning (peerId, isConnected) pairs for each outbound socket.</param>
+    /// <returns>The gauge object (to keep it alive), or null on non-NET targets.</returns>
+    internal static object? CreateConnectionStateGauge(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues)
+    {
 #if NET
-    internal static ObservableGauge<int> CreateConnectionStateGauge(Func<IEnumerable<Measurement<int>>> observeValues)
-        => ZebusMetrics.Meter.CreateObservableGauge(
+        return ZebusMetrics.Meter.CreateObservableGauge(
             "zebus.transport.connection.alive",
-            observeValues: observeValues,
+            observeValues: () => ObserveConnectionStates(observeValues),
             unit: "{connection}",
             description: "Whether a peer connection is alive (1) or dead (0)");
+#else
+        return null;
+#endif
+    }
+
+#if NET
+    private static IEnumerable<Measurement<int>> ObserveConnectionStates(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues)
+    {
+        foreach (var (peerId, isConnected) in observeValues())
+            yield return new Measurement<int>(isConnected ? 1 : 0, ZebusMetrics.PeerTag(peerId));
+    }
 #endif
 }
