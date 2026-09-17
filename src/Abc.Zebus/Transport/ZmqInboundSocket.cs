@@ -1,4 +1,5 @@
-﻿using System;
+﻿﻿using System;
+using System.IO;
 using System.Net;
 using Abc.Zebus.Serialization.Protobuf;
 using Abc.Zebus.Transport.Zmq;
@@ -26,13 +27,53 @@ internal class ZmqInboundSocket : IDisposable
 
     public ZmqEndPoint Bind()
     {
-        _socket = CreateSocket();
-
         var (configuredHost, configuredPort) = ZmqEndPoint.Parse(_configuredEndPoint.ToString());
 
-        _socket.Bind($"tcp://*:{configuredPort}");
+        return configuredPort switch
+        {
+            ZmqPort.Wildcard => Bind(configuredHost, "*"),
+            ZmqPort.Single single => Bind(configuredHost, single.Value.ToString()),
+            ZmqPort.Range range => BindRange(configuredHost, range),
+            _ => throw new InvalidOperationException($"Unknown ZMQ port type: {configuredPort.GetType().Name}"),
+        };
+    }
 
-        var (boundHost, boundPort) = ZmqEndPoint.Parse(_socket.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
+    private ZmqEndPoint Bind(string configuredHost, string port)
+    {
+        _socket = CreateSocket();
+        _socket.Bind($"tcp://*:{port}");
+
+        return GetBoundEndPoint(configuredHost);
+    }
+
+    private ZmqEndPoint BindRange(string configuredHost, ZmqPort.Range range)
+    {
+        for (var port = (int)range.Start; port <= range.End; ++port)
+        {
+            var endpoint = $"tcp://*:{port}";
+            var socket = CreateSocket();
+
+            if (!socket.TryBind(endpoint, out var error))
+            {
+                socket.Dispose();
+
+                if (!ZmqUtil.IsAddressAlreadyInUse(error))
+                    throw ZmqUtil.CreateError($"Unable to bind ZMQ socket to {endpoint}", error);
+
+                _logger.LogDebug($"Port {port} is already in use, trying the next port");
+                continue;
+            }
+
+            _socket = socket;
+            return GetBoundEndPoint(configuredHost);
+        }
+
+        throw new IOException($"Unable to bind ZMQ socket to any port in range {range}");
+    }
+
+    private ZmqEndPoint GetBoundEndPoint(string configuredHost)
+    {
+        var (boundHost, boundPort) = ZmqEndPoint.Parse(_socket!.GetOptionString(ZmqSocketOption.LAST_ENDPOINT));
 
         if (boundHost == "0.0.0.0")
         {

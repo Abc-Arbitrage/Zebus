@@ -14,6 +14,17 @@ internal static unsafe class ZmqUtil
     public static Exception ThrowLastError(string message)
         => throw new IOException($"{message}: {GetLastErrorMessage()})");
 
+    public static Exception CreateError(string message, ZmqErrorCode errorCode)
+        => new IOException($"{message}: {errorCode.ToErrorMessage()})");
+
+    public static bool IsAddressAlreadyInUse(ZmqErrorCode errorCode)
+    {
+        var nativeErrorCode = (int)errorCode;
+
+        // EADDRINUSE on Linux, macOS and Windows respectively.
+        return nativeErrorCode == 98 || nativeErrorCode == 48 || nativeErrorCode == 10048;
+    }
+
     public static string ToErrorMessage(this ZmqErrorCode errorCode)
     {
         if (errorCode == ZmqErrorCode.None)

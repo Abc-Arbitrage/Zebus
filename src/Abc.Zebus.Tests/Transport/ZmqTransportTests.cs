@@ -292,6 +292,21 @@ namespace Abc.Zebus.Tests.Transport
             transport.Stop();
         }
 
+        [Test]
+        public void should_skip_occupied_ports_in_port_range()
+        {
+            var transport0 = CreateAndStartZmqTransport();
+            var (_, port0) = ZmqEndPoint.Parse(transport0.InboundEndPoint);
+            var startPort = port0.ShouldBe<ZmqPort.Single>().Value;
+
+            var transport1 = CreateAndStartZmqTransport($"tcp://*:[{startPort}..{startPort + 10}]");
+            var (_, port1) = ZmqEndPoint.Parse(transport1.InboundEndPoint);
+            var selected = port1.ShouldBe<ZmqPort.Single>();
+
+            selected.Value.ShouldBeGreaterThan(startPort);
+            selected.Value.ShouldBeLessOrEqualThan((ushort)(startPort + 10));
+        }
+
         [Test, Repeat(5)]
         public void should_terminate_zmq_connection_of_a_forgotten_peer_after_some_time()
         {
@@ -446,7 +461,7 @@ namespace Abc.Zebus.Tests.Transport
             });
 
             var receivedMessages = new List<TransportMessage>();
-            var upReceiverTransport = CreateAndStartZmqTransport( onMessageReceived: receivedMessages.Add);
+            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
             var upReceiver = upReceiverTransport.GetPeer();
 
             var downReceiverTransport = CreateAndStartZmqTransport();

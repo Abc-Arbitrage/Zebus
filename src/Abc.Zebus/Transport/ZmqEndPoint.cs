@@ -5,7 +5,7 @@ namespace Abc.Zebus.Transport;
 
 internal readonly struct ZmqEndPoint
 {
-    private static readonly Regex _endpointRegex = new(@"^tcp://(?<host>\*|[0-9a-zA-Z_.-]+):(?<port>\*|[0-9]+)/?$", RegexOptions.IgnoreCase);
+    private static readonly Regex _endpointRegex = new(@"^tcp://(?<host>\*|[0-9a-zA-Z_.-]+):(?<port>[^/]+)/?$", RegexOptions.IgnoreCase);
 
     private readonly string? _value;
 
@@ -15,11 +15,20 @@ internal readonly struct ZmqEndPoint
     public override string ToString()
         => _value ?? "tcp://*:*";
 
-    public static (string host, string port) Parse(string? endpoint)
+    public static (string host, ZmqPort port) Parse(string? endpoint)
     {
         var match = _endpointRegex.Match(endpoint ?? string.Empty);
-        return match.Success
-            ? (match.Groups["host"].Value, match.Groups["port"].Value)
-            : throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
+        if (!match.Success)
+            throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
+
+        try
+        {
+            var port = ZmqPort.Parse(match.Groups["port"].Value);
+            return (match.Groups["host"].Value, port);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Invalid endpoint: {endpoint}", ex);
+        }
     }
 }
