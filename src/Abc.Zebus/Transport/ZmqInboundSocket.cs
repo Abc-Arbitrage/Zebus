@@ -31,9 +31,9 @@ internal class ZmqInboundSocket : IDisposable
 
         return configuredPort switch
         {
-            ZmqPort.Wildcard => Bind(configuredHost, "*"),
-            ZmqPort.Single single => Bind(configuredHost, single.Value.ToString()),
-            ZmqPort.Range range => BindRange(configuredHost, range),
+            ZmqPortSpec.Wildcard => Bind(configuredHost, "*"),
+            ZmqPortSpec.Single single => Bind(configuredHost, single.Value.ToString()),
+            ZmqPortSpec.Range range => BindRange(configuredHost, range),
             _ => throw new InvalidOperationException($"Unknown ZMQ port type: {configuredPort.GetType().Name}"),
         };
     }
@@ -46,7 +46,7 @@ internal class ZmqInboundSocket : IDisposable
         return GetBoundEndPoint(configuredHost);
     }
 
-    private ZmqEndPoint BindRange(string configuredHost, ZmqPort.Range range)
+    private ZmqEndPoint BindRange(string configuredHost, ZmqPortSpec.Range range)
     {
         for (var port = (int)range.Start; port <= range.End; ++port)
         {

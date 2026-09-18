@@ -297,11 +297,11 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transport0 = CreateAndStartZmqTransport();
             var (_, port0) = ZmqEndPoint.Parse(transport0.InboundEndPoint);
-            var startPort = port0.ShouldBe<ZmqPort.Single>().Value;
+            var startPort = port0.ShouldBe<ZmqPortSpec.Single>().Value;
 
             var transport1 = CreateAndStartZmqTransport($"tcp://*:[{startPort}..{startPort + 10}]");
             var (_, port1) = ZmqEndPoint.Parse(transport1.InboundEndPoint);
-            var selected = port1.ShouldBe<ZmqPort.Single>();
+            var selected = port1.ShouldBe<ZmqPortSpec.Single>();
 
             selected.Value.ShouldBeGreaterThan(startPort);
             selected.Value.ShouldBeLessOrEqualThan((ushort)(startPort + 10));

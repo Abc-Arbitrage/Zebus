@@ -15,7 +15,7 @@ internal readonly struct ZmqEndPoint
     public override string ToString()
         => _value ?? "tcp://*:*";
 
-    public static (string host, ZmqPort port) Parse(string? endpoint)
+    public static (string host, ZmqPortSpec port) Parse(string? endpoint)
     {
         var match = _endpointRegex.Match(endpoint ?? string.Empty);
         if (!match.Success)
@@ -23,7 +23,7 @@ internal readonly struct ZmqEndPoint
 
         try
         {
-            var port = ZmqPort.Parse(match.Groups["port"].Value);
+            var port = ZmqPortSpec.Parse(match.Groups["port"].Value);
             return (match.Groups["host"].Value, port);
         }
         catch (Exception ex)

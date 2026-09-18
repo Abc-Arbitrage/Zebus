@@ -13,7 +13,7 @@ public class ZmqEndPointTests
     {
         var (host, port) = ZmqEndPoint.Parse("tcp://*:*");
 
-        port.ShouldBeOfType<ZmqPort.Wildcard>();
+        port.ShouldBeOfType<ZmqPortSpec.Wildcard>();
         port.ToString().ShouldEqual("*");
     }
 
@@ -22,7 +22,7 @@ public class ZmqEndPointTests
     {
         var (host, port) = ZmqEndPoint.Parse("tcp://some.test.fqdn:12000");
 
-        var single = port.ShouldBe<ZmqPort.Single>();
+        var single = port.ShouldBe<ZmqPortSpec.Single>();
         single.Value.ShouldEqual((ushort)12000);
         port.ToString().ShouldEqual("12000");
     }
@@ -32,7 +32,7 @@ public class ZmqEndPointTests
     {
         var (host, port) = ZmqEndPoint.Parse("tcp://some.test.fqdn:[12000..12100]/");
 
-        var range = port.ShouldBe<ZmqPort.Range>();
+        var range = port.ShouldBe<ZmqPortSpec.Range>();
         host.ShouldEqual("some.test.fqdn");
         range.Start.ShouldEqual((ushort)12000);
         range.End.ShouldEqual((ushort)12100);

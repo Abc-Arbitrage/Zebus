@@ -3,22 +3,22 @@ using System.Text.RegularExpressions;
 
 namespace Abc.Zebus.Transport;
 
-internal abstract record ZmqPort
+internal abstract record ZmqPortSpec
 {
     private static readonly Regex _regex = new(@"^(?<port>\*|(?<single>[0-9]+)|\[(?<rangeStart>[0-9]+)\.\.(?<rangeEnd>[0-9]+)\])/?$", RegexOptions.IgnoreCase);
 
-    private ZmqPort()
+    private ZmqPortSpec()
     {
     }
 
     public abstract override string ToString();
 
-    internal sealed record Wildcard : ZmqPort
+    internal sealed record Wildcard : ZmqPortSpec
     {
         public override string ToString() => "*";
     }
 
-    internal sealed record Single : ZmqPort
+    internal sealed record Single : ZmqPortSpec
     {
         public Single(ushort value)
         {
@@ -30,7 +30,7 @@ internal abstract record ZmqPort
         public override string ToString() => Value.ToString();
     }
 
-    internal sealed record Range : ZmqPort
+    internal sealed record Range : ZmqPortSpec
     {
         public Range(ushort start, ushort end)
         {
@@ -47,7 +47,7 @@ internal abstract record ZmqPort
         public override string ToString() => $"[{Start}..{End}]";
     }
 
-    internal static ZmqPort Parse(string str)
+    internal static ZmqPortSpec Parse(string str)
     {
         var match = _regex.Match(str);
         if (!match.Success)
