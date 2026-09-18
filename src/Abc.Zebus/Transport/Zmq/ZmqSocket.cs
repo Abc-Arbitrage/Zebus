@@ -93,8 +93,26 @@ internal unsafe class ZmqSocket : IDisposable
 
     public void Bind(string endpoint)
     {
-        if (ZmqNative.bind(_handle, endpoint) == -1)
-            ZmqUtil.ThrowLastError($"Unable to bind ZMQ socket to {endpoint}");
+        if (!TryBind(endpoint, out var error))
+            throw ZmqUtil.CreateError($"Unable to bind ZMQ socket to {endpoint}", error);
+    }
+
+    public bool TryBind(string endpoint, out ZmqErrorCode error)
+    {
+        while (true)
+        {
+            if (ZmqNative.bind(_handle, endpoint) != -1)
+            {
+                error = ZmqErrorCode.None;
+                return true;
+            }
+
+            error = ZmqNative.errno();
+            if (error == ZmqErrorCode.EINTR)
+                continue;
+
+            return false;
+        }
     }
 
     public bool TryUnbind(string endpoint)
