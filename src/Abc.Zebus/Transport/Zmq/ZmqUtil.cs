@@ -22,7 +22,7 @@ internal static unsafe class ZmqUtil
         var nativeErrorCode = (int)errorCode;
 
         // EADDRINUSE on Linux, macOS and Windows respectively.
-        return nativeErrorCode == 98 || nativeErrorCode == 48 || nativeErrorCode == 10048;
+        return nativeErrorCode is 98 or 48 or 100;
     }
 
     public static string ToErrorMessage(this ZmqErrorCode errorCode)
