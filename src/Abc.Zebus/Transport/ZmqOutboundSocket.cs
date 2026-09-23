@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Abc.Zebus.Monitoring;
 using Abc.Zebus.Transport.Zmq;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,7 @@ internal class ZmqOutboundSocket
     private readonly ZmqContext _context;
     private readonly ZmqSocketOptions _options;
     private readonly IZmqOutboundSocketErrorHandler _errorHandler;
+    private readonly bool _replacePeerIdGuidSuffixWithClientInMetrics;
     private ZmqSocket? _socket;
     private int _failedSendCount;
     private bool _isInClosedState;
@@ -23,6 +25,7 @@ internal class ZmqOutboundSocket
         _context = context;
         _options = options;
         _errorHandler = errorHandler;
+        _replacePeerIdGuidSuffixWithClientInMetrics = options.ReplacePeerIdGuidSuffixWithClientInMetrics;
         PeerId = peerId;
         EndPoint = endPoint;
     }
@@ -42,6 +45,7 @@ internal class ZmqOutboundSocket
             _socket.Connect(EndPoint);
 
             IsConnected = true;
+            TransportMetrics.AddPeerConnections(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
 
             _logger.LogInformation($"Socket connected, Peer: {PeerId}, EndPoint: {EndPoint}");
         }
@@ -53,6 +57,7 @@ internal class ZmqOutboundSocket
 
             _logger.LogError(ex, $"Unable to connect socket, Peer: {PeerId}, EndPoint: {EndPoint}");
             _errorHandler.OnConnectException(PeerId, EndPoint, ex);
+            TransportMetrics.AddPeerConnectionFailures(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
 
             SwitchToClosedState(_options.ClosedStateDurationAfterConnectFailure);
         }
@@ -95,6 +100,7 @@ internal class ZmqOutboundSocket
         {
             _socket!.SetOption(ZmqSocketOption.LINGER, 0);
             _socket!.Dispose();
+            TransportMetrics.AddPeerDisconnections(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
 
             _logger.LogInformation($"Socket disconnected, Peer: {PeerId}");
         }
@@ -123,6 +129,7 @@ internal class ZmqOutboundSocket
 
         _logger.LogError($"Unable to send message, destination peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}, Error: {errorMessage}");
         _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
+        TransportMetrics.AddMessageSendFailures(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
 
         if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)
             SwitchToClosedState(_options.ClosedStateDurationAfterSendFailure);

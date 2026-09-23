@@ -114,7 +114,8 @@ public readonly struct BindingKey : IEquatable<BindingKey>
         var parts = new string[routingMembers.Length];
         for (var tokenIndex = 0; tokenIndex < routingMembers.Length; ++tokenIndex)
         {
-            parts[tokenIndex] = fieldValues.GetValueOrDefault(routingMembers[tokenIndex].Member.Name, BindingKeyPart.StarToken);
+            var memberName = routingMembers[tokenIndex].Member.Name;
+            parts[tokenIndex] = fieldValues.TryGetValue(memberName, out var value) ? value : BindingKeyPart.StarToken;
         }
 
         return new BindingKey(parts);

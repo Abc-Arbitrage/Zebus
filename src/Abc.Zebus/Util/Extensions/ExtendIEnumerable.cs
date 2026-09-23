@@ -7,6 +7,7 @@ namespace Abc.Zebus.Util.Extensions;
 
 internal static class ExtendIEnumerable
 {
+#if !NET
     [Pure]
     public static HashSet<T> ToHashSet<T>([InstantHandle] this IEnumerable<T> collection)
     {
@@ -18,6 +19,7 @@ internal static class ExtendIEnumerable
     {
         return new HashSet<T>(collection, comparer);
     }
+#endif
 
     [Pure]
     public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T>? collection)
