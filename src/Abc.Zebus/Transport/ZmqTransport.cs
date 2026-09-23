@@ -113,7 +113,7 @@ public class ZmqTransport : ITransport
         startSequenceState.Wait();
         _isRunning = true;
 
-        _connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates);
+        _connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
     }
 
     public void Stop()
@@ -272,8 +272,8 @@ public class ZmqTransport : ITransport
             {
                 MessageReceived?.Invoke(transportMessage);
                 var senderId = transportMessage.Originator.SenderId;
-                TransportMetrics.AddMessagesReceived(1, senderId);
-                TransportMetrics.AddBytesReceived(bufferReader.Length, senderId);
+                TransportMetrics.AddMessagesReceived(1, senderId, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
+                TransportMetrics.AddBytesReceived(bufferReader.Length, senderId, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
             }
         }
         catch (Exception ex)
@@ -406,8 +406,8 @@ public class ZmqTransport : ITransport
         try
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
-            TransportMetrics.AddMessagesSent(1, target.Id);
-            TransportMetrics.AddBytesSent(bufferWriter.Position, target.Id);
+            TransportMetrics.AddMessagesSent(1, target.Id, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
+            TransportMetrics.AddBytesSent(bufferWriter.Position, target.Id, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
         }
         catch (Exception ex)
         {

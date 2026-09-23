@@ -77,6 +77,11 @@ public class ZmqSocketOptions
     /// </summary>
     public KeepAliveOptions? KeepAlive { get; set; }
 
+    /// <summary>
+    /// When enabled, replaces a trailing GUID in peer IDs with ".Client" in metric tags.
+    /// </summary>
+    public bool ReplacePeerIdGuidSuffixWithClientInMetrics { get; set; }
+
     public class KeepAliveOptions
     {
         public static KeepAliveOptions On(TimeSpan? keepAliveTimeout, TimeSpan? keepAliveInterval)

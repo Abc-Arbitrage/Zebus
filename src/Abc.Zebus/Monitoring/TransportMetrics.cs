@@ -65,59 +65,59 @@ internal static class TransportMetrics
         description: "Current number of active outbound sockets");
 #endif
 
-    internal static void AddMessagesSent(long delta, PeerId peerId)
+    internal static void AddMessagesSent(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _messagesSent.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _messagesSent.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
-    internal static void AddMessagesReceived(long delta, PeerId peerId)
+    internal static void AddMessagesReceived(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _messagesReceived.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _messagesReceived.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
-    internal static void AddBytesSent(long delta, PeerId peerId)
+    internal static void AddBytesSent(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _bytesSent.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _bytesSent.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
-    internal static void AddBytesReceived(long delta, PeerId peerId)
+    internal static void AddBytesReceived(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _bytesReceived.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _bytesReceived.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
-    internal static void AddMessageSendFailures(long delta, PeerId peerId)
+    internal static void AddMessageSendFailures(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _messageSendFailures.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _messageSendFailures.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
-    internal static void AddPeerConnections(long delta, PeerId peerId)
+    internal static void AddPeerConnections(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _peerConnections.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _peerConnections.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
-    internal static void AddPeerDisconnections(long delta, PeerId peerId)
+    internal static void AddPeerDisconnections(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _peerDisconnections.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _peerDisconnections.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
-    internal static void AddPeerConnectionFailures(long delta, PeerId peerId)
+    internal static void AddPeerConnectionFailures(long delta, PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
     {
 #if NET
-        _peerConnectionFailures.Add(delta, ZebusMetrics.PeerTag(peerId));
+        _peerConnectionFailures.Add(delta, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
 #endif
     }
 
@@ -133,14 +133,14 @@ internal static class TransportMetrics
     /// </summary>
     /// <param name="observeValues">Callback returning (peerId, isConnected) pairs for each outbound socket.</param>
     /// <returns>A <see cref="ConnectionStateGauge"/> that must be kept alive for the gauge to be reported.</returns>
-    internal static ConnectionStateGauge CreateConnectionStateGauge(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues)
-        => new ConnectionStateGauge(observeValues);
+    internal static ConnectionStateGauge CreateConnectionStateGauge(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues, bool replacePeerIdGuidSuffixWithClient = false)
+        => new ConnectionStateGauge(observeValues, replacePeerIdGuidSuffixWithClient);
 
 #if NET
-    internal static IEnumerable<Measurement<int>> ObserveConnectionStates(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues)
+    internal static IEnumerable<Measurement<int>> ObserveConnectionStates(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues, bool replacePeerIdGuidSuffixWithClient)
     {
         foreach (var (peerId, isConnected) in observeValues())
-            yield return new Measurement<int>(isConnected ? 1 : 0, ZebusMetrics.PeerTag(peerId));
+            yield return new Measurement<int>(isConnected ? 1 : 0, ZebusMetrics.PeerTag(peerId, replacePeerIdGuidSuffixWithClient));
     }
 #endif
 }
@@ -155,12 +155,12 @@ internal sealed class ConnectionStateGauge
     private readonly ObservableGauge<int> _gauge;
 #endif
 
-    internal ConnectionStateGauge(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues)
+    internal ConnectionStateGauge(Func<IEnumerable<(PeerId peerId, bool isConnected)>> observeValues, bool replacePeerIdGuidSuffixWithClient)
     {
 #if NET
         _gauge = ZebusMetrics.Meter.CreateObservableGauge(
             "zebus.transport.connection.alive",
-            observeValues: () => TransportMetrics.ObserveConnectionStates(observeValues),
+            observeValues: () => TransportMetrics.ObserveConnectionStates(observeValues, replacePeerIdGuidSuffixWithClient),
             unit: "{connection}",
             description: "Whether a peer connection is alive (1) or dead (0)");
 #endif

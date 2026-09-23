@@ -1,4 +1,5 @@
 #if NET
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 #endif
@@ -16,7 +17,18 @@ internal static class ZebusMetrics
 
     private const string PeerIdTag = "zebus.peer.id";
 
-    internal static KeyValuePair<string, object?> PeerTag(PeerId peerId)
-        => new(PeerIdTag, peerId.ToString());
+    internal static KeyValuePair<string, object?> PeerTag(PeerId peerId, bool replacePeerIdGuidSuffixWithClient = false)
+    {
+        var value = peerId.ToString();
+
+        if (replacePeerIdGuidSuffixWithClient)
+        {
+            var separatorIndex = value.LastIndexOf('.');
+            if (separatorIndex >= 0 && Guid.TryParse(value.Substring(separatorIndex + 1), out _))
+                value = value.Substring(0, separatorIndex) + ".Client";
+        }
+
+        return new(PeerIdTag, value);
+    }
 #endif
 }
