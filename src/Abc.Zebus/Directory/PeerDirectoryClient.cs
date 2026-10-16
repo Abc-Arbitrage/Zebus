@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Abc.Zebus.Monitoring;
 using Abc.Zebus.Util;
 using Abc.Zebus.Util.Extensions;
 using Microsoft.Extensions.Logging;
@@ -260,19 +259,13 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         peerEntry.SetSubscriptions(subscriptions, peerDescriptor.TimestampUtc);
 
         if (shouldRaisePeerUpdated)
-        {
-            RaisePeerUpdated(peerDescriptor.Peer.Id, PeerUpdateAction.Started);
-        }
+            PeerUpdated?.Invoke(peerDescriptor.Peer.Id, PeerUpdateAction.Started);
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptions);
         if (observedSubscriptions.Count > 0)
             PeerSubscriptionsUpdated?.Invoke(peerDescriptor.PeerId, observedSubscriptions);
 
-        PeerEntry CreatePeerEntry()
-        {
-            DirectoryMetrics.AddKnownPeerCount(1);
-            return new(peerDescriptor, _globalSubscriptionsIndex);
-        }
+        PeerEntry CreatePeerEntry() => new(peerDescriptor, _globalSubscriptionsIndex);
 
         PeerEntry UpdatePeerEntry(PeerEntry entry)
         {
@@ -331,7 +324,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         peer.Value.Peer.IsResponding = false;
         peer.Value.TimestampUtc = message.TimestampUtc ?? DateTime.UtcNow;
 
-        RaisePeerUpdated(message.PeerId, PeerUpdateAction.Stopped);
+        PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Stopped);
     }
 
     public void Handle(PeerDecommissioned message)
@@ -343,9 +336,8 @@ public partial class PeerDirectoryClient : IPeerDirectory,
             return;
 
         removedPeer.RemoveSubscriptions();
-        DirectoryMetrics.AddKnownPeerCount(-1);
 
-        RaisePeerUpdated(message.PeerId, PeerUpdateAction.Decommissioned);
+        PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Decommissioned);
     }
 
     public void Handle(PeerSubscriptionsUpdated message)
@@ -365,7 +357,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         peer.Value.SetSubscriptions(subscriptions, message.PeerDescriptor.TimestampUtc);
         peer.Value.TimestampUtc = message.PeerDescriptor.TimestampUtc ?? DateTime.UtcNow;
 
-        RaisePeerUpdated(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
+        PeerUpdated?.Invoke(message.PeerDescriptor.PeerId, PeerUpdateAction.Updated);
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptions);
         if (observedSubscriptions.Count > 0)
@@ -404,7 +396,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
         var subscriptionsForTypes = message.SubscriptionsForType ?? Array.Empty<SubscriptionsForType>();
         peer.Value.SetSubscriptionsForType(subscriptionsForTypes, message.TimestampUtc);
 
-        RaisePeerUpdated(message.PeerId, PeerUpdateAction.Updated);
+        PeerUpdated?.Invoke(message.PeerId, PeerUpdateAction.Updated);
 
         var observedSubscriptions = GetObservedSubscriptions(subscriptionsForTypes);
         if (observedSubscriptions.Count > 0)
@@ -453,13 +445,7 @@ public partial class PeerDirectoryClient : IPeerDirectory,
 
         peer.Peer.IsResponding = isResponding;
 
-        RaisePeerUpdated(peerId, PeerUpdateAction.Updated);
-    }
-
-    private void RaisePeerUpdated(PeerId peerId, PeerUpdateAction action)
-    {
-        PeerUpdated?.Invoke(peerId, action);
-        DirectoryMetrics.AddPeerUpdates(1);
+        PeerUpdated?.Invoke(peerId, PeerUpdateAction.Updated);
     }
 
     private PeerEntryResult GetPeerCheckTimestamp(PeerId peerId, DateTime? timestampUtc)
