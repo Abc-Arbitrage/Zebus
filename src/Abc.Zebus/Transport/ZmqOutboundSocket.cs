@@ -141,6 +141,8 @@ internal class ZmqOutboundSocket
         if (_socket!.TrySend(buffer, 0, length, out var error))
         {
             _failedSendCount = 0;
+            _metricPublisher.AddMessagesSent(1, PeerId);
+            _metricPublisher.AddBytesSent(length, PeerId);
             return;
         }
 

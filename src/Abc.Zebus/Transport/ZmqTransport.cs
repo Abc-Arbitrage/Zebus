@@ -409,8 +409,6 @@ public class ZmqTransport : ITransport
         try
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
-            _metricPublisher.AddMessagesSent(1, target.Id);
-            _metricPublisher.AddBytesSent(bufferWriter.Position, target.Id);
         }
         catch (Exception ex)
         {
