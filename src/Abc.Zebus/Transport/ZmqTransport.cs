@@ -433,7 +433,7 @@ public class ZmqTransport : ITransport
     {
         if (!_outboundSockets.TryGetValue(peer.Id, out var outboundSocket))
         {
-            outboundSocket = new ZmqOutboundSocket(_context!, peer.Id, peer.EndPoint, _socketOptions, _errorHandler);
+            outboundSocket = new ZmqOutboundSocket(_context!, peer.Id, peer.EndPoint, _socketOptions, _errorHandler, _metricPublisher);
             outboundSocket.ConnectFor(transportMessage);
 
             _outboundSockets.TryAdd(peer.Id, outboundSocket);
