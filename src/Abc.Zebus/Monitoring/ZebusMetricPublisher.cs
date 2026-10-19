@@ -7,9 +7,12 @@ namespace Abc.Zebus.Monitoring;
 
 public class ZebusMetricPublisher : IZebusMetricPublisher, IDisposable
 {
-    private readonly Meter _meter = new("Abc.Zebus", typeof(ZebusMetricPublisher).Assembly.GetName().Version?.ToString());
-    private readonly HashSet<PeerId> _connectedPeers = new();
-    private readonly IZebusMetricPublisherConfiguration _configuration;
+    public static string PeerIdTag => "zebus.peer.id";
+    public static string MeterName => "Abc.Zebus";
+
+    private readonly Meter _meter = new(MeterName, typeof(ZebusMetricPublisher).Assembly.GetName().Version?.ToString());
+    private readonly Dictionary<string, HashSet<PeerId>> _connectedSocketsByPeerTagValue = new();
+    private readonly string? _dynamicPeerIdTagPlaceholder;
     private readonly Counter<long> _messagesSent;
     private readonly Counter<long> _messagesReceived;
     private readonly Counter<long> _bytesSent;
@@ -18,12 +21,13 @@ public class ZebusMetricPublisher : IZebusMetricPublisher, IDisposable
     private readonly Counter<long> _peerConnections;
     private readonly Counter<long> _peerDisconnections;
     private readonly Counter<long> _peerConnectionFailures;
-    private readonly Gauge<int> _peerConnectionStatuses;
-    private readonly Gauge<int> _totalConnectedSockets;
+    private readonly ObservableUpDownCounter<int> _connectedSockets;
 
     public ZebusMetricPublisher(IZebusMetricPublisherConfiguration configuration)
     {
-        _configuration = configuration;
+        // The value is captured on construction because runtime changes could break metric computation.
+        _dynamicPeerIdTagPlaceholder = configuration.DynamicPeerIdTagPlaceholder;
+
         _messagesSent = _meter.CreateCounter<long>("zebus.transport.messages.sent", unit: "{message}", description: "Number of transport messages sent to peers");
         _messagesReceived = _meter.CreateCounter<long>("zebus.transport.messages.received", unit: "{message}", description: "Number of transport messages received");
         _bytesSent = _meter.CreateCounter<long>("zebus.transport.bytes.sent", unit: "By", description: "Number of bytes sent to peers");
@@ -32,11 +36,23 @@ public class ZebusMetricPublisher : IZebusMetricPublisher, IDisposable
         _peerConnections = _meter.CreateCounter<long>("zebus.transport.peer_connections", unit: "{connection}", description: "Number of outbound peer socket connections established");
         _peerDisconnections = _meter.CreateCounter<long>("zebus.transport.peer_disconnections", unit: "{disconnection}", description: "Number of outbound peer socket disconnections");
         _peerConnectionFailures = _meter.CreateCounter<long>("zebus.transport.peer_connection_failures", unit: "{failure}", description: "Number of outbound peer socket connection failures");
-        _peerConnectionStatuses = _meter.CreateGauge<int>("zebus.transport.peer_connection_status", unit: "{connection}", description: "Whether a peer connection is alive (1) or dead (0)");
-        _totalConnectedSockets = _meter.CreateGauge<int>("zebus.transport.total_connected_sockets", unit: "{socket}", description: "Total number of connected outbound sockets");
-    }
+        _connectedSockets = _meter.CreateObservableUpDownCounter("zebus.transport.peer_connected_sockets", observeValues: ObserveConnectedSockets, unit: "{socket}", description: "Number of connected outbound sockets per peer");
 
-    public static string PeerIdTag => "zebus.peer.id";
+        IEnumerable<Measurement<int>> ObserveConnectedSockets()
+        {
+            // Explicitly avoid using yield return to control lock duration.
+            var measurements = new List<Measurement<int>>();
+            lock (_connectedSocketsByPeerTagValue)
+            {
+                foreach (var (peerTagValue, connectedSockets) in _connectedSocketsByPeerTagValue)
+                {
+                    measurements.Add(new Measurement<int>(connectedSockets.Count, PeerTag(peerTagValue)));
+                }
+            }
+
+            return measurements;
+        }
+    }
 
     public void Dispose()
     {
@@ -85,39 +101,52 @@ public class ZebusMetricPublisher : IZebusMetricPublisher, IDisposable
 
     public void UpdatedConnectionStatus(bool isConnected, PeerId peerId)
     {
-        var connectedPeerCount = UpdatedConnectedPeers(isConnected, peerId);
-
-        _peerConnectionStatuses.Record(isConnected ? 1 : 0, PeerTag(peerId));
-        _totalConnectedSockets.Record(connectedPeerCount);
-
-    }
-
-    private int UpdatedConnectedPeers(bool isConnected, PeerId peerId)
-    {
-        // In practice, the caller is single-threaded, but a lock is used here to ensure thread safety in case of future changes.
-        lock (_connectedPeers)
+        lock (_connectedSocketsByPeerTagValue)
         {
-            if (isConnected)
-                _connectedPeers.Add(peerId);
-            else
-                _connectedPeers.Remove(peerId);
+            var tagValue = PeerTagValue(peerId);
+            if (!_connectedSocketsByPeerTagValue.TryGetValue(tagValue, out var connectedSockets))
+            {
+                connectedSockets = new();
+                _connectedSocketsByPeerTagValue.Add(tagValue, connectedSockets);
+            }
 
-            return _connectedPeers.Count;
+            if (isConnected)
+            {
+                connectedSockets.Add(peerId);
+            }
+            else
+            {
+                connectedSockets.Remove(peerId);
+                if (connectedSockets.Count == 0)
+                    _connectedSocketsByPeerTagValue.Remove(tagValue);
+            }
         }
     }
 
     private KeyValuePair<string, object?> PeerTag(PeerId peerId)
     {
+        var tagValue = PeerTagValue(peerId);
+
+        return PeerTag(tagValue);
+    }
+
+    private static KeyValuePair<string, object?> PeerTag(string tagValue)
+    {
+        return new(PeerIdTag, tagValue);
+    }
+
+    private string PeerTagValue(PeerId peerId)
+    {
         var tagValue = peerId.ToString();
 
-        if (_configuration.DynamicPeerIdTagPlaceholder is { Length: > 0 } placeholder)
+        if (_dynamicPeerIdTagPlaceholder is { Length: > 0 } placeholder)
         {
             var separatorIndex = tagValue.LastIndexOf('.');
             if (separatorIndex >= 0 && Guid.TryParse(tagValue.Substring(separatorIndex + 1), out _))
                 tagValue = tagValue.Substring(0, separatorIndex + 1) + placeholder;
         }
 
-        return new(PeerIdTag, tagValue);
+        return tagValue;
     }
 }
 #endif
