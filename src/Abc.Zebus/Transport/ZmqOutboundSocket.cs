@@ -14,24 +14,44 @@ internal class ZmqOutboundSocket
     private readonly ZmqContext _context;
     private readonly ZmqSocketOptions _options;
     private readonly IZmqOutboundSocketErrorHandler _errorHandler;
-    private readonly bool _replacePeerIdGuidSuffixWithClientInMetrics;
+    private readonly IZebusMetricPublisher _metricPublisher;
     private ZmqSocket? _socket;
     private int _failedSendCount;
     private bool _isInClosedState;
     private TimeSpan _closedStateDuration;
+    private bool _isConnected;
 
     public ZmqOutboundSocket(ZmqContext context, PeerId peerId, string endPoint, ZmqSocketOptions options, IZmqOutboundSocketErrorHandler errorHandler)
+        : this(context, peerId, endPoint, options, errorHandler, new NoopZebusMetricPublisher())
+    {
+
+    }
+
+    public ZmqOutboundSocket(ZmqContext context, PeerId peerId, string endPoint, ZmqSocketOptions options, IZmqOutboundSocketErrorHandler errorHandler, IZebusMetricPublisher metricPublisher)
     {
         _context = context;
         _options = options;
         _errorHandler = errorHandler;
-        _replacePeerIdGuidSuffixWithClientInMetrics = options.ReplacePeerIdGuidSuffixWithClientInMetrics;
+        _metricPublisher = metricPublisher;
         PeerId = peerId;
         EndPoint = endPoint;
     }
 
     public PeerId PeerId { get; }
-    public bool IsConnected { get; private set; }
+
+    public bool IsConnected
+    {
+        get => _isConnected;
+        private set
+        {
+            if (_isConnected == value)
+                return;
+
+            _isConnected = value;
+            _metricPublisher.UpdatedConnectionStatus(value, PeerId);
+        }
+    }
+
     public string EndPoint { get; private set; }
 
     public void ConnectFor(TransportMessage message)
@@ -45,7 +65,7 @@ internal class ZmqOutboundSocket
             _socket.Connect(EndPoint);
 
             IsConnected = true;
-            TransportMetrics.AddPeerConnections(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
+            _metricPublisher.AddPeerConnections(1, PeerId);
 
             _logger.LogInformation($"Socket connected, Peer: {PeerId}, EndPoint: {EndPoint}");
         }
@@ -57,7 +77,7 @@ internal class ZmqOutboundSocket
 
             _logger.LogError(ex, $"Unable to connect socket, Peer: {PeerId}, EndPoint: {EndPoint}");
             _errorHandler.OnConnectException(PeerId, EndPoint, ex);
-            TransportMetrics.AddPeerConnectionFailures(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
+            _metricPublisher.AddPeerConnectionFailures(1, PeerId);
 
             SwitchToClosedState(_options.ClosedStateDurationAfterConnectFailure);
         }
@@ -100,7 +120,7 @@ internal class ZmqOutboundSocket
         {
             _socket!.SetOption(ZmqSocketOption.LINGER, 0);
             _socket!.Dispose();
-            TransportMetrics.AddPeerDisconnections(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
+            _metricPublisher.AddPeerDisconnections(1, PeerId);
 
             _logger.LogInformation($"Socket disconnected, Peer: {PeerId}");
         }
@@ -129,7 +149,7 @@ internal class ZmqOutboundSocket
 
         _logger.LogError($"Unable to send message, destination peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}, Error: {errorMessage}");
         _errorHandler.OnSendFailed(PeerId, EndPoint, message.MessageTypeId, message.Id);
-        TransportMetrics.AddMessageSendFailures(1, PeerId, _replacePeerIdGuidSuffixWithClientInMetrics);
+        _metricPublisher.AddMessageSendFailures(1, PeerId);
 
         if (_failedSendCount >= _options.SendRetriesBeforeSwitchingToClosedState)
             SwitchToClosedState(_options.ClosedStateDurationAfterSendFailure);

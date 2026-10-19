@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using Abc.Zebus.Directory;
@@ -18,6 +17,7 @@ public class ZmqTransport : ITransport
     private readonly IZmqTransportConfiguration _configuration;
     private readonly ZmqSocketOptions _socketOptions;
     private readonly IZmqOutboundSocketErrorHandler _errorHandler;
+    private readonly IZebusMetricPublisher _metricPublisher;
     private readonly ZmqEndPoint _configuredInboundEndPoint;
     private ILogger _logger = ZebusLogManager.GetLogger(typeof(ZmqTransport));
     private ConcurrentDictionary<PeerId, ZmqOutboundSocket> _outboundSockets = new();
@@ -32,13 +32,18 @@ public class ZmqTransport : ITransport
     private string _environment = string.Empty;
     private CountdownEvent? _outboundSocketsToStop;
     private bool _isRunning;
-    private ConnectionStateGauge? _connectionStateGauge;
 
     public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler)
+        : this(configuration, socketOptions, errorHandler, new NoopZebusMetricPublisher())
+    {
+    }
+
+    public ZmqTransport(IZmqTransportConfiguration configuration, ZmqSocketOptions socketOptions, IZmqOutboundSocketErrorHandler errorHandler, IZebusMetricPublisher metricPublisher)
     {
         _configuration = configuration;
         _socketOptions = socketOptions;
         _errorHandler = errorHandler;
+        _metricPublisher = metricPublisher;
         _configuredInboundEndPoint = new ZmqEndPoint(configuration.InboundEndPoint);
     }
 
@@ -112,8 +117,6 @@ public class ZmqTransport : ITransport
 
         startSequenceState.Wait();
         _isRunning = true;
-
-        _connectionStateGauge = TransportMetrics.CreateConnectionStateGauge(ObserveConnectionStates, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
     }
 
     public void Stop()
@@ -272,8 +275,8 @@ public class ZmqTransport : ITransport
             {
                 MessageReceived?.Invoke(transportMessage);
                 var senderId = transportMessage.Originator.SenderId;
-                TransportMetrics.AddMessagesReceived(1, senderId, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
-                TransportMetrics.AddBytesReceived(bufferReader.Length, senderId, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
+                _metricPublisher.AddMessagesReceived(1, senderId);
+                _metricPublisher.AddBytesReceived(bufferReader.Length, senderId);
             }
         }
         catch (Exception ex)
@@ -406,8 +409,8 @@ public class ZmqTransport : ITransport
         try
         {
             outboundSocket.Send(bufferWriter.Buffer, bufferWriter.Position, transportMessage);
-            TransportMetrics.AddMessagesSent(1, target.Id, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
-            TransportMetrics.AddBytesSent(bufferWriter.Position, target.Id, _socketOptions.ReplacePeerIdGuidSuffixWithClientInMetrics);
+            _metricPublisher.AddMessagesSent(1, target.Id);
+            _metricPublisher.AddBytesSent(bufferWriter.Position, target.Id);
         }
         catch (Exception ex)
         {
@@ -423,7 +426,6 @@ public class ZmqTransport : ITransport
                 continue;
 
             outboundSocket.Disconnect();
-            TransportMetrics.AddOutboundSocketCount(-1);
         }
     }
 
@@ -435,8 +437,6 @@ public class ZmqTransport : ITransport
             outboundSocket.ConnectFor(transportMessage);
 
             _outboundSockets.TryAdd(peer.Id, outboundSocket);
-            if (outboundSocket.IsConnected)
-                TransportMetrics.AddOutboundSocketCount(1);
         }
         else if (!string.Equals(outboundSocket.EndPoint, peer.EndPoint, StringComparison.OrdinalIgnoreCase))
         {
@@ -504,7 +504,7 @@ public class ZmqTransport : ITransport
         }
     }
 
-    private IEnumerable<(PeerId peerId, bool isConnected)> ObserveConnectionStates()
+    private IEnumerable<(PeerId peerId, bool isConnected)> GetConnectionStatuses()
     {
         foreach (var kvp in _outboundSockets)
             yield return (kvp.Key, kvp.Value.IsConnected);
