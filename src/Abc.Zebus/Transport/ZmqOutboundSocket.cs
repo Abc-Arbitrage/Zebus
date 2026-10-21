@@ -48,7 +48,7 @@ internal class ZmqOutboundSocket
                 return;
 
             _isConnected = value;
-            _metricPublisher.UpdatedConnectionStatus(value, PeerId);
+            _metricPublisher.UpdateConnectionStatus(value, PeerId);
         }
     }
 

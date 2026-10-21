@@ -99,7 +99,7 @@ public class ZebusMetricPublisher : IZebusMetricPublisher, IDisposable
         _peerConnectionFailures.Add(delta, PeerTag(peerId));
     }
 
-    public void UpdatedConnectionStatus(bool isConnected, PeerId peerId)
+    public void UpdateConnectionStatus(bool isConnected, PeerId peerId)
     {
         lock (_connectedSocketsByPeerTagValue)
         {

@@ -34,7 +34,7 @@ public class NoopZebusMetricPublisher : IZebusMetricPublisher
     {
     }
 
-    public void UpdatedConnectionStatus(bool isConnected, PeerId peerId)
+    public void UpdateConnectionStatus(bool isConnected, PeerId peerId)
     {
     }
 }

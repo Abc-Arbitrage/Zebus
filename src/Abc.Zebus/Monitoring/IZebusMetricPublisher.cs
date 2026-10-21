@@ -10,5 +10,5 @@ public interface IZebusMetricPublisher
     void AddPeerConnections(long delta, PeerId peerId);
     void AddPeerDisconnections(long delta, PeerId peerId);
     void AddPeerConnectionFailures(long delta, PeerId peerId);
-    void UpdatedConnectionStatus(bool isConnected, PeerId peerId);
+    void UpdateConnectionStatus(bool isConnected, PeerId peerId);
 }
