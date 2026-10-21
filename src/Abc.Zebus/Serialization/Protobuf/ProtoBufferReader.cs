@@ -104,7 +104,10 @@ internal sealed class ProtoBufferReader
     public bool TryReadGuid(out Guid value)
     {
         if (!TryReadLength(out var length) || !CanRead(length) || length != ProtoBufferWriter.GuidSize)
+        {
+            value = default;
             return false;
+        }
 
         // Skip tag
         _buffer.AsSpan(_position + 1, 8).CopyTo(_guidBuffer.AsSpan(0));
