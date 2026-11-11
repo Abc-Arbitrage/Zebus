@@ -1,4 +1,3 @@
-#if !NET
 // ReSharper disable CheckNamespace
 namespace System.Diagnostics.CodeAnalysis;
 
@@ -70,4 +69,3 @@ internal sealed class NotNullWhenAttribute : Attribute
 
     public bool ReturnValue { get; }
 }
-#endif

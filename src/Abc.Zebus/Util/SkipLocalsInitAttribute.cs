@@ -1,6 +1,11 @@
-#if !NET
 // ReSharper disable once CheckNamespace
 namespace System.Runtime.CompilerServices;
+
+#if NETCOREAPP
+
+[assembly: TypeForwardedTo(typeof(SkipLocalsInitAttribute))]
+
+#else
 
 [AttributeUsage(AttributeTargets.Module
                 | AttributeTargets.Class
@@ -14,4 +19,5 @@ namespace System.Runtime.CompilerServices;
 internal sealed class SkipLocalsInitAttribute : Attribute
 {
 }
+
 #endif

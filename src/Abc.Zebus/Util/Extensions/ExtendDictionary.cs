@@ -34,7 +34,6 @@ internal static class ExtendDictionary
         return dictionary.TryGetValue(key, out var value) ? value : (TValue?)null;
     }
 
-#if !NET
     [Pure]
     [return: MaybeNull]
     public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
@@ -51,7 +50,6 @@ internal static class ExtendDictionary
     {
         return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
     }
-#endif
 
     public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, [InstantHandle] Func<TKey, TValue> defaultValueBuilder)
         where TKey : notnull
