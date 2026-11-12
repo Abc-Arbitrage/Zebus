@@ -502,12 +502,6 @@ public class ZmqTransport : ITransport
         }
     }
 
-    private IEnumerable<(PeerId peerId, bool isConnected)> GetConnectionStatuses()
-    {
-        foreach (var kvp in _outboundSockets)
-            yield return (kvp.Key, kvp.Value.IsConnected);
-    }
-
     private readonly struct OutboundSocketAction
     {
         private static readonly TransportMessage _disconnectMessage = new(default, null!, new PeerId(), null!);
