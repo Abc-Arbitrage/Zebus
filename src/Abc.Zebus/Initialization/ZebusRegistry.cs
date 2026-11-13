@@ -40,5 +40,6 @@ public class ZebusRegistry : Registry
         ForSingletonOf<IStoppingStrategy>().Use<DefaultStoppingStrategy>();
 
         ForSingletonOf<IZmqOutboundSocketErrorHandler>().Use<DefaultZmqOutboundSocketErrorHandler>();
+        ForSingletonOf<IZebusMetricPublisher>().Use<NoopZebusMetricPublisher>();
     }
 }
