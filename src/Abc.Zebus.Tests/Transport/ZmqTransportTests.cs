@@ -4,13 +4,11 @@ using Abc.Zebus.Testing.Extensions;
 using Abc.Zebus.Tests.Messages;
 using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
-using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,8 +79,8 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport(environment: null);
 
-            var receivedMessages = new ConcurrentBag<TransportMessage>();
-            var destinationTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add, environment: "NotTest");
+            var messageCounter = new MessageCounter();
+            var destinationTransport = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter.Increment(), environment: "NotTest");
             var destinationPeer = destinationTransport.GetPeer();
             var nonExistingPeer = new Peer(new PeerId("Abc.NonExistingPeer.2"), "tcp://non-existing-peer:1234");
 
@@ -90,14 +88,13 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.Send(message, new[] { nonExistingPeer });
             senderTransport.Send(message, new[] { destinationPeer });
 
-            Wait.Until(() => receivedMessages.Count >= 1, 30.Seconds(), "The outbound thread was killed and couldn't connect to the next peer");
+            Wait.Until(() => messageCounter.Value >= 1, 30.Seconds(), "The outbound thread was killed and couldn't connect to the next peer");
         }
 
         [Test]
         public void should_not_dispatch_messages_received_from_wrong_environment()
         {
-            var transport1ReceivedMessages = new ConcurrentBag<TransportMessage>();
-            var transport1 = CreateAndStartZmqTransport(onMessageReceived: transport1ReceivedMessages.Add);
+            var transport1 = CreateAndStartZmqTransport();
 
             var transport2ReceivedMessages = new ConcurrentBag<TransportMessage>();
             var transport2 = CreateAndStartZmqTransport(onMessageReceived: transport2ReceivedMessages.Add, environment: "NotTest");
@@ -269,19 +266,19 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
 
-            var receivedMessages = new ConcurrentBag<TransportMessage>();
-            var receiverTransport1 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
-            var receiverTransport2 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var messageCounter = new MessageCounter();
+            var receiverTransport1 = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter.Increment());
+            var receiverTransport2 = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter.Increment());
             var receiver = receiverTransport1.GetPeer();
 
             senderTransport.Send(new FakeCommand(0).ToTransportMessage(), new[] { receiver });
-            Wait.Until(() => receivedMessages.Count == 1, 30.Seconds());
+            Wait.Until(() => messageCounter.Value == 1, 30.Seconds());
 
             receiverTransport1.Stop();
             receiver.EndPoint = receiverTransport2.InboundEndPoint;
 
             senderTransport.Send(new FakeCommand(0).ToTransportMessage(), new[] { receiver });
-            Wait.Until(() => receivedMessages.Count == 2, 30.Seconds(), "unable to receive message");
+            Wait.Until(() => messageCounter.Value == 2, 30.Seconds(), "unable to receive message");
         }
 
         [Test]
@@ -379,9 +376,9 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
 
-            var receivedMessagesCount = 0;
+            var messageCounter = new MessageCounter();
             var receiverTransports = Enumerable.Range(0, peerCount)
-                                               .Select(_ => CreateZmqTransport(onMessageReceived: _ => Interlocked.Increment(ref receivedMessagesCount)))
+                                               .Select(_ => CreateZmqTransport(onMessageReceived: _ => messageCounter.Increment()))
                                                .ToList()
                                                .AsParallel()
                                                .Select(StartZmqTransport)
@@ -390,7 +387,7 @@ namespace Abc.Zebus.Tests.Transport
             var message = new FakeCommand(999).ToTransportMessage();
             senderTransport.Send(message, receiverTransports.Select(x => x.GetPeer()));
 
-            Wait.Until(() => Volatile.Read(ref receivedMessagesCount) == peerCount, 30.Seconds());
+            Wait.Until(() => messageCounter.Value == peerCount, 30.Seconds());
         }
 
         [Test]
@@ -403,9 +400,9 @@ namespace Abc.Zebus.Tests.Transport
                 MaximumSocketCount = maximumSocketCount,
             });
 
-            var receivedMessages = new List<TransportMessage>();
+            var messageCounter = new MessageCounter();
             var receiverTransports = Enumerable.Range(0, maximumSocketCount + 2)
-                                               .Select(_ => CreateZmqTransport(onMessageReceived: receivedMessages.Add))
+                                               .Select(_ => CreateZmqTransport(onMessageReceived: _ => messageCounter.Increment()))
                                                .ToList()
                                                .AsParallel()
                                                .Select(StartZmqTransport)
@@ -414,11 +411,11 @@ namespace Abc.Zebus.Tests.Transport
             var message = new FakeCommand(999).ToTransportMessage();
             senderTransport.Send(message, receiverTransports.Select(x => x.GetPeer()));
 
-            Wait.Until(() => receivedMessages.Count == maximumSocketCount - 1, 30.Seconds());
+            Wait.Until(() => messageCounter.Value == maximumSocketCount - 1, 30.Seconds());
 
             Thread.Sleep(1.Second());
 
-            receivedMessages.Count.ShouldEqual(maximumSocketCount - 1);
+            messageCounter.Value.ShouldEqual(maximumSocketCount - 1);
         }
 
         [Test]
@@ -431,8 +428,8 @@ namespace Abc.Zebus.Tests.Transport
                 SendRetriesBeforeSwitchingToClosedState = 2,
             });
 
-            var receivedMessages = new List<TransportMessage>();
-            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var messageCounter = new MessageCounter();
+            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter.Increment());
             var upReceiver = upReceiverTransport.GetPeer();
 
             var downReceiverTransport = CreateAndStartZmqTransport();
@@ -446,7 +443,7 @@ namespace Abc.Zebus.Tests.Transport
                 senderTransport.Send(message, new[] { upReceiver, downReceiver });
 
                 var expectedMessageCount = i;
-                Wait.Until(() => receivedMessages.Count == expectedMessageCount, 30.Seconds(), "Failed to send message after " + i + " successful sent");
+                Wait.Until(() => messageCounter.Value == expectedMessageCount, 30.Seconds(), "Failed to send message after " + i + " successful sent");
             }
         }
 
@@ -460,8 +457,8 @@ namespace Abc.Zebus.Tests.Transport
                 SendRetriesBeforeSwitchingToClosedState = 0,
             });
 
-            var receivedMessages = new List<TransportMessage>();
-            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var messageCounter = new MessageCounter();
+            var upReceiverTransport = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter.Increment());
             var upReceiver = upReceiverTransport.GetPeer();
 
             var downReceiverTransport = CreateAndStartZmqTransport();
@@ -482,7 +479,7 @@ namespace Abc.Zebus.Tests.Transport
             }
 
             var receiverStopwatch = Stopwatch.StartNew();
-            Wait.Until(() => receivedMessages.Count == 10, 30.Seconds(), "Timed out while waiting for messages");
+            Wait.Until(() => messageCounter.Value == 10, 30.Seconds(), "Timed out while waiting for messages");
             receiverStopwatch.Stop();
             Console.WriteLine("Elapsed time to get messages: " + receiverStopwatch.Elapsed);
             receiverStopwatch.ElapsedMilliseconds.ShouldBeLessOrEqualThan(1000, "Throughput is too low");
@@ -539,20 +536,20 @@ namespace Abc.Zebus.Tests.Transport
         [Test]
         public void should_send_message_to_self()
         {
-            var receivedMessages = new List<TransportMessage>();
-            var transport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var messageCounter = new MessageCounter();
+            var transport = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter.Increment());
             var self = transport.GetPeer();
 
             transport.Send(new FakeCommand(1).ToTransportMessage(), new[] { self });
 
-            Wait.Until(() => receivedMessages.Count == 1, 30.Seconds());
+            Wait.Until(() => messageCounter.Value == 1, 30.Seconds());
         }
 
         [Test]
         public void should_not_forward_messages_to_upper_layer_when_stopping()
         {
-            var receivedMessages = new List<TransportMessage>();
-            var receivingTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
+            var messageCounter = new MessageCounter();
+            var receivingTransport = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter.Increment());
             var receivingPeer = receivingTransport.GetPeer();
 
             var receivedWhileNotListening = false;
@@ -575,7 +572,7 @@ namespace Abc.Zebus.Tests.Transport
                 Console.WriteLine($"{sendCount} messages sent");
             });
 
-            Wait.Until(() => receivedMessages.Count > 1, 30.Seconds());
+            Wait.Until(() => messageCounter.Value > 1, 30.Seconds());
             Console.WriteLine("Message received");
 
             receivingTransport.Stop();
@@ -688,6 +685,15 @@ namespace Abc.Zebus.Tests.Transport
             transport.Start();
 
             return transport;
+        }
+
+        private class MessageCounter
+        {
+            private int _value;
+
+            public int Value => Volatile.Read(ref _value);
+
+            public void Increment() => Interlocked.Increment(ref _value);
         }
     }
 }
