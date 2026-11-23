@@ -77,6 +77,15 @@ public class ZmqSocketOptions
     /// </summary>
     public KeepAliveOptions? KeepAlive { get; set; }
 
+    /// <summary>
+    /// Gets or sets the delegate that will be used to validate the outbound endpoints before connecting to them.
+    /// </summary>
+    /// <remarks>
+    /// If the endpoint validation fails, the outbound socket will not be opened and the related messages will be dropped.
+    /// Invalid endpoints will be re-evaluated periodically (see <see cref="ClosedStateDurationAfterConnectFailure"/>).
+    /// </remarks>
+    public Func<string, bool>? OutboundEndpointValidator { get; set; }
+
     public class KeepAliveOptions
     {
         public static KeepAliveOptions On(TimeSpan? keepAliveTimeout, TimeSpan? keepAliveInterval)

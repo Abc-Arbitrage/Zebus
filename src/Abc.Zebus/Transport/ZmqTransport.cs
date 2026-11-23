@@ -399,7 +399,7 @@ public class ZmqTransport : ITransport
 
     private void SendToPeer(TransportMessage transportMessage, ProtoBufferWriter bufferWriter, Peer target)
     {
-        var outboundSocket = GetConnectedOutboundSocket(target, transportMessage);
+        var outboundSocket = GetConnectedOutboundSocket(target);
         if (!outboundSocket.IsConnected)
         {
             _logger.LogError($"Could not send message of type {transportMessage.MessageTypeId.FullName} to peer {target.Id} because outbound socket was not connected");
@@ -427,19 +427,15 @@ public class ZmqTransport : ITransport
         }
     }
 
-    private ZmqOutboundSocket GetConnectedOutboundSocket(Peer peer, TransportMessage transportMessage)
+    private ZmqOutboundSocket GetConnectedOutboundSocket(Peer peer)
     {
         if (!_outboundSockets.TryGetValue(peer.Id, out var outboundSocket))
         {
             outboundSocket = new ZmqOutboundSocket(_context!, peer.Id, peer.EndPoint, _socketOptions, _errorHandler, _metricPublisher);
-            outboundSocket.ConnectFor(transportMessage);
-
             _outboundSockets.TryAdd(peer.Id, outboundSocket);
         }
-        else if (!string.Equals(outboundSocket.EndPoint, peer.EndPoint, StringComparison.OrdinalIgnoreCase))
-        {
-            outboundSocket.ReconnectFor(peer.EndPoint, transportMessage);
-        }
+
+        outboundSocket.EnsureConnected(peer.EndPoint);
 
         return outboundSocket;
     }

@@ -487,6 +487,53 @@ namespace Abc.Zebus.Tests.Transport
         }
 
         [Test]
+        public void should_retry_sending_to_unavailable_peer_after_delay()
+        {
+            var socketOptions = new ZmqSocketOptions
+            {
+                ClosedStateDurationAfterConnectFailure = 100.Milliseconds(),
+            };
+
+            var senderTransport = CreateAndStartZmqTransport(socketOptions: socketOptions);
+
+            var messageCounter1 = new MessageCounter();
+            var transport1 = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter1.Increment());
+            var receiver1 = transport1.GetPeer();
+
+            var messageCounter2 = new MessageCounter();
+            var transport2 = CreateAndStartZmqTransport(onMessageReceived: _ => messageCounter2.Increment());
+            var receiver2 = transport2.GetPeer();
+
+            socketOptions.OutboundEndpointValidator = x => x != receiver2.EndPoint;
+
+            var sendStopwatch1 = Stopwatch.StartNew();
+            for (var i = 0; i < 10; ++i)
+            {
+                var message = new FakeCommand(i).ToTransportMessage();
+                senderTransport.Send(message, new[] { receiver1, receiver2 });
+            }
+
+            Console.WriteLine("Sent messages to two peers in " + sendStopwatch1.Elapsed);
+            Wait.Until(() => messageCounter1.Value == 10, 30.Seconds(), "Timed out while waiting for messages");
+            messageCounter2.Value.ShouldEqual(0, "Messages should not have been sent to the second peer");
+
+            Thread.Sleep(200.Milliseconds());
+
+            socketOptions.OutboundEndpointValidator = null;
+
+            var sendStopwatch2 = Stopwatch.StartNew();
+            for (var i = 0; i < 10; ++i)
+            {
+                var message = new FakeCommand(i).ToTransportMessage();
+                senderTransport.Send(message, new[] { receiver1, receiver2 });
+            }
+
+            Console.WriteLine("Sent messages to two peers in " + sendStopwatch2.Elapsed);
+            Wait.Until(() => messageCounter1.Value == 20, 30.Seconds(), "Timed out while waiting for messages");
+            Wait.Until(() => messageCounter2.Value == 10, 30.Seconds(), "Timed out while waiting for messages");
+        }
+
+        [Test]
         public void should_not_wait_for_unknown_peer_on_every_send()
         {
             var receivedMessageCount = 0;
