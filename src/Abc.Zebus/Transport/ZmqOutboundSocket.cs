@@ -24,7 +24,6 @@ internal class ZmqOutboundSocket
     public ZmqOutboundSocket(ZmqContext context, PeerId peerId, string endPoint, ZmqSocketOptions options, IZmqOutboundSocketErrorHandler errorHandler)
         : this(context, peerId, endPoint, options, errorHandler, new NoopZebusMetricPublisher())
     {
-
     }
 
     public ZmqOutboundSocket(ZmqContext context, PeerId peerId, string endPoint, ZmqSocketOptions options, IZmqOutboundSocketErrorHandler errorHandler, IZebusMetricPublisher metricPublisher)
@@ -54,13 +53,16 @@ internal class ZmqOutboundSocket
 
     public string EndPoint { get; private set; }
 
-    public void ConnectFor(TransportMessage message)
+    private void Connect(string endpoint)
     {
-        if (!CanSendOrConnect(message))
-            return;
+        EndPoint = endpoint;
 
         try
         {
+            var endpointValidator = _options.OutboundEndpointValidator;
+            if (endpointValidator != null && !endpointValidator.Invoke(EndPoint))
+                throw new InvalidOperationException($"Invalid endpoint: {EndPoint}");
+
             _socket = CreateSocket();
             _socket.Connect(EndPoint);
 
@@ -104,11 +106,21 @@ internal class ZmqOutboundSocket
         return socket;
     }
 
-    public void ReconnectFor(string endPoint, TransportMessage message)
+    public void EnsureConnected(string endPoint)
     {
-        Disconnect();
-        EndPoint = endPoint;
-        ConnectFor(message);
+        if (_isConnected)
+        {
+            var shouldReconnect = !string.Equals(EndPoint, endPoint, StringComparison.OrdinalIgnoreCase);
+            if (shouldReconnect)
+            {
+                Disconnect();
+                Connect(endPoint);
+            }
+        }
+        else if (CanSendOrConnect())
+        {
+            Connect(endPoint);
+        }
     }
 
     public void Disconnect()
@@ -135,8 +147,11 @@ internal class ZmqOutboundSocket
 
     public void Send(byte[] buffer, int length, TransportMessage message)
     {
-        if (!CanSendOrConnect(message))
+        if (!CanSendOrConnect())
+        {
+            _logger.LogWarning($"Send ignored in closed state, Peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}");
             return;
+        }
 
         if (_socket!.TrySend(buffer, 0, length, out var error))
         {
@@ -159,15 +174,12 @@ internal class ZmqOutboundSocket
         ++_failedSendCount;
     }
 
-    private bool CanSendOrConnect(TransportMessage message)
+    private bool CanSendOrConnect()
     {
         if (_isInClosedState)
         {
             if (_closedStateStopwatch.Elapsed < _closedStateDuration)
-            {
-                _logger.LogWarning($"Send or connect ignored in closed state, Peer: {PeerId}, MessageTypeId: {message.MessageTypeId}, MessageId: {message.Id}");
                 return false;
-            }
 
             SwitchToOpenState();
         }
