@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Abc.Zebus.Log4Net;
 using JetBrains.Annotations;
 using log4net.Appender;
 using log4net.Config;
@@ -11,11 +12,14 @@ namespace Abc.Zebus.Tests
     [SetUpFixture]
     public class Log4netConfigurator
     {
+        private static readonly Log4NetFactory _loggerFactory = new();
+
         [OneTimeSetUp]
         public void Setup()
         {
             var configurationFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config");
             XmlConfigurator.Configure(LoggerManager.GetRepository(typeof(Log4netConfigurator).Assembly), new FileInfo(configurationFile));
+            ZebusLogManager.LoggerFactory = _loggerFactory;
         }
 
         [UsedImplicitly]
