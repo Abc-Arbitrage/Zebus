@@ -6,7 +6,6 @@ using Abc.Zebus.Transport;
 using Abc.Zebus.Util;
 using NUnit.Framework;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -63,7 +62,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transport1 = CreateAndStartZmqTransport(environment: null);
 
-            var transport2ReceivedMessages = new ConcurrentBag<TransportMessage>();
+            var transport2ReceivedMessages = new MessageAccumulator();
             var transport2 = CreateAndStartZmqTransport(onMessageReceived: transport2ReceivedMessages.Add, environment: "NotTest");
             var transport2Peer = transport2.GetPeer();
 
@@ -71,7 +70,8 @@ namespace Abc.Zebus.Tests.Transport
             transport1.Send(message, new[] { transport2Peer });
 
             Wait.Until(() => transport2ReceivedMessages.Count >= 1, 30.Seconds());
-            transport2ReceivedMessages.Single().Id.ShouldEqual(message.Id);
+            transport2ReceivedMessages.Count.ShouldEqual(1);
+            transport2ReceivedMessages[0].Id.ShouldEqual(message.Id);
         }
 
         [Test]
@@ -96,7 +96,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var transport1 = CreateAndStartZmqTransport();
 
-            var transport2ReceivedMessages = new ConcurrentBag<TransportMessage>();
+            var transport2ReceivedMessages = new MessageAccumulator();
             var transport2 = CreateAndStartZmqTransport(onMessageReceived: transport2ReceivedMessages.Add, environment: "NotTest");
             var transport2Peer = transport2.GetPeer();
 
@@ -109,17 +109,18 @@ namespace Abc.Zebus.Tests.Transport
             transport1.Send(message2, new[] { transport2Peer }); //should arrive
 
             Wait.Until(() => transport2ReceivedMessages.Count >= 1, 30.Seconds());
-            transport2ReceivedMessages.Single().Id.ShouldEqual(message2.Id);
+            transport2ReceivedMessages.Count.ShouldEqual(1);
+            transport2ReceivedMessages[0].Id.ShouldEqual(message2.Id);
         }
 
         [Test]
         public void should_send_messages()
         {
-            var transport1ReceivedMessages = new ConcurrentBag<TransportMessage>();
+            var transport1ReceivedMessages = new MessageAccumulator();
             var transport1 = CreateAndStartZmqTransport(onMessageReceived: transport1ReceivedMessages.Add);
             var transport1Peer = transport1.GetPeer();
 
-            var transport2ReceivedMessages = new ConcurrentBag<TransportMessage>();
+            var transport2ReceivedMessages = new MessageAccumulator();
             var transport2 = CreateAndStartZmqTransport(onMessageReceived: transport2ReceivedMessages.Add);
             var transport2Peer = transport2.GetPeer();
 
@@ -127,7 +128,7 @@ namespace Abc.Zebus.Tests.Transport
             transport1.Send(message1, new[] { transport2Peer });
 
             Wait.Until(() => transport2ReceivedMessages.Count == 1, 30.Seconds());
-            var transport2ReceivedMessage = transport2ReceivedMessages.ExpectedSingle();
+            var transport2ReceivedMessage = transport2ReceivedMessages[0];
             transport2ReceivedMessage.ShouldHaveSamePropertiesAs(message1, "Environment", "WasPersisted");
             transport2ReceivedMessage.Environment.ShouldEqual("Test");
             transport2ReceivedMessage.WasPersisted.ShouldEqual(false);
@@ -136,7 +137,7 @@ namespace Abc.Zebus.Tests.Transport
             transport2.Send(message2, new[] { transport1Peer });
 
             Wait.Until(() => transport1ReceivedMessages.Count == 1, 30.Seconds());
-            var transport1ReceivedMessage = transport1ReceivedMessages.ExpectedSingle();
+            var transport1ReceivedMessage = transport1ReceivedMessages[0];
             transport1ReceivedMessage.ShouldHaveSamePropertiesAs(message2, "Environment", "WasPersisted");
             transport1ReceivedMessage.Environment.ShouldEqual("Test");
             transport1ReceivedMessage.WasPersisted.ShouldEqual(false);
@@ -150,11 +151,11 @@ namespace Abc.Zebus.Tests.Transport
 
             var senderTransport = CreateAndStartZmqTransport();
 
-            var receiverMessages = new ConcurrentBag<TransportMessage>();
+            var receiverMessages = new MessageAccumulator();
             var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receiverMessages.Add);
             var receiverPeer = receiverTransport.GetPeer();
 
-            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceMessages = new MessageAccumulator();
             var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
             var persistencePeer = persistenceTransport.GetPeer();
 
@@ -162,13 +163,13 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.Send(message, new[] { receiverPeer }, new SendContext { PersistentPeerIds = { receiverPeer.Id }, PersistencePeer = persistencePeer });
 
             Wait.Until(() => receiverMessages.Count == 1, 30.Seconds());
-            var messageFromReceiver = receiverMessages.ExpectedSingle();
+            var messageFromReceiver = receiverMessages[0];
             messageFromReceiver.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted");
             messageFromReceiver.Environment.ShouldEqual("Test");
             messageFromReceiver.WasPersisted.ShouldEqual(true);
 
             Wait.Until(() => persistenceMessages.Count == 1, 30.Seconds());
-            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            var messageFromPersistence = persistenceMessages[0];
             messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted", "PersistentPeerIds", "IsPersistTransportMessage");
             messageFromPersistence.Environment.ShouldEqual("Test");
             messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeer.Id });
@@ -184,7 +185,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var receiverPeerId = new PeerId("Abc.R.0");
 
-            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceMessages = new MessageAccumulator();
             var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
             var persistencePeer = persistenceTransport.GetPeer();
 
@@ -192,7 +193,7 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.Send(message, Enumerable.Empty<Peer>(), new SendContext { PersistentPeerIds = { receiverPeerId }, PersistencePeer = persistencePeer });
 
             Wait.Until(() => persistenceMessages.Count == 1, 30.Seconds());
-            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            var messageFromPersistence = persistenceMessages[0];
             messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted", "PersistentPeerIds", "IsPersistTransportMessage");
             messageFromPersistence.Environment.ShouldEqual("Test");
             messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeerId });
@@ -207,7 +208,7 @@ namespace Abc.Zebus.Tests.Transport
 
             var receiverPeerId = new PeerId("Abc.Receiver.123");
 
-            var persistenceMessages = new ConcurrentBag<TransportMessage>();
+            var persistenceMessages = new MessageAccumulator();
             var persistenceTransport = CreateAndStartZmqTransport(onMessageReceived: persistenceMessages.Add);
             var persistencePeer = persistenceTransport.GetPeer();
 
@@ -215,7 +216,7 @@ namespace Abc.Zebus.Tests.Transport
             senderTransport.Send(message, new[] { persistencePeer });
 
             Wait.Until(() => persistenceMessages.Count == 1, 30.Seconds());
-            var messageFromPersistence = persistenceMessages.ExpectedSingle();
+            var messageFromPersistence = persistenceMessages[0];
             messageFromPersistence.ShouldHaveSamePropertiesAs(message, "Environment", "WasPersisted");
             messageFromPersistence.Environment.ShouldEqual("Test");
             messageFromPersistence.PersistentPeerIds.ShouldBeEquivalentTo(new[] { receiverPeerId });
@@ -226,7 +227,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var sender = CreateAndStartZmqTransport();
 
-            var receivedMessages = new ConcurrentBag<TransportMessage>();
+            var receivedMessages = new MessageAccumulator();
             var receiver = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
             var receivingPeer = receiver.GetPeer();
             var message = new FakeCommand(1).ToTransportMessage();
@@ -236,15 +237,15 @@ namespace Abc.Zebus.Tests.Transport
             sender.Send(otherMessage, new[] { receivingPeer }, new SendContext());
 
             Wait.Until(() => receivedMessages.Count >= 2, 30.Seconds());
-            receivedMessages.Single(x => x.Id == message.Id).WasPersisted.ShouldEqual(true);
-            receivedMessages.Single(x => x.Id == otherMessage.Id).WasPersisted.ShouldEqual(false);
+            var persistenceStatuses = receivedMessages.ToList().Select(x => (x.Id, x.WasPersisted));
+            persistenceStatuses.ShouldBeEquivalentTo((message.Id, true), (otherMessage.Id, false));
         }
 
         [Test]
         public void should_send_message_to_both_persisted_and_non_persisted_peers()
         {
             var sender = CreateAndStartZmqTransport();
-            var receivedMessages = new ConcurrentBag<TransportMessage>();
+            var receivedMessages = new MessageAccumulator();
 
             var receiver1 = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
             var receivingPeer1 = receiver1.GetPeer();
@@ -257,8 +258,8 @@ namespace Abc.Zebus.Tests.Transport
             sender.Send(message, new[] { receivingPeer1, receivingPeer2 }, new SendContext { PersistentPeerIds = { receivingPeer1.Id } });
 
             Wait.Until(() => receivedMessages.Count >= 2, 30.Seconds());
-            receivedMessages.ShouldContain(x => x.Id == message.Id && x.WasPersisted == true);
-            receivedMessages.ShouldContain(x => x.Id == message.Id && x.WasPersisted == false);
+            var persistenceStatuses = receivedMessages.ToList().Select(x => (x.Id, x.WasPersisted));
+            persistenceStatuses.ShouldBeEquivalentTo((message.Id, true), (message.Id, false));
         }
 
         [Test]
@@ -348,7 +349,7 @@ namespace Abc.Zebus.Tests.Transport
         {
             var senderTransport = CreateAndStartZmqTransport();
 
-            var receivedMessages = new List<TransportMessage>();
+            var receivedMessages = new MessageAccumulator();
             var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
             var receiver = receiverTransport.GetPeer();
 
@@ -511,7 +512,7 @@ namespace Abc.Zebus.Tests.Transport
                 SendHighWaterMark = 3,
             });
 
-            var receivedMessages = new List<TransportMessage>();
+            var receivedMessages = new MessageAccumulator();
             var receiverTransport = CreateAndStartZmqTransport(onMessageReceived: receivedMessages.Add);
             var receiver = receiverTransport.GetPeer();
 
@@ -694,6 +695,49 @@ namespace Abc.Zebus.Tests.Transport
             public int Value => Volatile.Read(ref _value);
 
             public void Increment() => Interlocked.Increment(ref _value);
+        }
+
+        private class MessageAccumulator
+        {
+            private readonly List<TransportMessage> _messages = new();
+
+            public int Count
+            {
+                get
+                {
+                    lock (_messages)
+                    {
+                        return _messages.Count;
+                    }
+                }
+            }
+
+            public void Add(TransportMessage message)
+            {
+                lock (_messages)
+                {
+                    _messages.Add(message);
+                }
+            }
+
+            public TransportMessage this[int index]
+            {
+                get
+                {
+                    lock (_messages)
+                    {
+                        return _messages[index];
+                    }
+                }
+            }
+
+            public List<TransportMessage> ToList()
+            {
+                lock (_messages)
+                {
+                    return _messages.ToList();
+                }
+            }
         }
     }
 }
